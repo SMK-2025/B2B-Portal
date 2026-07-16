@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./styles.css";
+import { PwaRegister } from "./pwa-register";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://b2bmatching.de";
 
@@ -15,10 +16,14 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "B2B Matching – Bedarf trifft Kompetenz", description: "Vertrauliche Bedarfssuche, qualitätsgeprüfte Anbieter und intelligentes Matching." },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
   category: "business"
+  ,manifest: "/manifest.webmanifest",
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], shortcut: "/icon.svg", apple: "/icons/b2b-matching-symbol.svg" },
+  appleWebApp: { capable: true, title: "B2B Matching", statusBarStyle: "black-translucent" },
+  applicationName: "B2B Matching"
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fbfaf7" };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return <html lang="de"><body>{children}</body></html>;
+  return <html lang="de"><body><PwaRegister/>{children}</body></html>;
 }

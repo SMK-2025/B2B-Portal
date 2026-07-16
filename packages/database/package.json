@@ -1,0 +1,6 @@
+{
+  "name": "@portal/database",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": { "build": "echo database migrations are SQL based", "typecheck": "echo no TypeScript sources" }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@portal/worker",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": { "@types/node": "^22.16.5", "typescript": "^5.8.3" }
+}

@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: portal
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: portal
+    ports: ["5432:5432"]
+    volumes:
+      - portal-postgres:/var/lib/postgresql/data
+      - ../packages/database/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal -d portal"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    command: redis-server --appendonly yes
+    volumes: ["portal-redis:/data"]
+  storage:
+    image: minio/minio:latest
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: portal
+      MINIO_ROOT_PASSWORD: change-me-now
+    ports: ["9000:9000", "9001:9001"]
+    volumes: ["portal-storage:/data"]
+volumes:
+  portal-postgres:
+  portal-redis:
+  portal-storage:

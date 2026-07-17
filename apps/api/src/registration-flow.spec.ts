@@ -38,4 +38,22 @@ describe("registration and organization approval", () => {
     admin.decideService(`Bearer ${reviewerLogin.token}`,service.id,{decision:"approved",reason:"Leistung ist eindeutig, plausibel und vollständig beschrieben."});
     expect(service.matchingEligible).toBe(true); expect(service.publicVisibility).toBe(true);
   });
+
+  it("resets the password once and invalidates existing sessions", async () => {
+    const store = new PortalStore();
+    const auth = new AuthService(store);
+    const registration = await auth.register({ email:"reset@example.de", password:"Sehr-Sicher-2026!", firstName:"Mara", lastName:"Klein" });
+    auth.verifyEmail(registration.verificationToken);
+    const login = await auth.login({ email:"reset@example.de", password:"Sehr-Sicher-2026!" });
+    expect(auth.authenticate(`Bearer ${login.token}`).email).toBe("reset@example.de");
+
+    const request = auth.requestPasswordReset({ email:"reset@example.de" });
+    expect(request.accepted).toBe(true);
+    expect(request.resetToken).toBeTypeOf("string");
+    await auth.resetPassword({ token:request.resetToken, password:"Noch-Sicherer-2027!" });
+    expect(() => auth.authenticate(`Bearer ${login.token}`)).toThrow();
+    await expect(auth.login({ email:"reset@example.de", password:"Sehr-Sicher-2026!" })).rejects.toThrow();
+    await expect(auth.login({ email:"reset@example.de", password:"Noch-Sicherer-2027!" })).resolves.toHaveProperty("token");
+    await expect(auth.resetPassword({ token:request.resetToken, password:"Weiter-Sicher-2028!" })).rejects.toThrow();
+  });
 });

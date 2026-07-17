@@ -44,6 +44,7 @@ export interface ReviewDecisionRecord {
 
 export interface SessionRecord { tokenHash: string; userId: string; expiresAt: string; }
 export interface VerificationRecord { tokenHash: string; userId: string; expiresAt: string; usedAt: string | null; }
+export interface PasswordResetRecord { tokenHash: string; userId: string; expiresAt: string; usedAt: string | null; }
 
 export interface CategoryRecord { id:string; name:string; parentId:string|null; slug:string; active:boolean; }
 export interface ServicePageRecord {

@@ -7,5 +7,7 @@ export class AuthController {
   @Post("register") register(@Body() body: Record<string, unknown>) { return this.auth.register(body); }
   @Post("verify-email") verifyEmail(@Body("token") token: unknown) { return this.auth.verifyEmail(token); }
   @Post("login") login(@Body() body: Record<string, unknown>) { return this.auth.login(body); }
+  @Post("password-reset/request") requestPasswordReset(@Body() body: Record<string, unknown>) { return this.auth.requestPasswordReset(body); }
+  @Post("password-reset/confirm") resetPassword(@Body() body: Record<string, unknown>) { return this.auth.resetPassword(body); }
   @Post("session/check") check(@Headers("authorization") authorization?: string) { const user = this.auth.authenticate(authorization); return { userId: user.id, valid: true }; }
 }

@@ -34,6 +34,25 @@ export class AuthService {
     return { token, expiresInSeconds: 28_800, user: this.publicUser(user) };
   }
 
+  requestPasswordReset(input: Record<string, unknown>) {
+    const email = emailAddress(input.email); const userId = this.store.userByEmail.get(email);
+    if (!userId) return { accepted: true };
+    const resetToken = opaqueToken();
+    this.store.passwordResetTokens.set(tokenHash(resetToken), { tokenHash: tokenHash(resetToken), userId, expiresAt: new Date(Date.now() + 60 * 60_000).toISOString(), usedAt: null });
+    return { accepted: true, resetToken };
+  }
+
+  async resetPassword(input: Record<string, unknown>) {
+    const raw = requiredText(input.token, "Zurücksetzungscode", 20, 200);
+    const password = requiredText(input.password, "Passwort", 12, 200);
+    const record = this.store.passwordResetTokens.get(tokenHash(raw));
+    if (!record || record.usedAt || Date.parse(record.expiresAt) <= Date.now()) throw new BadRequestException("Der Link zum Zurücksetzen ist ungültig oder abgelaufen.");
+    const user = this.store.users.get(record.userId); if (!user) throw new BadRequestException("Das Konto wurde nicht gefunden.");
+    user.passwordHash = await hashPassword(password); record.usedAt = new Date().toISOString();
+    for (const [key,session] of this.store.sessions) if (session.userId === user.id) this.store.sessions.delete(key);
+    return { changed: true };
+  }
+
   authenticate(header: string | undefined) {
     const token = header?.startsWith("Bearer ") ? header.slice(7) : ""; const session = this.store.sessions.get(tokenHash(token));
     if (!session || Date.parse(session.expiresAt) <= Date.now()) throw new UnauthorizedException("Die Sitzung ist ungültig oder abgelaufen.");

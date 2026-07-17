@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./styles.css";
 import { PwaRegister } from "./pwa-register";
+import { CookieConsent } from "./components/cookie-consent";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://b2bmatching.de";
 
@@ -25,5 +26,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fbfaf7" };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return <html lang="de"><body><PwaRegister/>{children}</body></html>;
+  return <html lang="de"><body><a className="skipLink" href="#main-content">Zum Hauptinhalt springen</a><PwaRegister/><div id="main-content" tabIndex={-1}>{children}</div><CookieConsent/></body></html>;
 }

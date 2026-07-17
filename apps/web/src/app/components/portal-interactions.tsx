@@ -51,14 +51,14 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
   const text=(button.getAttribute("aria-label")||button.textContent||"").trim();
   if(button.closest(".portalUser"))return open("Mein Konto","Einstellungen");
   if(text.includes("Benachrichtig"))return open("Benachrichtigungen","notifications");
-  if(text.includes("Neuen Bedarf"))return open("Neuen Bedarf erstellen","new-need");
+  if(text.includes("Neuen Bedarf")||text.includes("Ersten Bedarf"))return open("Neuen Bedarf erstellen","new-need");
   if(text.includes("KI erstellen")||text.includes("Bedarf mit KI"))return open("KI-Bedarfsassistent","ai");
-  if(text.includes("Mitglied anlegen"))return open("Mitglied anlegen","member");
-  if(text.includes("Leistungsseite")||text.includes("Profil vervollständigen"))return open("Leistungsprofil bearbeiten","profile");
+  if(text.includes("Mitglied anlegen")||text.includes("Mitglied einladen"))return open("Mitglied anlegen","member");
+  if(text.includes("Leistungsseite")||text.includes("Profil vervollständigen")||text.includes("Unternehmensprofil"))return open(role==="dienstleister"?"Leistungsprofil bearbeiten":"Unternehmensprofil bearbeiten","profile");
   if(text.includes("Prüfen")||text.includes("bearbeiten")||text.includes("Prüfzentrum"))return open(text.includes("Profil")?"Dienstleisterprofil prüfen":"Profilprüfung","review");
   if(text.includes("Chance ansehen"))return open("Geschäftschance im Detail","Geschäftschancen");
   if(text.includes("Vorschau"))return open("Öffentliche Profilvorschau","profile-preview");
-  if(text.includes("Abonnement"))return open("Abonnement verwalten","Abonnement");
+  if(text.includes("Abonnement")||text.includes("Tarife"))return open("Tarife und Abonnement","Abonnement");
   if(text.includes("Ablehnen")){setToast("Match wurde abgelehnt und in der Historie dokumentiert.");return}
   if(text.includes("entfernen")){setToast("Favorit wurde entfernt.");return}
   if(text.includes("Alle Bedarfe"))return open("Alle Bedarfe","Meine Bedarfe");

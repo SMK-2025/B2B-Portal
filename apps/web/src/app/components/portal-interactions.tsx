@@ -1,6 +1,6 @@
 "use client";
 import type {MouseEvent,ReactNode} from "react";
-import {useState} from "react";
+import {useEffect,useState} from "react";
 import Link from "next/link";
 
 type Role="admin"|"unternehmen"|"dienstleister";
@@ -65,6 +65,18 @@ function fields(kind:string,role:Role){
 
 export function PortalInteractions({role,children}:{role:Role;children:ReactNode}){
  const [dialog,setDialog]=useState<Dialog>(null);const [toast,setToast]=useState("");
+ useEffect(()=>{
+  if(dialog?.kind!=="profile"||!dialog.context)return;
+  const frame=requestAnimationFrame(()=>{
+   const dialogElement=document.querySelector<HTMLElement>(".companyDialog");
+   const section=dialogElement?.querySelectorAll<HTMLElement>(".companyProfileForm fieldset")[Number(dialog.context)-1];
+   if(!dialogElement||!section)return;
+   dialogElement.scrollTo({top:Math.max(0,section.offsetTop-96),behavior:"smooth"});
+   section.setAttribute("tabindex","-1");
+   section.focus({preventScroll:true});
+  });
+  return ()=>cancelAnimationFrame(frame);
+ },[dialog]);
  function open(title:string,kind:string,context?:string){setDialog({title,kind,context})}
  function click(e:MouseEvent<HTMLDivElement>){
   const target=e.target as HTMLElement;const link=target.closest("a");const button=target.closest("button");
@@ -77,7 +89,11 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
   const text=(button.getAttribute("aria-label")||button.textContent||"").trim();
   if(button.closest(".portalDialog")){if(text.includes("Abmelden")){localStorage.removeItem("b2b-matching-session");sessionStorage.removeItem("b2b-matching-session");window.location.href="/anmelden";return}if(text.includes("Bestätigung"))setToast("Eine Bestätigungs-E-Mail wird nach Anbindung des E-Mail-Dienstes versendet.");if(text.includes("Website prüfen"))setToast("Die Websiteprüfung wird für die technische Anbindung vorgemerkt.");if(text.includes("Nachweis")||text.includes("Datei auswählen"))setToast("Die Dateiauswahl wird mit dem sicheren Dokumentenspeicher verbunden.");if(text.includes("Hinzufügen"))setToast("Das Keyword wird nach Eingabe zur Matchingliste ergänzt.");return}
   if(button.closest(".workspaceTabs")){setToast(`Ansicht „${text.replace(/\d+/g,"").trim()}“ wurde ausgewählt.`);return}
-  if(button.closest(".profileSectionGrid"))return open("Unternehmensprofil bearbeiten","profile");
+  const profileSectionButton=button.closest(".profileSectionGrid button") as HTMLButtonElement|null;
+  if(profileSectionButton){
+   const sectionButtons=Array.from(profileSectionButton.parentElement?.querySelectorAll("button")||[]);
+   return open("Unternehmensprofil bearbeiten","profile",String(sectionButtons.indexOf(profileSectionButton)+1));
+  }
   if(button.closest(".portalUser"))return open("Mein Konto","account");
   if(text.includes("Benachrichtig"))return open("Benachrichtigungen","notifications");
   if(text.includes("Neuen Bedarf")||text.includes("Ersten Bedarf"))return open("Neuen Bedarf erstellen","new-need");

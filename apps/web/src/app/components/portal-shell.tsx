@@ -1,13 +1,315 @@
 import Link from "next/link";
-import type {ReactNode} from "react";
-import {PortalInteractions} from "./portal-interactions";
-type Role="admin"|"unternehmen"|"dienstleister";type MenuGroup={label:string;icon:string;items:Array<[string,string]>};
-const overview={admin:"/portal/admin",unternehmen:"/portal/unternehmen",dienstleister:"/portal/dienstleister"};
-const groups:Record<Role,MenuGroup[]>={admin:[{label:"Mitglieder & Qualität",icon:"◇",items:[["Freigaben","#freigaben"],["Mitglieder","#mitglieder"],["Prüfprotokoll","#protokoll"]]},{label:"Vermittlung",icon:"◎",items:[["Bedarfe","#bedarfe"],["Matches","#matches"],["Kommunikation","#kommunikation"]]},{label:"Betrieb",icon:"⚙",items:[["Abonnements","#abonnements"],["Einstellungen","#einstellungen"]]}],unternehmen:[{label:"Bedarf & Matching",icon:"◇",items:[["Meine Bedarfe","/portal/unternehmen/bedarfe"],["Matches","/portal/unternehmen/matches"],["Favoriten","/portal/unternehmen/favoriten"]]},{label:"Kommunikation",icon:"✉",items:[["Nachrichten & Termine","/portal/unternehmen/nachrichten"],["Statistik & Historie","/portal/unternehmen/aktivitaeten"]]},{label:"Konto & Unternehmen",icon:"⚙",items:[["Unternehmensprofil","/portal/unternehmen/profil"],["Team & Zugänge","/portal/unternehmen/team"],["Einstellungen","/portal/unternehmen/einstellungen"]]}],dienstleister:[{label:"Profil & Sichtbarkeit",icon:"◇",items:[["Leistungsprofil","#profil"],["Profilbesucher","#besucher"],["Verfügbarkeit","#verfuegbarkeit"]]},{label:"Chancen & Kontakte",icon:"◎",items:[["Geschäftschancen","#matches"],["Nachrichten","#nachrichten"],["Favoriten","#favoriten"]]},{label:"Konto & Vertrag",icon:"⚙",items:[["Abonnement","#abonnement"],["Einstellungen","#einstellungen"]]}]};
-const labels={admin:"Administration",unternehmen:"Unternehmer",dienstleister:"Dienstleister"};
-function Menu({role,mobile=false}:{role:Role;mobile?:boolean}){return <nav className={mobile?"portalMenu mobile":"portalMenu"} aria-label={`${labels[role]} Navigation`}><Link className="portalOverview active" href={overview[role] as never}><span aria-hidden="true">⌂</span>Übersicht</Link>{groups[role].map((group,i)=><details className="portalMenuGroup" key={group.label} open={!mobile&&i===0}><summary><span aria-hidden="true">{group.icon}</span>{group.label}<b aria-hidden="true">⌄</b></summary><div>{group.items.map(([label,href])=><Link key={label} href={href as never}>{label}{label==="Nachrichten"&&<b>0</b>}</Link>)}</div></details>)}</nav>}
-export function PortalShell({role,title,intro,children,action}:{role:Role;title:string;intro:string;children:ReactNode;action?:ReactNode}){return <PortalInteractions role={role}><main className="portalApp"><aside className="portalSidebar"><Link href="/" className="portalBrand"><img src="/icons/b2b-matching-symbol.svg" alt=""/><span>B2B <b>Matching</b></span></Link><div className="portalRole"><small>ARBEITSBEREICH</small><strong>{labels[role]}</strong></div><Menu role={role}/><div className="portalHelp"><strong>Hilfe benötigt?</strong><p>Unser Support begleitet Sie persönlich.</p><a href="mailto:mail@media-online-innovations.group">Support kontaktieren</a></div></aside><section className="portalMain"><header className="portalTop"><details className="portalMobileMenu"><summary aria-label="Portalmenü öffnen">☰</summary><div><Menu role={role} mobile/></div></details><label className="portalSearch"><span>⌕</span><input aria-label="Portal durchsuchen" placeholder="Im Portal suchen …"/></label><div className="portalTopActions"><button aria-label="Benachrichtigungen">♢<b>0</b></button><button className="portalUser" aria-label="Benutzermenü öffnen"><span>{role==="admin"?"MK":role==="unternehmen"?"UN":"DL"}</span><p><strong>{role==="admin"?"Martin Kelm":role==="unternehmen"?"Unternehmenskonto":"Dienstleisterkonto"}</strong><small>{labels[role]}</small></p></button></div></header><div className="portalContent"><div className="portalWelcome"><div><span>{role==="admin"?"PORTALSTEUERUNG":role==="unternehmen"?"IHR UNTERNEHMENSBEREICH":"IHR ANBIETERBEREICH"}</span><h1>{title}</h1><p>{intro}</p></div>{action}</div>{children}</div></section></main></PortalInteractions>}
-export function PortalStats({items}:{items:Array<[string,string,string?]>}){return <section className="portalStats" aria-label="Kennzahlen">{items.map(([value,label,note])=><article key={label}><span>{label}</span><strong>{value}</strong>{note&&<small>{note}</small>}</article>)}</section>}
-export function PortalPanel({id,title,eyebrow,action,children,className=""}:{id?:string;title:string;eyebrow?:string;action?:ReactNode;children:ReactNode;className?:string}){return <section id={id} className={`portalPanel ${className}`}><header><div>{eyebrow&&<span>{eyebrow}</span>}<h2>{title}</h2></div>{action}</header>{children}</section>}
-export function Status({children,tone="teal"}:{children:ReactNode;tone?:"teal"|"amber"|"red"|"blue"|"gray"}){return <span className={`portalStatus ${tone}`}>{children}</span>}
-export function PortalEmpty({icon,title,text,action}:{icon:string;title:string;text:string;action?:string}){return <div className="portalEmpty"><span aria-hidden="true">{icon}</span><h3>{title}</h3><p>{text}</p>{action&&<button className="portalSecondary">{action}</button>}</div>}
+import type { ReactNode } from "react";
+import { PortalInteractions } from "./portal-interactions";
+type Role = "admin" | "unternehmen" | "dienstleister";
+type MenuGroup = {
+  label: string;
+  icon: string;
+  items: Array<[string, string]>;
+};
+const overview = {
+  admin: "/portal/admin",
+  unternehmen: "/portal/unternehmen",
+  dienstleister: "/portal/dienstleister",
+};
+const groups: Record<Role, MenuGroup[]> = {
+  admin: [
+    {
+      label: "Netzwerkpartner",
+      icon: "N",
+      items: [["Netzwerke", "/portal/admin/netzwerke"]],
+    },
+    {
+      label: "Mitglieder & Qualität",
+      icon: "◇",
+      items: [
+        ["Freigaben", "#freigaben"],
+        ["Mitglieder", "#mitglieder"],
+        ["Prüfprotokoll", "#protokoll"],
+      ],
+    },
+    {
+      label: "Vermittlung",
+      icon: "◎",
+      items: [
+        ["Bedarfe", "#bedarfe"],
+        ["Matches", "#matches"],
+        ["Kommunikation", "#kommunikation"],
+      ],
+    },
+    {
+      label: "Betrieb",
+      icon: "⚙",
+      items: [
+        ["Abonnements", "#abonnements"],
+        ["Einstellungen", "#einstellungen"],
+      ],
+    },
+  ],
+  unternehmen: [
+    {
+      label: "Bedarf & Matching",
+      icon: "◇",
+      items: [
+        ["Meine Bedarfe", "/portal/unternehmen/bedarfe"],
+        ["Matches", "/portal/unternehmen/matches"],
+        ["Favoriten", "/portal/unternehmen/favoriten"],
+      ],
+    },
+    {
+      label: "Kommunikation",
+      icon: "✉",
+      items: [
+        ["Nachrichten & Termine", "/portal/unternehmen/nachrichten"],
+        ["Statistik & Historie", "/portal/unternehmen/aktivitaeten"],
+      ],
+    },
+    {
+      label: "Konto & Unternehmen",
+      icon: "⚙",
+      items: [
+        ["Unternehmensprofil", "/portal/unternehmen/profil"],
+        ["Team & Zugänge", "/portal/unternehmen/team"],
+        ["Einstellungen", "/portal/unternehmen/einstellungen"],
+      ],
+    },
+  ],
+  dienstleister: [
+    {
+      label: "Profil & Sichtbarkeit",
+      icon: "◇",
+      items: [
+        ["Leistungsprofil", "#profil"],
+        ["Profilbesucher", "#besucher"],
+        ["Verfügbarkeit", "#verfuegbarkeit"],
+      ],
+    },
+    {
+      label: "Chancen & Kontakte",
+      icon: "◎",
+      items: [
+        ["Geschäftschancen", "#matches"],
+        ["Nachrichten", "#nachrichten"],
+        ["Favoriten", "#favoriten"],
+      ],
+    },
+    {
+      label: "Konto & Vertrag",
+      icon: "⚙",
+      items: [
+        ["Abonnement", "#abonnement"],
+        ["Einstellungen", "#einstellungen"],
+      ],
+    },
+  ],
+};
+const labels = {
+  admin: "Administration",
+  unternehmen: "Unternehmer",
+  dienstleister: "Dienstleister",
+};
+function Menu({ role, mobile = false }: { role: Role; mobile?: boolean }) {
+  return (
+    <nav
+      className={mobile ? "portalMenu mobile" : "portalMenu"}
+      aria-label={`${labels[role]} Navigation`}
+    >
+      <Link className="portalOverview active" href={overview[role] as never}>
+        <span aria-hidden="true">⌂</span>Übersicht
+      </Link>
+      {groups[role].map((group, i) => (
+        <details
+          className="portalMenuGroup"
+          key={group.label}
+          open={!mobile && i === 0}
+        >
+          <summary>
+            <span aria-hidden="true">{group.icon}</span>
+            {group.label}
+            <b aria-hidden="true">⌄</b>
+          </summary>
+          <div>
+            {group.items.map(([label, href]) => (
+              <Link key={label} href={href as never}>
+                {label}
+                {label === "Nachrichten" && <b>0</b>}
+              </Link>
+            ))}
+          </div>
+        </details>
+      ))}
+    </nav>
+  );
+}
+export function PortalShell({
+  role,
+  title,
+  intro,
+  children,
+  action,
+}: {
+  role: Role;
+  title: string;
+  intro: string;
+  children: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <PortalInteractions role={role}>
+      <main className="portalApp">
+        <aside className="portalSidebar">
+          <Link href="/" className="portalBrand">
+            <img src="/icons/b2b-matching-symbol.svg" alt="" />
+            <span>
+              B2B <b>Matching</b>
+            </span>
+          </Link>
+          <div className="portalRole">
+            <small>ARBEITSBEREICH</small>
+            <strong>{labels[role]}</strong>
+          </div>
+          <Menu role={role} />
+          <div className="portalHelp">
+            <strong>Hilfe benötigt?</strong>
+            <p>Unser Support begleitet Sie persönlich.</p>
+            <a href="mailto:mail@media-online-innovations.group">
+              Support kontaktieren
+            </a>
+          </div>
+        </aside>
+        <section className="portalMain">
+          <header className="portalTop">
+            <details className="portalMobileMenu">
+              <summary aria-label="Portalmenü öffnen">☰</summary>
+              <div>
+                <Menu role={role} mobile />
+              </div>
+            </details>
+            <label className="portalSearch">
+              <span>⌕</span>
+              <input
+                aria-label="Portal durchsuchen"
+                placeholder="Im Portal suchen …"
+              />
+            </label>
+            <div className="portalTopActions">
+              <button aria-label="Benachrichtigungen">
+                ♢<b>0</b>
+              </button>
+              <button className="portalUser" aria-label="Benutzermenü öffnen">
+                <span>
+                  {role === "admin"
+                    ? "MK"
+                    : role === "unternehmen"
+                      ? "UN"
+                      : "DL"}
+                </span>
+                <p>
+                  <strong>
+                    {role === "admin"
+                      ? "Martin Kelm"
+                      : role === "unternehmen"
+                        ? "Unternehmenskonto"
+                        : "Dienstleisterkonto"}
+                  </strong>
+                  <small>{labels[role]}</small>
+                </p>
+              </button>
+            </div>
+          </header>
+          <div className="portalContent">
+            <div className="portalWelcome">
+              <div>
+                <span>
+                  {role === "admin"
+                    ? "PORTALSTEUERUNG"
+                    : role === "unternehmen"
+                      ? "IHR UNTERNEHMENSBEREICH"
+                      : "IHR ANBIETERBEREICH"}
+                </span>
+                <h1>{title}</h1>
+                <p>{intro}</p>
+              </div>
+              {action}
+            </div>
+            {children}
+          </div>
+        </section>
+      </main>
+    </PortalInteractions>
+  );
+}
+export function PortalStats({
+  items,
+}: {
+  items: Array<[string, string, string?]>;
+}) {
+  return (
+    <section className="portalStats" aria-label="Kennzahlen">
+      {items.map(([value, label, note]) => (
+        <article key={label}>
+          <span>{label}</span>
+          <strong>{value}</strong>
+          {note && <small>{note}</small>}
+        </article>
+      ))}
+    </section>
+  );
+}
+export function PortalPanel({
+  id,
+  title,
+  eyebrow,
+  action,
+  children,
+  className = "",
+}: {
+  id?: string;
+  title: string;
+  eyebrow?: string;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section id={id} className={`portalPanel ${className}`}>
+      <header>
+        <div>
+          {eyebrow && <span>{eyebrow}</span>}
+          <h2>{title}</h2>
+        </div>
+        {action}
+      </header>
+      {children}
+    </section>
+  );
+}
+export function Status({
+  children,
+  tone = "teal",
+}: {
+  children: ReactNode;
+  tone?: "teal" | "amber" | "red" | "blue" | "gray";
+}) {
+  return <span className={`portalStatus ${tone}`}>{children}</span>;
+}
+export function PortalEmpty({
+  icon,
+  title,
+  text,
+  action,
+}: {
+  icon: string;
+  title: string;
+  text: string;
+  action?: string;
+}) {
+  return (
+    <div className="portalEmpty">
+      <span aria-hidden="true">{icon}</span>
+      <h3>{title}</h3>
+      <p>{text}</p>
+      {action && <button className="portalSecondary">{action}</button>}
+    </div>
+  );
+}

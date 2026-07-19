@@ -1,13 +1,146 @@
-import {PortalEmpty,PortalPanel,PortalShell,PortalStats,Status} from "../../components/portal-shell";
-export default function AdminPortal(){return <PortalShell role="admin" title="Das Portal ist bereit für die Einrichtung." intro="Konfigurieren Sie die Betriebsgrundlagen und begleiten Sie anschließend die ersten registrierten Mitglieder." action={<button className="portalPrimary">＋ Mitglied anlegen</button>}>
-<div className="portalSetup adminSetup"><div><span>INBETRIEBNAHME</span><h2>Die Oberfläche steht. Externe Dienste müssen noch verbunden werden.</h2></div><b>40 %</b><div className="setupBar"><i style={{width:"40%"}}/></div><ol><li className="done">Portaloberfläche eingerichtet</li><li className="done">Rollenbereiche angelegt</li><li>Authentifizierung und Datenbank verbinden</li><li>E-Mail, Zahlung und KI konfigurieren</li></ol></div>
-<PortalStats items={[["0","Mitglieder","Noch keine Registrierung"],["0","Profile in Prüfung","Keine offenen Prüfungen"],["0","Aktive Bedarfe","Keine Bedarfe"],["0","Offene Meldungen","Keine Meldungen"]]}/>
-<div className="portalGrid equal"><div>
-<PortalPanel id="freigaben" eyebrow="QUALITÄTSSICHERUNG" title="Offene Profilprüfungen" action={<button className="portalLink">Prüfzentrum öffnen →</button>}><PortalEmpty icon="✓" title="Keine Profile zu prüfen" text="Neue Unternehmer- und Dienstleisterprofile werden nach Registrierung in dieser Warteschlange angezeigt."/></PortalPanel>
-<PortalPanel id="mitglieder" eyebrow="NETZWERK" title="Mitgliederverwaltung"><PortalEmpty icon="◇" title="Noch keine Mitglieder" text="Registrierte Konten, Rollen, Freigabestatus und letzte Aktivitäten werden künftig hier verwaltet." action="Erstes Mitglied einladen"/></PortalPanel>
-<PortalPanel id="protokoll" eyebrow="NACHVOLLZIEHBARKEIT" title="Prüf- und Aktivitätsprotokoll"><PortalEmpty icon="↗" title="Noch keine Systemaktivitäten" text="Administrative und automatisierte Aktionen werden nach der technischen Anbindung revisionsnah protokolliert."/></PortalPanel>
-</div><aside>
-<PortalPanel id="matches" title="Matching-Qualität"><PortalEmpty icon="◎" title="Keine Matchingdaten" text="Qualitätskennzahlen erscheinen, sobald Profile und Bedarfe aktiv sind."/></PortalPanel>
-<PortalPanel title="Portalstatus"><div className="systemRows"><p><span><i className="ok"/>Web-Anwendung</span><b>Bereit</b></p><p><span><i className="warn"/>Authentifizierung</span><b>Offen</b></p><p><span><i className="warn"/>Datenbank</span><b>Offen</b></p><p><span><i className="warn"/>E-Mail, KI und Zahlung</span><b>Offen</b></p></div></PortalPanel>
-<PortalPanel id="kommunikation" title="Einrichtungsaufgaben"><div className="taskRows"><label><input type="checkbox"/>Authentifizierung verbinden</label><label><input type="checkbox"/>Datenbank bereitstellen</label><label><input type="checkbox"/>Zahlungsanbieter konfigurieren</label><label><input type="checkbox"/>E-Mail-Versand freigeben</label></div></PortalPanel>
-</aside></div></PortalShell>}
+import {
+  PortalEmpty,
+  PortalPanel,
+  PortalShell,
+  PortalStats,
+  Status,
+} from "../../components/portal-shell";
+export default function AdminPortal() {
+  return (
+    <PortalShell
+      role="admin"
+      title="Das Portal ist bereit für die Einrichtung."
+      intro="Konfigurieren Sie die Betriebsgrundlagen und begleiten Sie anschließend die ersten registrierten Mitglieder."
+      action={<button className="portalPrimary">＋ Mitglied anlegen</button>}
+    >
+      <div className="portalSetup adminSetup">
+        <div>
+          <span>INBETRIEBNAHME</span>
+          <h2>
+            Die Oberfläche steht. Externe Dienste müssen noch verbunden werden.
+          </h2>
+        </div>
+        <b>40 %</b>
+        <div className="setupBar">
+          <i style={{ width: "40%" }} />
+        </div>
+        <ol>
+          <li className="done">Portaloberfläche eingerichtet</li>
+          <li className="done">Rollenbereiche angelegt</li>
+          <li>Authentifizierung und Datenbank verbinden</li>
+          <li>E-Mail, Zahlung und KI konfigurieren</li>
+        </ol>
+      </div>
+      <PortalStats
+        items={[
+          ["0", "Mitglieder", "Noch keine Registrierung"],
+          ["0", "Profile in Prüfung", "Keine offenen Prüfungen"],
+          ["0", "Aktive Bedarfe", "Keine Bedarfe"],
+          ["0", "Offene Meldungen", "Keine Meldungen"],
+        ]}
+      />
+      <div className="portalGrid equal">
+        <div>
+          <PortalPanel
+            id="freigaben"
+            eyebrow="QUALITÄTSSICHERUNG"
+            title="Offene Profilprüfungen"
+            action={
+              <button className="portalLink">Prüfzentrum öffnen →</button>
+            }
+          >
+            <PortalEmpty
+              icon="✓"
+              title="Keine Profile zu prüfen"
+              text="Neue Unternehmer- und Dienstleisterprofile werden nach Registrierung in dieser Warteschlange angezeigt."
+            />
+          </PortalPanel>
+          <PortalPanel
+            id="mitglieder"
+            eyebrow="NETZWERK"
+            title="Mitgliederverwaltung"
+          >
+            <PortalEmpty
+              icon="◇"
+              title="Noch keine Mitglieder"
+              text="Registrierte Konten, Rollen, Freigabestatus und letzte Aktivitäten werden künftig hier verwaltet."
+              action="Erstes Mitglied einladen"
+            />
+          </PortalPanel>
+          <PortalPanel
+            id="protokoll"
+            eyebrow="NACHVOLLZIEHBARKEIT"
+            title="Prüf- und Aktivitätsprotokoll"
+          >
+            <PortalEmpty
+              icon="↗"
+              title="Noch keine Systemaktivitäten"
+              text="Administrative und automatisierte Aktionen werden nach der technischen Anbindung revisionsnah protokolliert."
+            />
+          </PortalPanel>
+        </div>
+        <aside>
+          <PortalPanel id="matches" title="Matching-Qualität">
+            <PortalEmpty
+              icon="◎"
+              title="Keine Matchingdaten"
+              text="Qualitätskennzahlen erscheinen, sobald Profile und Bedarfe aktiv sind."
+            />
+          </PortalPanel>
+          <PortalPanel title="Portalstatus">
+            <div className="systemRows">
+              <p>
+                <span>
+                  <i className="ok" />
+                  Web-Anwendung
+                </span>
+                <b>Bereit</b>
+              </p>
+              <p>
+                <span>
+                  <i className="warn" />
+                  Authentifizierung
+                </span>
+                <b>Offen</b>
+              </p>
+              <p>
+                <span>
+                  <i className="warn" />
+                  Datenbank
+                </span>
+                <b>Offen</b>
+              </p>
+              <p>
+                <span>
+                  <i className="warn" />
+                  E-Mail, KI und Zahlung
+                </span>
+                <b>Offen</b>
+              </p>
+            </div>
+          </PortalPanel>
+          <PortalPanel id="kommunikation" title="Einrichtungsaufgaben">
+            <div className="taskRows">
+              <label>
+                <input type="checkbox" />
+                Authentifizierung verbinden
+              </label>
+              <label>
+                <input type="checkbox" />
+                Datenbank bereitstellen
+              </label>
+              <label>
+                <input type="checkbox" />
+                Zahlungsanbieter konfigurieren
+              </label>
+              <label>
+                <input type="checkbox" />
+                E-Mail-Versand freigeben
+              </label>
+            </div>
+          </PortalPanel>
+        </aside>
+      </div>
+    </PortalShell>
+  );
+}

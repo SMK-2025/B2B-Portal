@@ -1,6 +1,9 @@
 export type AccountRole = "user" | "platform_admin" | "reviewer";
 export type OrganizationRole = "buyer" | "provider" | "both";
 export type MembershipRole = "admin" | "member";
+export type NetworkRole = "network_admin" | "moderator" | "organization_admin" | "member";
+export type NetworkMembershipStatus = "pending" | "active" | "rejected" | "suspended" | "left";
+export type NetworkModule = "members" | "profiles" | "services" | "matching" | "communication" | "events" | "community" | "tasks" | "documents" | "analytics" | "notifications";
 export type ReviewStatus = "draft" | "submitted" | "changes_requested" | "approved" | "rejected" | "suspended";
 
 export interface UserRecord {
@@ -33,6 +36,21 @@ export interface MembershipRecord {
   role: MembershipRole;
 }
 
+export interface NetworkRecord {
+  id:string; slug:string; name:string; legalName:string|null; websiteUrl:string|null;
+  logoUrl:string|null; primaryColor:string; secondaryColor:string;
+  status:"active"|"suspended"; enabledModules:NetworkModule[];
+  settings:{closedNetwork:boolean;selfRegistration:boolean;crossNetworkMatching:boolean;admissionRules:string|null};
+  createdAt:string; updatedAt:string;
+}
+
+export interface NetworkMembershipRecord {
+  id:string; networkId:string; organizationId:string; userId:string;
+  role:NetworkRole; status:NetworkMembershipStatus;
+  invitedByUserId:string|null; reviewedByUserId:string|null; reviewedAt:string|null;
+  createdAt:string; updatedAt:string;
+}
+
 export interface ReviewDecisionRecord {
   id: string;
   organizationId: string;
@@ -53,7 +71,7 @@ export interface ServicePageRecord {
   reviewStatus:ReviewStatus; publicVisibility:boolean; matchingEligible:boolean; version:number;
   submittedAt:string|null; approvedAt:string|null; createdAt:string;
 }
-export interface NeedRecord { id:string; organizationId:string; title:string; description:string; categoryId:string; requiredSkills:string[]; preferredIndustries:string[]; region:string|null; deliveryModes:("online"|"onsite"|"hybrid")[]; status:"draft"|"active"|"paused"|"closed"; createdAt:string; }
+export interface NeedRecord { id:string; organizationId:string; networkId:string|null; title:string; description:string; categoryId:string; requiredSkills:string[]; preferredIndustries:string[]; region:string|null; deliveryModes:("online"|"onsite"|"hybrid")[]; status:"draft"|"active"|"paused"|"closed"; createdAt:string; }
 export interface MatchRecord { id:string; needId:string; servicePageId:string; buyerOrganizationId:string; providerOrganizationId:string; score:number; components:Record<string,number|null>; explanation:string[]; status:"buyer_review"|"deferred"|"rejected_by_buyer"|"released_anonymously"|"rejected_by_provider"|"provider_interested"|"mutual_match"|"closed"; buyerDecisionAt:string|null; providerDecisionAt:string|null; identityReleasedAt:string|null; createdAt:string; }
 export interface ConversationRecord{id:string;matchId:string;createdAt:string;}
 export interface MessageRecord{id:string;conversationId:string;senderUserId:string;body:string;createdAt:string;}

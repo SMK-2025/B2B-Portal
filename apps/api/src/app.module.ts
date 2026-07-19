@@ -8,6 +8,7 @@ import { CoreModule } from "./core/core.module";
 import { ServicesModule } from "./services/services.module";
 import { MatchingModule } from "./matching/matching.module";
 import { CollaborationModule } from "./collaboration/collaboration.module";
+import {NetworksModule} from "./networks/networks.module";
 
-@Module({ imports: [CoreModule, ProfilesModule, AuthModule, OrganizationsModule, ServicesModule, MatchingModule, CollaborationModule, AdminModule], controllers: [HealthController] })
+@Module({ imports: [CoreModule, ProfilesModule, AuthModule, OrganizationsModule, NetworksModule, ServicesModule, MatchingModule, CollaborationModule, AdminModule], controllers: [HealthController] })
 export class AppModule {}

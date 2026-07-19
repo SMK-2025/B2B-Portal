@@ -18,6 +18,11 @@ export class NetworksService{
   this.store.networks.set(network.id,network);this.store.networkBySlug.set(network.slug,network.id);return network;
  }
 
+ adminList(authorization:string|undefined){
+  const user=this.auth.authenticate(authorization);this.requirePlatformAdmin(user.id);
+  return [...this.store.networks.values()].map(network=>{const membership=this.store.networkMemberships.find(item=>item.networkId===network.id&&item.role==="network_admin"&&item.status==="active");return{...network,administrator:membership?{...membership,user:this.publicUser(membership.userId)}:null}});
+ }
+
  setAccess(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
   const user=this.auth.authenticate(authorization);this.requirePlatformAdmin(user.id);const network=this.raw(networkId);
   const status=input.status;if(!["draft","trial","active","suspended"].includes(String(status)))throw new BadRequestException("Ungültiger Netzwerkstatus.");
@@ -25,6 +30,15 @@ export class NetworksService{
   if(status==="trial"){const days=Number(input.trialDays);if(!Number.isInteger(days)||days<1||days>180)throw new BadRequestException("Testzugänge müssen zwischen 1 und 180 Tagen laufen.");network.trialEndsAt=new Date(Date.now()+days*86_400_000).toISOString()}
   if(typeof input.selfRegistration==="boolean")network.settings.selfRegistration=input.selfRegistration;
   network.updatedAt=new Date().toISOString();return network;
+ }
+
+ appointAdministrator(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+  const actor=this.auth.authenticate(authorization);this.requirePlatformAdmin(actor.id);this.raw(networkId);
+  const email=requiredText(input.email,"Geschäftliche E-Mail-Adresse",5,250).toLowerCase();
+  const userId=this.store.userByEmail.get(email);if(!userId)throw new NotFoundException("Für diese E-Mail-Adresse wurde noch kein Benutzerkonto gefunden.");
+  const companyMembership=this.store.memberships.find(item=>item.userId===userId);
+  if(!companyMembership)throw new BadRequestException("Das Benutzerkonto ist noch keinem Unternehmen zugeordnet.");
+  return this.addMember(authorization,networkId,{organizationId:companyMembership.organizationId,userId,role:"network_admin"});
  }
 
  publicBySlug(slug:string){

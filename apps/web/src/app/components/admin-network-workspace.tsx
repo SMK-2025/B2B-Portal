@@ -1,66 +1,176 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { Status } from "./portal-shell";
 
-type Access = "Entwurf" | "Testzugang" | "Aktiv" | "Gesperrt";
+type NetworkStatus = "draft" | "trial" | "active" | "suspended";
+type Network = {
+  id: string;
+  name: string;
+  websiteUrl: string | null;
+  status: NetworkStatus;
+  trialEndsAt: string | null;
+  settings: { selfRegistration: boolean };
+  administrator: {
+    userId: string;
+    user?: { firstName: string; lastName: string; email: string };
+  } | null;
+};
+const NETWORK_ID = "10000000-0000-4000-8000-000000000001";
+const labels: Record<NetworkStatus, string> = {
+  draft: "Entwurf",
+  trial: "Testzugang",
+  active: "Aktiv",
+  suspended: "Gesperrt",
+};
 
 export function AdminNetworkWorkspace() {
-  const [access, setAccess] = useState<Access>("Entwurf");
+  const [network, setNetwork] = useState<Network>({
+    id: NETWORK_ID,
+    name: "Unternehmerfreunde NRW",
+    websiteUrl: "https://www.unternehmerfreunde-nrw.de/",
+    status: "draft",
+    trialEndsAt: null,
+    settings: { selfRegistration: false },
+    administrator: null,
+  });
   const [trialDays, setTrialDays] = useState(30);
-  const [trialEnd, setTrialEnd] = useState("");
   const [admin, setAdmin] = useState("Noch nicht vergeben");
   const [dialog, setDialog] = useState<"trial" | "admin" | null>(null);
   const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function grantTrial(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const end = new Date();
-    end.setDate(end.getDate() + trialDays);
-    setTrialEnd(end.toLocaleDateString("de-DE"));
-    setAccess("Testzugang");
-    setDialog(null);
-    setNotice(`Testzugang für ${trialDays} Tage wurde vorbereitet.`);
+  useEffect(() => {
+    const token = getPortalSession();
+    if (!token) return;
+    portalRequest<Network[]>("/networks/admin", { token })
+      .then((items) => {
+        if (items[0]) {
+          setNetwork(items[0]);
+          const person = items[0].administrator?.user;
+          if (person)
+            setAdmin(
+              `${person.firstName} ${person.lastName} · ${person.email}`,
+            );
+        }
+      })
+      .catch((error) =>
+        setNotice(
+          error instanceof Error
+            ? error.message
+            : "Netzwerke konnten nicht geladen werden.",
+        ),
+      );
+  }, []);
+
+  async function updateAccess(status: NetworkStatus, days?: number) {
+    const token = getPortalSession();
+    if (!token) {
+      setNotice("Bitte melden Sie sich zuerst als Plattformadministrator an.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const updated = await portalRequest<Network>(
+        `/networks/${network.id}/access`,
+        {
+          token,
+          body: {
+            status,
+            ...(days ? { trialDays: days } : {}),
+            selfRegistration: status === "active" || status === "trial",
+          },
+        },
+      );
+      setNetwork((current) => ({ ...current, ...updated }));
+      setDialog(null);
+      setNotice(
+        status === "trial"
+          ? `Testzugang für ${days} Tage wurde erteilt.`
+          : status === "active"
+            ? "Das Netzwerk wurde dauerhaft aktiviert."
+            : "Das Netzwerk wurde gesperrt.",
+      );
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : "Die Änderung konnte nicht gespeichert werden.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function appointAdmin(event: FormEvent<HTMLFormElement>) {
+  async function grantTrial(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setAdmin(String(new FormData(event.currentTarget).get("name")));
-    setDialog(null);
-    setNotice(
-      "Die Netzwerkadministrator-Rolle wurde durch den Plattforminhaber zugewiesen.",
-    );
+    await updateAccess("trial", trialDays);
   }
 
+  async function appointAdmin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const token = getPortalSession();
+    if (!token) {
+      setNotice("Bitte melden Sie sich zuerst als Plattformadministrator an.");
+      return;
+    }
+    const email = String(new FormData(event.currentTarget).get("email"));
+    setBusy(true);
+    try {
+      await portalRequest(`/networks/${network.id}/administrator`, {
+        token,
+        body: { email },
+      });
+      setAdmin(email);
+      setDialog(null);
+      setNotice(
+        "Die Netzwerkadministrator-Rolle wurde verbindlich zugewiesen.",
+      );
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : "Die Rolle konnte nicht zugewiesen werden.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const label = labels[network.status];
   const tone =
-    access === "Aktiv"
+    network.status === "active"
       ? "teal"
-      : access === "Gesperrt"
+      : network.status === "suspended"
         ? "red"
-        : access === "Testzugang"
+        : network.status === "trial"
           ? "amber"
           : "gray";
+  const trialEnd = network.trialEndsAt
+    ? new Date(network.trialEndsAt).toLocaleDateString("de-DE")
+    : null;
 
   return (
     <>
       <section className="adminNetworkNotice">
         <b>Rollenhoheit beim Plattforminhaber</b>
         <p>
-          Netzwerkpartner können weder einen Netzwerkmandanten selbst aktivieren
-          noch die Rolle Netzwerkadministrator eigenständig vergeben.
+          Netzwerkpartner können weder ihren Mandanten selbst aktivieren noch
+          die Rolle Netzwerkadministrator eigenständig vergeben.
         </p>
       </section>
       <div className="adminNetworkToolbar">
         <div>
           <strong>1 Netzwerkpartner</strong>
-          <span>Davon 1 als Entwurf vorbereitet</span>
+          <span>Zentrale Freigabe und Rollensteuerung</span>
         </div>
         <button
           className="portalPrimary"
           type="button"
           onClick={() =>
             setNotice(
-              "Das Formular für einen neuen Netzwerkpartner ist vorbereitet.",
+              "Die Anlage weiterer Netzwerkpartner folgt als nächster modularer Schritt.",
             )
           }
         >
@@ -73,9 +183,9 @@ export function AdminNetworkWorkspace() {
             <span>UF</span>
             <div>
               <small>NETZWERKPARTNER</small>
-              <h2>Unternehmerfreunde NRW</h2>
+              <h2>{network.name}</h2>
               <a
-                href="https://www.unternehmerfreunde-nrw.de/"
+                href={network.websiteUrl || "#"}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -83,16 +193,18 @@ export function AdminNetworkWorkspace() {
               </a>
             </div>
           </div>
-          <Status tone={tone}>{access}</Status>
+          <Status tone={tone}>{label}</Status>
         </header>
         <div className="adminNetworkFacts">
           <article>
             <small>Zugangsstatus</small>
-            <b>{access}</b>
+            <b>{label}</b>
             <span>
               {trialEnd
                 ? `Testzugang bis ${trialEnd}`
-                : "Noch nicht freigeschaltet"}
+                : network.status === "active"
+                  ? "Dauerhaft freigeschaltet"
+                  : "Noch nicht freigeschaltet"}
             </span>
           </article>
           <article>
@@ -102,8 +214,10 @@ export function AdminNetworkWorkspace() {
           </article>
           <article>
             <small>Mitgliederregistrierung</small>
-            <b>Deaktiviert</b>
-            <span>Erst nach Ihrer Netzwerkfreigabe möglich</span>
+            <b>
+              {network.settings.selfRegistration ? "Aktiviert" : "Deaktiviert"}
+            </b>
+            <span>Nur innerhalb freigegebener Netzwerke</span>
           </article>
           <article>
             <small>Mandant</small>
@@ -126,26 +240,21 @@ export function AdminNetworkWorkspace() {
           >
             Administrator bestimmen
           </button>
-          {access !== "Aktiv" ? (
+          {network.status !== "active" ? (
             <button
+              disabled={busy}
               className="portalPrimary"
               type="button"
-              onClick={() => {
-                setAccess("Aktiv");
-                setTrialEnd("");
-                setNotice("Das Netzwerk wurde dauerhaft aktiviert.");
-              }}
+              onClick={() => updateAccess("active")}
             >
               Netzwerk aktivieren
             </button>
           ) : (
             <button
+              disabled={busy}
               className="portalReject adminNetworkBlock"
               type="button"
-              onClick={() => {
-                setAccess("Gesperrt");
-                setNotice("Das Netzwerk wurde gesperrt.");
-              }}
+              onClick={() => updateAccess("suspended")}
             >
               Netzwerk sperren
             </button>
@@ -197,14 +306,14 @@ export function AdminNetworkWorkspace() {
                   </select>
                 </label>
                 <p>
-                  Nach Ablauf wird der Netzwerkzugang automatisch gesperrt. Eine
-                  dauerhafte Aktivierung ist weiterhin nur durch Sie möglich.
+                  Nach Ablauf endet der Zugriff automatisch. Eine dauerhafte
+                  Aktivierung bleibt Ihnen vorbehalten.
                 </p>
                 <footer>
                   <button type="button" onClick={() => setDialog(null)}>
                     Abbrechen
                   </button>
-                  <button className="portalPrimary">
+                  <button disabled={busy} className="portalPrimary">
                     Testzugang freigeben
                   </button>
                 </footer>
@@ -212,12 +321,12 @@ export function AdminNetworkWorkspace() {
             ) : (
               <form onSubmit={appointAdmin}>
                 <label>
-                  Benutzer oder Ansprechpartner
+                  Geschäftliche E-Mail-Adresse
                   <input
-                    name="name"
+                    name="email"
+                    type="email"
                     required
-                    minLength={2}
-                    placeholder="Name oder geschäftliche E-Mail-Adresse"
+                    placeholder="name@netzwerk.de"
                   />
                 </label>
                 <label>
@@ -227,14 +336,15 @@ export function AdminNetworkWorkspace() {
                   </select>
                 </label>
                 <p>
-                  Diese Rolle erhält Verwaltungsrechte ausschließlich für diesen
-                  Netzwerkmandanten, niemals für die gesamte Plattform.
+                  Das Benutzerkonto muss bereits registriert und einem
+                  Unternehmen zugeordnet sein. Die Rechte gelten ausschließlich
+                  für diesen Netzwerkmandanten.
                 </p>
                 <footer>
                   <button type="button" onClick={() => setDialog(null)}>
                     Abbrechen
                   </button>
-                  <button className="portalPrimary">
+                  <button disabled={busy} className="portalPrimary">
                     Rolle verbindlich zuweisen
                   </button>
                 </footer>

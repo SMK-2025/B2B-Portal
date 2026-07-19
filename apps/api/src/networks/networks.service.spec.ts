@@ -21,7 +21,8 @@ describe("network tenancy",()=>{
   networks.review(adminBearer,UNTERNEHMERFREUNDE_NETWORK_ID,store.networkMemberships[0].id,{decision:"active"});
   expect(networks.mine(bearer)[0].network.slug).toBe("unternehmerfreunde-nrw");
   expect(()=>networks.addMember(bearer,UNTERNEHMERFREUNDE_NETWORK_ID,{organizationId:organization.id,userId:registration.user.id,role:"network_admin"})).toThrow();
-  const networkAdmin=networks.addMember(adminBearer,UNTERNEHMERFREUNDE_NETWORK_ID,{organizationId:organization.id,userId:registration.user.id,role:"network_admin"});
+  const networkAdmin=networks.appointAdministrator(adminBearer,UNTERNEHMERFREUNDE_NETWORK_ID,{email:"mitglied@example.de"});
   expect(networkAdmin.role).toBe("network_admin");
+  expect(networks.adminList(adminBearer)[0].administrator?.user?.email).toBe("mitglied@example.de");
  });
 });

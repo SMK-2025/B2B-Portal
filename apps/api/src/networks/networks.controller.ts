@@ -5,7 +5,9 @@ import {NetworksService} from "./networks.service";
 export class NetworksController{
  constructor(private readonly networks:NetworksService){}
  @Post()create(@Headers("authorization")authorization:string|undefined,@Body()body:Record<string,unknown>){return this.networks.create(authorization,body)}
+ @Get("admin")adminList(@Headers("authorization")authorization:string|undefined){return this.networks.adminList(authorization)}
  @Post(":networkId/access")access(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.setAccess(authorization,networkId,body)}
+ @Post(":networkId/administrator")administrator(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.appointAdministrator(authorization,networkId,body)}
  @Get("public/:slug")publicNetwork(@Param("slug")slug:string){return this.networks.publicBySlug(slug)}
  @Get("mine")mine(@Headers("authorization")authorization:string|undefined){return this.networks.mine(authorization)}
  @Post(":slug/applications")apply(@Headers("authorization")authorization:string|undefined,@Param("slug")slug:string,@Body()body:Record<string,unknown>){return this.networks.apply(authorization,slug,body)}

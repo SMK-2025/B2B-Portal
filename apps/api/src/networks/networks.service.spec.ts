@@ -24,5 +24,9 @@ describe("network tenancy",()=>{
   const networkAdmin=networks.appointAdministrator(adminBearer,UNTERNEHMERFREUNDE_NETWORK_ID,{email:"mitglied@example.de"});
   expect(networkAdmin.role).toBe("network_admin");
   expect(networks.adminList(adminBearer)[0].administrator?.user?.email).toBe("mitglied@example.de");
+  const second=networks.create(adminBearer,{name:"Test Netzwerk",slug:"test-netzwerk",websiteUrl:"https://netzwerk.example",enabledModules:["members","events"]});
+  expect(second).toMatchObject({status:"draft",trialEndsAt:null});
+  expect(second.settings.selfRegistration).toBe(false);
+  expect(networks.adminList(adminBearer)).toHaveLength(2);
  });
 });

@@ -2,6 +2,7 @@
 import type {MouseEvent,ReactNode} from "react";
 import {useEffect,useState} from "react";
 import Link from "next/link";
+import {NEEDS_KEY,PORTAL_UPDATE_EVENT,PROFILE_KEY,readNeeds,type StoredNeed} from "../lib/entrepreneur-state";
 
 type Role="admin"|"unternehmen"|"dienstleister";
 type Dialog={title:string;kind:string;context?:string}|null;
@@ -66,17 +67,26 @@ function fields(kind:string,role:Role){
 export function PortalInteractions({role,children}:{role:Role;children:ReactNode}){
  const [dialog,setDialog]=useState<Dialog>(null);const [toast,setToast]=useState("");
  useEffect(()=>{
-  if(dialog?.kind!=="profile"||!dialog.context)return;
+  if(!dialog)return;
   const frame=requestAnimationFrame(()=>{
    const dialogElement=document.querySelector<HTMLElement>(".companyDialog");
-   const section=dialogElement?.querySelectorAll<HTMLElement>(".companyProfileForm fieldset")[Number(dialog.context)-1];
-   if(!dialogElement||!section)return;
-   dialogElement.scrollTo({top:Math.max(0,section.offsetTop-96),behavior:"smooth"});
-   section.setAttribute("tabindex","-1");
-   section.focus({preventScroll:true});
+   if(dialog.kind==="profile"&&role==="unternehmen"){
+    try{
+     const saved=JSON.parse(localStorage.getItem(PROFILE_KEY)||"null") as {values?:Record<string,string|boolean>}|null;
+     const controls=document.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>(".companyProfileForm input,.companyProfileForm textarea,.companyProfileForm select");
+     controls.forEach((control,index)=>{const value=saved?.values?.[`field-${index}`];if(typeof value==="boolean"&&control instanceof HTMLInputElement)control.checked=value;else if(typeof value==="string")control.value=value});
+    }catch{}
+   }
+   if(dialog.kind==="profile"&&dialog.context&&dialogElement){
+    const section=dialogElement.querySelectorAll<HTMLElement>(".companyProfileForm fieldset")[Number(dialog.context)-1];
+    if(!section)return;
+    dialogElement.scrollTo({top:Math.max(0,section.offsetTop-96),behavior:"smooth"});
+    section.setAttribute("tabindex","-1");
+    section.focus({preventScroll:true});
+   }
   });
   return ()=>cancelAnimationFrame(frame);
- },[dialog]);
+ },[dialog,role]);
  function open(title:string,kind:string,context?:string){setDialog({title,kind,context})}
  function click(e:MouseEvent<HTMLDivElement>){
   const target=e.target as HTMLElement;const link=target.closest("a");const button=target.closest("button");
@@ -87,7 +97,7 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
   if(!button&&target.closest(".activity p")){open("Aktivitätsdetails","Historie");return}
   if(!button)return;
   const text=(button.getAttribute("aria-label")||button.textContent||"").trim();
-  if(button.closest(".portalDialog")){if(text.includes("Abmelden")){localStorage.removeItem("b2b-matching-session");sessionStorage.removeItem("b2b-matching-session");window.location.href="/anmelden";return}if(text.includes("Bestätigung"))setToast("Eine Bestätigungs-E-Mail wird nach Anbindung des E-Mail-Dienstes versendet.");if(text.includes("Website prüfen"))setToast("Die Websiteprüfung wird für die technische Anbindung vorgemerkt.");if(text.includes("Nachweis")||text.includes("Datei auswählen"))setToast("Die Dateiauswahl wird mit dem sicheren Dokumentenspeicher verbunden.");if(text.includes("Hinzufügen"))setToast("Das Keyword wird nach Eingabe zur Matchingliste ergänzt.");return}
+  if(button.closest(".portalDialog")){if(text.includes("Abmelden")){localStorage.removeItem("b2b-matching-session");sessionStorage.removeItem("b2b-matching-session");window.location.href="/anmelden";return}if(text.includes("Dialog schließen")||text.includes("Abbrechen"))return;if(text.includes("Bestätigung"))setToast("Eine Bestätigungs-E-Mail wird nach Anbindung des E-Mail-Dienstes versendet.");else if(text.includes("Website prüfen"))setToast("Die Websiteprüfung wird für die technische Anbindung vorgemerkt.");else if(text.includes("Nachweis")||text.includes("Datei auswählen")||text.includes("Datei anhängen"))setToast("Die Dateiauswahl wird mit dem sicheren Dokumentenspeicher verbunden.");else if(text.includes("Hinzufügen"))setToast("Das Keyword wird nach Eingabe zur Matchingliste ergänzt.");else if(text.includes("Ablehnen"))setToast("Der Match wurde abgelehnt und in der Historie dokumentiert.");else if(text.includes("Favorisieren"))setToast("Der Dienstleister wurde als Favorit gespeichert.");else if(text.includes("freigeben"))setToast("Der Bedarf wurde für diesen Dienstleister freigegeben.");else if(text.includes("Termin"))setToast("Die Terminabstimmung wurde geöffnet.");else if(button.getAttribute("type")==="button")setToast(`„${text}“ wurde geöffnet.`);return}
   if(button.closest(".workspaceTabs")){setToast(`Ansicht „${text.replace(/\d+/g,"").trim()}“ wurde ausgewählt.`);return}
   const profileSectionButton=button.closest(".profileSectionGrid button") as HTMLButtonElement|null;
   if(profileSectionButton){
@@ -112,6 +122,25 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
   if(text==="Jetzt bearbeiten")return open("Offene Profilprüfungen","review");
   open(text||"Details","generic");
  }
- function submit(e:React.FormEvent){e.preventDefault();setDialog(null);setToast(dialog?.kind==="ai"?"KI-Entwurf wurde erstellt und zur Prüfung vorgemerkt.":"Änderungen wurden in der Frontend-Demonstration übernommen.")}
+ function submit(e:React.FormEvent<HTMLFormElement>){
+  e.preventDefault();
+  const controls=Array.from(e.currentTarget.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>("input,textarea,select")).filter(control=>control.type!=="range");
+  const values:Record<string,string|boolean>={};
+  controls.forEach((control,index)=>values[`field-${index}`]=control instanceof HTMLInputElement&&(control.type==="checkbox"||control.type==="radio")?control.checked:control.value);
+  if(dialog?.kind==="profile"&&role==="unternehmen"){
+   localStorage.setItem(PROFILE_KEY,JSON.stringify({values,updatedAt:new Date().toISOString()}));
+   window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
+   setToast("Unternehmensprofil gespeichert. Der Profilfortschritt wurde aktualisiert.");
+  }else if(dialog?.kind==="new-need"||dialog?.kind==="ai"){
+   const title=(controls.find(control=>control instanceof HTMLInputElement&&control.type==="text")?.value||"Neuer geschäftlicher Bedarf").trim();
+   const category=(controls.find(control=>control instanceof HTMLSelectElement)?.value||"Noch nicht eingeordnet").trim();
+   const summary=(controls.find(control=>control instanceof HTMLTextAreaElement)?.value||"").trim();
+   const need:StoredNeed={id:crypto.randomUUID(),title,category,summary,status:"Entwurf",updatedAt:new Date().toISOString(),values};
+   localStorage.setItem(NEEDS_KEY,JSON.stringify([need,...readNeeds()]));
+   window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
+   setToast(dialog.kind==="ai"?"KI-Entwurf wurde erstellt und als Bedarf gespeichert.":"Bedarf wurde als Entwurf gespeichert.");
+  }else setToast("Änderungen wurden gespeichert.");
+  setDialog(null);
+ }
  return <div onClick={click}>{children}{dialog&&<div className="portalDialogBackdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setDialog(null)}}><section className={`portalDialog ${dialog.kind==="new-need"?"needDialog":dialog.kind==="profile"&&role==="unternehmen"?"companyDialog":dialog.kind==="account"?"accountDialog":""}`} role="dialog" aria-modal="true" aria-labelledby="portal-dialog-title"><header><div><span>{role.toUpperCase()}</span><h2 id="portal-dialog-title">{dialog.title}</h2></div><button type="button" onClick={()=>setDialog(null)} aria-label="Dialog schließen">×</button></header><form onSubmit={submit}>{fields(dialog.kind,role)}{dialog.kind!=="account"&&<div className="portalDialogActions"><button type="button" className="portalSecondary" onClick={()=>setDialog(null)}>Abbrechen</button><button type="submit" className="portalPrimary">{dialog.kind==="ai"?"Entwurf generieren":dialog.kind==="message"?"Nachricht senden":"Speichern und fortfahren"}</button></div>}</form></section></div>}{toast&&<div className="portalToast" role="status"><span>✓</span>{toast}<button onClick={()=>setToast("")} aria-label="Meldung schließen">×</button></div>}</div>
 }

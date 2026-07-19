@@ -1,13 +1,31 @@
 import {BadRequestException,ConflictException,ForbiddenException,Inject,Injectable,NotFoundException} from "@nestjs/common";
 import {randomUUID} from "node:crypto";
 import {AuthService} from "../auth/auth.service";
-import type {NetworkMembershipRecord,NetworkRole} from "../core/domain";
+import type {NetworkMembershipRecord,NetworkModule,NetworkRecord,NetworkRole} from "../core/domain";
 import {PortalStore} from "../core/portal.store";
 import {requiredText} from "../core/validation";
 
 @Injectable()
 export class NetworksService{
  constructor(@Inject(PortalStore)private readonly store:PortalStore,@Inject(AuthService)private readonly auth:AuthService){}
+
+ create(authorization:string|undefined,input:Record<string,unknown>){
+  const user=this.auth.authenticate(authorization);this.requirePlatformAdmin(user.id);
+  const slug=requiredText(input.slug,"Netzwerk-Kennung",3,80).toLowerCase();
+  if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))throw new BadRequestException("Die Netzwerk-Kennung darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten.");
+  if(this.store.networkBySlug.has(slug))throw new ConflictException("Diese Netzwerk-Kennung ist bereits vergeben.");
+  const now=new Date().toISOString();const network:NetworkRecord={id:randomUUID(),slug,name:requiredText(input.name,"Netzwerkname",2,160),legalName:typeof input.legalName==="string"&&input.legalName.trim()?input.legalName.trim():null,websiteUrl:typeof input.websiteUrl==="string"&&input.websiteUrl.trim()?input.websiteUrl.trim():null,logoUrl:null,primaryColor:"#183b34",secondaryColor:"#c5a15a",status:"draft",trialEndsAt:null,enabledModules:this.modules(input.enabledModules),settings:{closedNetwork:true,selfRegistration:false,crossNetworkMatching:false,admissionRules:null},createdAt:now,updatedAt:now};
+  this.store.networks.set(network.id,network);this.store.networkBySlug.set(network.slug,network.id);return network;
+ }
+
+ setAccess(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+  const user=this.auth.authenticate(authorization);this.requirePlatformAdmin(user.id);const network=this.raw(networkId);
+  const status=input.status;if(!["draft","trial","active","suspended"].includes(String(status)))throw new BadRequestException("Ungültiger Netzwerkstatus.");
+  network.status=status as NetworkRecord["status"];network.trialEndsAt=null;
+  if(status==="trial"){const days=Number(input.trialDays);if(!Number.isInteger(days)||days<1||days>180)throw new BadRequestException("Testzugänge müssen zwischen 1 und 180 Tagen laufen.");network.trialEndsAt=new Date(Date.now()+days*86_400_000).toISOString()}
+  if(typeof input.selfRegistration==="boolean")network.settings.selfRegistration=input.selfRegistration;
+  network.updatedAt=new Date().toISOString();return network;
+ }
 
  publicBySlug(slug:string){
   const network=this.bySlug(slug);
@@ -49,15 +67,23 @@ export class NetworksService{
   const actor=this.auth.authenticate(authorization);this.requireNetworkManagement(actor.id,networkId);
   const organizationId=requiredText(input.organizationId,"Unternehmen",20,100);const userId=requiredText(input.userId,"Benutzer",20,100);
   const role=input.role as NetworkRole;if(!["network_admin","moderator","organization_admin","member"].includes(role))throw new BadRequestException("Ungültige Netzwerkrolle.");
+  if(role==="network_admin"&&actor.accountRole!=="platform_admin")throw new ForbiddenException("Nur die Plattformadministration darf Netzwerkadministratoren ernennen.");
   if(!this.store.organizations.has(organizationId)||!this.store.users.has(userId))throw new NotFoundException("Benutzer oder Unternehmen nicht gefunden.");
-  if(this.store.networkMemberships.some(item=>item.networkId===networkId&&item.organizationId===organizationId&&item.userId===userId&&item.status==="active"))throw new ConflictException("Die Person ist bereits aktives Netzwerkmitglied.");
+  const existing=this.store.networkMemberships.find(item=>item.networkId===networkId&&item.organizationId===organizationId&&item.userId===userId&&item.status==="active");
+  if(existing){
+   if(actor.accountRole==="platform_admin"&&existing.role!==role){existing.role=role;existing.reviewedByUserId=actor.id;existing.reviewedAt=new Date().toISOString();existing.updatedAt=existing.reviewedAt;return existing}
+   throw new ConflictException("Die Person ist bereits aktives Netzwerkmitglied.");
+  }
   const membership=this.record(networkId,organizationId,userId,role,"active",actor.id);membership.reviewedByUserId=actor.id;membership.reviewedAt=membership.createdAt;
   this.store.networkMemberships.push(membership);return membership;
  }
 
  private record(networkId:string,organizationId:string,userId:string,role:NetworkRole,status:NetworkMembershipRecord["status"],invitedByUserId:string|null):NetworkMembershipRecord{const now=new Date().toISOString();return{id:randomUUID(),networkId,organizationId,userId,role,status,invitedByUserId,reviewedByUserId:null,reviewedAt:null,createdAt:now,updatedAt:now}}
  private bySlug(slug:string){const id=this.store.networkBySlug.get(slug);if(!id)throw new NotFoundException("Netzwerk nicht gefunden.");return this.get(id)}
- private get(id:string){const network=this.store.networks.get(id);if(!network||network.status!=="active")throw new NotFoundException("Netzwerk nicht gefunden.");return network}
+ private get(id:string){const network=this.raw(id);if(network.status==="active")return network;if(network.status==="trial"&&network.trialEndsAt&&Date.parse(network.trialEndsAt)>Date.now())return network;throw new NotFoundException("Netzwerk nicht gefunden oder nicht freigeschaltet.")}
+ private raw(id:string){const network=this.store.networks.get(id);if(!network)throw new NotFoundException("Netzwerk nicht gefunden.");return network}
+ private modules(value:unknown):NetworkModule[]{const allowed:NetworkModule[]=["members","profiles","services","matching","communication","events","community","tasks","documents","analytics","notifications"];if(!Array.isArray(value))return["members","profiles"];return [...new Set(value.map(String).filter((item):item is NetworkModule=>allowed.includes(item as NetworkModule)))]}
+ private requirePlatformAdmin(userId:string){if(this.store.users.get(userId)?.accountRole!=="platform_admin")throw new ForbiddenException("Nur die Plattformadministration darf Netzwerkpartner freischalten.")}
  private requireNetworkManagement(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"&&["network_admin","moderator"].includes(item.role)))throw new ForbiddenException("Keine Berechtigung zur Netzwerkverwaltung.")}
  private publicUser(userId:string){const user=this.store.users.get(userId);return user?{id:user.id,firstName:user.firstName,lastName:user.lastName,email:user.email}:null}
 }

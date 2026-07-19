@@ -4,7 +4,7 @@
 
 B2B Matching betreibt eine gemeinsame Plattform für das allgemeine Portal und beliebig viele abgeschlossene Partnernetzwerke. Jedes Netzwerk ist ein eigener Mandant. Datenzugriffe werden immer über die Netzwerkmitgliedschaft und die darin vergebene Rolle begrenzt.
 
-Der erste vorkonfigurierte Mandant ist:
+Der erste vorbereitete Mandant ist:
 
 - Name: Unternehmerfreunde NRW
 - Slug: `unternehmerfreunde-nrw`
@@ -12,19 +12,22 @@ Der erste vorkonfigurierte Mandant ist:
 - Website: `https://www.unternehmerfreunde-nrw.de/`
 - Registrierung: `/registrieren?network=unternehmerfreunde-nrw`
 
-Die öffentliche Website des Netzwerkpartners bleibt ein eigenständiges Projekt. Sie verlinkt lediglich auf Registrierung, Anmeldung und Portal.
+Der Mandant wird im Status `draft` angelegt und ist damit zunächst nicht öffentlich nutzbar. Ein vorbereiteter Registrierungslink bedeutet ausdrücklich noch keine Freischaltung. Die öffentliche Website des Netzwerkpartners bleibt ein eigenständiges Projekt und verlinkt später lediglich auf Registrierung, Anmeldung und Portal.
+
+## Verbindliche Freigabelogik
+
+Ein Netzwerkpartner kann sich nicht selbst als Netzwerk registrieren oder aktivieren. Ausschließlich die Plattformadministration darf:
+
+- einen Netzwerkmandanten anlegen,
+- einen zeitlich begrenzten Testzugang von 1 bis 180 Tagen erteilen,
+- ein Netzwerk dauerhaft aktivieren oder sperren,
+- den ersten oder einen weiteren Netzwerkadministrator ernennen.
+
+Die optionale Selbstregistrierung betrifft ausschließlich Mitgliedsunternehmen innerhalb eines bereits freigeschalteten Netzwerks. Dabei entsteht zunächst der Status `pending`. Netzwerkadministration oder Plattformadministration entscheidet anschließend über die Aufnahme.
 
 ## Mandantenmodell
 
-Ein Benutzer kann mehreren Unternehmen und Netzwerken angehören. Eine Netzwerkmitgliedschaft verbindet:
-
-- Netzwerk
-- Unternehmen
-- Benutzer
-- Netzwerkrolle
-- Aufnahme- und Prüfstatus
-
-Die Mitgliedschaft wird nicht allein durch eine Registrierung aktiv. Bei einer eigenständigen Registrierung entsteht zunächst der Status `pending`. Netzwerkadministration oder Plattformadministration entscheidet über die Aufnahme.
+Ein Benutzer kann mehreren Unternehmen und Netzwerken angehören. Eine Netzwerkmitgliedschaft verbindet Netzwerk, Unternehmen, Benutzer, Netzwerkrolle sowie Aufnahme- und Prüfstatus.
 
 ## Rollen
 
@@ -33,25 +36,11 @@ Die Mitgliedschaft wird nicht allein durch eine Registrierung aktiv. Bei einer e
 - `organization_admin`: das eigene Mitgliedsunternehmen im Netzwerk verwalten
 - `member`: freigegebene Netzwerkbereiche nutzen
 
-Die bestehenden Plattformrollen `platform_admin` und `reviewer` bleiben erhalten.
+Die bestehenden Plattformrollen `platform_admin` und `reviewer` bleiben erhalten. Die Rolle `network_admin` wird niemals automatisch aus Name, Ansprechpartner oder Registrierung abgeleitet. Sie wird ausschließlich durch die Plattformadministration vergeben.
 
 ## Module
 
-Jeder Mandant besitzt eine Liste aktivierter Module:
-
-- Mitglieder
-- Profile
-- Leistungen
-- Matching
-- Kommunikation
-- Veranstaltungen
-- Community
-- Aufgaben
-- Dokumente
-- Statistiken
-- Benachrichtigungen
-
-Unternehmerfreunde NRW startet mit allen Modulen. Weitere Netzwerkpartner können später mit einer abweichenden Modulkonfiguration eingerichtet werden.
+Jeder Mandant besitzt eine eigene Liste aktivierter Module: Mitglieder, Profile, Leistungen, Matching, Kommunikation, Veranstaltungen, Community, Aufgaben, Dokumente, Statistiken und Benachrichtigungen. Weitere Netzwerkpartner können mit einer abweichenden Modulkonfiguration eingerichtet werden.
 
 ## Sichtbarkeit und Matching
 
@@ -61,21 +50,13 @@ Ein Bedarf kann dem allgemeinen Portal oder einem konkreten Netzwerk zugeordnet 
 
 ## API-Grundlage
 
+- `POST /api/networks`: Netzwerkmandanten als Entwurf anlegen (nur Plattformadministration)
+- `POST /api/networks/:networkId/access`: Entwurf, Testzugang, Aktivierung oder Sperre setzen (nur Plattformadministration)
 - `GET /api/networks/public/:slug`: öffentliche Netzwerk- und Brandingkonfiguration
 - `GET /api/networks/mine`: aktive Netzwerkmitgliedschaften des angemeldeten Benutzers
 - `POST /api/networks/:slug/applications`: Mitgliedschaft für ein bestehendes Unternehmen beantragen
 - `GET /api/networks/:networkId/memberships`: Mitgliederverwaltung
-- `POST /api/networks/:networkId/memberships`: Mitglied durch die Netzwerkadministration hinzufügen
+- `POST /api/networks/:networkId/memberships`: Mitglied hinzufügen; Netzwerkadministratoren nur durch die Plattformadministration
 - `POST /api/networks/:networkId/memberships/:membershipId/review`: Antrag freigeben oder ablehnen
 
-Beim Anlegen eines Unternehmens kann `networkSlug` direkt mitgesendet werden. Dadurch werden Unternehmen und Mitgliedschaftsantrag in einem Registrierungsablauf angelegt.
-
-## Weitere Ausbauschritte
-
-1. persistente PostgreSQL-Anbindung statt In-Memory-Testbetrieb
-2. Einladungen und E-Mail-Versand
-3. Netzwerkwechsel im Portal
-4. gebrandete Netzwerkoberfläche
-5. Veranstaltungs-, Community-, Aufgaben- und Dokumentenmodule
-6. Netzwerkstatistiken und Exporte
-7. automatisierte Mandantenbereitstellung und Abrechnung
+Beim Anlegen eines Unternehmens kann `networkSlug` mitgesendet werden. Das funktioniert nur, wenn der Netzwerkmandant aktiv ist oder einen noch gültigen Testzugang besitzt und die Selbstregistrierung für Mitgliedsunternehmen erlaubt wurde.

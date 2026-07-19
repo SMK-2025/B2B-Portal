@@ -31,7 +31,7 @@ export class PortalStore {
 
   private seedNetworks(){
     const now=new Date().toISOString();
-    const network:NetworkRecord={id:UNTERNEHMERFREUNDE_NETWORK_ID,slug:"unternehmerfreunde-nrw",name:"Unternehmerfreunde NRW",legalName:null,websiteUrl:"https://www.unternehmerfreunde-nrw.de/",logoUrl:null,primaryColor:"#183b34",secondaryColor:"#c5a15a",status:"active",enabledModules:["members","profiles","services","matching","communication","events","community","tasks","documents","analytics","notifications"],settings:{closedNetwork:true,selfRegistration:true,crossNetworkMatching:false,admissionRules:"Neue Mitgliedsunternehmen werden durch die Netzwerkadministration geprüft und freigegeben."},createdAt:now,updatedAt:now};
+    const network:NetworkRecord={id:UNTERNEHMERFREUNDE_NETWORK_ID,slug:"unternehmerfreunde-nrw",name:"Unternehmerfreunde NRW",legalName:null,websiteUrl:"https://www.unternehmerfreunde-nrw.de/",logoUrl:null,primaryColor:"#183b34",secondaryColor:"#c5a15a",status:"draft",trialEndsAt:null,enabledModules:["members","profiles","services","matching","communication","events","community","tasks","documents","analytics","notifications"],settings:{closedNetwork:true,selfRegistration:false,crossNetworkMatching:false,admissionRules:"Neue Mitgliedsunternehmen werden durch die Netzwerkadministration geprüft und freigegeben."},createdAt:now,updatedAt:now};
     this.networks.set(network.id,network);this.networkBySlug.set(network.slug,network.id);
   }
 }

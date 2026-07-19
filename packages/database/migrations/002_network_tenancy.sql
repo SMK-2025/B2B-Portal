@@ -1,4 +1,4 @@
-CREATE TYPE network_status AS ENUM ('active','suspended');
+CREATE TYPE network_status AS ENUM ('draft','trial','active','suspended');
 CREATE TYPE network_membership_status AS ENUM ('pending','active','rejected','suspended','left');
 CREATE TYPE network_role AS ENUM ('network_admin','moderator','organization_admin','member');
 
@@ -11,7 +11,8 @@ CREATE TABLE networks (
   logo_url text,
   primary_color text NOT NULL DEFAULT '#183b34',
   secondary_color text NOT NULL DEFAULT '#c5a15a',
-  status network_status NOT NULL DEFAULT 'active',
+  status network_status NOT NULL DEFAULT 'draft',
+  trial_ends_at timestamptz,
   enabled_modules text[] NOT NULL DEFAULT '{}',
   settings jsonb NOT NULL DEFAULT '{}',
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -57,7 +58,7 @@ CREATE TABLE needs (
 CREATE INDEX needs_network_status ON needs(network_id,status);
 
 INSERT INTO networks (
-  id,slug,name,website_url,primary_color,secondary_color,enabled_modules,settings
+  id,slug,name,website_url,primary_color,secondary_color,status,enabled_modules,settings
 ) VALUES (
   '10000000-0000-4000-8000-000000000001',
   'unternehmerfreunde-nrw',
@@ -65,6 +66,7 @@ INSERT INTO networks (
   'https://www.unternehmerfreunde-nrw.de/',
   '#183b34',
   '#c5a15a',
+  'draft',
   ARRAY['members','profiles','services','matching','communication','events','community','tasks','documents','analytics','notifications'],
-  '{"closedNetwork":true,"selfRegistration":true,"crossNetworkMatching":false,"admissionRules":"Neue Mitgliedsunternehmen werden durch die Netzwerkadministration geprüft und freigegeben."}'::jsonb
+  '{"closedNetwork":true,"selfRegistration":false,"crossNetworkMatching":false,"admissionRules":"Neue Mitgliedsunternehmen werden durch die Netzwerkadministration geprüft und freigegeben."}'::jsonb
 ) ON CONFLICT (slug) DO NOTHING;

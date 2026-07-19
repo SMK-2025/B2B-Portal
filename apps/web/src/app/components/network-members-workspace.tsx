@@ -3,7 +3,6 @@ import {FormEvent,useMemo,useState} from "react";
 
 type Member={id:string;company:string;contact:string;email:string;role:string;status:"Aktiv"|"Antrag"|"Eingeladen"|"Deaktiviert";lastActive:string};
 const initial:Member[]=[
- {id:"1",company:"Subvenio GmbH",contact:"Dirk Poschmann",email:"dirk@subvenio.de",role:"Netzwerkadministrator",status:"Aktiv",lastActive:"Heute"},
  {id:"2",company:"Kiwis & Brownies",contact:"Sebastian Brock",email:"kontakt@kiwis-brownies.de",role:"Unternehmensadministrator",status:"Aktiv",lastActive:"Vor 2 Tagen"},
  {id:"3",company:"Beispielunternehmen GmbH",contact:"Neue Mitgliedschaft",email:"antrag@beispiel.de",role:"Unternehmensadministrator",status:"Antrag",lastActive:"Noch nie"}
 ];

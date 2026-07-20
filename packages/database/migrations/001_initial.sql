@@ -1,4 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE profile_review_status AS ENUM ('draft','incomplete','submitted','automated_review','manual_review','changes_requested','approved','partially_approved','rejected','suspended');
@@ -88,11 +87,9 @@ CREATE TABLE service_page_versions (
   version integer NOT NULL,
   description text NOT NULL,
   structured_data jsonb NOT NULL DEFAULT '{}',
-  embedding vector,
+  embedding jsonb,
   review_status profile_review_status NOT NULL DEFAULT 'draft',
   created_by uuid NOT NULL REFERENCES users(id),
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (service_page_id, version)
 );
-
-CREATE INDEX service_page_versions_embedding_hnsw ON service_page_versions USING hnsw (embedding vector_cosine_ops);

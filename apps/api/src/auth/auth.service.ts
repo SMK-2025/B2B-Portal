@@ -40,6 +40,7 @@ export class AuthService implements OnModuleInit {
       firstName: process.env.PLATFORM_ADMIN_FIRST_NAME || "Martin",
       lastName: process.env.PLATFORM_ADMIN_LAST_NAME || "Kelm",
     });
+    await this.store.persist();
   }
 
   async ensurePlatformAdmin(input: Record<string, unknown>) {

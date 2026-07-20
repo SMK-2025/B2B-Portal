@@ -151,13 +151,16 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
    window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
    setToast("Unternehmensprofil gespeichert. Der Profilfortschritt wurde aktualisiert.");
   }else if(dialog?.kind==="new-need"||dialog?.kind==="ai"){
-   const title=(controls.find(control=>control instanceof HTMLInputElement&&control.type==="text")?.value||"Neuer geschäftlicher Bedarf").trim();
-   const category=(controls.find(control=>control instanceof HTMLSelectElement)?.value||"Noch nicht eingeordnet").trim();
    const summary=(controls.find(control=>control instanceof HTMLTextAreaElement)?.value||"").trim();
+   const manualTitle=(controls.find(control=>control instanceof HTMLInputElement&&control.type==="text")?.value||"").trim();
+   const generatedTitle=summary.split(/[.!?]/)[0]?.trim().slice(0,80);
+   const title=manualTitle||(dialog.kind==="ai"&&generatedTitle?`KI-Entwurf: ${generatedTitle}`:"Neuer geschäftlicher Bedarf");
+   const category=(controls.find(control=>control instanceof HTMLSelectElement)?.value||(dialog.kind==="ai"?"KI-Entwurf · Einordnung offen":"Noch nicht eingeordnet")).trim();
    const need:StoredNeed={id:crypto.randomUUID(),title,category,summary,status:"Entwurf",updatedAt:new Date().toISOString(),values};
    localStorage.setItem(NEEDS_KEY,JSON.stringify([need,...readNeeds()]));
    window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
-   setToast(dialog.kind==="ai"?"KI-Entwurf wurde erstellt und als Bedarf gespeichert.":"Bedarf wurde als Entwurf gespeichert.");
+   window.location.assign("/portal/unternehmen/bedarfe");
+   return;
   }else setToast("Änderungen wurden gespeichert.");
   setDialog(null);
  }

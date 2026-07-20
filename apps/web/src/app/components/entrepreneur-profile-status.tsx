@@ -1,8 +1,9 @@
 "use client";
 
 import {useEffect,useState} from "react";
-import {PORTAL_UPDATE_EVENT,profileProgress,readNeeds,readProfile} from "../lib/entrepreneur-state";
-import {PortalPanel,Status} from "./portal-shell";
+import Link from "next/link";
+import {PORTAL_UPDATE_EVENT,profileProgress,readNeeds,readProfile,type StoredNeed} from "../lib/entrepreneur-state";
+import {PortalEmpty,PortalPanel,Status} from "./portal-shell";
 
 function useProfileState(){
  const [progress,setProgress]=useState(0);
@@ -28,4 +29,10 @@ export function EntrepreneurProfilePanel(){
  const {progress,missing}=useProfileState();
  const complete=progress===100;
  return <PortalPanel id="profil" title="Unternehmensprofil"><Status tone={complete?"teal":"amber"}>{complete?"Vollständig":`${progress} % vollständig`}</Status><h3 className="planTitle">{complete?"Grundlage für präzise Matches geschaffen":"Pflichtangaben weiter vervollständigen"}</h3><p className="panelNote">{complete?"Alle erforderlichen Unternehmensangaben wurden gespeichert.":missing?`${missing} Pflichtangaben fehlen noch. Optionale Angaben zählen nicht.`:"Speichern Sie das Profil erneut, damit die Pflichtfelder geprüft werden."}</p><button className="portalSecondary full">Unternehmensprofil bearbeiten</button></PortalPanel>;
+}
+
+export function EntrepreneurNeedsPanel(){
+ const [needs,setNeeds]=useState<StoredNeed[]>([]);
+ useEffect(()=>{const refresh=()=>setNeeds(readNeeds());refresh();window.addEventListener(PORTAL_UPDATE_EVENT,refresh);window.addEventListener("storage",refresh);return()=>{window.removeEventListener(PORTAL_UPDATE_EVENT,refresh);window.removeEventListener("storage",refresh)}},[]);
+ return <PortalPanel id="bedarfe" eyebrow="BEDARFSMANAGEMENT" title="Meine Bedarfe" action={<Link className="portalLink" href="/portal/unternehmen/bedarfe">Bedarfsverwaltung öffnen →</Link>}>{needs.length?<div className="dashboardNeedList">{needs.slice(0,3).map(need=><article key={need.id}><div><Status tone={need.status==="Aktiv"?"teal":need.status==="In Prüfung"?"blue":need.status==="Archiv"?"gray":"amber"}>{need.status}</Status><h3>{need.title}</h3><p>{need.category}</p></div><Link href="/portal/unternehmen/bedarfe">{need.status==="Entwurf"?"Prüfen und einreichen":"Status ansehen"} →</Link></article>)}</div>:<PortalEmpty icon="◇" title="Noch kein Bedarf angelegt" text="Beschreiben Sie die gesuchte Dienstleistung manuell oder lassen Sie sich von der KI durch die Bedarfserstellung führen." action="Ersten Bedarf erstellen"/>}</PortalPanel>;
 }

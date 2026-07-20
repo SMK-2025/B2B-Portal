@@ -28,6 +28,8 @@ export interface OrganizationRecord {
   submittedAt: string | null;
   approvedAt: string | null;
   createdAt: string;
+  profileData?: Record<string, string | boolean>;
+  profileUpdatedAt?: string | null;
 }
 
 export interface MembershipRecord {
@@ -71,7 +73,7 @@ export interface ServicePageRecord {
   reviewStatus:ReviewStatus; publicVisibility:boolean; matchingEligible:boolean; version:number;
   submittedAt:string|null; approvedAt:string|null; createdAt:string;
 }
-export interface NeedRecord { id:string; organizationId:string; networkId:string|null; title:string; description:string; categoryId:string; requiredSkills:string[]; preferredIndustries:string[]; region:string|null; deliveryModes:("online"|"onsite"|"hybrid")[]; status:"draft"|"active"|"paused"|"closed"; createdAt:string; }
+export interface NeedRecord { id:string; organizationId:string; networkId:string|null; title:string; description:string; categoryId:string; requiredSkills:string[]; preferredIndustries:string[]; region:string|null; deliveryModes:("online"|"onsite"|"hybrid")[]; status:"draft"|"submitted"|"active"|"changes_requested"|"rejected"|"paused"|"closed"; createdAt:string; submittedAt?:string|null; reviewedAt?:string|null; reviewReason?:string|null; details?:Array<{label:string;value:string}>; }
 export interface MatchRecord { id:string; needId:string; servicePageId:string; buyerOrganizationId:string; providerOrganizationId:string; score:number; components:Record<string,number|null>; explanation:string[]; status:"buyer_review"|"deferred"|"rejected_by_buyer"|"released_anonymously"|"rejected_by_provider"|"provider_interested"|"mutual_match"|"closed"; buyerDecisionAt:string|null; providerDecisionAt:string|null; identityReleasedAt:string|null; createdAt:string; }
 export interface ConversationRecord{id:string;matchId:string;createdAt:string;}
 export interface MessageRecord{id:string;conversationId:string;senderUserId:string;body:string;createdAt:string;}

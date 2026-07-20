@@ -3,4 +3,5 @@ import { AuthModule } from "../auth/auth.module";
 import { AdminController } from "./admin.controller";
 import { AdminService } from "./admin.service";
 import { ServicesModule } from "../services/services.module";
-@Module({imports:[AuthModule,ServicesModule],controllers:[AdminController],providers:[AdminService]}) export class AdminModule{}
+import { MatchingModule } from "../matching/matching.module";
+@Module({imports:[AuthModule,ServicesModule,MatchingModule],controllers:[AdminController],providers:[AdminService]}) export class AdminModule{}

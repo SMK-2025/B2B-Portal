@@ -91,6 +91,7 @@ function fields(kind:string,role:Role,accountEmail="",profile:StoredProfile|null
 export function PortalInteractions({role,children}:{role:Role;children:ReactNode}){
  const [dialog,setDialog]=useState<Dialog>(null);const [toast,setToast]=useState("");const [accountEmail,setAccountEmail]=useState("");const [storedProfile,setStoredProfile]=useState<StoredProfile|null>(null);
  useEffect(()=>{const refresh=()=>setStoredProfile(readProfile());refresh();window.addEventListener(PORTAL_UPDATE_EVENT,refresh);return()=>window.removeEventListener(PORTAL_UPDATE_EVENT,refresh)},[]);
+ useEffect(()=>{if(role!=="unternehmen"||!storedProfile)return;const token=getPortalSession();if(!token)return;void portalRequest<Array<{id:string}>>("/organizations/mine",{token}).then(organizations=>organizations[0]?portalRequest(`/organizations/${organizations[0].id}/profile`,{token,body:{profileData:storedProfile.values}}):undefined).catch(()=>undefined)},[role,storedProfile]);
  useEffect(()=>{
   const token=getPortalSession();if(!token)return;
   portalRequest<{email:string}>("/auth/session/check",{method:"POST",token}).then(session=>setAccountEmail(session.email)).catch(()=>{});
@@ -152,7 +153,7 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
   if(text==="Jetzt bearbeiten")return open("Offene Profilprüfungen","review");
   open(text||"Details","generic");
  }
- function submit(e:FormEvent<HTMLFormElement>){
+ async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();
   const controls=Array.from(e.currentTarget.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>("input,textarea,select")).filter(control=>control.type!=="range");
   const values:Record<string,string|boolean>={};
@@ -172,7 +173,9 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
      return control.value.trim().length>0;
     });
    });
-   localStorage.setItem(PROFILE_KEY,JSON.stringify({values,requiredTotal:required.length,requiredCompleted,requiredSections,updatedAt:new Date().toISOString()}));
+    localStorage.setItem(PROFILE_KEY,JSON.stringify({values,requiredTotal:required.length,requiredCompleted,requiredSections,updatedAt:new Date().toISOString()}));
+    const token=getPortalSession();
+    if(token)try{const organizations=await portalRequest<Array<{id:string}>>("/organizations/mine",{token});if(organizations[0])await portalRequest(`/organizations/${organizations[0].id}/profile`,{token,body:{profileData:values}})}catch(error){setToast(error instanceof Error?error.message:"Das Profil konnte nicht zentral übertragen werden.");return}
    window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
    setToast("Unternehmensprofil gespeichert. Der Profilfortschritt wurde aktualisiert.");
   }else if(dialog?.kind==="new-need"||dialog?.kind==="ai"){

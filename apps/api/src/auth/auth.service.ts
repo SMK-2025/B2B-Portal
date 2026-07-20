@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   OnModuleInit,
+  Optional,
   UnauthorizedException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
@@ -15,11 +16,15 @@ import {
   tokenHash,
   verifyPassword,
 } from "./password";
+import { EmailService } from "./email.service";
 
 @Injectable()
 export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
-  constructor(private readonly store: PortalStore) {}
+  constructor(
+    private readonly store: PortalStore,
+    @Optional() private readonly email: EmailService = new EmailService(),
+  ) {}
 
   async onModuleInit() {
     const email = process.env.PLATFORM_ADMIN_EMAIL;
@@ -97,7 +102,23 @@ export class AuthService implements OnModuleInit {
       expiresAt: new Date(Date.now() + 24 * 3600_000).toISOString(),
       usedAt: null,
     });
-    return { user: this.publicUser(user), verificationToken };
+    try {
+      await this.email.sendVerification({
+        email: user.email,
+        firstName: user.firstName,
+        token: verificationToken,
+      });
+    } catch (error) {
+      this.store.verificationTokens.delete(tokenHash(verificationToken));
+      this.store.userByEmail.delete(email);
+      this.store.users.delete(user.id);
+      throw error;
+    }
+    return {
+      user: this.publicUser(user),
+      verificationRequired: true,
+      ...(this.email.directLinksEnabled() ? { verificationToken } : {}),
+    };
   }
 
   verifyEmail(token: unknown) {
@@ -136,10 +157,12 @@ export class AuthService implements OnModuleInit {
     return { token, expiresInSeconds: 28_800, user: this.publicUser(user) };
   }
 
-  requestPasswordReset(input: Record<string, unknown>) {
+  async requestPasswordReset(input: Record<string, unknown>) {
     const email = emailAddress(input.email);
     const userId = this.store.userByEmail.get(email);
     if (!userId) return { accepted: true };
+    const user = this.store.users.get(userId);
+    if (!user) return { accepted: true };
     const resetToken = opaqueToken();
     this.store.passwordResetTokens.set(tokenHash(resetToken), {
       tokenHash: tokenHash(resetToken),
@@ -147,7 +170,20 @@ export class AuthService implements OnModuleInit {
       expiresAt: new Date(Date.now() + 60 * 60_000).toISOString(),
       usedAt: null,
     });
-    return { accepted: true, resetToken };
+    try {
+      await this.email.sendPasswordReset({
+        email: user.email,
+        firstName: user.firstName,
+        token: resetToken,
+      });
+    } catch (error) {
+      this.store.passwordResetTokens.delete(tokenHash(resetToken));
+      throw error;
+    }
+    return {
+      accepted: true,
+      ...(this.email.directLinksEnabled() ? { resetToken } : {}),
+    };
   }
 
   async resetPassword(input: Record<string, unknown>) {

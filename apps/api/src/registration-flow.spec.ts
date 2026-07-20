@@ -126,7 +126,9 @@ describe("registration and organization approval", () => {
       "reset@example.de",
     );
 
-    const request = auth.requestPasswordReset({ email: "reset@example.de" });
+    const request = await auth.requestPasswordReset({
+      email: "reset@example.de",
+    });
     expect(request.accepted).toBe(true);
     expect(request.resetToken).toBeTypeOf("string");
     await auth.resetPassword({

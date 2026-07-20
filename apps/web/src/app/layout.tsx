@@ -4,7 +4,7 @@ import "./styles.css";
 import { PwaRegister } from "./pwa-register";
 import { CookieConsent } from "./components/cookie-consent";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://b2bmatching.de";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://b2b-matching.de";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

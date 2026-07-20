@@ -24,7 +24,7 @@ Die spätere Marken- und Live-Domain ist von dieser Aufteilung unabhängig.
 
 ```text
 NODE_ENV=production
-WEB_ORIGINS=https://b2-b-portal-api.vercel.app,https://IHRE-SPAETERE-LIVE-DOMAIN
+WEB_ORIGINS=https://b2b-matching.de,https://www.b2b-matching.de
 PLATFORM_ADMIN_EMAIL=IHRE-GESCHAEFTLICHE-E-MAIL
 PLATFORM_ADMIN_PASSWORD=IHR-STARKES-PASSWORT
 PLATFORM_ADMIN_FIRST_NAME=Martin

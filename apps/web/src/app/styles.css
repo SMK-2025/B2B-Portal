@@ -181,3 +181,4 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 
 /* Company account verification is inherited from the authenticated user account. */
 .verificationGrid.single{grid-template-columns:1fr}.verificationGrid .verifiedAccount{display:grid;grid-template-columns:42px 1fr;align-items:center;padding:17px 19px;background:#edf7f4;border-color:#b9ddd6}.verifiedAccount>strong{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#087d78;color:#fff;font-size:18px}.verificationGrid .verifiedAccount>span{display:flex;flex-direction:column;gap:4px;color:#183044}.verifiedAccount b{font-size:13px}.verifiedAccount small{font-size:10px;color:#607786;font-weight:500}
+.companyProfileForm :is(input,select,textarea):required{border-left:3px solid #087d78}.companyProfileForm :is(input,select,textarea):required:invalid{border-color:#bd654f;background:#fffaf8}

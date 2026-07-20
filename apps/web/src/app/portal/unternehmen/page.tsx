@@ -1,6 +1,7 @@
-import {PortalEmpty,PortalPanel,PortalShell,PortalStats,Status} from "../../components/portal-shell";
+import {PortalEmpty,PortalPanel,PortalShell,PortalStats} from "../../components/portal-shell";
+import {EntrepreneurProfilePanel,EntrepreneurSetupStatus} from "../../components/entrepreneur-profile-status";
 export default function UnternehmenPortal(){return <PortalShell role="unternehmen" title="Willkommen in Ihrem Unternehmensbereich." intro="Richten Sie Ihr Profil ein und veröffentlichen Sie anschließend Ihren ersten geschäftlichen Bedarf." action={<button className="portalPrimary">＋ Neuen Bedarf erstellen</button>}>
-<div className="portalSetup"><div><span>ERSTE SCHRITTE</span><h2>Ihr Konto ist bereit. Vervollständigen Sie jetzt die Grundlagen.</h2></div><b>25 %</b><div className="setupBar"><i style={{width:"25%"}}/></div><ol><li className="done">E-Mail-Adresse bestätigt</li><li>Unternehmensprofil vervollständigen</li><li>Ersten Bedarf erstellen</li><li>Profil zur Prüfung einreichen</li></ol></div>
+<EntrepreneurSetupStatus/>
 <PortalStats items={[["0","Aktive Bedarfe","Noch keine Einträge"],["0","Matches","Startet nach Veröffentlichung"],["0","Nachrichten","Keine neuen Nachrichten"],["0","Bedarfsaufrufe","Noch keine Aufrufe"]]}/>
 <div className="portalGrid wideLeft"><div>
 <PortalPanel id="bedarfe" eyebrow="BEDARFSMANAGEMENT" title="Meine Bedarfe" action={<button className="portalLink">Bedarfsverwaltung öffnen →</button>}><PortalEmpty icon="◇" title="Noch kein Bedarf angelegt" text="Beschreiben Sie die gesuchte Dienstleistung manuell oder lassen Sie sich von der KI durch die Bedarfserstellung führen." action="Ersten Bedarf erstellen"/></PortalPanel>
@@ -8,7 +9,7 @@ export default function UnternehmenPortal(){return <PortalShell role="unternehme
 <PortalPanel id="historie" eyebrow="AKTIVITÄTSDOKUMENTATION" title="Ihre Historie"><PortalEmpty icon="↗" title="Noch keine Aktivitäten" text="Profilaufrufe, Entscheidungen, Statusänderungen und Kontakte werden künftig hier nachvollziehbar dokumentiert."/></PortalPanel>
 </div><aside>
 <PortalPanel title="KI-Bedarfsassistent" className="portalAi"><span className="aiMark">✦</span><h3>Aus einer Idee wird ein klarer Bedarf.</h3><p>Beschreiben Sie Ihr Ziel. Die KI strukturiert Leistungsumfang, Kriterien, Zeitraum und wichtige Rückfragen.</p><button className="portalPrimary">Bedarf mit KI erstellen</button></PortalPanel>
-<PortalPanel id="profil" title="Unternehmensprofil"><Status tone="amber">Unvollständig</Status><h3 className="planTitle">Für bessere Matches vervollständigen</h3><p className="panelNote">Unternehmensdaten bleiben für Dienstleister verborgen, bis Sie einen Kontakt freigeben.</p><button className="portalSecondary full">Unternehmensprofil bearbeiten</button></PortalPanel>
+<EntrepreneurProfilePanel/>
 <PortalPanel id="favoriten" title="Favoriten"><PortalEmpty icon="☆" title="Keine Favoriten" text="Gespeicherte Dienstleister erscheinen an dieser Stelle."/></PortalPanel>
 <PortalPanel id="aufrufe" title="Bedarfsreichweite"><PortalEmpty icon="◫" title="Keine Aufrufdaten" text="Nach Aktivierung eines Bedarfs sehen Sie hier seine qualifizierten Aufrufe."/></PortalPanel>
 </aside></div></PortalShell>}

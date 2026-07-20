@@ -36,7 +36,13 @@ Wichtig: Der aktuelle lokale Speicheradapter dient Entwicklung und Ablaufprüfun
 - Umgebungsvariablen:
   - `WEB_ORIGIN=https://<WEB-PROJEKT>.vercel.app`
   - `DATABASE_URL=<NEON-VERBINDUNG>`
+  - `PLATFORM_ADMIN_EMAIL=<IHRE-GESCHÄFTLICHE-E-MAIL>`
+  - `PLATFORM_ADMIN_PASSWORD=<STARKES-PASSWORT-MINDESTENS-16-ZEICHEN>`
+  - `PLATFORM_ADMIN_FIRST_NAME=Martin`
+  - `PLATFORM_ADMIN_LAST_NAME=Kelm`
   - später E-Mail-, Datei- und KI-Zugangsdaten
+
+Das Plattformadministratorkonto wird nicht öffentlich registriert. Es wird ausschließlich aus diesen geschützten Umgebungsvariablen bereitgestellt. Die Werte niemals in Dateien, GitHub oder Screenshots eintragen.
 
 Nach dem ersten Deployment die API-Adresse notieren.
 

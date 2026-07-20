@@ -1,37 +1,63 @@
-# PostgreSQL-Datenbank für den Pilotbetrieb
+# Railway-Zielarchitektur für den Pilotbetrieb
 
-## Ziel
+## Klare Systemtrennung
 
-Die API wird mit einer verwalteten PostgreSQL-Datenbank betrieben. Empfohlen ist Neon in der Vercel-Region Frankfurt. Die öffentliche Domain ist davon unabhängig und kann später ohne Datenmigration geändert werden.
+- Vercel betreibt ausschließlich die Next.js-Webanwendung.
+- Railway betreibt die NestJS-API.
+- Railway betreibt PostgreSQL als getrennten Dienst mit eigenem Volume.
+- Nur die API erhält Datenbankzugang über Railways private `DATABASE_URL`.
+- Der Browser und die Webanwendung erhalten niemals Datenbankzugangsdaten.
 
-## Reihenfolge
+Die spätere Marken- und Live-Domain ist von dieser Aufteilung unabhängig.
 
-1. Im Vercel-Dashboard das API-Projekt öffnen.
-2. Unter `Storage` beziehungsweise `Marketplace` eine Neon-PostgreSQL-Datenbank anlegen.
-3. Die Integration ausschließlich mit dem API-Projekt verbinden.
-4. `DATABASE_URL` für Production und Preview bereitstellen.
-5. Im Neon SQL Editor die Migrationen in dieser Reihenfolge ausführen:
-   - `001_initial.sql`
-   - `002_network_tenancy.sql`
-   - `003_operational_portal.sql`
-6. Erst nach erfolgreicher Migration den PostgreSQL-Adapter der API aktivieren.
+## Railway-Projekt anlegen
 
-## Enthaltene Datenbereiche
+1. In Railway ein neues Projekt erstellen.
+2. `Deploy from GitHub repo` wählen und dieses Repository verbinden.
+3. Für den API-Dienst als Konfigurationsdatei `apps/api/railway.json` verwenden.
+4. Die Region für API und Datenbank identisch auf `EU West` setzen.
+5. Im selben Projekt über `New → Database → PostgreSQL` einen Datenbankdienst anlegen.
+6. Den PostgreSQL-Dienst nicht mit einer öffentlichen Domain versehen.
+7. Im API-Dienst eine Referenz auf die private `DATABASE_URL` des PostgreSQL-Dienstes anlegen.
 
-- Benutzer, E-Mail-Bestätigung, Sitzungen und Passwortzurücksetzung
-- Unternehmen, Mitgliedschaften, Profile und Prüfentscheidungen
-- Dienstleistungsseiten und Versionen
-- Netzwerkpartner, Rollen, Testzugänge und Module
-- Bedarfe, Matches und Freigabeentscheidungen
-- Nachrichten, Termine, Aktivitäten und Benachrichtigungen
-- Netzwerkveranstaltungen und Teilnehmer
-- Netzwerkthemen und Dokumentmetadaten
-- revisionsnahes Administrationsprotokoll
+## API-Variablen bei Railway
 
-## Sicherheitsregeln
+```text
+NODE_ENV=production
+WEB_ORIGINS=https://b2-b-portal-api.vercel.app,https://IHRE-SPAETERE-LIVE-DOMAIN
+PLATFORM_ADMIN_EMAIL=IHRE-GESCHAEFTLICHE-E-MAIL
+PLATFORM_ADMIN_PASSWORD=IHR-STARKES-PASSWORT
+PLATFORM_ADMIN_FIRST_NAME=Martin
+PLATFORM_ADMIN_LAST_NAME=Kelm
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+```
 
-- `DATABASE_URL` niemals in GitHub oder lokale Dokumente kopieren.
-- Für Production und Preview getrennte Datenbanken oder mindestens getrennte Branches verwenden.
-- Vor dem Pilotstart Wiederherstellung und Backup prüfen.
-- Direkte öffentliche Datenbankzugriffe deaktivieren; nur die API greift auf Daten zu.
-- Personenbezogene Daten nicht in Vercel- oder Anwendungslogs schreiben.
+Den tatsächlichen Namen des PostgreSQL-Dienstes in der Railway-Referenz verwenden. Geheimnisse niemals in GitHub-Dateien eintragen.
+
+## Datenbankschema
+
+Nach Anlage der Datenbank die SQL-Migrationen einmalig in dieser Reihenfolge ausführen:
+
+1. `packages/database/migrations/001_initial.sql`
+2. `packages/database/migrations/002_network_tenancy.sql`
+3. `packages/database/migrations/003_operational_portal.sql`
+
+## Vercel-Webprojekt
+
+Im sichtbaren Webprojekt wird anschließend gesetzt:
+
+```text
+NEXT_PUBLIC_API_URL=https://IHRE-RAILWAY-API-DOMAIN
+NEXT_PUBLIC_SITE_URL=https://IHRE-SPAETERE-LIVE-DOMAIN
+```
+
+Bis die Live-Domain verbunden ist, bleibt `NEXT_PUBLIC_SITE_URL` auf der Vercel-Adresse.
+
+## Backups und Betrieb
+
+- Tägliche, wöchentliche und monatliche Volume-Backups aktivieren.
+- Point-in-Time-Recovery vor dem Pilotstart einrichten.
+- Eine Wiederherstellung testweise durchführen und dokumentieren.
+- Kostenlimit und Benachrichtigungen im Railway-Konto setzen.
+- API-Healthcheck `/health` überwachen.
+- Production und Testdaten strikt in getrennten Railway-Environments führen.

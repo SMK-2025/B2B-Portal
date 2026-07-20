@@ -9,7 +9,7 @@ const sections=[
  ["Struktur","Branche, Größe, Geschäftsgebiet und Märkte"],
  ["Unternehmensbeschreibung","Kurzprofil, Tätigkeiten, Zielgruppen und Keywords"],
  ["Beschaffungsprofil","Bedarfe, Projektgrößen und Anforderungen"],
- ["Verifizierung","E-Mail-Domain, Website und Nachweise"],
+ ["Kontostatus","Bestätigte E-Mail und optionale Nachweise"],
  ["Sichtbarkeit","Freigaben und Benachrichtigungen"]
 ];
 

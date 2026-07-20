@@ -1,13 +1,14 @@
 import {BadRequestException,ConflictException,ForbiddenException,Inject,Injectable,NotFoundException} from "@nestjs/common";
 import {randomUUID} from "node:crypto";
 import {AuthService} from "../auth/auth.service";
+import {EmailService} from "../auth/email.service";
 import type {NetworkContentRecord,NetworkContentType,NetworkMembershipRecord,NetworkModule,NetworkRecord,NetworkRole} from "../core/domain";
 import {PortalStore} from "../core/portal.store";
 import {requiredText} from "../core/validation";
 
 @Injectable()
 export class NetworksService{
- constructor(@Inject(PortalStore)private readonly store:PortalStore,@Inject(AuthService)private readonly auth:AuthService){}
+ constructor(@Inject(PortalStore)private readonly store:PortalStore,@Inject(AuthService)private readonly auth:AuthService,@Inject(EmailService)private readonly email:EmailService){}
 
  create(authorization:string|undefined,input:Record<string,unknown>){
   const user=this.auth.authenticate(authorization);this.requirePlatformAdmin(user.id);
@@ -92,8 +93,10 @@ export class NetworksService{
   this.store.networkMemberships.push(membership);return membership;
  }
 
- inviteMember(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
-  const actor=this.auth.authenticate(authorization);this.requireNetworkManagement(actor.id,networkId);const email=requiredText(input.email,"Geschäftliche E-Mail-Adresse",5,250).toLowerCase(),userId=this.store.userByEmail.get(email);if(!userId)throw new NotFoundException("Für diese E-Mail-Adresse besteht noch kein B2B-Matching-Konto. Senden Sie der Person den Registrierungslink des Netzwerks.");const company=this.store.memberships.find(item=>item.userId===userId);if(!company)throw new BadRequestException("Das Konto ist noch keinem Unternehmen zugeordnet.");const requested=String(input.role||"member");const role:NetworkRole=["moderator","organization_admin","member"].includes(requested)?requested as NetworkRole:"member";return this.addMember(authorization,networkId,{organizationId:company.organizationId,userId,role});
+ async inviteMember(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+  const actor=this.auth.authenticate(authorization);this.requireNetworkManagement(actor.id,networkId);const network=this.raw(networkId);const email=requiredText(input.email,"Geschäftliche E-Mail-Adresse",5,250).toLowerCase(),userId=this.store.userByEmail.get(email);
+  if(!userId){await this.email.sendNetworkInvitation({email,networkName:network.name,networkSlug:network.slug});return{invited:true,email,registrationRequired:true}}
+  const company=this.store.memberships.find(item=>item.userId===userId);if(!company)throw new BadRequestException("Das Konto ist noch keinem Unternehmen zugeordnet.");const requested=String(input.role||"member");const role:NetworkRole=["moderator","organization_admin","member"].includes(requested)?requested as NetworkRole:"member";return this.addMember(authorization,networkId,{organizationId:company.organizationId,userId,role});
  }
 
  membershipStatus(authorization:string|undefined,networkId:string,membershipId:string,input:Record<string,unknown>){

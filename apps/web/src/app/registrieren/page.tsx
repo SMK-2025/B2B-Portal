@@ -28,9 +28,11 @@ export default function RegistrationPage() {
   const [role, setRole] = useState<OrganizationRole>("buyer");
   const [loading, setLoading] = useState(false);
   const [networkSlug, setNetworkSlug] = useState("");
+  const [invitedEmail, setInvitedEmail] = useState("");
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNetworkSlug(params.get("network") || "");
+    setInvitedEmail(params.get("email") || "");
     if (params.get("onboarding") === "1") {
       const token = getPortalSession();
       if (token) {
@@ -236,6 +238,7 @@ export default function RegistrationPage() {
                     name="email"
                     type="email"
                     required
+                    defaultValue={invitedEmail}
                     autoComplete="email"
                   />
                 </label>

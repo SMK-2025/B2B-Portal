@@ -55,6 +55,22 @@ export class EmailService {
     });
   }
 
+  async sendNetworkInvitation(input: { email: string; networkName: string; networkSlug: string }): Promise<void> {
+    const link = `${this.webUrl()}/registrieren?network=${encodeURIComponent(input.networkSlug)}&email=${encodeURIComponent(input.email)}`;
+    await this.send({
+      to: input.email,
+      subject: `Einladung in das Netzwerk ${input.networkName}`,
+      text: `Sie wurden in das geschlossene Unternehmensnetzwerk ${input.networkName} eingeladen.\n\nRegistrierung starten:\n${link}`,
+      html: this.template(
+        "Ihre Netzwerkeinladung",
+        `Sie wurden eingeladen, dem geschlossenen Unternehmensnetzwerk <strong>${this.escape(input.networkName)}</strong> beizutreten.`,
+        "Registrierung starten",
+        link,
+        "Die Aufnahme erfolgt nach Prüfung durch die Netzwerkverwaltung.",
+      ),
+    });
+  }
+
   private async send(message: {
     to: string;
     subject: string;

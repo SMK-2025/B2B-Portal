@@ -1,4 +1,5 @@
 import {AdminReviewWorkspace} from "../../components/admin-review-workspace";
+import {AdminMembersWorkspace} from "../../components/admin-members-workspace";
 import {PortalEmpty,PortalPanel,PortalShell} from "../../components/portal-shell";
 
 export default function AdminPortal(){
@@ -13,9 +14,7 @@ export default function AdminPortal(){
 
   <div className="portalGrid equal adminDashboardLower">
    <div>
-    <PortalPanel id="mitglieder" eyebrow="MITGLIEDER & ROLLEN" title="Mitgliederverwaltung">
-     <PortalEmpty icon="◇" title="Mitgliederübersicht wird erweitert" text="Registrierte Konten, Unternehmensrollen, Freigabestatus, Testzugänge und letzte Aktivitäten werden in dieser Verwaltung zusammengeführt." action="Mitgliederverwaltung öffnen"/>
-    </PortalPanel>
+    <AdminMembersWorkspace/>
     <PortalPanel id="protokoll" eyebrow="NACHVOLLZIEHBARKEIT" title="Prüf- und Aktivitätsprotokoll">
      <div className="activity">
       <p><span/><small>System</small><strong>PostgreSQL-Persistenz verbunden</strong></p>

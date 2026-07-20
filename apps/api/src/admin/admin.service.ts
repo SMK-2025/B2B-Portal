@@ -10,6 +10,14 @@ import { NeedsService } from "../matching/needs.service";
 export class AdminService {
   constructor(@Inject(PortalStore) private readonly store: PortalStore,@Inject(AuthService) private readonly auth:AuthService,@Inject(ServicesService) private readonly services:ServicesService,@Inject(NeedsService) private readonly needs:NeedsService) {}
   queue(authorization:string|undefined) { this.requireReviewer(authorization); return [...this.store.organizations.values()].filter(o=>o.reviewStatus==="submitted"); }
+  members(authorization:string|undefined){
+    this.requireReviewer(authorization);
+    return [...this.store.organizations.values()].map(organization=>{
+      const memberships=this.store.memberships.filter(item=>item.organizationId===organization.id);
+      const users=memberships.flatMap(item=>{const user=this.store.users.get(item.userId);return user?[{id:user.id,firstName:user.firstName,lastName:user.lastName,email:user.email,role:item.role,lastActiveAt:null}]:[]});
+      return {...organization,users};
+    }).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  }
   decide(authorization:string|undefined,organizationId:string,input:Record<string,unknown>) {
     const reviewer=this.requireReviewer(authorization); const organization=this.store.organizations.get(organizationId); if(!organization) throw new BadRequestException("Unternehmen nicht gefunden.");
     if(organization.reviewStatus!=="submitted") throw new BadRequestException("Nur eingereichte Profile können entschieden werden.");

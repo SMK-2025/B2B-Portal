@@ -92,6 +92,10 @@ export class EmailService {
           { type: "text/plain", value: message.text },
           { type: "text/html", value: message.html },
         ],
+        tracking_settings: {
+          click_tracking: { enable: false, enable_text: false },
+          open_tracking: { enable: false },
+        },
         ...(process.env.MAIL_REPLY_TO
           ? { reply_to: { email: process.env.MAIL_REPLY_TO } }
           : {}),

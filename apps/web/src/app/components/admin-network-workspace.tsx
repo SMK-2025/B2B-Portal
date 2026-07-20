@@ -401,14 +401,14 @@ export function AdminNetworkWorkspace() {
                   Das Netzwerk wird ohne Zugriff und ohne Administratorrolle als
                   Entwurf angelegt.
                 </p>
-                <footer>
+                <div className="adminNetworkDialogActions">
                   <button type="button" onClick={() => setDialog(null)}>
                     Abbrechen
                   </button>
                   <button disabled={busy} className="portalPrimary">
                     Netzwerk anlegen
                   </button>
-                </footer>
+                </div>
               </form>
             ) : dialog === "trial" ? (
               <form
@@ -432,14 +432,14 @@ export function AdminNetworkWorkspace() {
                   </select>
                 </label>
                 <p>Nach Ablauf endet der Netzwerkzugriff automatisch.</p>
-                <footer>
+                <div className="adminNetworkDialogActions">
                   <button type="button" onClick={() => setDialog(null)}>
                     Abbrechen
                   </button>
                   <button disabled={busy} className="portalPrimary">
                     Testzugang freigeben
                   </button>
-                </footer>
+                </div>
               </form>
             ) : (
               <form onSubmit={appoint}>
@@ -462,14 +462,14 @@ export function AdminNetworkWorkspace() {
                   Das Konto muss registriert und einem Unternehmen zugeordnet
                   sein. Die Rechte gelten nur für den ausgewählten Mandanten.
                 </p>
-                <footer>
+                <div className="adminNetworkDialogActions">
                   <button type="button" onClick={() => setDialog(null)}>
                     Abbrechen
                   </button>
                   <button disabled={busy} className="portalPrimary">
                     Rolle zuweisen
                   </button>
-                </footer>
+                </div>
               </form>
             )}
           </section>

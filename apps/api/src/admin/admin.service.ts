@@ -19,6 +19,7 @@ export class AdminService {
     }).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
   }
   decide(authorization:string|undefined,organizationId:string,input:Record<string,unknown>) {
+    if(input.scope!=="organization_profile")throw new BadRequestException("Die Entscheidung ist keinem Unternehmensprofil eindeutig zugeordnet.");
     const reviewer=this.requireReviewer(authorization); const organization=this.store.organizations.get(organizationId); if(!organization) throw new BadRequestException("Unternehmen nicht gefunden.");
     if(organization.reviewStatus!=="submitted") throw new BadRequestException("Nur eingereichte Profile können entschieden werden.");
     const decision=input.decision; if(!["approved","changes_requested","rejected"].includes(String(decision))) throw new BadRequestException("Ungültige Entscheidung.");
@@ -28,6 +29,6 @@ export class AdminService {
   serviceQueue(authorization:string|undefined){this.requireReviewer(authorization);return this.services.reviewQueue();}
   decideService(authorization:string|undefined,serviceId:string,input:Record<string,unknown>){const reviewer=this.requireReviewer(authorization);const decision=String(input.decision);if(!["approved","changes_requested","rejected"].includes(decision))throw new BadRequestException("Ungültige Entscheidung.");return this.services.approve(reviewer.id,serviceId,decision as "approved"|"changes_requested"|"rejected",requiredText(input.reason,"Begründung",5,1000));}
   needQueue(authorization:string|undefined){this.requireReviewer(authorization);return this.needs.reviewQueue().map(need=>({...need,organization:this.store.organizations.get(need.organizationId)}));}
-  decideNeed(authorization:string|undefined,needId:string,input:Record<string,unknown>){this.requireReviewer(authorization);const decision=String(input.decision);if(!["approved","changes_requested","rejected"].includes(decision))throw new BadRequestException("Ungültige Entscheidung.");return this.needs.decide(needId,decision as "approved"|"changes_requested"|"rejected",requiredText(input.reason,"Begründung",3,1000));}
+  decideNeed(authorization:string|undefined,needId:string,input:Record<string,unknown>){if(input.scope!=="need")throw new BadRequestException("Die Entscheidung ist keinem Bedarf eindeutig zugeordnet.");this.requireReviewer(authorization);const decision=String(input.decision);if(!["approved","changes_requested","rejected"].includes(decision))throw new BadRequestException("Ungültige Entscheidung.");return this.needs.decide(needId,decision as "approved"|"changes_requested"|"rejected",requiredText(input.reason,"Begründung",3,1000));}
   private requireReviewer(authorization:string|undefined) { const user=this.auth.authenticate(authorization); if(!["platform_admin","reviewer"].includes(user.accountRole)) throw new ForbiddenException("Prüfberechtigung erforderlich."); return user; }
 }

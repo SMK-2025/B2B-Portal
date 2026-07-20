@@ -75,16 +75,33 @@ describe("registration and organization approval", () => {
       password: "Sehr-Sicher-2026!",
     });
     expect(admin.queue(`Bearer ${reviewerLogin.token}`)).toHaveLength(1);
+    store.needs.set("separate-need", {
+      id: "separate-need",
+      organizationId: organization.id,
+      networkId: null,
+      title: "Separat zu prüfender Bedarf",
+      description: "Dieser Bedarf darf durch die Profilfreigabe nicht verändert werden.",
+      categoryId: "test-category",
+      requiredSkills: [],
+      preferredIndustries: [],
+      region: null,
+      deliveryModes: ["hybrid"],
+      status: "submitted",
+      createdAt: new Date().toISOString(),
+      submittedAt: new Date().toISOString(),
+    });
     const result = admin.decide(
       `Bearer ${reviewerLogin.token}`,
       organization.id,
       {
+        scope: "organization_profile",
         decision: "approved",
         reason: "Pflichtangaben und Homepage sind plausibel.",
       },
     );
     expect(result.organization.reviewStatus).toBe("approved");
     expect(result.organization.approvedAt).not.toBeNull();
+    expect(store.needs.get("separate-need")?.status).toBe("submitted");
 
     const service = services.create(bearer, organization.id, {
       title: "Penetrationstests für Webanwendungen",

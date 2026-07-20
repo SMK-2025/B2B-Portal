@@ -274,7 +274,7 @@ export function AdminNetworkWorkspace() {
                 {network.status === "trial" && (
                   <Link
                     className="adminNetworkTestLogin"
-                    href={`/portal/netzwerk/${network.slug}`}
+                    href={`/portal/netzwerk/${network.slug}` as never}
                     target="_blank"
                   >
                     <span aria-hidden="true">↗</span>
@@ -519,7 +519,7 @@ export function AdminNetworkWorkspace() {
             {!testAccess.administrator && <p className="adminNetworkTestHint">Für einen vollständig rollengetreuen Test bestimmen Sie anschließend noch einen Netzwerkadministrator. Die Testansicht können Sie bereits jetzt öffnen.</p>}
             <div className="adminNetworkDialogActions">
               <button type="button" onClick={() => setTestAccess(null)}>Zur Übersicht</button>
-              <Link className="portalPrimary adminNetworkLoginCta" href={`/portal/netzwerk/${testAccess.slug}`} target="_blank" onClick={() => setTestAccess(null)}><span aria-hidden="true">↗</span>Jetzt als Testnutzer öffnen</Link>
+              <Link className="portalPrimary adminNetworkLoginCta" href={`/portal/netzwerk/${testAccess.slug}` as never} target="_blank" onClick={() => setTestAccess(null)}><span aria-hidden="true">↗</span>Jetzt als Testnutzer öffnen</Link>
             </div>
           </section>
         </div>

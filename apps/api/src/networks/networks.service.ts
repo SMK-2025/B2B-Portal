@@ -1,7 +1,7 @@
 import {BadRequestException,ConflictException,ForbiddenException,Inject,Injectable,NotFoundException} from "@nestjs/common";
 import {randomUUID} from "node:crypto";
 import {AuthService} from "../auth/auth.service";
-import type {NetworkMembershipRecord,NetworkModule,NetworkRecord,NetworkRole} from "../core/domain";
+import type {NetworkContentRecord,NetworkContentType,NetworkMembershipRecord,NetworkModule,NetworkRecord,NetworkRole} from "../core/domain";
 import {PortalStore} from "../core/portal.store";
 import {requiredText} from "../core/validation";
 
@@ -43,7 +43,7 @@ export class NetworksService{
 
  publicBySlug(slug:string){
   const network=this.bySlug(slug);
-  return {id:network.id,slug:network.slug,name:network.name,websiteUrl:network.websiteUrl,logoUrl:network.logoUrl,colors:{primary:network.primaryColor,secondary:network.secondaryColor},enabledModules:network.enabledModules,selfRegistration:network.settings.selfRegistration};
+  return {id:network.id,slug:network.slug,name:network.name,legalName:network.legalName,websiteUrl:network.websiteUrl,logoUrl:network.logoUrl,primaryColor:network.primaryColor,secondaryColor:network.secondaryColor,colors:{primary:network.primaryColor,secondary:network.secondaryColor},enabledModules:network.enabledModules,settings:network.settings,selfRegistration:network.settings.selfRegistration};
  }
 
  mine(authorization:string|undefined){
@@ -92,6 +92,42 @@ export class NetworksService{
   this.store.networkMemberships.push(membership);return membership;
  }
 
+ inviteMember(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+  const actor=this.auth.authenticate(authorization);this.requireNetworkManagement(actor.id,networkId);const email=requiredText(input.email,"Geschäftliche E-Mail-Adresse",5,250).toLowerCase(),userId=this.store.userByEmail.get(email);if(!userId)throw new NotFoundException("Für diese E-Mail-Adresse besteht noch kein B2B-Matching-Konto. Senden Sie der Person den Registrierungslink des Netzwerks.");const company=this.store.memberships.find(item=>item.userId===userId);if(!company)throw new BadRequestException("Das Konto ist noch keinem Unternehmen zugeordnet.");const requested=String(input.role||"member");const role:NetworkRole=["moderator","organization_admin","member"].includes(requested)?requested as NetworkRole:"member";return this.addMember(authorization,networkId,{organizationId:company.organizationId,userId,role});
+ }
+
+ membershipStatus(authorization:string|undefined,networkId:string,membershipId:string,input:Record<string,unknown>){
+  const actor=this.auth.authenticate(authorization);this.requireNetworkManagement(actor.id,networkId);const membership=this.store.networkMemberships.find(item=>item.id===membershipId&&item.networkId===networkId);if(!membership)throw new NotFoundException("Netzwerkmitgliedschaft nicht gefunden.");const status=String(input.status);if(!["active","rejected","suspended","left"].includes(status))throw new BadRequestException("Ungültiger Mitgliederstatus.");membership.status=status as NetworkMembershipRecord["status"];membership.reviewedByUserId=actor.id;membership.reviewedAt=new Date().toISOString();membership.updatedAt=membership.reviewedAt;return membership;
+ }
+
+ listContent(authorization:string|undefined,networkId:string,type?:string){
+  const user=this.auth.authenticate(authorization);this.requireNetworkAccess(user.id,networkId);this.raw(networkId);
+  return [...this.store.networkContents.values()].filter(item=>item.networkId===networkId&&(!type||item.type===type)).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+ }
+
+ createContent(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+  const user=this.auth.authenticate(authorization);this.requireNetworkManagement(user.id,networkId);this.raw(networkId);
+  const allowed:NetworkContentType[]=["event","topic","announcement","poll","task","document","conversation","need","service"];
+  const type=String(input.type) as NetworkContentType;if(!allowed.includes(type))throw new BadRequestException("Ungültiger Netzwerkinhalt.");
+  const now=new Date().toISOString();const record:NetworkContentRecord={id:randomUUID(),networkId,type,title:requiredText(input.title,"Titel",2,200),description:requiredText(input.description,"Beschreibung",2,5000),status:["draft","published","active","completed","archived"].includes(String(input.status))?input.status as NetworkContentRecord["status"]:"published",createdByUserId:user.id,assignedToUserId:typeof input.assignedToUserId==="string"&&input.assignedToUserId?input.assignedToUserId:null,startsAt:this.optionalDate(input.startsAt),endsAt:this.optionalDate(input.endsAt),visibility:input.visibility==="administrators"?"administrators":"members",data:typeof input.data==="object"&&input.data!==null?input.data as Record<string,unknown>:{},createdAt:now,updatedAt:now};
+  this.store.networkContents.set(record.id,record);this.store.activities.push({id:randomUUID(),matchId:null,organizationId:null,actorUserId:user.id,type:`network.${type}.created`,visibility:"platform_internal",data:{networkId,contentId:record.id,title:record.title},createdAt:now});return record;
+ }
+
+ updateContent(authorization:string|undefined,networkId:string,contentId:string,input:Record<string,unknown>){
+  const user=this.auth.authenticate(authorization);this.requireNetworkManagement(user.id,networkId);const record=this.store.networkContents.get(contentId);if(!record||record.networkId!==networkId)throw new NotFoundException("Netzwerkinhalt nicht gefunden.");
+  if(typeof input.title==="string")record.title=requiredText(input.title,"Titel",2,200);if(typeof input.description==="string")record.description=requiredText(input.description,"Beschreibung",2,5000);if(["draft","published","active","completed","archived"].includes(String(input.status)))record.status=input.status as NetworkContentRecord["status"];if(typeof input.data==="object"&&input.data!==null)record.data={...record.data,...input.data as Record<string,unknown>};record.updatedAt=new Date().toISOString();return record;
+ }
+
+ dashboard(authorization:string|undefined,networkId:string){
+  const user=this.auth.authenticate(authorization);this.requireNetworkAccess(user.id,networkId);const network=this.raw(networkId),members=this.store.networkMemberships.filter(item=>item.networkId===networkId),contents=[...this.store.networkContents.values()].filter(item=>item.networkId===networkId);return{network,members:{total:members.length,active:members.filter(item=>item.status==="active").length,pending:members.filter(item=>item.status==="pending").length},content:{total:contents.length,events:contents.filter(item=>item.type==="event").length,topics:contents.filter(item=>["topic","announcement","poll"].includes(item.type)).length,tasks:contents.filter(item=>item.type==="task"&&item.status!=="completed").length,documents:contents.filter(item=>item.type==="document").length},recent:contents.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,8)};
+ }
+
+ updateSettings(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+  const user=this.auth.authenticate(authorization);this.requireNetworkManagement(user.id,networkId);const network=this.raw(networkId);
+  if(typeof input.name==="string")network.name=requiredText(input.name,"Netzwerkname",2,160);if(typeof input.legalName==="string")network.legalName=input.legalName.trim()||null;if(typeof input.websiteUrl==="string")network.websiteUrl=input.websiteUrl.trim()||null;if(typeof input.logoUrl==="string")network.logoUrl=input.logoUrl.trim()||null;if(typeof input.primaryColor==="string"&&/^#[0-9a-f]{6}$/i.test(input.primaryColor))network.primaryColor=input.primaryColor;if(typeof input.secondaryColor==="string"&&/^#[0-9a-f]{6}$/i.test(input.secondaryColor))network.secondaryColor=input.secondaryColor;
+  if(typeof input.closedNetwork==="boolean")network.settings.closedNetwork=input.closedNetwork;if(typeof input.selfRegistration==="boolean")network.settings.selfRegistration=input.selfRegistration;if(typeof input.crossNetworkMatching==="boolean")network.settings.crossNetworkMatching=input.crossNetworkMatching;if(typeof input.admissionRules==="string")network.settings.admissionRules=input.admissionRules.trim()||null;if(Array.isArray(input.enabledModules))network.enabledModules=this.modules(input.enabledModules);network.updatedAt=new Date().toISOString();return network;
+ }
+
  private record(networkId:string,organizationId:string,userId:string,role:NetworkRole,status:NetworkMembershipRecord["status"],invitedByUserId:string|null):NetworkMembershipRecord{const now=new Date().toISOString();return{id:randomUUID(),networkId,organizationId,userId,role,status,invitedByUserId,reviewedByUserId:null,reviewedAt:null,createdAt:now,updatedAt:now}}
  private bySlug(slug:string){const id=this.store.networkBySlug.get(slug);if(!id)throw new NotFoundException("Netzwerk nicht gefunden.");return this.get(id)}
  private get(id:string){const network=this.raw(id);if(network.status==="active")return network;if(network.status==="trial"&&network.trialEndsAt&&Date.parse(network.trialEndsAt)>Date.now())return network;throw new NotFoundException("Netzwerk nicht gefunden oder nicht freigeschaltet.")}
@@ -99,5 +135,7 @@ export class NetworksService{
  private modules(value:unknown):NetworkModule[]{const allowed:NetworkModule[]=["members","profiles","services","matching","communication","events","community","tasks","documents","analytics","notifications"];if(!Array.isArray(value))return["members","profiles"];return [...new Set(value.map(String).filter((item):item is NetworkModule=>allowed.includes(item as NetworkModule)))]}
  private requirePlatformAdmin(userId:string){if(this.store.users.get(userId)?.accountRole!=="platform_admin")throw new ForbiddenException("Nur die Plattformadministration darf Netzwerkpartner freischalten.")}
  private requireNetworkManagement(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"&&["network_admin","moderator"].includes(item.role)))throw new ForbiddenException("Keine Berechtigung zur Netzwerkverwaltung.")}
+ private requireNetworkAccess(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"))throw new ForbiddenException("Kein Zugriff auf dieses Netzwerk.")}
+ private optionalDate(value:unknown){if(typeof value!=="string"||!value.trim())return null;const date=new Date(value);if(Number.isNaN(date.getTime()))throw new BadRequestException("Ungültiges Datum.");return date.toISOString()}
  private publicUser(userId:string){const user=this.store.users.get(userId);return user?{id:user.id,firstName:user.firstName,lastName:user.lastName,email:user.email}:null}
 }

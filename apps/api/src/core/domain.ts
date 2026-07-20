@@ -53,6 +53,14 @@ export interface NetworkMembershipRecord {
   createdAt:string; updatedAt:string;
 }
 
+export type NetworkContentType = "event" | "topic" | "announcement" | "poll" | "task" | "document" | "conversation" | "need" | "service";
+export interface NetworkContentRecord {
+  id:string; networkId:string; type:NetworkContentType; title:string; description:string;
+  status:"draft"|"published"|"active"|"completed"|"archived";
+  createdByUserId:string; assignedToUserId:string|null; startsAt:string|null; endsAt:string|null;
+  visibility:"members"|"administrators"; data:Record<string,unknown>; createdAt:string; updatedAt:string;
+}
+
 export interface ReviewDecisionRecord {
   id: string;
   organizationId: string;

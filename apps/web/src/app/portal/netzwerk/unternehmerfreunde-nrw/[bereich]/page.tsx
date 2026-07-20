@@ -1,7 +1,7 @@
-import Link from "next/link";
 import {notFound} from "next/navigation";
 import {NetworkShell} from "../../../../components/network-shell";
-import {networkBase} from "../../../../lib/network-config";
+import {NetworkModuleWorkspace} from "../../../../components/network-module-workspace";
+import {NetworkAdministrationWorkspace} from "../../../../components/network-administration-workspace";
 
 const content:Record<string,{title:string;intro:string;eyebrow:string;description:string;features:string[]}>={
  veranstaltungen:{title:"Veranstaltungen und Treffen",intro:"Einmalige und wiederkehrende Treffen planen, Anmeldungen verwalten und Anwesenheit dokumentieren.",eyebrow:"VERANSTALTUNGSMODUL",description:"Das Veranstaltungszentrum bündelt Unternehmerfrühstücke, interne Treffen und Sonderveranstaltungen.",features:["Terminserien und individuelle Wiederholungen","Zu- und Absagen mit Warteliste","Teilnehmerzahl und Anmeldeschluss","Online-, Vor-Ort- und Hybridtermine","Erinnerungen und Anwesenheit","Dokumente, Protokolle und Folgetermine"]},
@@ -15,4 +15,4 @@ const content:Record<string,{title:string;intro:string;eyebrow:string;descriptio
 };
 
 export function generateStaticParams(){return Object.keys(content).map(bereich=>({bereich}))}
-export default async function Page({params}:{params:Promise<{bereich:string}>}){const {bereich}=await params;const page=content[bereich];if(!page)notFound();return <NetworkShell title={page.title} intro={page.intro}><section className="networkModuleHero"><span>{page.eyebrow}</span><h2>{page.title}</h2><p>{page.description}</p><button className="networkPrimary">＋ Neu anlegen</button></section><section className="networkFeatureGrid">{page.features.map((feature,index)=><article key={feature}><b>0{index+1}</b><h3>{feature}</h3><p>Dieser Funktionsbereich wird auf der gemeinsamen modularen Netzwerkbasis geführt und ausschließlich entsprechend Ihrer Rolle freigegeben.</p></article>)}</section><section className="networkCard networkModuleEmpty"><span>MODUL BEREIT</span><h2>Noch keine Inhalte vorhanden</h2><p>Die Oberfläche und Navigation sind eingerichtet. Sobald erste Inhalte angelegt werden, erscheinen sie hier mit Suche, Filtern und Statusverwaltung.</p><Link href={networkBase}>Zur Netzwerkübersicht</Link></section></NetworkShell>}
+export default async function Page({params}:{params:Promise<{bereich:string}>}){const {bereich}=await params;const page=content[bereich];if(!page)notFound();return <NetworkShell title={page.title} intro={page.intro}><section className="networkModuleHero"><span>{page.eyebrow}</span><h2>{page.title}</h2><p>{page.description}</p></section>{bereich==="auswertungen"?<NetworkAdministrationWorkspace mode="analytics"/>:bereich==="einstellungen"?<NetworkAdministrationWorkspace mode="settings"/>:<NetworkModuleWorkspace module={bereich}/>}</NetworkShell>}

@@ -16,6 +16,7 @@ import type {
   MessageRecord,
   NeedRecord,
   NetworkMembershipRecord,
+  NetworkContentRecord,
   NetworkRecord,
   NotificationRecord,
   OrganizationRecord,
@@ -42,6 +43,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   readonly networks = new Map<string, NetworkRecord>();
   readonly networkBySlug = new Map<string, string>();
   readonly networkMemberships: NetworkMembershipRecord[] = [];
+  readonly networkContents = new Map<string, NetworkContentRecord>();
   readonly sessions = new Map<string, SessionRecord>();
   readonly verificationTokens = new Map<string, VerificationRecord>();
   readonly passwordResetTokens = new Map<string, PasswordResetRecord>();
@@ -93,6 +95,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       networks: [...this.networks],
       networkBySlug: [...this.networkBySlug],
       networkMemberships: this.networkMemberships,
+      networkContents: [...this.networkContents],
       sessions: [...this.sessions],
       verificationTokens: [...this.verificationTokens],
       passwordResetTokens: [...this.passwordResetTokens],
@@ -159,6 +162,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     map(this.networks, state.networks);
     map(this.networkBySlug, state.networkBySlug);
     array(this.networkMemberships, state.networkMemberships);
+    map(this.networkContents, state.networkContents);
     map(this.sessions, state.sessions);
     map(this.verificationTokens, state.verificationTokens);
     map(this.passwordResetTokens, state.passwordResetTokens);
@@ -214,6 +218,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     this.networks.clear();
     this.networkBySlug.clear();
     this.networkMemberships.splice(0);
+    this.networkContents.clear();
     this.sessions.clear();
     this.verificationTokens.clear();
     this.passwordResetTokens.clear();

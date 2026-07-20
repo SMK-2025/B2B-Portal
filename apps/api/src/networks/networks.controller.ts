@@ -1,4 +1,4 @@
-import {Body,Controller,Get,Headers,Param,Post} from "@nestjs/common";
+import {Body,Controller,Get,Headers,Param,Post,Query} from "@nestjs/common";
 import {NetworksService} from "./networks.service";
 
 @Controller("networks")
@@ -14,4 +14,11 @@ export class NetworksController{
  @Get(":networkId/memberships")members(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string){return this.networks.listMembers(authorization,networkId)}
  @Post(":networkId/memberships")add(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.addMember(authorization,networkId,body)}
  @Post(":networkId/memberships/:membershipId/review")review(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Param("membershipId")membershipId:string,@Body()body:Record<string,unknown>){return this.networks.review(authorization,networkId,membershipId,body)}
+ @Post(":networkId/memberships/invite")invite(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.inviteMember(authorization,networkId,body)}
+ @Post(":networkId/memberships/:membershipId/status")membershipStatus(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Param("membershipId")membershipId:string,@Body()body:Record<string,unknown>){return this.networks.membershipStatus(authorization,networkId,membershipId,body)}
+ @Get(":networkId/content")content(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Query("type")type?:string){return this.networks.listContent(authorization,networkId,type)}
+ @Post(":networkId/content")createContent(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.createContent(authorization,networkId,body)}
+ @Post(":networkId/content/:contentId")updateContent(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Param("contentId")contentId:string,@Body()body:Record<string,unknown>){return this.networks.updateContent(authorization,networkId,contentId,body)}
+ @Get(":networkId/dashboard")dashboard(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string){return this.networks.dashboard(authorization,networkId)}
+ @Post(":networkId/settings")settings(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.updateSettings(authorization,networkId,body)}
 }

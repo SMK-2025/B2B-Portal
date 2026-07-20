@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { Status } from "./portal-shell";
 
@@ -43,6 +44,7 @@ export function AdminNetworkWorkspace() {
   const [trialDays, setTrialDays] = useState(30);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [testAccess, setTestAccess] = useState<Network | null>(null);
 
   useEffect(() => {
     const token = getPortalSession();
@@ -123,6 +125,7 @@ export function AdminNetworkWorkspace() {
         ),
       );
       setDialog(null);
+      if (status === "trial") setTestAccess(updated);
       setNotice(
         status === "trial"
           ? `Testzugang für ${days} Tage wurde erteilt.`
@@ -166,7 +169,7 @@ export function AdminNetworkWorkspace() {
   }
 
   return (
-    <>
+    <div className="adminNetworkWorkspace">
       <section className="adminNetworkNotice">
         <b>Rollenhoheit beim Plattforminhaber</b>
         <p>
@@ -268,6 +271,16 @@ export function AdminNetworkWorkspace() {
                 </article>
               </div>
               <footer className="adminNetworkActions">
+                {network.status === "trial" && (
+                  <Link
+                    className="adminNetworkTestLogin"
+                    href={`/portal/netzwerk/${network.slug}`}
+                    target="_blank"
+                  >
+                    <span aria-hidden="true">↗</span>
+                    Als Testnutzer öffnen
+                  </Link>
+                )}
                 <button
                   className="portalSecondary"
                   type="button"
@@ -475,13 +488,49 @@ export function AdminNetworkWorkspace() {
           </section>
         </div>
       )}
+      {testAccess && (
+        <div
+          className="networkModalBackdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setTestAccess(null);
+          }}
+        >
+          <section
+            className="networkModal adminNetworkModal adminNetworkTestSuccess"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="test-access-ready-title"
+          >
+            <header>
+              <div>
+                <span>TESTZUGANG AKTIV</span>
+                <h2 id="test-access-ready-title">Testbereich ist freigeschaltet</h2>
+              </div>
+              <button type="button" onClick={() => setTestAccess(null)} aria-label="Dialog schließen">×</button>
+            </header>
+            <div className="adminNetworkTestSummary">
+              <strong aria-hidden="true">✓</strong>
+              <div>
+                <b>{testAccess.name}</b>
+                <p>Sie können den Netzwerkbereich jetzt unmittelbar in einem neuen Browser-Tab aus Sicht der Netzwerkverwaltung prüfen.</p>
+                {testAccess.trialEndsAt && <small>Testzugang gültig bis {new Date(testAccess.trialEndsAt).toLocaleDateString("de-DE")}</small>}
+              </div>
+            </div>
+            {!testAccess.administrator && <p className="adminNetworkTestHint">Für einen vollständig rollengetreuen Test bestimmen Sie anschließend noch einen Netzwerkadministrator. Die Testansicht können Sie bereits jetzt öffnen.</p>}
+            <div className="adminNetworkDialogActions">
+              <button type="button" onClick={() => setTestAccess(null)}>Zur Übersicht</button>
+              <Link className="portalPrimary adminNetworkLoginCta" href={`/portal/netzwerk/${testAccess.slug}`} target="_blank" onClick={() => setTestAccess(null)}><span aria-hidden="true">↗</span>Jetzt als Testnutzer öffnen</Link>
+            </div>
+          </section>
+        </div>
+      )}
       {notice && (
         <div className="networkNotice" role="status">
           ✓ {notice}
           <button onClick={() => setNotice("")}>×</button>
         </div>
       )}
-    </>
+    </div>
   );
 
   async function updateAccessFor(id: string, status: NetworkStatus) {

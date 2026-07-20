@@ -8,6 +8,7 @@ export type StoredNeed={
  title:string;
  category:string;
  summary:string;
+ details?:Array<{label:string;value:string}>;
  status:"Entwurf"|"In Prüfung"|"Aktiv"|"Pausiert"|"Archiv";
  updatedAt:string;
  values:Record<string,string|boolean>;

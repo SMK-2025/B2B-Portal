@@ -151,13 +151,24 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
    window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
    setToast("Unternehmensprofil gespeichert. Der Profilfortschritt wurde aktualisiert.");
   }else if(dialog?.kind==="new-need"||dialog?.kind==="ai"){
-   const summary=(controls.find(control=>control instanceof HTMLTextAreaElement)?.value||"").trim();
-   const manualTitle=(controls.find(control=>control instanceof HTMLInputElement&&control.type==="text")?.value||"").trim();
+   const summaryControl=controls.find(control=>control instanceof HTMLTextAreaElement);
+   const titleControl=controls.find(control=>control instanceof HTMLInputElement&&control.type==="text");
+   const categoryControl=controls.find(control=>control instanceof HTMLSelectElement);
+   const summary=(summaryControl?.value||"").trim();
+   const manualTitle=(titleControl?.value||"").trim();
    const generatedTitle=summary.split(/[.!?]/)[0]?.trim().slice(0,80);
    const title=manualTitle||(dialog.kind==="ai"&&generatedTitle?`KI-Entwurf: ${generatedTitle}`:"Neuer geschäftlicher Bedarf");
-   const category=(controls.find(control=>control instanceof HTMLSelectElement)?.value||(dialog.kind==="ai"?"KI-Entwurf · Einordnung offen":"Noch nicht eingeordnet")).trim();
-   const need:StoredNeed={id:crypto.randomUUID(),title,category,summary,status:"Entwurf",updatedAt:new Date().toISOString(),values};
+   const category=(categoryControl?.value||(dialog.kind==="ai"?"KI-Entwurf · Einordnung offen":"Noch nicht eingeordnet")).trim();
+   const details=controls.flatMap(control=>{
+    if(control===titleControl||control===categoryControl||control===summaryControl)return [];
+    if(control instanceof HTMLInputElement&&(control.type==="checkbox"||control.type==="radio"||control.type==="range"))return [];
+    const value=control.value.trim();if(!value)return [];
+    const label=control.closest("label")?.childNodes[0]?.textContent?.trim()||"Weitere Angabe";
+    return [{label,value}];
+   });
+   const need:StoredNeed={id:crypto.randomUUID(),title,category,summary,details,status:"Entwurf",updatedAt:new Date().toISOString(),values};
    localStorage.setItem(NEEDS_KEY,JSON.stringify([need,...readNeeds()]));
+   sessionStorage.setItem("b2b-matching-preview-need",need.id);
    window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
    window.location.assign("/portal/unternehmen/bedarfe");
    return;

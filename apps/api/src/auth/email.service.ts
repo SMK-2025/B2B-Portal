@@ -24,7 +24,6 @@ export class EmailService {
     await this.send({
       to: input.email,
       subject: "E-Mail-Adresse bei B2B Matching bestätigen",
-      idempotencyKey: `verify-${input.token.slice(0, 48)}`,
       text: `Hallo ${input.firstName},\n\nbestätigen Sie Ihre geschäftliche E-Mail-Adresse:\n${link}\n\nDer Link ist 24 Stunden gültig.`,
       html: this.template(
         "Geschäftliche E-Mail bestätigen",
@@ -45,7 +44,6 @@ export class EmailService {
     await this.send({
       to: input.email,
       subject: "Passwort für B2B Matching zurücksetzen",
-      idempotencyKey: `reset-${input.token.slice(0, 48)}`,
       text: `Hallo ${input.firstName},\n\nvergeben Sie über diesen Link ein neues Passwort:\n${link}\n\nDer Link ist 60 Minuten gültig.`,
       html: this.template(
         "Passwort zurücksetzen",
@@ -62,11 +60,11 @@ export class EmailService {
     subject: string;
     text: string;
     html: string;
-    idempotencyKey: string;
   }): Promise<void> {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.MAIL_FROM;
-    if (!apiKey || !from) {
+    const apiKey = process.env.SENDGRID_API_KEY;
+    const fromEmail = process.env.MAIL_FROM_EMAIL;
+    const fromName = process.env.MAIL_FROM_NAME ?? "B2B Matching";
+    if (!apiKey || !fromEmail) {
       if (this.directLinksEnabled()) {
         this.logger.warn(
           "Mailversand ist nicht konfiguriert; direkter Testlink bleibt aktiv.",
@@ -77,21 +75,25 @@ export class EmailService {
         "Der E-Mail-Versand ist momentan nicht verfügbar. Bitte versuchen Sie es später erneut.",
       );
     }
-    const response = await fetch("https://api.resend.com/emails", {
+    const apiBaseUrl = (
+      process.env.SENDGRID_API_BASE_URL ?? "https://api.sendgrid.com"
+    ).replace(/\/$/, "");
+    const response = await fetch(`${apiBaseUrl}/v3/mail/send`, {
       method: "POST",
       headers: {
         authorization: `Bearer ${apiKey}`,
         "content-type": "application/json",
-        "idempotency-key": message.idempotencyKey,
       },
       body: JSON.stringify({
-        from,
-        to: [message.to],
+        personalizations: [{ to: [{ email: message.to }] }],
+        from: { email: fromEmail, name: fromName },
         subject: message.subject,
-        text: message.text,
-        html: message.html,
+        content: [
+          { type: "text/plain", value: message.text },
+          { type: "text/html", value: message.html },
+        ],
         ...(process.env.MAIL_REPLY_TO
-          ? { reply_to: process.env.MAIL_REPLY_TO }
+          ? { reply_to: { email: process.env.MAIL_REPLY_TO } }
           : {}),
       }),
     });

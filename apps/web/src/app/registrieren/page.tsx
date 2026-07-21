@@ -38,6 +38,7 @@ export default function RegistrationPage() {
     setNetworkSlug(params.get("network") || "");
     setInvitedEmail(params.get("email") || "");
     setNetworkInviteToken(params.get("invite") || "");
+    if (params.get("rolle") === "netzwerk") setRole("network");
     if (params.get("onboarding") === "1") {
       const token = getPortalSession();
       if (token) {

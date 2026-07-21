@@ -224,10 +224,12 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .networkPortal .networkSidebar nav a:hover,.networkPortal .networkSidebar nav a:focus-visible{border-color:var(--network-accent);background:#8566c728}
 
 /* Öffentliche Rollenseiten werden über ihren eindeutigen Inhalt thematisiert. */
-.v2:has(.painGrid){--public-role:#0b938c;--public-role-dark:#08756f;--public-role-soft:#e7f6f4}
-.v2:has(.valueGrid){--public-role:#5367d8;--public-role-dark:#4052b8;--public-role-soft:#eef0ff}
-.v2:has(.painGrid) .subHero{background:linear-gradient(120deg,#102c42,#08756f)}
-.v2:has(.valueGrid) .subHero{background:linear-gradient(120deg,#102c42,#4052b8)}
+.v2:has(.painGrid){--t:#0b938c;--td:#08756f;--public-role:#0b938c;--public-role-dark:#08756f;--public-role-soft:#e7f6f4}
+.v2:has(.valueGrid){--t:#5367d8;--td:#4052b8;--public-role:#5367d8;--public-role-dark:#4052b8;--public-role-soft:#eef0ff}
+.v2:has(.painGrid) .subHero{min-height:620px;display:flex;align-items:center;background-image:linear-gradient(90deg,#071d2df7 0%,#0b283de8 42%,#08756f75 67%,#07172018 100%),url('/images/company-landing-hero.webp');background-position:center;background-size:cover}
+.v2:has(.valueGrid) .subHero{min-height:620px;display:flex;align-items:center;background-image:linear-gradient(90deg,#071d2df7 0%,#18284ee8 42%,#4052b86b 67%,#07172018 100%),url('/images/provider-landing-hero.webp');background-position:center;background-size:cover}
+.v2:has(.painGrid) .subHero::after,.v2:has(.valueGrid) .subHero::after{display:none}
+.v2:has(.painGrid) .subHero>div,.v2:has(.valueGrid) .subHero>div{max-width:720px}
 .v2:has(.painGrid) :is(.contentLead>span,.splitContent>div>span,.infoPanel small),.v2:has(.valueGrid) :is(.contentLead>span,.splitContent>div>span,.quotePanel small){color:var(--public-role)}
 .v2:has(.painGrid) .painGrid article{border-top:4px solid var(--public-role)}
 .v2:has(.valueGrid) .valueGrid article{border-top:4px solid var(--public-role)}
@@ -245,7 +247,7 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .v2RoleIntro>span:before,.v2Heading>span:before{content:"";display:inline-block;width:7px;height:7px;margin-right:8px;border-radius:50%;background:#f0645a;vertical-align:1px}
 
 /* Netzwerke: Violett kennzeichnet Mandant, Administration und Mitgliederwelt. */
-.networkLanding{--network-accent:#8566c7;--network-dark:#6847aa;--network-soft:#f1edfb}
+.networkLanding{--t:#8566c7;--td:#6847aa;--network-accent:#8566c7;--network-dark:#6847aa;--network-soft:#f1edfb}
 .networkLanding .networkPublicHero{background-image:linear-gradient(90deg,#071d2df5 0%,#24244ee0 42%,#5b41858c 65%,#22183925 100%),url('/images/network-portal-hero.webp')}
 .networkLanding .networkPublicHero h1 em,.networkLanding .networkPublicHero>div>span,.networkLanding .networkFeatureSection .v2Heading>span,.networkLanding .networkPricingPublic>div:first-child>span,.networkLanding .networkTestCta>span{color:#cbbce9}
 .networkLanding :is(.networkRoleFlow article>b,.networkFeatureGrid article>b,.networkProductCopy>span,.networkBeforeAfter>div>span,.networkMockMain>small,.networkMockMain section small){color:var(--network-accent)}
@@ -262,3 +264,4 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .roleChoice label.roleBoth.active{border-color:#f0645a;background:#fff0ed;box-shadow:0 0 0 2px #f0645a20}
 .roleChoice label.roleBuyer input{accent-color:#0b938c}.roleChoice label.roleProvider input{accent-color:#5367d8}.roleChoice label.roleNetwork input{accent-color:#8566c7}.roleChoice label.roleBoth input{accent-color:#f0645a}
 .networkRegistrationFields{border-color:#cbbce9;background:#f7f4fc}.networkPriceDetails{background:linear-gradient(125deg,#102c42,#6847aa)}
+@media(max-width:600px){.v2:has(.painGrid) .subHero,.v2:has(.valueGrid) .subHero{min-height:620px;padding-top:65px;padding-bottom:65px;background-position:68% center}.v2:has(.painGrid) .subHero{background-image:linear-gradient(90deg,#071d2ff2,#0b2939dc),url('/images/company-landing-hero.webp')}.v2:has(.valueGrid) .subHero{background-image:linear-gradient(90deg,#071d2ff0,#162648dc),url('/images/provider-landing-hero.webp')}}

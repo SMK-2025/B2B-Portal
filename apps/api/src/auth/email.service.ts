@@ -55,8 +55,8 @@ export class EmailService {
     });
   }
 
-  async sendNetworkInvitation(input: { email: string; networkName: string; networkSlug: string }): Promise<void> {
-    const link = `${this.webUrl()}/registrieren?network=${encodeURIComponent(input.networkSlug)}&email=${encodeURIComponent(input.email)}`;
+  async sendNetworkInvitation(input: { email: string; networkName: string; networkSlug: string; inviteToken: string }): Promise<void> {
+    const link = `${this.webUrl()}/registrieren?network=${encodeURIComponent(input.networkSlug)}&email=${encodeURIComponent(input.email)}&invite=${encodeURIComponent(input.inviteToken)}`;
     await this.send({
       to: input.email,
       subject: `Einladung in das Netzwerk ${input.networkName}`,

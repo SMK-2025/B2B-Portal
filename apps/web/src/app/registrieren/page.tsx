@@ -12,12 +12,14 @@ import {
 
 type Step = "account" | "verify" | "organization" | "submitted";
 type OrganizationRole = "buyer" | "provider" | "both";
+type RegistrationRole = OrganizationRole | "network";
 type RegisterResult = {
   verificationToken?: string;
   verificationRequired: boolean;
 };
 type LoginResult = { token: string };
 type OrganizationResult = { id: string };
+type NetworkApplicationResult = { network: { slug: string } };
 
 export default function RegistrationPage() {
   const [step, setStep] = useState<Step>("account");
@@ -25,14 +27,17 @@ export default function RegistrationPage() {
   const [verificationToken, setVerificationToken] = useState("");
   const [sessionToken, setSessionToken] = useState("");
   const [credentials, setCredentials] = useState({ email: "", password: "" });
-  const [role, setRole] = useState<OrganizationRole>("buyer");
+  const [role, setRole] = useState<RegistrationRole>("buyer");
   const [loading, setLoading] = useState(false);
   const [networkSlug, setNetworkSlug] = useState("");
   const [invitedEmail, setInvitedEmail] = useState("");
+  const [createdNetworkSlug, setCreatedNetworkSlug] = useState("");
+  const [networkInviteToken, setNetworkInviteToken] = useState("");
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNetworkSlug(params.get("network") || "");
     setInvitedEmail(params.get("email") || "");
+    setNetworkInviteToken(params.get("invite") || "");
     if (params.get("onboarding") === "1") {
       const token = getPortalSession();
       if (token) {
@@ -109,9 +114,10 @@ export default function RegistrationPage() {
           body: {
             legalName,
             displayName: legalName,
-            role,
+            role: role === "network" ? "both" : role,
             websiteUrl: form.get("websiteUrl"),
             ...(networkSlug ? { networkSlug } : {}),
+            ...(networkInviteToken ? { networkInviteToken } : {}),
           },
           token: sessionToken,
         },
@@ -120,6 +126,13 @@ export default function RegistrationPage() {
         body: {},
         token: sessionToken,
       });
+      if (role === "network") {
+        const application = await portalRequest<NetworkApplicationResult>("/networks/applications", {
+          body: { organizationId: organization.id, name: form.get("networkName"), legalName, websiteUrl: form.get("websiteUrl"), authorized: form.get("networkAuthorized") === "on", responsibilityAccepted: form.get("networkResponsibility") === "on", pricingAccepted: form.get("networkPricing") === "on" },
+          token: sessionToken,
+        });
+        setCreatedNetworkSlug(application.network.slug);
+      }
       setStep("submitted");
     } catch (error) {
       setMessage(
@@ -380,21 +393,40 @@ export default function RegistrationPage() {
                       </small>
                     </span>
                   </label>
+                  <label className={role === "network" ? "active" : ""}>
+                    <input type="radio" name="role" value="network" checked={role === "network"} onChange={() => setRole("network")}/>
+                    <span><b>Unternehmensnetzwerk betreiben</b><small>Eigenen geschlossenen Netzwerkbereich beantragen</small></span>
+                  </label>
                 </fieldset>
+                {role === "network" && <section className="full networkRegistrationFields">
+                  <h2>Ihr Unternehmensnetzwerk</h2>
+                  <p>Sie erhalten nach Abschluss sofort den administrativen Zugang zu einer unverbindlichen 10-Tage-Testansicht.</p>
+                  <label>Bezeichnung des Netzwerks<input name="networkName" required placeholder="z. B. Unternehmerfreunde NRW"/></label>
+                  <div className="networkPriceCard">
+                    <span>NETZWERKPORTAL BIS 50 MITGLIEDSUNTERNEHMEN</span>
+                    <strong>390 € <small>netto / Monat</small></strong>
+                    <p><b>2.990 € netto</b> einmalige Einrichtung</p>
+                    <ul><li>12 Monate Mindestlaufzeit</li><li>12 Monate im Voraus oder halbjährliche Abrechnung</li><li>Hosting, Wartung, Sicherheits- und Funktionsupdates inklusive</li></ul>
+                    <small>Der Test endet nach zehn Tagen automatisch. Es erfolgt keine automatische kostenpflichtige Verlängerung.</small>
+                  </div>
+                  <label className="networkConsent"><input type="checkbox" name="networkAuthorized" required/><span>Ich bestätige, dass ich zur Registrierung und Verwaltung dieses Netzwerks entscheidungsberechtigt bin.</span></label>
+                  <label className="networkConsent"><input type="checkbox" name="networkResponsibility" required/><span>Ich übernehme die Verantwortung für Einladungen, Mitgliederrechte und die Inhalte des geschlossenen Netzwerkbereichs.</span></label>
+                  <label className="networkConsent"><input type="checkbox" name="networkPricing" required/><span>Ich habe die Preise und die Mindestlaufzeit zur Kenntnis genommen. Der kostenpflichtige Vertrag beginnt erst mit einer gesonderten Buchung.</span></label>
+                </section>}
                 <div className="full pricingClarity">
                   <b>
                     {role === "buyer"
                       ? "Für Unternehmen kostenlos"
                       : role === "provider"
                         ? "Kostenpflichtig erst bei aktiver Dienstleisternutzung"
-                        : "Klare Trennung nach Funktionsbereich"}
+                        : role === "both" ? "Klare Trennung nach Funktionsbereich" : "10 Tage unverbindliche Netzwerk-Demo"}
                   </b>
                   <p>
                     {role === "buyer"
                       ? "Bedarfe, Matches und Kontaktfreigaben können ohne Mitgliedsbeitrag genutzt werden."
                       : role === "provider"
                         ? "Registrierung und Profilerstellung sind kostenlos. Vor der aktiven Teilnahme wird ein Tarif mit mindestens drei Monaten Laufzeit transparent bestätigt."
-                        : "Die Suche nach Dienstleistern bleibt kostenlos. Für das Anbieten eigener Leistungen gelten später die Dienstleistertarife."}
+                        : role === "both" ? "Die Suche nach Dienstleistern bleibt kostenlos. Für das Anbieten eigener Leistungen gelten später die Dienstleistertarife." : "Sie können alle Netzwerkoberflächen ansehen. Speichern, Einladen und Veröffentlichen werden erst nach der verbindlichen Buchung freigeschaltet."}
                   </p>
                 </div>
                 <button className="primary full" disabled={loading}>
@@ -413,7 +445,7 @@ export default function RegistrationPage() {
                 Das Unternehmen wurde angelegt und zur Prüfung vorgemerkt. Im
                 Portal können Sie Ihr Profil jetzt in Ruhe vervollständigen.
               </p>
-              <Link className="primary linkButton" href={routeForRole(role)}>
+              <Link className="primary linkButton" href={role === "network" && createdNetworkSlug ? `/portal/netzwerk/${createdNetworkSlug}` as never : routeForRole(role === "network" ? "both" : role)}>
                 Zum persönlichen Arbeitsbereich
               </Link>
               <small className="successNote">

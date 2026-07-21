@@ -18,7 +18,7 @@ const configs:Record<string,Config>={
 };
 const labels:Record<Status,string>={draft:"Entwurf",published:"Veröffentlicht",active:"Aktiv",completed:"Erledigt",archived:"Archiviert"};
 
-export function NetworkModuleWorkspace({module}:{module:string}){
+export function NetworkModuleWorkspace({module,slug="unternehmerfreunde-nrw"}:{module:string;slug?:string}){
  const config=configs[module];
  const [networkId,setNetworkId]=useState("");
  const [items,setItems]=useState<Item[]>([]);
@@ -28,11 +28,11 @@ export function NetworkModuleWorkspace({module}:{module:string}){
  const [notice,setNotice]=useState("");
  const [busy,setBusy]=useState(false);
 
- useEffect(()=>{void load()},[module]);
+ useEffect(()=>{void load()},[module,slug]);
  async function load(){
   const token=getPortalSession();if(!token||!config){setNotice("Bitte melden Sie sich erneut an.");return}
   try{
-   const network=await portalRequest<{id:string}>("/networks/public/unternehmerfreunde-nrw");
+   const network=await portalRequest<{id:string}>(`/networks/public/${slug}`);
    setNetworkId(network.id);
    setItems(await portalRequest<Item[]>(`/networks/${network.id}/content?type=${config.type}`,{token}));
   }catch(error){setNotice(error instanceof Error?error.message:"Die Netzwerkdaten konnten nicht geladen werden.")}

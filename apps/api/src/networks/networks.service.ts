@@ -2,6 +2,7 @@ import {BadRequestException,ConflictException,ForbiddenException,Inject,Injectab
 import {randomUUID} from "node:crypto";
 import {AuthService} from "../auth/auth.service";
 import {EmailService} from "../auth/email.service";
+import {opaqueToken,tokenHash} from "../auth/password";
 import type {NetworkContentRecord,NetworkContentType,NetworkMembershipRecord,NetworkModule,NetworkRecord,NetworkRole} from "../core/domain";
 import {PortalStore} from "../core/portal.store";
 import {requiredText} from "../core/validation";
@@ -52,6 +53,22 @@ export class NetworksService{
   return this.store.networkMemberships.filter(item=>item.userId===user.id&&item.status==="active").map(item=>({membership:item,network:this.get(item.networkId),organization:this.store.organizations.get(item.organizationId)}));
  }
 
+ applyAsPartner(authorization:string|undefined,input:Record<string,unknown>){
+  const user=this.auth.authenticate(authorization);
+  const organizationId=requiredText(input.organizationId,"Unternehmen",20,100);
+  if(!this.store.memberships.some(item=>item.userId===user.id&&item.organizationId===organizationId&&item.role==="admin"))throw new ForbiddenException("Nur Unternehmensadministratoren können einen Netzwerkzugang beantragen.");
+  const name=requiredText(input.name,"Netzwerkname",2,160);
+  const base=String(input.slug||name).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70)||"netzwerk";
+  let slug=base,index=2;while(this.store.networkBySlug.has(slug))slug=`${base}-${index++}`;
+  const now=new Date().toISOString();
+  if(input.authorized!==true||input.responsibilityAccepted!==true||input.pricingAccepted!==true)throw new BadRequestException("Entscheidungsberechtigung, Verantwortung und Preisinformationen müssen bestätigt werden.");
+  const network:NetworkRecord={id:randomUUID(),slug,name,legalName:typeof input.legalName==="string"&&input.legalName.trim()?input.legalName.trim():null,websiteUrl:typeof input.websiteUrl==="string"&&input.websiteUrl.trim()?input.websiteUrl.trim():null,logoUrl:null,primaryColor:"#183b34",secondaryColor:"#c5a15a",status:"trial",trialEndsAt:new Date(Date.now()+10*86_400_000).toISOString(),enabledModules:["members","profiles","services","matching","communication","events","community","tasks","documents","analytics","notifications"],settings:{closedNetwork:true,selfRegistration:false,crossNetworkMatching:false,admissionRules:null},createdAt:now,updatedAt:now};
+  this.store.networks.set(network.id,network);this.store.networkBySlug.set(slug,network.id);
+  this.store.networkMemberships.push(this.record(network.id,organizationId,user.id,"network_admin","active",null));
+  this.store.activities.push({id:randomUUID(),matchId:null,organizationId,actorUserId:user.id,type:"network.application.created",visibility:"platform_internal",data:{networkId:network.id,name},createdAt:now});
+  return{network,applicationStatus:"trial",message:"Der geschlossene Netzwerk-Testbereich wurde eingerichtet."};
+ }
+
  apply(authorization:string|undefined,slug:string,input:Record<string,unknown>){
   const user=this.auth.authenticate(authorization);const network=this.bySlug(slug);
   if(!network.settings.selfRegistration)throw new ForbiddenException("Dieses Netzwerk nimmt keine eigenständigen Registrierungen an.");
@@ -95,7 +112,7 @@ export class NetworksService{
 
  async inviteMember(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
   const actor=this.auth.authenticate(authorization);this.requireNetworkManagement(actor.id,networkId);const network=this.raw(networkId);const email=requiredText(input.email,"Geschäftliche E-Mail-Adresse",5,250).toLowerCase(),userId=this.store.userByEmail.get(email);
-  if(!userId){await this.email.sendNetworkInvitation({email,networkName:network.name,networkSlug:network.slug});return{invited:true,email,registrationRequired:true}}
+  if(!userId){const inviteToken=opaqueToken(),now=new Date().toISOString(),requested=String(input.role||"member"),role=["moderator","organization_admin","member"].includes(requested)?requested:"member";const invitation:NetworkContentRecord={id:randomUUID(),networkId,type:"announcement",title:`Einladung ${email}`,description:"Persönliche Netzwerkeinladung",status:"active",createdByUserId:actor.id,assignedToUserId:null,startsAt:null,endsAt:new Date(Date.now()+14*86_400_000).toISOString(),visibility:"administrators",data:{kind:"network_invitation",email,role,inviteTokenHash:tokenHash(inviteToken),usedAt:null},createdAt:now,updatedAt:now};this.store.networkContents.set(invitation.id,invitation);await this.email.sendNetworkInvitation({email,networkName:network.name,networkSlug:network.slug,inviteToken});return{invited:true,email,registrationRequired:true}}
   const company=this.store.memberships.find(item=>item.userId===userId);if(!company)throw new BadRequestException("Das Konto ist noch keinem Unternehmen zugeordnet.");const requested=String(input.role||"member");const role:NetworkRole=["moderator","organization_admin","member"].includes(requested)?requested as NetworkRole:"member";return this.addMember(authorization,networkId,{organizationId:company.organizationId,userId,role});
  }
 
@@ -137,7 +154,7 @@ export class NetworksService{
  private raw(id:string){const network=this.store.networks.get(id);if(!network)throw new NotFoundException("Netzwerk nicht gefunden.");return network}
  private modules(value:unknown):NetworkModule[]{const allowed:NetworkModule[]=["members","profiles","services","matching","communication","events","community","tasks","documents","analytics","notifications"];if(!Array.isArray(value))return["members","profiles"];return [...new Set(value.map(String).filter((item):item is NetworkModule=>allowed.includes(item as NetworkModule)))]}
  private requirePlatformAdmin(userId:string){if(this.store.users.get(userId)?.accountRole!=="platform_admin")throw new ForbiddenException("Nur die Plattformadministration darf Netzwerkpartner freischalten.")}
- private requireNetworkManagement(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"&&["network_admin","moderator"].includes(item.role)))throw new ForbiddenException("Keine Berechtigung zur Netzwerkverwaltung.")}
+ private requireNetworkManagement(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;const network=this.raw(networkId);if(network.status==="trial")throw new ForbiddenException("Im 10-Tage-Testzugang ist nur die unverbindliche Ansicht möglich. Zum Speichern, Einladen oder Veröffentlichen muss das Netzwerkportal gebucht und aktiviert werden.");if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"&&["network_admin","moderator"].includes(item.role)))throw new ForbiddenException("Keine Berechtigung zur Netzwerkverwaltung.")}
  private requireNetworkAccess(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"))throw new ForbiddenException("Kein Zugriff auf dieses Netzwerk.")}
  private optionalDate(value:unknown){if(typeof value!=="string"||!value.trim())return null;const date=new Date(value);if(Number.isNaN(date.getTime()))throw new BadRequestException("Ungültiges Datum.");return date.toISOString()}
  private publicUser(userId:string){const user=this.store.users.get(userId);return user?{id:user.id,firstName:user.firstName,lastName:user.lastName,email:user.email}:null}

@@ -402,13 +402,17 @@ export default function RegistrationPage() {
                   <h2>Ihr Unternehmensnetzwerk</h2>
                   <p>Sie erhalten nach Abschluss sofort den administrativen Zugang zu einer unverbindlichen 10-Tage-Testansicht.</p>
                   <label>Bezeichnung des Netzwerks<input name="networkName" required placeholder="z. B. Unternehmerfreunde NRW"/></label>
-                  <div className="networkPriceCard">
-                    <span>NETZWERKPORTAL BIS 50 MITGLIEDSUNTERNEHMEN</span>
-                    <strong>390 € <small>netto / Monat</small></strong>
-                    <p><b>2.990 € netto</b> einmalige Einrichtung</p>
-                    <ul><li>12 Monate Mindestlaufzeit</li><li>12 Monate im Voraus oder halbjährliche Abrechnung</li><li>Hosting, Wartung, Sicherheits- und Funktionsupdates inklusive</li></ul>
-                    <small>Der Test endet nach zehn Tagen automatisch. Es erfolgt keine automatische kostenpflichtige Verlängerung.</small>
-                  </div>
+                  <details className="networkPriceDetails">
+                    <summary>
+                      <span><b>Netzwerkportal bis 50 Unternehmen</b><small>Preise und Vertragsdetails anzeigen</small></span>
+                      <strong>390 € <small>netto / Monat</small></strong>
+                    </summary>
+                    <div className="networkPriceCard">
+                      <p><b>2.990 € netto</b> einmalige Einrichtung</p>
+                      <ul><li>12 Monate Mindestlaufzeit</li><li>12 Monate im Voraus oder halbjährliche Abrechnung</li><li>Hosting, Wartung, Sicherheits- und Funktionsupdates inklusive</li></ul>
+                      <small>Der Test endet nach zehn Tagen automatisch. Es erfolgt keine automatische kostenpflichtige Verlängerung.</small>
+                    </div>
+                  </details>
                   <label className="networkConsent"><input type="checkbox" name="networkAuthorized" required/><span>Ich bestätige, dass ich zur Registrierung und Verwaltung dieses Netzwerks entscheidungsberechtigt bin.</span></label>
                   <label className="networkConsent"><input type="checkbox" name="networkResponsibility" required/><span>Ich übernehme die Verantwortung für Einladungen, Mitgliederrechte und die Inhalte des geschlossenen Netzwerkbereichs.</span></label>
                   <label className="networkConsent"><input type="checkbox" name="networkPricing" required/><span>Ich habe die Preise und die Mindestlaufzeit zur Kenntnis genommen. Der kostenpflichtige Vertrag beginnt erst mit einer gesonderten Buchung.</span></label>

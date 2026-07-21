@@ -408,9 +408,10 @@ export default function RegistrationPage() {
                       <strong>390 € <small>netto / Monat</small></strong>
                     </summary>
                     <div className="networkPriceCard">
-                      <p><b>2.990 € netto</b> einmalige Einrichtung</p>
+                      <p className="networkMonthlyFee"><b>Monatliche Netzwerkpauschale</b><span>390 € netto pro Monat für die Nutzung mit bis zu 50 Mitgliedsunternehmen.</span></p>
                       <ul><li>12 Monate Mindestlaufzeit</li><li>12 Monate im Voraus oder halbjährliche Abrechnung</li><li>Hosting, Wartung, Sicherheits- und Funktionsupdates inklusive</li></ul>
                       <small>Der Test endet nach zehn Tagen automatisch. Es erfolgt keine automatische kostenpflichtige Verlängerung.</small>
+                      <p className="networkSetupFee"><span>Einmalige Bereitstellungs- und Servicepauschale</span><strong>2.990 € netto</strong><small>Zusätzlich zur monatlichen Netzwerkpauschale – einmalig für Einrichtung und Bereitstellung des Netzwerkportals.</small></p>
                     </div>
                   </details>
                   <label className="networkConsent"><input type="checkbox" name="networkAuthorized" required/><span>Ich bestätige, dass ich zur Registrierung und Verwaltung dieses Netzwerks entscheidungsberechtigt bin.</span></label>

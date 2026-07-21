@@ -349,7 +349,7 @@ export default function RegistrationPage() {
                 </label>
                 <fieldset className="full roleChoice">
                   <legend>Wie möchten Sie B2B Matching nutzen?</legend>
-                  <label className={role === "buyer" ? "active" : ""}>
+                  <label className={`roleBuyer ${role === "buyer" ? "active" : ""}`}>
                     <input
                       type="radio"
                       name="role"
@@ -362,7 +362,7 @@ export default function RegistrationPage() {
                       <small>Für Unternehmer dauerhaft kostenlos</small>
                     </span>
                   </label>
-                  <label className={role === "provider" ? "active" : ""}>
+                  <label className={`roleProvider ${role === "provider" ? "active" : ""}`}>
                     <input
                       type="radio"
                       name="role"
@@ -378,7 +378,7 @@ export default function RegistrationPage() {
                       </small>
                     </span>
                   </label>
-                  <label className={role === "both" ? "active" : ""}>
+                  <label className={`roleBoth ${role === "both" ? "active" : ""}`}>
                     <input
                       type="radio"
                       name="role"
@@ -394,7 +394,7 @@ export default function RegistrationPage() {
                       </small>
                     </span>
                   </label>
-                  <label className={role === "network" ? "active" : ""}>
+                  <label className={`roleNetwork ${role === "network" ? "active" : ""}`}>
                     <input type="radio" name="role" value="network" checked={role === "network"} onChange={() => setRole("network")}/>
                     <span><b>Unternehmensnetzwerk betreiben</b><small>Eigenen geschlossenen Netzwerkbereich beantragen</small></span>
                   </label>

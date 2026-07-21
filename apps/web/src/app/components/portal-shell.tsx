@@ -156,7 +156,7 @@ export function PortalShell({
 }) {
   return (
     <PortalInteractions role={role}>
-      <main className="portalApp">
+      <main className={`portalApp portalRole-${role}`}>
         <aside className="portalSidebar">
           <Link href="/" className="portalBrand">
             <img src="/icons/b2b-matching-symbol.svg" alt="" />

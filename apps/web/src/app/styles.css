@@ -226,8 +226,8 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 /* Öffentliche Rollenseiten werden über ihren eindeutigen Inhalt thematisiert. */
 .v2:has(.painGrid){--t:#0b938c;--td:#08756f;--public-role:#0b938c;--public-role-dark:#08756f;--public-role-soft:#e7f6f4}
 .v2:has(.valueGrid){--t:#5367d8;--td:#4052b8;--public-role:#5367d8;--public-role-dark:#4052b8;--public-role-soft:#eef0ff}
-.v2:has(.painGrid) .subHero{min-height:620px;display:flex;align-items:center;background-image:linear-gradient(90deg,#071d2df7 0%,#0b283de8 42%,#08756f75 67%,#07172018 100%),url('/images/company-landing-hero.webp');background-position:center;background-size:cover}
-.v2:has(.valueGrid) .subHero{min-height:620px;display:flex;align-items:center;background-image:linear-gradient(90deg,#071d2df7 0%,#18284ee8 42%,#4052b86b 67%,#07172018 100%),url('/images/provider-landing-hero.webp');background-position:center;background-size:cover}
+.v2:has(.painGrid) .subHero{min-height:720px;display:flex;align-items:center;background-image:linear-gradient(90deg,#071d2df7 0%,#0b283de8 42%,#08756f75 67%,#07172018 100%),url('/images/company-landing-hero.webp');background-position:center;background-size:cover}
+.v2:has(.valueGrid) .subHero{min-height:720px;display:flex;align-items:center;background-image:linear-gradient(90deg,#071d2df7 0%,#18284ee8 42%,#4052b86b 67%,#07172018 100%),url('/images/provider-landing-hero.webp');background-position:center;background-size:cover}
 .v2:has(.painGrid) .subHero::after,.v2:has(.valueGrid) .subHero::after{display:none}
 .v2:has(.painGrid) .subHero>div,.v2:has(.valueGrid) .subHero>div{max-width:720px}
 .v2:has(.painGrid) :is(.contentLead>span,.splitContent>div>span,.infoPanel small),.v2:has(.valueGrid) :is(.contentLead>span,.splitContent>div>span,.quotePanel small){color:var(--public-role)}
@@ -235,6 +235,11 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .v2:has(.valueGrid) .valueGrid article{border-top:4px solid var(--public-role)}
 .v2:has(.valueGrid) .valueGrid article>b{color:var(--public-role)}
 .v2:has(.valueGrid) .darkStatement{background:linear-gradient(125deg,#102c42,#35479f)}
+.roleHeroAccent{height:7px}.roleHeroAccent-company{background:#0b938c}.roleHeroAccent-provider{background:#5367d8}
+.roleImpactStrip{display:grid;grid-template-columns:repeat(3,1fr);padding:0 max(22px,calc((100vw - 1140px)/2));background:#102c42;color:#fff}
+.roleImpactStrip p{display:grid;gap:7px;margin:0;padding:30px 28px;border-right:1px solid #ffffff1c}
+.roleImpactStrip p:last-child{border-right:0}.roleImpactStrip b{font-family:Georgia,serif;font-size:21px;font-weight:500}.roleImpactStrip span{font-size:13px;line-height:1.5;color:#a8bdc6}
+.roleImpactStrip-company b{color:#7ed4cc}.roleImpactStrip-provider b{color:#aab5ff}
 
 /* Startseite: Rollen sind bereits beim ersten Vergleich visuell unterscheidbar. */
 .threeRoles>article{position:relative;overflow:hidden}
@@ -264,4 +269,4 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .roleChoice label.roleBoth.active{border-color:#f0645a;background:#fff0ed;box-shadow:0 0 0 2px #f0645a20}
 .roleChoice label.roleBuyer input{accent-color:#0b938c}.roleChoice label.roleProvider input{accent-color:#5367d8}.roleChoice label.roleNetwork input{accent-color:#8566c7}.roleChoice label.roleBoth input{accent-color:#f0645a}
 .networkRegistrationFields{border-color:#cbbce9;background:#f7f4fc}.networkPriceDetails{background:linear-gradient(125deg,#102c42,#6847aa)}
-@media(max-width:600px){.v2:has(.painGrid) .subHero,.v2:has(.valueGrid) .subHero{min-height:620px;padding-top:65px;padding-bottom:65px;background-position:68% center}.v2:has(.painGrid) .subHero{background-image:linear-gradient(90deg,#071d2ff2,#0b2939dc),url('/images/company-landing-hero.webp')}.v2:has(.valueGrid) .subHero{background-image:linear-gradient(90deg,#071d2ff0,#162648dc),url('/images/provider-landing-hero.webp')}}
+@media(max-width:600px){.v2:has(.painGrid) .subHero,.v2:has(.valueGrid) .subHero{min-height:670px;padding-top:65px;padding-bottom:65px;background-position:68% center}.v2:has(.painGrid) .subHero{background-image:linear-gradient(90deg,#071d2ff2,#0b2939dc),url('/images/company-landing-hero.webp')}.v2:has(.valueGrid) .subHero{background-image:linear-gradient(90deg,#071d2ff0,#162648dc),url('/images/provider-landing-hero.webp')}.roleImpactStrip{grid-template-columns:1fr;padding:0 18px}.roleImpactStrip p{padding:22px 0;border-right:0;border-bottom:1px solid #ffffff1c}.roleImpactStrip p:last-child{border-bottom:0}}

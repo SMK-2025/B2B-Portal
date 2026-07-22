@@ -22,5 +22,8 @@ export class NetworksController{
  @Post(":networkId/content")createContent(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.createContent(authorization,networkId,body)}
  @Post(":networkId/content/:contentId")updateContent(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Param("contentId")contentId:string,@Body()body:Record<string,unknown>){return this.networks.updateContent(authorization,networkId,contentId,body)}
  @Get(":networkId/dashboard")dashboard(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string){return this.networks.dashboard(authorization,networkId)}
+ @Get(":networkId/orders")orders(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string){return this.networks.orders(authorization,networkId)}
+ @Post(":networkId/orders")order(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.order(authorization,networkId,body)}
+ @Post(":networkId/orders/:orderId/decision")orderDecision(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Param("orderId")orderId:string,@Body()body:Record<string,unknown>){return this.networks.decideOrder(authorization,networkId,orderId,body)}
  @Post(":networkId/settings")settings(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.updateSettings(authorization,networkId,body)}
 }

@@ -71,6 +71,17 @@ export class EmailService {
     });
   }
 
+  async sendNetworkOrderConfirmation(input:{email:string;contact:string;networkName:string;orderId:string;billingCycle:"annual"|"semiannual"}):Promise<void>{
+    const link=`${this.webUrl()}/portal`;
+    const cycle=input.billingCycle==="annual"?"jährliche Vorauszahlung":"halbjährliche Abrechnung";
+    await this.send({
+      to:input.email,
+      subject:`Eingangsbestätigung Ihrer Netzwerkportal-Bestellung ${input.orderId}`,
+      text:`Hallo ${input.contact},\n\nwir bestätigen den Eingang Ihrer verbindlichen Bestellung für ${input.networkName}.\nBestellnummer: ${input.orderId}\nAbrechnung: ${cycle}\nNetzwerkpauschale: 390,00 EUR netto pro Monat\nEinmalige Einrichtung: 2.990,00 EUR netto\nMindestlaufzeit: 12 Monate\n\nDer Vertrag kommt entsprechend unseren AGB durch unsere Auftragsbestätigung zustande. Rechnung und Auftragsbestätigung folgen gesondert.`,
+      html:this.template("Ihre verbindliche Bestellung",`Hallo ${this.escape(input.contact)}, wir bestätigen den Eingang Ihrer Bestellung für das Netzwerkportal <strong>${this.escape(input.networkName)}</strong>.<br><br><strong>Bestellnummer:</strong> ${this.escape(input.orderId)}<br><strong>Abrechnung:</strong> ${this.escape(cycle)}<br><strong>Netzwerkpauschale:</strong> 390,00 € netto pro Monat<br><strong>Einrichtung:</strong> 2.990,00 € netto einmalig<br><strong>Mindestlaufzeit:</strong> 12 Monate`,"Zum Portal",link,"Der Vertrag kommt entsprechend unseren AGB durch unsere gesonderte Auftragsbestätigung zustande. Rechnung und Auftragsbestätigung folgen separat."),
+    });
+  }
+
   private async send(message: {
     to: string;
     subject: string;

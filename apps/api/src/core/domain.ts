@@ -64,6 +64,18 @@ export interface NetworkContentRecord {
   visibility:"members"|"administrators"; data:Record<string,unknown>; createdAt:string; updatedAt:string;
 }
 
+export interface NetworkOrderRecord {
+  id:string; networkId:string; orderedByUserId:string;
+  invoiceCompany:string; invoiceContact:string; invoiceEmail:string;
+  invoiceStreet:string; invoicePostalCode:string; invoiceCity:string; invoiceCountry:string;
+  billingCycle:"annual"|"semiannual"; purchaseOrderReference:string|null;
+  monthlyNetCents:39000; setupNetCents:299000; minimumTermMonths:12;
+  termsVersion:string; pricingVersion:string;
+  authorityConfirmed:boolean; termsAccepted:boolean; paymentObligationAccepted:boolean;
+  status:"submitted"|"accepted"|"rejected"|"cancelled";
+  submittedAt:string; decidedAt:string|null; decidedByUserId:string|null;
+}
+
 export interface ReviewDecisionRecord {
   id: string;
   organizationId: string;

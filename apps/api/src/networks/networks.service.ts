@@ -3,7 +3,7 @@ import {randomUUID} from "node:crypto";
 import {AuthService} from "../auth/auth.service";
 import {EmailService} from "../auth/email.service";
 import {opaqueToken,tokenHash} from "../auth/password";
-import type {NetworkContentRecord,NetworkContentType,NetworkMembershipRecord,NetworkModule,NetworkRecord,NetworkRole} from "../core/domain";
+import type {NetworkContentRecord,NetworkContentType,NetworkMembershipRecord,NetworkModule,NetworkOrderRecord,NetworkRecord,NetworkRole} from "../core/domain";
 import {PortalStore} from "../core/portal.store";
 import {requiredText} from "../core/validation";
 
@@ -22,7 +22,7 @@ export class NetworksService{
 
  adminList(authorization:string|undefined){
   const user=this.auth.authenticate(authorization);this.requirePlatformAdmin(user.id);
-  return [...this.store.networks.values()].map(network=>{const membership=this.store.networkMemberships.find(item=>item.networkId===network.id&&item.role==="network_admin"&&item.status==="active");return{...network,administrator:membership?{...membership,user:this.publicUser(membership.userId)}:null}});
+  return [...this.store.networks.values()].map(network=>{const membership=this.store.networkMemberships.find(item=>item.networkId===network.id&&item.role==="network_admin"&&item.status==="active"),orders=[...this.store.networkOrders.values()].filter(item=>item.networkId===network.id).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));return{...network,administrator:membership?{...membership,user:this.publicUser(membership.userId)}:null,latestOrder:orders[0]||null}});
  }
 
  setAccess(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
@@ -162,6 +162,39 @@ export class NetworksService{
   const user=this.auth.authenticate(authorization);this.requireNetworkAccess(user.id,networkId);const network=this.raw(networkId),members=this.store.networkMemberships.filter(item=>item.networkId===networkId),contents=[...this.store.networkContents.values()].filter(item=>item.networkId===networkId);return{network,members:{total:members.length,active:members.filter(item=>item.status==="active").length,pending:members.filter(item=>item.status==="pending").length},content:{total:contents.length,events:contents.filter(item=>item.type==="event").length,topics:contents.filter(item=>["topic","announcement","poll"].includes(item.type)).length,tasks:contents.filter(item=>item.type==="task"&&item.status!=="completed").length,documents:contents.filter(item=>item.type==="document").length},recent:contents.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,8)};
  }
 
+ orders(authorization:string|undefined,networkId:string){
+  const user=this.auth.authenticate(authorization);this.requireNetworkManagementOrTrialAdmin(user.id,networkId);
+  return [...this.store.networkOrders.values()].filter(item=>item.networkId===networkId).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
+ }
+
+ order(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+  const user=this.auth.authenticate(authorization),network=this.raw(networkId);this.requireNetworkManagementOrTrialAdmin(user.id,networkId);
+  if(network.status!=="trial")throw new BadRequestException("Eine Buchung aus der Testansicht ist für dieses Netzwerk nicht möglich.");
+  if([...this.store.networkOrders.values()].some(item=>item.networkId===networkId&&item.status==="submitted"))throw new ConflictException("Für dieses Netzwerk liegt bereits eine verbindliche Bestellung vor.");
+  const billingCycle=String(input.billingCycle);if(!["annual","semiannual"].includes(billingCycle))throw new BadRequestException("Bitte wählen Sie den Abrechnungszeitraum.");
+  if(input.authorityConfirmed!==true||input.termsAccepted!==true||input.paymentObligationAccepted!==true)throw new BadRequestException("Für die verbindliche Bestellung müssen alle erforderlichen Erklärungen bestätigt werden.");
+  const now=new Date().toISOString();const record:NetworkOrderRecord={
+   id:randomUUID(),networkId,orderedByUserId:user.id,
+   invoiceCompany:requiredText(input.invoiceCompany,"Rechnungsempfänger",2,200),invoiceContact:requiredText(input.invoiceContact,"Ansprechpartner",2,160),invoiceEmail:requiredText(input.invoiceEmail,"Rechnungs-E-Mail",5,250).toLowerCase(),
+   invoiceStreet:requiredText(input.invoiceStreet,"Straße und Hausnummer",3,200),invoicePostalCode:requiredText(input.invoicePostalCode,"Postleitzahl",4,12),invoiceCity:requiredText(input.invoiceCity,"Ort",2,120),invoiceCountry:requiredText(input.invoiceCountry,"Land",2,80),
+   billingCycle:billingCycle as NetworkOrderRecord["billingCycle"],purchaseOrderReference:typeof input.purchaseOrderReference==="string"&&input.purchaseOrderReference.trim()?input.purchaseOrderReference.trim().slice(0,120):null,
+   monthlyNetCents:39000,setupNetCents:299000,minimumTermMonths:12,termsVersion:"2026-07-22",pricingVersion:"network-2026-07",
+   authorityConfirmed:true,termsAccepted:true,paymentObligationAccepted:true,status:"submitted",submittedAt:now,decidedAt:null,decidedByUserId:null
+  };
+  this.store.networkOrders.set(record.id,record);this.store.activities.push({id:randomUUID(),matchId:null,organizationId:null,actorUserId:user.id,type:"network.order.submitted",visibility:"platform_internal",data:{networkId,orderId:record.id,billingCycle},createdAt:now});
+  void this.email.sendNetworkOrderConfirmation({email:record.invoiceEmail,contact:record.invoiceContact,networkName:network.name,orderId:record.id,billingCycle:record.billingCycle}).catch(()=>undefined);
+  return record;
+ }
+
+ decideOrder(authorization:string|undefined,networkId:string,orderId:string,input:Record<string,unknown>){
+  const actor=this.auth.authenticate(authorization);this.requirePlatformAdmin(actor.id);const network=this.raw(networkId),order=this.store.networkOrders.get(orderId);
+  if(!order||order.networkId!==networkId)throw new NotFoundException("Bestellung nicht gefunden.");if(order.status!=="submitted")throw new BadRequestException("Diese Bestellung wurde bereits entschieden.");
+  const decision=String(input.decision);if(!["accepted","rejected"].includes(decision))throw new BadRequestException("Ungültige Bestellentscheidung.");
+  order.status=decision as "accepted"|"rejected";order.decidedAt=new Date().toISOString();order.decidedByUserId=actor.id;
+  if(decision==="accepted"){network.status="active";network.trialEndsAt=null;network.settings.selfRegistration=true;network.updatedAt=order.decidedAt}
+  this.store.activities.push({id:randomUUID(),matchId:null,organizationId:null,actorUserId:actor.id,type:`network.order.${decision}`,visibility:"platform_internal",data:{networkId,orderId},createdAt:order.decidedAt});return{order,network};
+ }
+
  updateSettings(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
   const user=this.auth.authenticate(authorization);this.requireNetworkManagement(user.id,networkId);const network=this.raw(networkId);
   if(typeof input.name==="string")network.name=requiredText(input.name,"Netzwerkname",2,160);if(typeof input.legalName==="string")network.legalName=input.legalName.trim()||null;if(typeof input.websiteUrl==="string")network.websiteUrl=input.websiteUrl.trim()||null;if(typeof input.logoUrl==="string")network.logoUrl=input.logoUrl.trim()||null;if(typeof input.primaryColor==="string"&&/^#[0-9a-f]{6}$/i.test(input.primaryColor))network.primaryColor=input.primaryColor;if(typeof input.secondaryColor==="string"&&/^#[0-9a-f]{6}$/i.test(input.secondaryColor))network.secondaryColor=input.secondaryColor;
@@ -174,6 +207,7 @@ export class NetworksService{
  private raw(id:string){const network=this.store.networks.get(id);if(!network)throw new NotFoundException("Netzwerk nicht gefunden.");return network}
  private modules(value:unknown):NetworkModule[]{const allowed:NetworkModule[]=["members","profiles","services","matching","communication","events","community","tasks","documents","analytics","notifications"];if(!Array.isArray(value))return["members","profiles"];return [...new Set(value.map(String).filter((item):item is NetworkModule=>allowed.includes(item as NetworkModule)))]}
  private requirePlatformAdmin(userId:string){if(this.store.users.get(userId)?.accountRole!=="platform_admin")throw new ForbiddenException("Nur die Plattformadministration darf Netzwerkpartner freischalten.")}
+ private requireNetworkManagementOrTrialAdmin(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"&&item.role==="network_admin"))throw new ForbiddenException("Nur die verantwortliche Netzwerkadministration darf diese Buchung verwalten.")}
  private requireNetworkManagement(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;const network=this.raw(networkId);if(network.status==="trial")throw new ForbiddenException("Im 10-Tage-Testzugang ist nur die unverbindliche Ansicht möglich. Zum Speichern, Einladen oder Veröffentlichen muss das Netzwerkportal gebucht und aktiviert werden.");if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"&&["network_admin","moderator"].includes(item.role)))throw new ForbiddenException("Keine Berechtigung zur Netzwerkverwaltung.")}
  private requireNetworkAccess(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"))throw new ForbiddenException("Kein Zugriff auf dieses Netzwerk.")}
  private requireContentCreation(userId:string,networkId:string,type:NetworkContentType){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;const network=this.raw(networkId);if(network.status==="trial")throw new ForbiddenException("Die Testansicht ist schreibgeschützt.");const membership=this.store.networkMemberships.find(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active");if(!membership)throw new ForbiddenException("Kein Zugriff auf dieses Netzwerk.");if(["network_admin","moderator"].includes(membership.role))return;if(!["conversation","need","service","topic","poll"].includes(type))throw new ForbiddenException("Dieser Inhalt kann nur durch die Netzwerkverwaltung angelegt werden.")}

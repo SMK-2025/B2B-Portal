@@ -18,6 +18,11 @@ type Network = {
     userId: string;
     user?: { firstName: string; lastName: string; email: string };
   } | null;
+  latestOrder?: {
+    id:string; status:"submitted"|"accepted"|"rejected"|"cancelled";
+    submittedAt:string; invoiceCompany:string; invoiceContact:string; invoiceEmail:string;
+    billingCycle:"annual"|"semiannual";
+  } | null;
 };
 type Dialog = "create" | "trial" | "admin" | null;
 const labels: Record<NetworkStatus, string> = {
@@ -162,6 +167,13 @@ export function AdminNetworkWorkspace() {
     const token=getPortalSession();if(!token)return setNotice("Bitte melden Sie sich erneut als Plattformadministrator an.");
     setBusy(true);try{await portalRequest(`/networks/${network.id}/delete`,{token,body:{confirmSlug:confirmation}});setNetworks(items=>items.filter(item=>item.id!==network.id));setNotice(`${network.name} wurde vollständig gelöscht.`)}catch(error){showError(error)}finally{setBusy(false)}
   }
+  async function decideOrder(network:Network,decision:"accepted"|"rejected"){
+    const order=network.latestOrder;if(!order)return;
+    const text=decision==="accepted"?"Diese verbindliche Bestellung annehmen und das Netzwerk produktiv aktivieren?":"Diese verbindliche Bestellung ablehnen?";
+    if(!window.confirm(text))return;
+    const token=getPortalSession();if(!token)return setNotice("Bitte melden Sie sich erneut als Plattformadministrator an.");
+    setBusy(true);try{await portalRequest(`/networks/${network.id}/orders/${order.id}/decision`,{token,body:{decision}});const refreshed=await portalRequest<Network[]>("/networks/admin",{token});setNetworks(refreshed);setNotice(decision==="accepted"?"Die Bestellung wurde angenommen und das Netzwerk aktiviert.":"Die Bestellung wurde abgelehnt.")}catch(error){showError(error)}finally{setBusy(false)}
+  }
 
   return (
     <div className="adminNetworkWorkspace">
@@ -265,6 +277,10 @@ export function AdminNetworkWorkspace() {
                   <span>Eigene Mitglieder, Inhalte und Rollen</span>
                 </article>
               </div>
+              {network.latestOrder?.status === "submitted" && <section className="adminNetworkOrderNotice">
+                <div><small>VERBINDLICHE BESTELLUNG EINGEGANGEN</small><b>{network.latestOrder.invoiceCompany}</b><span>{new Date(network.latestOrder.submittedAt).toLocaleString("de-DE")} · {network.latestOrder.billingCycle === "annual" ? "jährliche Vorauszahlung" : "halbjährliche Abrechnung"}</span></div>
+                <div><span>Bestellnummer</span><code>{network.latestOrder.id}</code><div className="adminNetworkOrderActions"><button type="button" disabled={busy} onClick={()=>void decideOrder(network,"accepted")}>Annehmen &amp; aktivieren</button><button type="button" disabled={busy} onClick={()=>void decideOrder(network,"rejected")}>Ablehnen</button></div></div>
+              </section>}
               <footer className="adminNetworkActions">
                 {network.status === "trial" && (
                   <Link
@@ -289,7 +305,7 @@ export function AdminNetworkWorkspace() {
                 >
                   Administrator bestimmen
                 </button>
-                {network.status !== "active" ? (
+                {network.latestOrder?.status === "submitted" ? null : network.status !== "active" ? (
                   <button
                     disabled={busy}
                     className="portalPrimary"

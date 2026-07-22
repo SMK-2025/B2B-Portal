@@ -30,6 +30,9 @@ export interface OrganizationRecord {
   createdAt: string;
   profileData?: Record<string, string | boolean>;
   profileUpdatedAt?: string | null;
+  profileRequiredTotal?: number;
+  profileRequiredCompleted?: number;
+  profileRequiredSections?: boolean[];
 }
 
 export interface MembershipRecord {

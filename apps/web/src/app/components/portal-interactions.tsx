@@ -2,7 +2,7 @@
 import type {ChangeEvent,FormEvent,MouseEvent,ReactNode} from "react";
 import {useEffect,useState} from "react";
 import Link from "next/link";
-import {NEEDS_KEY,PORTAL_UPDATE_EVENT,PROFILE_KEY,readNeeds,readProfile,type StoredNeed,type StoredProfile} from "../lib/entrepreneur-state";
+import {PORTAL_UPDATE_EVENT,type StoredProfile} from "../lib/entrepreneur-state";
 import {getPortalSession,portalRequest} from "../lib/portal-api";
 
 type Role="admin"|"unternehmen"|"dienstleister";
@@ -90,8 +90,7 @@ function fields(kind:string,role:Role,accountEmail="",profile:StoredProfile|null
 
 export function PortalInteractions({role,children}:{role:Role;children:ReactNode}){
  const [dialog,setDialog]=useState<Dialog>(null);const [toast,setToast]=useState("");const [accountEmail,setAccountEmail]=useState("");const [storedProfile,setStoredProfile]=useState<StoredProfile|null>(null);
- useEffect(()=>{const refresh=()=>setStoredProfile(readProfile());refresh();window.addEventListener(PORTAL_UPDATE_EVENT,refresh);return()=>window.removeEventListener(PORTAL_UPDATE_EVENT,refresh)},[]);
- useEffect(()=>{if(role!=="unternehmen"||!storedProfile)return;const token=getPortalSession();if(!token)return;void portalRequest<Array<{id:string}>>("/organizations/mine",{token}).then(organizations=>organizations[0]?portalRequest(`/organizations/${organizations[0].id}/profile`,{token,body:{profileData:storedProfile.values}}):undefined).catch(()=>undefined)},[role,storedProfile]);
+ useEffect(()=>{if(role!=="unternehmen")return;const token=getPortalSession();if(!token)return;const load=()=>portalRequest<Array<{id:string;profileData?:Record<string,string|boolean>;profileUpdatedAt?:string|null;profileRequiredTotal?:number;profileRequiredCompleted?:number;profileRequiredSections?:boolean[]}>>("/organizations/mine",{token}).then(organizations=>{const organization=organizations[0];setStoredProfile(organization?.profileData?{values:organization.profileData,updatedAt:organization.profileUpdatedAt||new Date().toISOString(),requiredTotal:organization.profileRequiredTotal,requiredCompleted:organization.profileRequiredCompleted,requiredSections:organization.profileRequiredSections}:null)}).catch(()=>setToast("Das Unternehmensprofil konnte nicht geladen werden."));void load();window.addEventListener(PORTAL_UPDATE_EVENT,load);return()=>window.removeEventListener(PORTAL_UPDATE_EVENT,load)},[role]);
  useEffect(()=>{
   const token=getPortalSession();if(!token)return;
   portalRequest<{email:string}>("/auth/session/check",{method:"POST",token}).then(session=>setAccountEmail(session.email)).catch(()=>{});
@@ -101,11 +100,8 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
   const frame=requestAnimationFrame(()=>{
    const dialogElement=document.querySelector<HTMLElement>(".companyDialog");
    if(dialog.kind==="profile"&&role==="unternehmen"){
-    try{
-     const saved=JSON.parse(localStorage.getItem(PROFILE_KEY)||"null") as {values?:Record<string,string|boolean>}|null;
-     const controls=document.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>(".companyProfileForm input,.companyProfileForm textarea,.companyProfileForm select");
-     controls.forEach((control,index)=>{const value=saved?.values?.[`field-${index}`];if(typeof value==="boolean"&&control instanceof HTMLInputElement)control.checked=value;else if(typeof value==="string")control.value=value});
-    }catch{}
+    const controls=document.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>(".companyProfileForm input,.companyProfileForm textarea,.companyProfileForm select");
+    controls.forEach((control,index)=>{const value=storedProfile?.values?.[`field-${index}`];if(typeof value==="boolean"&&control instanceof HTMLInputElement)control.checked=value;else if(typeof value==="string")control.value=value});
    }
    if(dialog.kind==="profile"&&dialog.context&&dialogElement){
     const section=dialogElement.querySelectorAll<HTMLElement>(".companyProfileForm fieldset")[Number(dialog.context)-1];
@@ -116,7 +112,7 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
    }
   });
   return ()=>cancelAnimationFrame(frame);
- },[dialog,role]);
+ },[dialog,role,storedProfile]);
  function open(title:string,kind:string,context?:string){setDialog({title,kind,context})}
  function click(e:MouseEvent<HTMLDivElement>){
    const target=e.target as HTMLElement;const link=target.closest("a");const button=target.closest("button");
@@ -174,9 +170,9 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
      return control.value.trim().length>0;
     });
    });
-    localStorage.setItem(PROFILE_KEY,JSON.stringify({values,requiredTotal:required.length,requiredCompleted,requiredSections,updatedAt:new Date().toISOString()}));
     const token=getPortalSession();
-    if(token)try{const organizations=await portalRequest<Array<{id:string}>>("/organizations/mine",{token});if(organizations[0])await portalRequest(`/organizations/${organizations[0].id}/profile`,{token,body:{profileData:values}})}catch(error){setToast(error instanceof Error?error.message:"Das Profil konnte nicht zentral übertragen werden.");return}
+    if(!token){setToast("Bitte melden Sie sich erneut an.");return}
+    try{const organizations=await portalRequest<Array<{id:string}>>("/organizations/mine",{token});if(!organizations[0])throw new Error("Kein Unternehmenskonto gefunden.");await portalRequest(`/organizations/${organizations[0].id}/profile`,{token,body:{profileData:values,requiredTotal:required.length,requiredCompleted,requiredSections}});setStoredProfile({values,requiredTotal:required.length,requiredCompleted,requiredSections,updatedAt:new Date().toISOString()})}catch(error){setToast(error instanceof Error?error.message:"Das Profil konnte nicht zentral gespeichert werden.");return}
    window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
    setToast("Unternehmensprofil gespeichert. Der Profilfortschritt wurde aktualisiert.");
   }else if(dialog?.kind==="new-need"||dialog?.kind==="ai"){
@@ -196,9 +192,8 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
     const label=control.closest("label")?.childNodes[0]?.textContent?.trim()||"Weitere Angabe";
     return [{label,value}];
    });
-   const need:StoredNeed={id:crypto.randomUUID(),title,category,summary,details,status:"Entwurf",updatedAt:new Date().toISOString(),values};
-   localStorage.setItem(NEEDS_KEY,JSON.stringify([need,...readNeeds()]));
-   sessionStorage.setItem("b2b-matching-preview-need",need.id);
+   const token=getPortalSession();if(!token){setToast("Bitte melden Sie sich erneut an.");return}
+   try{const organizations=await portalRequest<Array<{id:string}>>("/organizations/mine",{token});if(!organizations[0])throw new Error("Kein Unternehmenskonto gefunden.");await portalRequest(`/organizations/${organizations[0].id}/needs`,{token,body:{title,description:summary||title,categoryId:category,requiredSkills:details.filter(item=>/keyword|fachkennt|kompetenz/i.test(item.label)).flatMap(item=>item.value.split(",").map(value=>value.trim()).filter(Boolean)),preferredIndustries:[],region:null,deliveryModes:["hybrid"],details,submitForReview:false}})}catch(error){setToast(error instanceof Error?error.message:"Der Bedarf konnte nicht gespeichert werden.");return}
    window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
    window.location.assign("/portal/unternehmen/bedarfe");
    return;

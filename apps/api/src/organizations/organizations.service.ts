@@ -35,9 +35,13 @@ export class OrganizationsService {
     const source=input.profileData;if(!source||typeof source!=="object"||Array.isArray(source))throw new BadRequestException("Profildaten fehlen.");
     organization.profileData=Object.fromEntries(Object.entries(source as Record<string,unknown>).filter(([,value])=>typeof value==="string"||typeof value==="boolean")) as Record<string,string|boolean>;
     organization.profileUpdatedAt=new Date().toISOString();
-    if(organization.reviewStatus==="draft"||organization.reviewStatus==="changes_requested"){organization.reviewStatus="submitted";organization.submittedAt=organization.profileUpdatedAt;}
+    organization.profileRequiredTotal=typeof input.requiredTotal==="number"?Math.max(0,input.requiredTotal):organization.profileRequiredTotal;
+    organization.profileRequiredCompleted=typeof input.requiredCompleted==="number"?Math.max(0,input.requiredCompleted):organization.profileRequiredCompleted;
+    organization.profileRequiredSections=Array.isArray(input.requiredSections)?input.requiredSections.map(Boolean):organization.profileRequiredSections;
+    if(organization.reviewStatus==="changes_requested") organization.reviewStatus="draft";
     return organization;
   }
+  profile(authorization:string|undefined,organizationId:string){const user=this.auth.authenticate(authorization);this.requireAdmin(user.id,organizationId);return this.get(organizationId);}
   listMine(authorization: string | undefined) { const user = this.auth.authenticate(authorization); const ids = this.store.memberships.filter(m=>m.userId===user.id).map(m=>m.organizationId); return ids.map(id=>this.get(id)); }
   get(id: string) { const organization=this.store.organizations.get(id); if(!organization) throw new NotFoundException("Unternehmen nicht gefunden."); return organization; }
   private requireAdmin(userId:string, organizationId:string) { if(!this.store.memberships.some(m=>m.userId===userId&&m.organizationId===organizationId&&m.role==="admin")) throw new ForbiddenException(); }

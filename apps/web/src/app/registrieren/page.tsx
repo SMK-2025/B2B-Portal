@@ -123,10 +123,6 @@ export default function RegistrationPage() {
           token: sessionToken,
         },
       );
-      await portalRequest(`/organizations/${organization.id}/submit`, {
-        body: {},
-        token: sessionToken,
-      });
       if (role === "network") {
         const application = await portalRequest<NetworkApplicationResult>("/networks/applications", {
           body: { organizationId: organization.id, name: form.get("networkName"), legalName, websiteUrl: form.get("websiteUrl"), authorized: form.get("networkAuthorized") === "on", responsibilityAccepted: form.get("networkResponsibility") === "on", pricingAccepted: form.get("networkPricing") === "on" },

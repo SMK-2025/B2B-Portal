@@ -2,12 +2,15 @@
 
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent,ReactNode} from "react";
-import {PORTAL_UPDATE_EVENT,readNeeds,type StoredNeed,writeNeeds} from "../lib/entrepreneur-state";
+import {PORTAL_UPDATE_EVENT,type StoredNeed} from "../lib/entrepreneur-state";
 import {getPortalSession,portalRequest} from "../lib/portal-api";
 
 const tabs=["Alle","Entwürfe","In Prüfung","Aktiv","Pausiert","Archiv"];
 const tabStatus:Record<string,StoredNeed["status"]|undefined>={"Entwürfe":"Entwurf","In Prüfung":"In Prüfung","Aktiv":"Aktiv","Pausiert":"Pausiert","Archiv":"Archiv"};
 type IconName="edit"|"copy"|"eye"|"trash"|"pause"|"play";
+type RemoteNeed={id:string;title:string;description:string;categoryId:string;status:string;createdAt:string;details?:Array<{label:string;value:string}>};
+const statusMap:Record<string,StoredNeed["status"]>={draft:"Entwurf",submitted:"In Prüfung",active:"Aktiv",changes_requested:"Entwurf",rejected:"Archiv",paused:"Pausiert",closed:"Archiv"};
+const fromRemote=(need:RemoteNeed):StoredNeed=>({id:need.id,remoteId:need.id,title:need.title,category:need.categoryId,summary:need.description,details:need.details||[],status:statusMap[need.status]||"Entwurf",updatedAt:need.createdAt,values:{}});
 
 function Icon({name}:{name:IconName}){
  const paths:Record<IconName,ReactNode>={
@@ -33,36 +36,19 @@ export function NeedsWorkspace(){
  const [preview,setPreview]=useState<StoredNeed|null>(null);
  const [deleting,setDeleting]=useState<StoredNeed|null>(null);
  const [syncMessage,setSyncMessage]=useState("");
- const refresh=()=>setNeeds(readNeeds());
- useEffect(()=>{const stored=readNeeds();setNeeds(stored);const previewId=sessionStorage.getItem("b2b-matching-preview-need");if(previewId){setPreview(stored.find(need=>need.id===previewId)||null);sessionStorage.removeItem("b2b-matching-preview-need")}void syncSubmitted(stored);window.addEventListener(PORTAL_UPDATE_EVENT,refresh);return()=>window.removeEventListener(PORTAL_UPDATE_EVENT,refresh)},[]);
+ const refresh=async()=>{const token=getPortalSession();if(!token){setSyncMessage("Bitte melden Sie sich erneut an.");return}try{const organizations=await portalRequest<Array<{id:string}>>("/organizations/mine",{token});if(!organizations[0]){setNeeds([]);return}const remote=await portalRequest<RemoteNeed[]>(`/organizations/${organizations[0].id}/needs`,{token});setNeeds(remote.map(fromRemote));setSyncMessage("")}catch(error){setSyncMessage(error instanceof Error?error.message:"Die Bedarfe konnten nicht geladen werden.")}};
+ useEffect(()=>{void refresh();const listener=()=>void refresh();window.addEventListener(PORTAL_UPDATE_EVENT,listener);return()=>window.removeEventListener(PORTAL_UPDATE_EVENT,listener)},[]);
  const visible=useMemo(()=>needs.filter(need=>(!tabStatus[tab]||need.status===tabStatus[tab])&&(!query||`${need.title} ${need.category} ${need.summary}`.toLowerCase().includes(query.toLowerCase()))),[needs,query,tab]);
 
- function replace(next:StoredNeed){writeNeeds(needs.map(need=>need.id===next.id?next:need));setNeeds(readNeeds())}
- async function syncSubmitted(source:StoredNeed[]){
-  const token=getPortalSession();if(!token)return;
-  const pending=source.filter(need=>need.status==="In Prüfung"&&!need.remoteId);
-  try{
-   const organizations=await portalRequest<Array<{id:string}>>("/organizations/mine",{token});const organization=organizations[0];if(!organization)return;
-   let next=[...source];
-   for(const need of pending){
-    const remote=await portalRequest<{id:string}>(`/organizations/${organization.id}/needs`,{token,body:{title:need.title,description:need.summary||need.title,categoryId:need.category||"Sonstige Dienstleistungen",requiredSkills:need.details?.filter(item=>/keyword|fachkennt|kompetenz/i.test(item.label)).flatMap(item=>item.value.split(",").map(value=>value.trim()).filter(Boolean))||[],preferredIndustries:[],region:null,deliveryModes:["hybrid"],details:need.details||[],submitForReview:true}});
-    next=next.map(item=>item.id===need.id?{...item,remoteId:remote.id}:item);
-   }
-   const remoteNeeds=await portalRequest<Array<{id:string;status:string}>>(`/organizations/${organization.id}/needs`,{token});
-   const statusMap:Record<string,StoredNeed["status"]>={draft:"Entwurf",submitted:"In Prüfung",active:"Aktiv",changes_requested:"Entwurf",rejected:"Archiv",paused:"Pausiert",closed:"Archiv"};
-   next=next.map(item=>item.remoteId?{...item,status:statusMap[remoteNeeds.find(remote=>remote.id===item.remoteId)?.status||""]||item.status}:item);
-   writeNeeds(next);setNeeds(next);setSyncMessage("Der Bedarf wurde an die zentrale Prüfung übermittelt.");
-  }catch(error){setSyncMessage(error instanceof Error?error.message:"Die zentrale Übermittlung ist fehlgeschlagen.")}
- }
- function update(need:StoredNeed,status:StoredNeed["status"]){const next={...need,status,updatedAt:new Date().toISOString()};replace(next);setPreview(status==="In Prüfung"?null:preview);if(status==="In Prüfung")void syncSubmitted(readNeeds())}
- function duplicate(need:StoredNeed){writeNeeds([{...need,id:crypto.randomUUID(),title:`${need.title} (Kopie)`,status:"Entwurf",updatedAt:new Date().toISOString()},...needs]);refresh()}
- function remove(need:StoredNeed){writeNeeds(needs.filter(item=>item.id!==need.id));setDeleting(null);refresh()}
- function saveEdit(event:FormEvent<HTMLFormElement>){
+ async function update(need:StoredNeed,status:StoredNeed["status"]){const token=getPortalSession();if(!token)return;try{const path=status==="In Prüfung"?`/needs/${need.id}/submit`:status==="Pausiert"?`/needs/${need.id}/pause`:`/needs/${need.id}/activate`;await portalRequest(path,{token,body:{}});setPreview(status==="In Prüfung"?null:preview);await refresh()}catch(error){setSyncMessage(error instanceof Error?error.message:"Der Status konnte nicht geändert werden.")}}
+ async function duplicate(need:StoredNeed){const token=getPortalSession();if(!token)return;try{await portalRequest(`/needs/${need.id}/duplicate`,{token,body:{}});await refresh()}catch(error){setSyncMessage(error instanceof Error?error.message:"Der Bedarf konnte nicht dupliziert werden.")}}
+ async function remove(need:StoredNeed){const token=getPortalSession();if(!token)return;try{await portalRequest(`/needs/${need.id}/delete`,{token,body:{}});setDeleting(null);await refresh()}catch(error){setSyncMessage(error instanceof Error?error.message:"Der Bedarf konnte nicht gelöscht werden.")}}
+ async function saveEdit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();if(!editing)return;
   const data=new FormData(event.currentTarget);
   const details=editing.details?.map((detail,index)=>({...detail,value:String(data.get(`detail-${index}`)??detail.value).trim()}));
   const next={...editing,title:String(data.get("title")||"").trim(),category:String(data.get("category")||"").trim(),summary:String(data.get("summary")||"").trim(),details,status:"Entwurf" as const,updatedAt:new Date().toISOString()};
-  replace(next);setEditing(null);setPreview(next);
+  const token=getPortalSession();if(!token)return;try{const remote=await portalRequest<RemoteNeed>(`/needs/${editing.id}/update`,{token,body:{title:next.title,description:next.summary,categoryId:next.category,details:next.details}});const saved=fromRemote(remote);setEditing(null);setPreview(saved);await refresh()}catch(error){setSyncMessage(error instanceof Error?error.message:"Der Bedarf konnte nicht gespeichert werden.")}
  }
 
  return <><div className="workspaceToolbar"><div className="workspaceTabs">{tabs.map(item=><button type="button" className={tab===item?"active":""} key={item} onClick={event=>{event.stopPropagation();setTab(item)}}>{item} <b>{item==="Alle"?needs.length:needs.filter(need=>need.status===tabStatus[item]).length}</b></button>)}</div><label className="workspaceFilter"><span>⌕</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="Bedarfe filtern" aria-label="Bedarfe filtern"/></label></div>

@@ -56,17 +56,3 @@ CREATE TABLE needs (
 );
 
 CREATE INDEX needs_network_status ON needs(network_id,status);
-
-INSERT INTO networks (
-  id,slug,name,website_url,primary_color,secondary_color,status,enabled_modules,settings
-) VALUES (
-  '10000000-0000-4000-8000-000000000001',
-  'unternehmerfreunde-nrw',
-  'Unternehmerfreunde NRW',
-  'https://www.unternehmerfreunde-nrw.de/',
-  '#183b34',
-  '#c5a15a',
-  'draft',
-  ARRAY['members','profiles','services','matching','communication','events','community','tasks','documents','analytics','notifications'],
-  '{"closedNetwork":true,"selfRegistration":false,"crossNetworkMatching":false,"admissionRules":"Neue Mitgliedsunternehmen werden durch die Netzwerkadministration geprüft und freigegeben."}'::jsonb
-) ON CONFLICT (slug) DO NOTHING;

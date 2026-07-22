@@ -8,6 +8,7 @@ export class NetworksController{
  @Get("admin")adminList(@Headers("authorization")authorization:string|undefined){return this.networks.adminList(authorization)}
  @Post(":networkId/access")access(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.setAccess(authorization,networkId,body)}
  @Post(":networkId/administrator")administrator(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.appointAdministrator(authorization,networkId,body)}
+ @Post(":networkId/delete")remove(@Headers("authorization")authorization:string|undefined,@Param("networkId")networkId:string,@Body()body:Record<string,unknown>){return this.networks.remove(authorization,networkId,body)}
  @Get("public/:slug")publicNetwork(@Param("slug")slug:string){return this.networks.publicBySlug(slug)}
  @Get("mine")mine(@Headers("authorization")authorization:string|undefined){return this.networks.mine(authorization)}
  @Post("applications")partnerApplication(@Headers("authorization")authorization:string|undefined,@Body()body:Record<string,unknown>){return this.networks.applyAsPartner(authorization,body)}

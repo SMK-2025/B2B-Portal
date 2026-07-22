@@ -208,15 +208,6 @@ export default function RegistrationPage() {
             <span style={{ width: `${stepNumber * 25}%` }} />
             <small>SCHRITT {stepNumber} VON 4</small>
           </div>
-          {networkSlug === "unternehmerfreunde-nrw" && (
-            <div className="networkRegistrationNotice">
-              <b>Registrierung für Unternehmerfreunde NRW</b>
-              <span>
-                Ihr Unternehmen beantragt nach der Registrierung die Aufnahme in
-                den geschlossenen Netzwerkbereich.
-              </span>
-            </div>
-          )}
           {step === "account" && (
             <>
               <h1>Konto erstellen</h1>
@@ -398,7 +389,7 @@ export default function RegistrationPage() {
                 {role === "network" && <section className="full networkRegistrationFields">
                   <h2>Ihr Unternehmensnetzwerk</h2>
                   <p>Sie erhalten nach Abschluss sofort den administrativen Zugang zu einer unverbindlichen 10-Tage-Testansicht.</p>
-                  <label>Bezeichnung des Netzwerks<input name="networkName" required placeholder="z. B. Unternehmerfreunde NRW"/></label>
+                  <label>Bezeichnung des Netzwerks<input name="networkName" required placeholder="z. B. Wirtschaftsnetzwerk Rheinland"/></label>
                   <details className="networkPriceDetails">
                     <summary>
                       <span><b>Netzwerkportal bis 50 Unternehmen</b><small>Preise und Vertragsdetails anzeigen</small></span>

@@ -43,6 +43,25 @@ export class NetworksService{
   return this.addMember(authorization,networkId,{organizationId:companyMembership.organizationId,userId,role:"network_admin"});
  }
 
+ remove(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+  const actor=this.auth.authenticate(authorization);this.requirePlatformAdmin(actor.id);const network=this.raw(networkId);
+  if(input.confirmSlug!==network.slug)throw new BadRequestException("Zur Bestätigung muss die exakte Netzwerk-Kennung angegeben werden.");
+  const needIds=new Set([...this.store.needs.values()].filter(item=>item.networkId===networkId).map(item=>item.id));
+  const matchIds=new Set([...this.store.matches.values()].filter(item=>needIds.has(item.needId)).map(item=>item.id));
+  const conversationIds=new Set([...this.store.conversations.values()].filter(item=>matchIds.has(item.matchId)).map(item=>item.id));
+  for(const [id,item] of this.store.networkContents)if(item.networkId===networkId)this.store.networkContents.delete(id);
+  for(const [id,item] of this.store.needs)if(item.networkId===networkId)this.store.needs.delete(id);
+  for(const id of matchIds)this.store.matches.delete(id);
+  for(const id of conversationIds)this.store.conversations.delete(id);
+  for(const [id,item] of this.store.meetings)if(matchIds.has(item.matchId))this.store.meetings.delete(id);
+  this.store.messages.splice(0,this.store.messages.length,...this.store.messages.filter(item=>!conversationIds.has(item.conversationId)));
+  this.store.networkMemberships.splice(0,this.store.networkMemberships.length,...this.store.networkMemberships.filter(item=>item.networkId!==networkId));
+  this.store.activities.splice(0,this.store.activities.length,...this.store.activities.filter(item=>item.data.networkId!==networkId&&(!item.matchId||!matchIds.has(item.matchId))));
+  this.store.notifications.splice(0,this.store.notifications.length,...this.store.notifications.filter(item=>item.data.networkId!==networkId));
+  this.store.networks.delete(networkId);this.store.networkBySlug.delete(network.slug);
+  return{deleted:true,id:networkId,slug:network.slug};
+ }
+
  publicBySlug(slug:string){
   const network=this.bySlug(slug);
   return {id:network.id,slug:network.slug,name:network.name,legalName:network.legalName,websiteUrl:network.websiteUrl,logoUrl:network.logoUrl,primaryColor:network.primaryColor,secondaryColor:network.secondaryColor,colors:{primary:network.primaryColor,secondary:network.secondaryColor},enabledModules:network.enabledModules,settings:network.settings,selfRegistration:network.settings.selfRegistration};
@@ -81,7 +100,7 @@ export class NetworksService{
  }
 
  listMembers(authorization:string|undefined,networkId:string){
-  const user=this.auth.authenticate(authorization);this.requireNetworkManagement(user.id,networkId);
+  const user=this.auth.authenticate(authorization);this.requireNetworkAccess(user.id,networkId);
   return this.store.networkMemberships.filter(item=>item.networkId===networkId).map(item=>({...item,user:this.publicUser(item.userId),organization:this.store.organizations.get(item.organizationId)}));
  }
 
@@ -121,20 +140,21 @@ export class NetworksService{
  }
 
  listContent(authorization:string|undefined,networkId:string,type?:string){
-  const user=this.auth.authenticate(authorization);this.requireNetworkAccess(user.id,networkId);this.raw(networkId);
+  const user=this.auth.authenticate(authorization);this.requireNetworkAccess(user.id,networkId);this.ensureModule(this.raw(networkId),type);
   return [...this.store.networkContents.values()].filter(item=>item.networkId===networkId&&(!type||item.type===type)).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
  }
 
  createContent(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
-  const user=this.auth.authenticate(authorization);this.requireNetworkManagement(user.id,networkId);this.raw(networkId);
+  const user=this.auth.authenticate(authorization);const network=this.raw(networkId);
   const allowed:NetworkContentType[]=["event","topic","announcement","poll","task","document","conversation","need","service"];
   const type=String(input.type) as NetworkContentType;if(!allowed.includes(type))throw new BadRequestException("Ungültiger Netzwerkinhalt.");
+  this.ensureModule(network,type);this.requireContentCreation(user.id,networkId,type);
   const now=new Date().toISOString();const record:NetworkContentRecord={id:randomUUID(),networkId,type,title:requiredText(input.title,"Titel",2,200),description:requiredText(input.description,"Beschreibung",2,5000),status:["draft","published","active","completed","archived"].includes(String(input.status))?input.status as NetworkContentRecord["status"]:"published",createdByUserId:user.id,assignedToUserId:typeof input.assignedToUserId==="string"&&input.assignedToUserId?input.assignedToUserId:null,startsAt:this.optionalDate(input.startsAt),endsAt:this.optionalDate(input.endsAt),visibility:input.visibility==="administrators"?"administrators":"members",data:typeof input.data==="object"&&input.data!==null?input.data as Record<string,unknown>:{},createdAt:now,updatedAt:now};
   this.store.networkContents.set(record.id,record);this.store.activities.push({id:randomUUID(),matchId:null,organizationId:null,actorUserId:user.id,type:`network.${type}.created`,visibility:"platform_internal",data:{networkId,contentId:record.id,title:record.title},createdAt:now});return record;
  }
 
  updateContent(authorization:string|undefined,networkId:string,contentId:string,input:Record<string,unknown>){
-  const user=this.auth.authenticate(authorization);this.requireNetworkManagement(user.id,networkId);const record=this.store.networkContents.get(contentId);if(!record||record.networkId!==networkId)throw new NotFoundException("Netzwerkinhalt nicht gefunden.");
+  const user=this.auth.authenticate(authorization);const record=this.store.networkContents.get(contentId);if(!record||record.networkId!==networkId)throw new NotFoundException("Netzwerkinhalt nicht gefunden.");this.ensureModule(this.raw(networkId),record.type);this.requireContentUpdate(user.id,networkId,record);
   if(typeof input.title==="string")record.title=requiredText(input.title,"Titel",2,200);if(typeof input.description==="string")record.description=requiredText(input.description,"Beschreibung",2,5000);if(["draft","published","active","completed","archived"].includes(String(input.status)))record.status=input.status as NetworkContentRecord["status"];if(typeof input.data==="object"&&input.data!==null)record.data={...record.data,...input.data as Record<string,unknown>};record.updatedAt=new Date().toISOString();return record;
  }
 
@@ -156,6 +176,9 @@ export class NetworksService{
  private requirePlatformAdmin(userId:string){if(this.store.users.get(userId)?.accountRole!=="platform_admin")throw new ForbiddenException("Nur die Plattformadministration darf Netzwerkpartner freischalten.")}
  private requireNetworkManagement(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;const network=this.raw(networkId);if(network.status==="trial")throw new ForbiddenException("Im 10-Tage-Testzugang ist nur die unverbindliche Ansicht möglich. Zum Speichern, Einladen oder Veröffentlichen muss das Netzwerkportal gebucht und aktiviert werden.");if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"&&["network_admin","moderator"].includes(item.role)))throw new ForbiddenException("Keine Berechtigung zur Netzwerkverwaltung.")}
  private requireNetworkAccess(userId:string,networkId:string){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;if(!this.store.networkMemberships.some(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active"))throw new ForbiddenException("Kein Zugriff auf dieses Netzwerk.")}
+ private requireContentCreation(userId:string,networkId:string,type:NetworkContentType){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;const network=this.raw(networkId);if(network.status==="trial")throw new ForbiddenException("Die Testansicht ist schreibgeschützt.");const membership=this.store.networkMemberships.find(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active");if(!membership)throw new ForbiddenException("Kein Zugriff auf dieses Netzwerk.");if(["network_admin","moderator"].includes(membership.role))return;if(!["conversation","need","service","topic","poll"].includes(type))throw new ForbiddenException("Dieser Inhalt kann nur durch die Netzwerkverwaltung angelegt werden.")}
+ private requireContentUpdate(userId:string,networkId:string,record:NetworkContentRecord){const user=this.store.users.get(userId);if(user?.accountRole==="platform_admin")return;const network=this.raw(networkId);if(network.status==="trial")throw new ForbiddenException("Die Testansicht ist schreibgeschützt.");const membership=this.store.networkMemberships.find(item=>item.userId===userId&&item.networkId===networkId&&item.status==="active");if(!membership)throw new ForbiddenException("Kein Zugriff auf dieses Netzwerk.");if(record.createdByUserId!==userId&&!["network_admin","moderator"].includes(membership.role))throw new ForbiddenException("Sie dürfen nur eigene Inhalte bearbeiten.")}
+ private ensureModule(network:NetworkRecord,type?:string){if(!type)return;const moduleByType:Partial<Record<NetworkContentType,NetworkModule>>={event:"events",topic:"community",announcement:"community",poll:"community",task:"tasks",document:"documents",conversation:"communication",need:"matching",service:"services"};const module=moduleByType[type as NetworkContentType];if(module&&!network.enabledModules.includes(module))throw new ForbiddenException("Dieses Netzwerkmodul ist nicht freigeschaltet.")}
  private optionalDate(value:unknown){if(typeof value!=="string"||!value.trim())return null;const date=new Date(value);if(Number.isNaN(date.getTime()))throw new BadRequestException("Ungültiges Datum.");return date.toISOString()}
  private publicUser(userId:string){const user=this.store.users.get(userId);return user?{id:user.id,firstName:user.firstName,lastName:user.lastName,email:user.email}:null}
 }

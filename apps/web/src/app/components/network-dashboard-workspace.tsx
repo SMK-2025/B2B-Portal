@@ -3,7 +3,7 @@ import Link from "next/link";
 import {useEffect,useState} from "react";
 import {getPortalSession,portalRequest} from "../lib/portal-api";
 type Dashboard={network:{id:string;name:string;status:string;trialEndsAt:string|null};members:{total:number;active:number;pending:number};content:{total:number;events:number;topics:number;tasks:number;documents:number};recent:Array<{id:string;type:string;title:string;updatedAt:string}>};
-export function NetworkDashboardWorkspace({slug="unternehmerfreunde-nrw"}:{slug?:string}){
+export function NetworkDashboardWorkspace({slug}:{slug:string}){
  const [data,setData]=useState<Dashboard|null>(null),[message,setMessage]=useState(""),base=`/portal/netzwerk/${slug}`;
  useEffect(()=>{const token=getPortalSession();if(!token){setMessage("Bitte melden Sie sich erneut an.");return}portalRequest<{id:string}>(`/networks/public/${slug}`).then(n=>portalRequest<Dashboard>(`/networks/${n.id}/dashboard`,{token})).then(setData).catch(e=>setMessage(e instanceof Error?e.message:"Die Netzwerkübersicht konnte nicht geladen werden."))},[slug]);
  if(!data)return <section className="networkCard networkLoading"><p>{message||"Netzwerkübersicht wird geladen …"}</p></section>;

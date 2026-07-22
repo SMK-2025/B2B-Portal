@@ -2,6 +2,7 @@
 
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {getPortalSession,portalRequest} from "../lib/portal-api";
+import {useNetworkAccess} from "./network-shell";
 
 type ContentType="event"|"topic"|"task"|"document"|"conversation"|"need";
 type Status="draft"|"published"|"active"|"completed"|"archived";
@@ -18,8 +19,9 @@ const configs:Record<string,Config>={
 };
 const labels:Record<Status,string>={draft:"Entwurf",published:"Veröffentlicht",active:"Aktiv",completed:"Erledigt",archived:"Archiviert"};
 
-export function NetworkModuleWorkspace({module,slug="unternehmerfreunde-nrw"}:{module:string;slug?:string}){
+export function NetworkModuleWorkspace({module,slug}:{module:string;slug:string}){
  const config=configs[module];
+ const access=useNetworkAccess();
  const [networkId,setNetworkId]=useState("");
  const [items,setItems]=useState<Item[]>([]);
  const [dialog,setDialog]=useState(false);
@@ -28,17 +30,19 @@ export function NetworkModuleWorkspace({module,slug="unternehmerfreunde-nrw"}:{m
  const [notice,setNotice]=useState("");
  const [busy,setBusy]=useState(false);
 
- useEffect(()=>{void load()},[module,slug]);
+ useEffect(()=>{void load()},[module,slug,access?.networkId]);
  async function load(){
   const token=getPortalSession();if(!token||!config){setNotice("Bitte melden Sie sich erneut an.");return}
   try{
-   const network=await portalRequest<{id:string}>(`/networks/public/${slug}`);
-   setNetworkId(network.id);
-   setItems(await portalRequest<Item[]>(`/networks/${network.id}/content?type=${config.type}`,{token}));
+   if(!access?.networkId)return;
+   setNetworkId(access.networkId);
+   setItems(await portalRequest<Item[]>(`/networks/${access.networkId}/content?type=${config.type}`,{token}));
   }catch(error){setNotice(error instanceof Error?error.message:"Die Netzwerkdaten konnten nicht geladen werden.")}
  }
  const visible=useMemo(()=>items.filter(item=>(filter==="Alle"||labels[item.status]===filter)&&`${item.title} ${item.description}`.toLowerCase().includes(query.toLowerCase())),[items,query,filter]);
  if(!config)return null;
+ const memberCanCreate=["kommunikation","matching","themen"].includes(module);
+ const canCreate=Boolean(!access?.readOnly&&(access?.canManage||memberCanCreate));
 
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();const token=getPortalSession();if(!token||!networkId)return;
@@ -63,15 +67,15 @@ export function NetworkModuleWorkspace({module,slug="unternehmerfreunde-nrw"}:{m
   <div className="networkMemberToolbar">
    <label><span>⌕</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder={`${config.plural} durchsuchen`}/></label>
    <select value={filter} onChange={event=>setFilter(event.target.value)} aria-label="Status filtern"><option>Alle</option>{Object.values(labels).map(label=><option key={label}>{label}</option>)}</select>
-   <button className="networkPrimary" type="button" onClick={()=>setDialog(true)}>＋ {config.singular} anlegen</button>
+   {canCreate&&<button className="networkPrimary" type="button" onClick={()=>setDialog(true)}>＋ {config.singular} anlegen</button>}
   </div>
   <div className="networkMemberStats"><button className={filter==="Alle"?"active":""} onClick={()=>setFilter("Alle")}><strong>{items.length}</strong><span>Gesamt</span></button>{(["published","active","completed"] as const).map(value=><button key={value} className={filter===labels[value]?"active":""} onClick={()=>setFilter(labels[value])}><strong>{items.filter(item=>item.status===value).length}</strong><span>{labels[value]}</span></button>)}</div>
   <section className="networkCard">
    <header><div><span>NETZWERKMODUL</span><h2>{config.plural}</h2></div><button type="button" onClick={exportCsv} disabled={!visible.length}>CSV exportieren</button></header>
    <div className="networkContentRows">{visible.map(item=><article key={item.id}><div><span className={`networkMemberStatus ${item.status}`}>{labels[item.status]}</span><h3>{item.title}</h3><p>{item.description}</p><small>{item.startsAt?new Date(item.startsAt).toLocaleString("de-DE"):"Ohne Termin"} · {item.visibility==="administrators"?"Nur Verwaltung":"Alle Mitglieder"}</small></div><div className="networkRowActions">{item.status!=="published"&&item.status!=="completed"&&<button onClick={()=>void change(item,"published")} title="Veröffentlichen" aria-label="Veröffentlichen">✓</button>}{item.status!=="completed"&&<button onClick={()=>void change(item,"completed")} title="Erledigen" aria-label="Erledigen">○</button>}{item.status!=="archived"&&<button onClick={()=>void change(item,"archived")} title="Archivieren" aria-label="Archivieren">⌑</button>}</div></article>)}</div>
-   {!visible.length&&<div className="networkEmpty"><b>{config.empty}</b><p>Legen Sie den ersten Eintrag an oder ändern Sie den Filter.</p><button className="networkPrimary" onClick={()=>setDialog(true)}>＋ Jetzt {config.singular.toLowerCase()} anlegen</button></div>}
+   {!visible.length&&<div className="networkEmpty"><b>{config.empty}</b><p>{canCreate?"Legen Sie den ersten Eintrag an oder ändern Sie den Filter.":"Sobald Inhalte freigegeben wurden, erscheinen sie hier."}</p>{canCreate&&<button className="networkPrimary" onClick={()=>setDialog(true)}>＋ Jetzt {config.singular.toLowerCase()} anlegen</button>}</div>}
   </section>
-  {dialog&&<div className="networkModalBackdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setDialog(false)}}><section className="networkModal networkContentModal" role="dialog" aria-modal="true">
+  {canCreate&&dialog&&<div className="networkModalBackdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setDialog(false)}}><section className="networkModal networkContentModal" role="dialog" aria-modal="true">
    <header><div><span>{config.plural.toUpperCase()}</span><h2>{config.singular} anlegen</h2></div><button type="button" onClick={()=>setDialog(false)} aria-label="Dialog schließen">×</button></header>
    <form onSubmit={submit}>
     <label>Titel<input name="title" required minLength={2}/></label><label>Ausführliche Beschreibung<textarea name="description" required rows={5}/></label>

@@ -26,20 +26,9 @@ const labels: Record<NetworkStatus, string> = {
   active: "Aktiv",
   suspended: "Gesperrt",
 };
-const fallback: Network = {
-  id: "10000000-0000-4000-8000-000000000001",
-  slug: "unternehmerfreunde-nrw",
-  name: "Unternehmerfreunde NRW",
-  websiteUrl: "https://www.unternehmerfreunde-nrw.de/",
-  status: "draft",
-  trialEndsAt: null,
-  settings: { selfRegistration: false },
-  administrator: null,
-};
-
 export function AdminNetworkWorkspace() {
-  const [networks, setNetworks] = useState<Network[]>([fallback]);
-  const [selected, setSelected] = useState(fallback.id);
+  const [networks, setNetworks] = useState<Network[]>([]);
+  const [selected, setSelected] = useState("");
   const [dialog, setDialog] = useState<Dialog>(null);
   const [trialDays, setTrialDays] = useState(30);
   const [notice, setNotice] = useState("");
@@ -51,7 +40,7 @@ export function AdminNetworkWorkspace() {
     if (!token) return;
     portalRequest<Network[]>("/networks/admin", { token })
       .then((items) => {
-        if (items.length) setNetworks(items);
+        setNetworks(items);
       })
       .catch(showError);
   }, []);
@@ -166,6 +155,12 @@ export function AdminNetworkWorkspace() {
     } finally {
       setBusy(false);
     }
+  }
+  async function deleteNetwork(network:Network){
+    const confirmation=window.prompt(`„${network.name}“ einschließlich Mitgliedschaften und Inhalten dauerhaft löschen? Geben Sie zur Bestätigung ${network.slug} ein:`);
+    if(confirmation!==network.slug)return;
+    const token=getPortalSession();if(!token)return setNotice("Bitte melden Sie sich erneut als Plattformadministrator an.");
+    setBusy(true);try{await portalRequest(`/networks/${network.id}/delete`,{token,body:{confirmSlug:confirmation}});setNetworks(items=>items.filter(item=>item.id!==network.id));setNotice(`${network.name} wurde vollständig gelöscht.`)}catch(error){showError(error)}finally{setBusy(false)}
   }
 
   return (
@@ -320,6 +315,7 @@ export function AdminNetworkWorkspace() {
                     Sperren
                   </button>
                 )}
+                <button disabled={busy} className="portalReject" type="button" title="Netzwerk vollständig löschen" aria-label={`${network.name} vollständig löschen`} onClick={()=>void deleteNetwork(network)}>⌫</button>
               </footer>
             </section>
           );

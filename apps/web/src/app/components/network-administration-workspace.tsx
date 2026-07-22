@@ -3,7 +3,7 @@ import {FormEvent,useEffect,useState} from "react";
 import {getPortalSession,portalRequest} from "../lib/portal-api";
 type Network={id:string;name:string;legalName:string|null;websiteUrl:string|null;logoUrl:string|null;primaryColor:string;secondaryColor:string;status:string;enabledModules:string[];settings:{closedNetwork:boolean;selfRegistration:boolean;crossNetworkMatching:boolean;admissionRules:string|null}};
 type Dashboard={members:{total:number;active:number;pending:number};content:{total:number;events:number;topics:number;tasks:number;documents:number};recent:Array<{id:string;title:string;type:string;updatedAt:string}>};
-export function NetworkAdministrationWorkspace({mode,slug="unternehmerfreunde-nrw"}:{mode:"settings"|"analytics";slug?:string}){
+export function NetworkAdministrationWorkspace({mode,slug}:{mode:"settings"|"analytics";slug:string}){
  const [network,setNetwork]=useState<Network|null>(null),[dashboard,setDashboard]=useState<Dashboard|null>(null),[notice,setNotice]=useState(""),[busy,setBusy]=useState(false);
  async function load(){const token=getPortalSession();if(!token){setNotice("Bitte melden Sie sich erneut an.");return}try{const n=await portalRequest<Network>(`/networks/public/${slug}`);setNetwork(n);setDashboard(await portalRequest<Dashboard>(`/networks/${n.id}/dashboard`,{token}))}catch(e){setNotice(e instanceof Error?e.message:"Netzwerkverwaltung konnte nicht geladen werden.")}}
  useEffect(()=>{void load()},[slug]);

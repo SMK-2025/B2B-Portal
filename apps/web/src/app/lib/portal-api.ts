@@ -58,6 +58,12 @@ export function getPortalSession() {
   );
 }
 
+export function clearPortalSession() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("b2b-matching-session");
+  sessionStorage.removeItem("b2b-matching-session");
+}
+
 export function routeForRole(role: "buyer" | "provider" | "both" | undefined) {
   return role === "provider" ? "/portal/dienstleister" : "/portal/unternehmen";
 }

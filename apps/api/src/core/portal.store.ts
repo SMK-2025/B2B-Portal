@@ -15,9 +15,9 @@ import type {
   MembershipRecord,
   MessageRecord,
   NeedRecord,
+  NetworkRecord,
   NetworkMembershipRecord,
   NetworkContentRecord,
-  NetworkRecord,
   NotificationRecord,
   OrganizationRecord,
   PasswordResetRecord,
@@ -27,9 +27,6 @@ import type {
   UserRecord,
   VerificationRecord,
 } from "./domain";
-
-export const UNTERNEHMERFREUNDE_NETWORK_ID =
-  "10000000-0000-4000-8000-000000000001";
 
 @Injectable()
 export class PortalStore implements OnModuleInit, OnApplicationShutdown {
@@ -58,9 +55,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   readonly activities: ActivityRecord[] = [];
   readonly notifications: NotificationRecord[] = [];
 
-  constructor() {
-    this.seedNetworks();
-  }
+  constructor() {}
 
   async onModuleInit(): Promise<void> {
     const databaseUrl = process.env.DATABASE_URL;
@@ -176,7 +171,6 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     map(this.meetings, state.meetings);
     array(this.activities, state.activities);
     array(this.notifications, state.notifications);
-    if (!this.networks.size) this.seedNetworks();
   }
 
   private async runMigrations(): Promise<void> {
@@ -207,7 +201,6 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
 
   reset(): void {
     this.clear();
-    this.seedNetworks();
   }
 
   private clear(): void {
@@ -234,43 +227,4 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     this.notifications.splice(0);
   }
 
-  private seedNetworks() {
-    const now = new Date().toISOString();
-    const network: NetworkRecord = {
-      id: UNTERNEHMERFREUNDE_NETWORK_ID,
-      slug: "unternehmerfreunde-nrw",
-      name: "Unternehmerfreunde NRW",
-      legalName: null,
-      websiteUrl: "https://www.unternehmerfreunde-nrw.de/",
-      logoUrl: null,
-      primaryColor: "#183b34",
-      secondaryColor: "#c5a15a",
-      status: "draft",
-      trialEndsAt: null,
-      enabledModules: [
-        "members",
-        "profiles",
-        "services",
-        "matching",
-        "communication",
-        "events",
-        "community",
-        "tasks",
-        "documents",
-        "analytics",
-        "notifications",
-      ],
-      settings: {
-        closedNetwork: true,
-        selfRegistration: false,
-        crossNetworkMatching: false,
-        admissionRules:
-          "Neue Mitgliedsunternehmen werden durch die Netzwerkadministration geprüft und freigegeben.",
-      },
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.networks.set(network.id, network);
-    this.networkBySlug.set(network.slug, network.id);
-  }
 }

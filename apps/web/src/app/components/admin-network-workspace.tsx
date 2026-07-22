@@ -270,10 +270,9 @@ export function AdminNetworkWorkspace() {
                   <Link
                     className="adminNetworkTestLogin"
                     href={`/portal/netzwerk/${network.slug}` as never}
-                    target="_blank"
                   >
-                    <span aria-hidden="true">↗</span>
-                    Als Testnutzer öffnen
+                    <span aria-hidden="true">→</span>
+                    Testansicht öffnen
                   </Link>
                 )}
                 <button
@@ -508,14 +507,14 @@ export function AdminNetworkWorkspace() {
               <strong aria-hidden="true">✓</strong>
               <div>
                 <b>{testAccess.name}</b>
-                <p>Sie können den Netzwerkbereich jetzt unmittelbar in einem neuen Browser-Tab aus Sicht der Netzwerkverwaltung prüfen.</p>
+                <p>Sie können jetzt direkt in die geschützte Testansicht wechseln. Ihre bestehende Administrationssitzung bleibt dabei erhalten.</p>
                 {testAccess.trialEndsAt && <small>Testzugang gültig bis {new Date(testAccess.trialEndsAt).toLocaleDateString("de-DE")}</small>}
               </div>
             </div>
             {!testAccess.administrator && <p className="adminNetworkTestHint">Für einen vollständig rollengetreuen Test bestimmen Sie anschließend noch einen Netzwerkadministrator. Die Testansicht können Sie bereits jetzt öffnen.</p>}
             <div className="adminNetworkDialogActions">
               <button type="button" onClick={() => setTestAccess(null)}>Zur Übersicht</button>
-              <Link className="portalPrimary adminNetworkLoginCta" href={`/portal/netzwerk/${testAccess.slug}` as never} target="_blank" onClick={() => setTestAccess(null)}><span aria-hidden="true">↗</span>Jetzt als Testnutzer öffnen</Link>
+              <Link className="portalPrimary adminNetworkLoginCta" href={`/portal/netzwerk/${testAccess.slug}` as never} onClick={() => setTestAccess(null)}><span aria-hidden="true">→</span>Testansicht jetzt öffnen</Link>
             </div>
           </section>
         </div>

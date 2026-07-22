@@ -367,3 +367,9 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .networkBookingConsents{gap:17px;padding:25px 24px}.networkBookingConsents label{gap:13px;color:#2d4852;font-size:15px;font-weight:400;line-height:1.6}.networkBookingConsents input{width:20px;height:20px}
 .networkBookingFooter{padding:24px}.networkBookingFooter b{font-size:15px;font-weight:600}.networkBookingFooter small{font-size:14px;font-weight:400}.networkBookingFooter button{min-height:54px;font-size:16px;font-weight:650}
 @media(max-width:760px){.networkBookingSummary h2{font-size:25px}.networkBookingSection>header{align-items:flex-start;padding:18px}.networkBookingSection>header h3{font-size:18px}.networkBookingSection>header p{font-size:14px}.networkBookingFields,.networkBillingOptions,.networkBookingConsents{padding:18px}.networkBookingFields label,.networkBookingConsents label{font-size:14px}.networkBookingFields input{font-size:16px}}
+
+/* Verbindliche Typografie-Regel für alle eingeloggten Portalbereiche: maximal 500. */
+:where(.portalApp,.networkPortal,.networkTrialGate) :where(*){font-weight:400!important}
+:where(.portalApp,.networkPortal,.networkTrialGate) :where(h1,h2,h3,h4,h5,h6,strong,b,label,button,summary,th,legend){font-weight:500!important}
+:where(.portalApp,.networkPortal,.networkTrialGate) :where(input,select,textarea,option,p,small,span,a,li,td){font-weight:400!important}
+:where(.portalApp,.networkPortal,.networkTrialGate) :where(.portalStatus,.networkMemberStatus,.networkReadOnlyNotice,.networkBookingSummary>span,.networkBookingSection>header>span){font-weight:500!important}

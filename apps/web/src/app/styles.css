@@ -546,3 +546,75 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
   .homeMotionReady :is(.subHero>div,.networkPublicHero>div,.authStory,.authCardV2,.legalHero>*){animation:none!important}
   .painGrid article,.valueGrid article,.securityGrid article,.networkRoleFlow article,.networkFeatureGrid article,.networkPriceColumns article,.authTrust>div,.authAfter article,.splitContent>div{transition:none!important}
 }
+
+/* Marken-Relaunch: Navy + Indigo als Plattform, Aqua und Violett als Rollenakzente. */
+.v2{
+  --n:#102c42;
+  --t:#5267d8;
+  --td:#4056c5;
+  --brand-indigo:#5267d8;
+  --brand-indigo-dark:#4056c5;
+  --brand-aqua:#32b8ae;
+  --brand-purple:#7455b4;
+  --off:#f5f7fa;
+  background:#fff;
+}
+.v2Header{border-bottom-color:#e1e5f0;box-shadow:0 5px 22px rgba(16,44,66,.035)}
+.v2Header nav a:hover,.v2Login:hover{color:var(--brand-indigo)}
+.v2Button{background:var(--brand-indigo);border-color:var(--brand-indigo);box-shadow:0 10px 24px rgba(82,103,216,.2)}
+.v2Button:hover{background:var(--brand-indigo-dark);border-color:var(--brand-indigo-dark)}
+.v2Button:focus-visible,.v2 a:focus-visible,.v2 summary:focus-visible{outline:3px solid rgba(82,103,216,.3);outline-offset:3px}
+.v2Hero h1 em{color:#aeb9ff}
+.v2Pill,.v2HeroNetworkLink{color:#81ded5}
+.v2HeroNetworkLink{text-decoration-color:rgba(129,222,213,.7)}
+.v2RoleIntro>span,.v2Heading>span,.v2Trust>div:first-child>span,.contentLead>span,.splitContent>div>span,.darkStatement>span{color:var(--brand-indigo)}
+.v2RoleIntro>h2 em,.v2Heading em{color:var(--brand-indigo)}
+.v2RoleIntro>span::before,.v2Heading>span::before{background:var(--brand-aqua)}
+.v2Clarity{background:linear-gradient(180deg,#f5f7fa,#f1f4fa)}
+.v2Clarity>header>span,.v2Clarity article h3{color:#263f80}
+.v2Clarity article>b{background:#e9ecfb;color:var(--brand-indigo)}
+.threeRoles>article::before{background:var(--brand-aqua)}
+.threeRoles>article.dark{background:linear-gradient(145deg,#102c42,#4056c5)}
+.threeRoles>article.dark::before{background:#aeb9ff}
+.roleCards .networkRoleCard{background:linear-gradient(145deg,#f2eefb,#fbfaff);border-color:#d4c8ed}
+.roleCards .networkRoleCard::before{background:var(--brand-purple)}
+.roleCards .networkRoleCard small,.roleCards .networkRoleCard a{color:var(--brand-purple)}
+.v2Numbers{background:linear-gradient(110deg,#102c42,#263f80)}
+.processGrid b,.textCta,.v2Trust article>span,.v2Trust>a{color:var(--brand-indigo)}
+.v2ProviderFeature{background:linear-gradient(135deg,#f1f4fa,#eef1f8)}
+.v2ProviderFeature>div:first-child>span,.featureChecks p>b,.providerMock>span,.providerMock>div b{color:var(--brand-indigo)}
+.providerMock>div{background:#eaedfb}
+.providerMock .mockButton{background:var(--brand-indigo)}
+.v2Faq{background:#f5f7fa}
+.v2MatchingGraphic{background:radial-gradient(circle at 79% 20%,rgba(82,103,216,.27),transparent 31%),radial-gradient(circle at 15% 100%,rgba(50,184,174,.12),transparent 34%),linear-gradient(135deg,#0d293b,#243d79 68%,#332f70)}
+.mapCore{background:linear-gradient(145deg,var(--brand-aqua),var(--brand-indigo))}
+.mapNode.provider>span{color:var(--brand-indigo)}
+.mapNetwork>span{background:var(--brand-purple)}
+.mapConnection i{background:linear-gradient(90deg,var(--brand-aqua),var(--brand-indigo),var(--brand-purple))}
+.matchingGraphicIntro>span{color:#95e1da}
+.matchingGraphicIntro a{border-bottom-color:#8ca0ff}
+.v2Footer{background:radial-gradient(circle at 86% 0,rgba(82,103,216,.12),transparent 32%),#102c42}
+.subHero{background:radial-gradient(circle at 83% 8%,rgba(82,103,216,.35),transparent 30%),linear-gradient(120deg,#102c42,#344a91)}
+.subHero span{color:#aeb9ff}.subHero .outline{border-color:#aeb9ff;color:#fff}
+.darkStatement{background:radial-gradient(circle at 85% 10%,rgba(82,103,216,.2),transparent 30%),linear-gradient(125deg,#102c42,#263f80)}
+.darkStatement h2 em{color:#aeb9ff}
+.v2Cta:not(.v2Cta-company):not(.v2Cta-provider){background:radial-gradient(circle at 82% 42%,rgba(127,98,194,.43),transparent 39%),radial-gradient(circle at 8% 120%,rgba(50,184,174,.2),transparent 38%),linear-gradient(115deg,#102c42,#344a91 62%,#5267d8)}
+
+/* Rollen behalten eine klare, aber harmonisierte Kennfarbe. */
+.v2:has(.painGrid){--t:#32b8ae;--td:#218f88;--public-role:#32b8ae;--public-role-dark:#218f88;--public-role-soft:#e8f7f5}
+.v2:has(.valueGrid){--t:#5267d8;--td:#4056c5;--public-role:#5267d8;--public-role-dark:#4056c5;--public-role-soft:#eceffc}
+.v2:has(.painGrid) .subHero{background-image:linear-gradient(90deg,#071d2df7 0%,#0b283de8 42%,#218f8870 67%,#07172018 100%),url('/images/company-landing-hero.webp')}
+.v2:has(.valueGrid) .subHero{background-image:linear-gradient(90deg,#071d2df7 0%,#18284ee8 42%,#4056c575 67%,#07172018 100%),url('/images/provider-landing-hero.webp')}
+.roleHeroAccent-company{background:var(--brand-aqua)}.roleHeroAccent-provider{background:var(--brand-indigo)}
+.roleImpactStrip{background:linear-gradient(110deg,#102c42,#263f80)}
+.roleImpactStrip-company b{color:#7de0d7}.roleImpactStrip-provider b{color:#b9c2ff}
+.networkLanding{--t:#7455b4;--td:#5f439a;--network-accent:#7455b4;--network-dark:#5f439a;--network-soft:#f2eefb}
+.networkLanding .networkPublicHero{background-image:linear-gradient(90deg,#071d2df5 0%,#25264ee0 42%,#60428d8f 65%,#22183925 100%),url('/images/network-portal-hero.webp')}
+.networkLanding .networkPriceColumns article.monthly,.networkLanding .networkBeforeAfter>div:last-child{background:linear-gradient(135deg,#102c42,#5f439a)}
+
+/* Formulare und Authentifizierung folgen ebenfalls der neuen Plattformfarbe. */
+.authPage{background:linear-gradient(120deg,#102c42 0 48%,#f2f4fa 48%)}
+.authCardV2 .primary,.authPage .primary{background:var(--brand-indigo)}
+.authCardV2 .primary:hover,.authPage .primary:hover{background:var(--brand-indigo-dark)}
+.authStory>span,.authAfter>span{color:#8edfd7}
+.formGrid input:focus,.formGrid select:focus,.formGrid textarea:focus{border-color:var(--brand-indigo);box-shadow:0 0 0 3px rgba(82,103,216,.16);outline:0}

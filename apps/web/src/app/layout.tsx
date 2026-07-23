@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
   category: "business"
   ,manifest: "/manifest.webmanifest",
-  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], shortcut: "/icon.svg", apple: "/icons/b2b-matching-symbol.svg" },
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], shortcut: "/icon.svg", apple: "/icon.svg" },
   appleWebApp: { capable: true, title: "B2B Matching", statusBarStyle: "black-translucent" },
   applicationName: "B2B Matching"
 };

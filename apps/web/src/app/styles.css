@@ -444,3 +444,86 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
   .homeMotionReady .homeReveal{opacity:1!important;transform:none!important;transition:none!important}
   .v2Clarity article,.roleCards article,.processGrid article,.v2Trust article{transition:none!important}
 }
+
+/* Vollbreiter Abschlussbereich: visuelle Brücke zwischen Inhalt und Footer. */
+.v2Cta{
+  isolation:isolate;
+  width:100%;
+  max-width:none;
+  min-height:430px;
+  margin:0;
+  padding:92px max(24px,calc((100vw - 1140px)/2));
+  overflow:hidden;
+  border-radius:0;
+  background:
+    radial-gradient(circle at 82% 42%,rgba(123,93,192,.5) 0,rgba(123,93,192,.18) 22%,transparent 43%),
+    radial-gradient(circle at 8% 120%,rgba(76,207,194,.25),transparent 38%),
+    linear-gradient(115deg,#0a5f61 0%,#0b817b 47%,#115a72 100%);
+}
+.v2Cta::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:480px;
+  height:480px;
+  right:7%;
+  top:50%;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:50%;
+  box-shadow:0 0 0 72px rgba(255,255,255,.055),0 0 0 144px rgba(255,255,255,.035);
+  transform:translateY(-50%);
+}
+.v2Cta::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:0;
+  opacity:.42;
+  background-image:
+    linear-gradient(90deg,transparent 0 49.8%,rgba(255,255,255,.07) 50%,transparent 50.2%),
+    linear-gradient(0deg,transparent 0 49.8%,rgba(255,255,255,.055) 50%,transparent 50.2%);
+  background-size:110px 110px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 34%,#000 72%,transparent);
+  mask-image:linear-gradient(90deg,transparent 34%,#000 72%,transparent);
+}
+.v2Cta>span,.v2Cta>h2,.v2Cta>p,.v2Cta>a{position:relative;z-index:2}
+.v2Cta>span{color:#a9eee6}
+.v2Cta h2{max-width:780px;margin-top:17px;color:#fff;font-size:clamp(38px,4.1vw,58px);line-height:1.08;letter-spacing:-.025em}
+.v2Cta p{max-width:720px;color:#d7efec;font-size:17px;line-height:1.65}
+.v2Cta .v2Button.light{min-height:50px;padding-inline:23px;box-shadow:0 14px 35px rgba(4,38,48,.22)}
+.v2Cta .v2Button.light:hover{background:#f1fbf9;color:#075f5c}
+.v2Cta+.v2Footer{margin-top:0}
+.v2Cta-provider{background:radial-gradient(circle at 82% 42%,rgba(83,103,216,.52) 0,rgba(83,103,216,.18) 23%,transparent 43%),radial-gradient(circle at 8% 120%,rgba(91,219,207,.2),transparent 38%),linear-gradient(115deg,#153a58,#304d91 58%,#4655a6)}
+.v2Cta-company{background:radial-gradient(circle at 82% 42%,rgba(51,199,187,.38) 0,rgba(51,199,187,.12) 23%,transparent 43%),radial-gradient(circle at 8% 120%,rgba(126,220,210,.22),transparent 38%),linear-gradient(115deg,#075f61,#0b817b 55%,#116c72)}
+.networkTestCta{
+  isolation:isolate;
+  position:relative;
+  width:100%;
+  max-width:none;
+  min-height:430px;
+  margin:0;
+  padding:90px max(24px,calc((100vw - 1140px)/2));
+  overflow:hidden;
+  border-radius:0;
+  background:radial-gradient(circle at 82% 36%,rgba(174,145,230,.42),transparent 34%),radial-gradient(circle at 4% 110%,rgba(70,191,179,.2),transparent 36%),linear-gradient(120deg,#102c42,#4b3787 72%,#6245a5);
+}
+.networkTestCta::before{content:"";position:absolute;z-index:-1;width:470px;height:470px;right:8%;top:50%;border:1px solid rgba(255,255,255,.14);border-radius:50%;box-shadow:0 0 0 72px rgba(255,255,255,.045),0 0 0 144px rgba(255,255,255,.025);transform:translateY(-50%)}
+.networkTestCta::after{content:"";position:absolute;z-index:-1;inset:0;opacity:.35;background-image:linear-gradient(90deg,transparent 49.8%,rgba(255,255,255,.08) 50%,transparent 50.2%),linear-gradient(0deg,transparent 49.8%,rgba(255,255,255,.06) 50%,transparent 50.2%);background-size:110px 110px;-webkit-mask-image:linear-gradient(90deg,transparent 35%,#000 72%,transparent);mask-image:linear-gradient(90deg,transparent 35%,#000 72%,transparent)}
+.networkTestCta>span,.networkTestCta>h2,.networkTestCta>p,.networkTestCta>a,.networkTestCta>small{position:relative;z-index:2}
+.networkTestCta h2{max-width:800px;margin-left:auto;margin-right:auto;color:#fff;font-size:clamp(37px,4vw,56px);line-height:1.1}
+.networkTestCta p{font-size:17px}
+.networkTestCta+.v2Footer{margin-top:0}
+@media(max-width:700px){
+  .v2Cta{min-height:0;margin:0;padding:72px 18px;background:radial-gradient(circle at 100% 12%,rgba(123,93,192,.42),transparent 42%),linear-gradient(135deg,#0a5f61,#0b817b 58%,#115a72)}
+  .v2Cta-provider{background:radial-gradient(circle at 100% 12%,rgba(123,93,192,.42),transparent 42%),linear-gradient(135deg,#153a58,#304d91 58%,#4655a6)}
+  .v2Cta-company{background:radial-gradient(circle at 100% 12%,rgba(91,219,207,.34),transparent 42%),linear-gradient(135deg,#075f61,#0b817b 58%,#116c72)}
+  .v2Cta::before{width:300px;height:300px;right:-165px;top:25%;box-shadow:0 0 0 48px rgba(255,255,255,.05),0 0 0 96px rgba(255,255,255,.025)}
+  .v2Cta::after{background-size:80px 80px;-webkit-mask-image:linear-gradient(90deg,transparent,#000);mask-image:linear-gradient(90deg,transparent,#000)}
+  .v2Cta h2{font-size:36px}
+  .v2Cta p{font-size:16px}
+  .networkTestCta{min-height:0;margin:0;padding:72px 18px;background:radial-gradient(circle at 100% 12%,rgba(174,145,230,.4),transparent 42%),linear-gradient(135deg,#102c42,#4b3787 72%,#6245a5)}
+  .networkTestCta::before{width:300px;height:300px;right:-170px;top:24%;box-shadow:0 0 0 48px rgba(255,255,255,.045),0 0 0 96px rgba(255,255,255,.025)}
+  .networkTestCta::after{background-size:80px 80px;-webkit-mask-image:linear-gradient(90deg,transparent,#000);mask-image:linear-gradient(90deg,transparent,#000)}
+  .networkTestCta h2{font-size:35px}
+  .networkTestCta p{font-size:16px}
+}

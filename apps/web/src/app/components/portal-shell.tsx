@@ -80,8 +80,6 @@ const groups: Record<Role, MenuGroup[]> = {
       icon: "◇",
       items: [
         ["Leistungsprofil", "#profil"],
-        ["Profilbesucher", "#besucher"],
-        ["Verfügbarkeit", "#verfuegbarkeit"],
       ],
     },
     {
@@ -89,16 +87,6 @@ const groups: Record<Role, MenuGroup[]> = {
       icon: "◎",
       items: [
         ["Geschäftschancen", "#matches"],
-        ["Nachrichten", "#nachrichten"],
-        ["Favoriten", "#favoriten"],
-      ],
-    },
-    {
-      label: "Konto & Vertrag",
-      icon: "⚙",
-      items: [
-        ["Abonnement", "#abonnement"],
-        ["Einstellungen", "#einstellungen"],
       ],
     },
   ],
@@ -172,7 +160,7 @@ export function PortalShell({
           <div className="portalHelp">
             <strong>Hilfe benötigt?</strong>
             <p>Unser Support begleitet Sie persönlich.</p>
-            <a href="mailto:mail@media-online-innovations.group">
+            <a href="mailto:service@b2b-matching.de">
               Support kontaktieren
             </a>
           </div>

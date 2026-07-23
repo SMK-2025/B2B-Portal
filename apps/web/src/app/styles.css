@@ -830,3 +830,7 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .mapConnection i{background:linear-gradient(90deg,#4f8ee8,#5267d8,#7455b4)}
 .matchingGraphicIntro>span{color:#c1c8ff}
 
+.portalSnapshotSelector{display:grid;gap:8px;max-width:520px;margin:0 0 24px;font-size:14px;color:#29324f}.portalSnapshotSelector select{min-height:48px;border:1px solid #cbd0df;border-radius:9px;background:#fff;padding:0 14px;color:#102c42;font:inherit}
+
+/* Einheitliche, gut lesbare Typografie: Hervorhebungen bleiben bewusst unterhalb fetter Display-Schnitte. */
+h1,h2,h3,h4,h5,h6,b,strong,button,label,summary{font-weight:500!important}

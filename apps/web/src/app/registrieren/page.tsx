@@ -424,7 +424,7 @@ export default function RegistrationPage() {
                 </div>
                 <button className="primary full" disabled={loading}>
                   {loading
-                    ? "Profil wird vorbereitet …"
+                    ? "Registrierung wird gespeichert …"
                     : "Unternehmen anlegen und fortfahren"}
                 </button>
               </form>

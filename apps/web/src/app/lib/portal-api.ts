@@ -1,10 +1,17 @@
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 export const portalApiUrl =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+  configuredApiUrl ??
+  (process.env.NODE_ENV === "development" ? "http://localhost:3001" : "");
 
 export async function portalRequest<T>(
   path: string,
   options: { method?: "GET" | "POST"; body?: unknown; token?: string } = {},
 ): Promise<T> {
+  if (!portalApiUrl) {
+    throw new Error(
+      "Die API-Adresse ist für diese Umgebung nicht konfiguriert. Bitte wenden Sie sich an den Support.",
+    );
+  }
   let response: Response;
   try {
     response = await fetch(`${portalApiUrl}/api${path}`, {

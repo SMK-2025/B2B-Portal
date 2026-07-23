@@ -80,7 +80,7 @@ function fields(kind:string,role:Role,accountEmail="",profile:StoredProfile|null
  </div>;
  if(kind==="profile")return <><div className="dialogSplit"><label>Unternehmensname<input placeholder="Vollständige Firmierung"/></label><label>Branche<input placeholder="Hauptbranche"/></label></div><label className="full">Leistungsversprechen<textarea rows={5} placeholder="Positionierung und Nutzenversprechen des Dienstleisters"/></label><div className="dialogSplit"><label>Region<input placeholder="Einsatzgebiet"/></label><label>Website<input type="url" placeholder="https://"/></label></div></>;
  if(kind==="member")return <><div className="dialogSplit"><label>Unternehmen<input placeholder="Firmenname"/></label><label>Rolle<select><option>Unternehmer</option><option>Dienstleister</option><option>Administrator</option></select></label></div><div className="dialogSplit"><label>Ansprechpartner<input placeholder="Vor- und Nachname"/></label><label>E-Mail<input type="email" placeholder="name@unternehmen.de"/></label></div><label><input type="checkbox" defaultChecked/> Einladungs-E-Mail versenden</label></>;
- if(kind==="message")return <><div className="dialogMessage"><b>Bergwerk GmbH</b><p>Vielen Dank für Ihr Interesse. Wir würden gern die nächsten Schritte abstimmen.</p><small>Heute, 09:42 Uhr</small></div><label className="full">Nachricht<textarea rows={5} placeholder="Ihre Nachricht …"/></label><div className="dialogSplit"><button type="button" className="portalSecondary">＋ Datei anhängen</button><button type="button" className="portalSecondary">Termin vorschlagen</button></div></>;
+ if(kind==="message")return <div className="portalInlineAlert"><b>Keine Unterhaltung ausgewählt</b><p>Nachrichten und Termine werden ausschließlich innerhalb eines beidseitig freigegebenen Matches geöffnet.</p></div>;
  if(kind==="review")return <><div className="reviewSummary"><span>91%</span><div><b>Automatische Qualitätsbewertung</b><p>Unternehmensdaten plausibel · Leistungstexte vollständig · ein Nachweis offen</p></div></div><label>Prüfentscheidung<select><option>Profil freigeben</option><option>Rückfrage senden</option><option>Zurückstellen</option><option>Ablehnen</option></select></label><label className="full">Interne Notiz<textarea rows={4} placeholder="Entscheidung dokumentieren …"/></label></>;
  if(kind==="search")return <><label className="full">Portal durchsuchen<input autoFocus placeholder="Unternehmen, Bedarf, Dienstleistung oder Nachricht …"/></label><div className="searchEmpty">Noch keine durchsuchbaren Inhalte vorhanden.</div></>;
  if(kind==="Geschäftschancen")return <div className="needPreview"><div className="anonymousBanner"><span>◉</span><div><b>Anonymisiertes Unternehmen</b><p>Identität und Kontaktdaten werden erst nach Freigabe sichtbar.</p></div><strong>0 %</strong></div><section><span>BEDARF</span><h3>Noch keine freigegebene Geschäftschance</h3><p>Sobald ein suchendes Unternehmen einen Match für Sie freigibt, erscheint hier das vollständige anonymisierte Anforderungsprofil.</p></section><div className="previewGrid"><article><small>Unternehmenskontext</small><b>Branche, Größe, Region, Marktgebiet</b></article><article><small>Projektumfang</small><b>Ziele, Leistungen und Ergebnisse</b></article><article><small>Anforderungen</small><b>Muss-/Kann-Kriterien und Nachweise</b></article><article><small>Rahmenbedingungen</small><b>Start, Dauer, Modell und Budget</b></article></div><section><span>MATCHING-TRANSPARENZ</span><h4>So wird die Passung erklärt</h4><div className="matchingFactors"><p><b>Fachkompetenz</b><i/><small>Keine Daten</small></p><p><b>Branchenerfahrung</b><i/><small>Keine Daten</small></p><p><b>Verfügbarkeit</b><i/><small>Keine Daten</small></p><p><b>Region & Arbeitsmodell</b><i/><small>Keine Daten</small></p></div></section></div>;
@@ -125,8 +125,8 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
   if(!button&&target.closest(".activity p")){open("Aktivitätsdetails","Historie");return}
   if(!button)return;
   const text=(button.getAttribute("aria-label")||button.textContent||"").trim();
-  if(button.closest(".portalDialog")){if(text.includes("Abmelden")){localStorage.removeItem("b2b-matching-session");sessionStorage.removeItem("b2b-matching-session");window.location.href="/anmelden";return}if(text.includes("Dialog schließen")||text.includes("Abbrechen"))return;if(text.includes("Nachweis")||text.includes("Datei auswählen")||text.includes("Datei anhängen"))setToast("Die Dateiauswahl wird mit dem sicheren Dokumentenspeicher verbunden.");else if(text.includes("Hinzufügen"))setToast("Das Keyword wird nach Eingabe zur Matchingliste ergänzt.");else if(text.includes("Ablehnen"))setToast("Der Match wurde abgelehnt und in der Historie dokumentiert.");else if(text.includes("Favorisieren"))setToast("Der Dienstleister wurde als Favorit gespeichert.");else if(text.includes("freigeben"))setToast("Der Bedarf wurde für diesen Dienstleister freigegeben.");else if(text.includes("Termin"))setToast("Die Terminabstimmung wurde geöffnet.");else if(button.getAttribute("type")==="button")setToast(`„${text}“ wurde geöffnet.`);return}
-  if(button.closest(".workspaceTabs")){setToast(`Ansicht „${text.replace(/\d+/g,"").trim()}“ wurde ausgewählt.`);return}
+  if(button.closest(".portalDialog")){if(text.includes("Abmelden")){localStorage.removeItem("b2b-matching-session");sessionStorage.removeItem("b2b-matching-session");window.location.href="/anmelden";return}return}
+  if(button.closest(".workspaceTabs"))return;
   const profileSectionButton=button.closest(".profileSectionGrid button") as HTMLButtonElement|null;
   if(profileSectionButton){
    const sectionButtons=Array.from(profileSectionButton.parentElement?.querySelectorAll("button")||[]);
@@ -143,12 +143,11 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
   if(text.includes("Dienstleisterprofil"))return open("Dienstleisterprofil prüfen","provider-preview");
   if(text.includes("Vorschau"))return open("Öffentliche Profilvorschau","profile-preview");
   if(text.includes("Abonnement")||text.includes("Tarife"))return open("Tarife und Abonnement","Abonnement");
-  if(text.includes("Ablehnen")){setToast("Match wurde abgelehnt und in der Historie dokumentiert.");return}
-  if(text.includes("entfernen")){setToast("Favorit wurde entfernt.");return}
+  if(text.includes("Ablehnen")||text.includes("entfernen"))return;
   if(text.includes("Alle Bedarfe"))return open("Alle Bedarfe","Meine Bedarfe");
   if(text.includes("Matching")||text.includes("Chancen"))return open(text.replace("→",""),role==="dienstleister"?"Geschäftschancen":"Matches");
   if(text==="Jetzt bearbeiten")return open("Offene Profilprüfungen","review");
-  open(text||"Details","generic");
+  return;
  }
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();
@@ -197,7 +196,7 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
    window.dispatchEvent(new Event(PORTAL_UPDATE_EVENT));
    window.location.assign("/portal/unternehmen/bedarfe");
    return;
-  }else setToast("Änderungen wurden gespeichert.");
+  }else return;
   setDialog(null);
  }
  return <div onClick={click}>{children}{dialog&&<div className="portalDialogBackdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setDialog(null)}}><section className={`portalDialog ${dialog.kind==="new-need"||dialog.kind==="ai"?"needDialog":dialog.kind==="profile"&&role==="unternehmen"?"companyDialog":dialog.kind==="account"?"accountDialog":""}`} role="dialog" aria-modal="true" aria-labelledby="portal-dialog-title"><header><div><span>{role.toUpperCase()}</span><h2 id="portal-dialog-title">{dialog.title}</h2></div><button type="button" onClick={()=>setDialog(null)} aria-label="Dialog schließen">×</button></header><form onSubmit={submit}>{fields(dialog.kind,role,accountEmail,storedProfile)}{dialog.kind!=="account"&&<div className="portalDialogActions"><button type="button" className="portalSecondary" onClick={()=>setDialog(null)}>Abbrechen</button><button type="submit" className="portalPrimary">{dialog.kind==="message"?"Nachricht senden":"Speichern und Vorschau"}</button></div>}</form></section></div>}{toast&&<div className="portalToast" role="status"><span>✓</span>{toast}<button onClick={()=>setToast("")} aria-label="Meldung schließen">×</button></div>}</div>

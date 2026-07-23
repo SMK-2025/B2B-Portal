@@ -68,8 +68,13 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   async onModuleInit(): Promise<void> {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(
+          "DATABASE_URL fehlt. Die produktive API wird zum Schutz vor Datenverlust nicht gestartet.",
+        );
+      }
       this.logger.warn(
-        "DATABASE_URL fehlt; der PortalStore läuft nur im Arbeitsspeicher.",
+        "DATABASE_URL fehlt; der PortalStore läuft nur in der lokalen Entwicklungsumgebung im Arbeitsspeicher.",
       );
       return;
     }

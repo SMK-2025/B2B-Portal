@@ -1,8 +1,8 @@
+import {AdminProviderSnapshot} from "../../../components/admin-provider-snapshot";
 import {PortalShell} from "../../../components/portal-shell";
-import {ProviderWorkspace} from "../../../components/provider-workspace";
 
 export default function AdminProviderPreviewPage(){
- return <PortalShell role="dienstleister" title="Dienstleister-Testansicht" intro="Prüfen Sie den Dienstleisterbereich aus Sicht eines freigegebenen Anbieters.">
-  <ProviderWorkspace preview/>
- </PortalShell>;
+  return <PortalShell role="admin" title="Dienstleisterkonten prüfen" intro="Prüfen Sie ausschließlich tatsächlich registrierte Dienstleister, Leistungsseiten und freigegebene Geschäftschancen.">
+    <AdminProviderSnapshot/>
+  </PortalShell>;
 }

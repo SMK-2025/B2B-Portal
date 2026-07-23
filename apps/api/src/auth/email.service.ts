@@ -9,10 +9,7 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
   directLinksEnabled(): boolean {
-    return (
-      process.env.NODE_ENV !== "production" ||
-      process.env.ALLOW_DIRECT_EMAIL_LINKS === "true"
-    );
+    return process.env.NODE_ENV !== "production";
   }
 
   async sendVerification(input: {
@@ -150,12 +147,18 @@ export class EmailService {
   }
 
   private webUrl(): string {
-    return (
+    const configured = (
       process.env.PUBLIC_WEB_URL ??
       process.env.WEB_ORIGIN ??
       process.env.WEB_ORIGINS?.split(",")[0]?.trim() ??
-      "http://localhost:3000"
+      ""
     ).replace(/\/$/, "");
+    if (configured) return configured;
+    if (process.env.NODE_ENV === "test") return "https://portal.test.invalid";
+    if (process.env.NODE_ENV === "development") return "http://localhost:3000";
+    throw new ServiceUnavailableException(
+      "Die öffentliche Portaladresse ist nicht konfiguriert.",
+    );
   }
 
   private template(

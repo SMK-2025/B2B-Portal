@@ -27,6 +27,23 @@ export class AdminService {
     const record={id:randomUUID(),organizationId,reviewerId:reviewer.id,decision:decision as "approved"|"changes_requested"|"rejected",reason,createdAt:new Date().toISOString()}; this.store.reviewDecisions.push(record); return {organization,decision:record};
   }
   serviceQueue(authorization:string|undefined){this.requireReviewer(authorization);return this.services.reviewQueue();}
+  providerSnapshot(authorization:string|undefined){
+    this.requireReviewer(authorization);
+    const organizations=[...this.store.organizations.values()]
+      .filter(organization=>["provider","both"].includes(organization.role))
+      .map(organization=>{
+        const pages=[...this.store.servicePages.values()].filter(page=>page.organizationId===organization.id);
+        const chances=[...this.store.matches.values()]
+          .filter(match=>match.providerOrganizationId===organization.id&&["released_anonymously","provider_interested","mutual_match"].includes(match.status))
+          .flatMap(match=>{
+            const need=this.store.needs.get(match.needId);
+            return need?[{match,need:{id:need.id,title:need.title,description:need.description,categoryId:need.categoryId,region:need.region}}]:[];
+          });
+        return {organization,pages,chances};
+      })
+      .sort((a,b)=>b.organization.createdAt.localeCompare(a.organization.createdAt));
+    return {organizations,categories:[...this.store.categories.values()].filter(category=>category.active)};
+  }
   decideService(authorization:string|undefined,serviceId:string,input:Record<string,unknown>){const reviewer=this.requireReviewer(authorization);const decision=String(input.decision);if(!["approved","changes_requested","rejected"].includes(decision))throw new BadRequestException("Ungültige Entscheidung.");return this.services.approve(reviewer.id,serviceId,decision as "approved"|"changes_requested"|"rejected",requiredText(input.reason,"Begründung",5,1000));}
   needQueue(authorization:string|undefined){this.requireReviewer(authorization);return this.needs.reviewQueue().map(need=>({...need,organization:this.store.organizations.get(need.organizationId)}));}
   decideNeed(authorization:string|undefined,needId:string,input:Record<string,unknown>){if(input.scope!=="need")throw new BadRequestException("Die Entscheidung ist keinem Bedarf eindeutig zugeordnet.");this.requireReviewer(authorization);const decision=String(input.decision);if(!["approved","changes_requested","rejected"].includes(decision))throw new BadRequestException("Ungültige Entscheidung.");return this.needs.decide(needId,decision as "approved"|"changes_requested"|"rejected",requiredText(input.reason,"Begründung",3,1000));}

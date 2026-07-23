@@ -4,14 +4,17 @@ import { AppModule } from "./app.module";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const allowedOrigins = (
+  const originConfiguration =
     process.env.WEB_ORIGINS ??
     process.env.WEB_ORIGIN ??
-    "http://localhost:3000"
-  )
+    (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "");
+  const allowedOrigins = originConfiguration
     .split(",")
     .map((value) => value.trim().replace(/\/$/, ""))
     .filter(Boolean);
+  if (!allowedOrigins.length) {
+    throw new Error("WEB_ORIGINS muss für den Produktivbetrieb gesetzt sein.");
+  }
   app.enableCors({
     origin(origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
       if (!origin || allowedOrigins.includes(origin.replace(/\/$/, "")))

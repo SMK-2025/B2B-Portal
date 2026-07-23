@@ -8,7 +8,7 @@ import {NetworksService} from "./networks.service";
 
 describe("network tenancy",()=>{
  it("allows only the platform owner to activate trials and appoint network administrators",async()=>{
-  const store=new PortalStore();const auth=new AuthService(store);const organizations=new OrganizationsService(store,auth);const networks=new NetworksService(store,auth,new EmailService());
+  const store=new PortalStore();const auth=new AuthService(store);const organizations=new OrganizationsService(store,auth,new EmailService());const networks=new NetworksService(store,auth,new EmailService());
   const adminId="platform-admin";store.users.set(adminId,{id:adminId,email:"admin@b2bmatching.de",passwordHash:await hashPassword("Sehr-Sicher-2026!"),firstName:"Portal",lastName:"Admin",accountRole:"platform_admin",emailVerifiedAt:new Date().toISOString(),createdAt:new Date().toISOString()});store.userByEmail.set("admin@b2bmatching.de",adminId);
   const adminLogin=await auth.login({email:"admin@b2bmatching.de",password:"Sehr-Sicher-2026!"});const adminBearer=`Bearer ${adminLogin.token}`;
   expect(()=>networks.publicBySlug("test-netzwerk")).toThrow();

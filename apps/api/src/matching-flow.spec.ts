@@ -1,9 +1,10 @@
 import{describe,expect,it}from"vitest";import{PortalStore}from"./core/portal.store";import{AuthService}from"./auth/auth.service";import{OrganizationsService}from"./organizations/organizations.service";import{ServicesService}from"./services/services.service";import{MatchingService}from"./matching/matching.service";import{NeedsService}from"./matching/needs.service";
 import{CollaborationService}from"./collaboration/collaboration.service";
+import{EmailService}from"./auth/email.service";
 
 async function account(auth:AuthService,email:string){const r=await auth.register({email,password:"Sehr-Sicher-2026!",firstName:"Test",lastName:"Person"});auth.verifyEmail(r.verificationToken);return `Bearer ${(await auth.login({email,password:"Sehr-Sicher-2026!"})).token}`;}
 describe("controlled double opt-in matching",()=>{it("reveals the anonymous need only after buyer release and identity only after mutual interest",async()=>{
- const store=new PortalStore(),auth=new AuthService(store),organizations=new OrganizationsService(store,auth),services=new ServicesService(store,auth),matching=new MatchingService(store,auth),needs=new NeedsService(store,auth,matching),collaboration=new CollaborationService(store,auth);
+ const store=new PortalStore(),auth=new AuthService(store),organizations=new OrganizationsService(store,auth,new EmailService()),services=new ServicesService(store,auth),matching=new MatchingService(store,auth),needs=new NeedsService(store,auth,matching),collaboration=new CollaborationService(store,auth);
  const buyerToken=await account(auth,"buyer@example.de"),providerToken=await account(auth,"provider@example.de");
  const buyer=organizations.create(buyerToken,{legalName:"Käufer GmbH",displayName:"Käufer",role:"buyer",websiteUrl:"https://buyer.example"});buyer.reviewStatus="approved";
  const provider=organizations.create(providerToken,{legalName:"Security GmbH",displayName:"Security",role:"provider",websiteUrl:"https://provider.example"});provider.reviewStatus="approved";

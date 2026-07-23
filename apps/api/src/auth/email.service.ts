@@ -71,6 +71,16 @@ export class EmailService {
     });
   }
 
+  async sendTeamInvitation(input:{email:string;organizationName:string;inviterName:string;token:string}):Promise<void>{
+    const link=`${this.webUrl()}/team-einladung?token=${encodeURIComponent(input.token)}`;
+    await this.send({
+      to:input.email,
+      subject:`Einladung zum Unternehmenskonto ${input.organizationName}`,
+      text:`${input.inviterName} hat Sie zum Unternehmenskonto ${input.organizationName} bei B2B Matching eingeladen.\n\nEinladung annehmen:\n${link}\n\nDer Link ist 14 Tage gültig.`,
+      html:this.template("Ihre Teameinladung",`${this.escape(input.inviterName)} hat Sie eingeladen, im Unternehmenskonto <strong>${this.escape(input.organizationName)}</strong> mitzuarbeiten.`,"Einladung annehmen",link,"Dieser persönliche Link ist 14 Tage gültig und kann nur mit der eingeladenen E-Mail-Adresse verwendet werden."),
+    });
+  }
+
   async sendNetworkOrderConfirmation(input:{email:string;contact:string;networkName:string;orderId:string;billingCycle:"annual"|"semiannual"}):Promise<void>{
     const link=`${this.webUrl()}/portal`;
     const cycle=input.billingCycle==="annual"?"jährliche Vorauszahlung":"halbjährliche Abrechnung";

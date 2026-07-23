@@ -27,6 +27,9 @@ import type {
   SessionRecord,
   UserRecord,
   VerificationRecord,
+  TeamInvitationRecord,
+  FavoriteRecord,
+  UserPreferenceRecord,
 } from "./domain";
 
 @Injectable()
@@ -38,6 +41,9 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   readonly userByEmail = new Map<string, string>();
   readonly organizations = new Map<string, OrganizationRecord>();
   readonly memberships: MembershipRecord[] = [];
+  readonly teamInvitations = new Map<string,TeamInvitationRecord>();
+  readonly favorites = new Map<string,FavoriteRecord>();
+  readonly userPreferences = new Map<string,UserPreferenceRecord>();
   readonly networks = new Map<string, NetworkRecord>();
   readonly networkBySlug = new Map<string, string>();
   readonly networkMemberships: NetworkMembershipRecord[] = [];
@@ -89,6 +95,9 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       userByEmail: [...this.userByEmail],
       organizations: [...this.organizations],
       memberships: this.memberships,
+      teamInvitations:[...this.teamInvitations],
+      favorites:[...this.favorites],
+      userPreferences:[...this.userPreferences],
       networks: [...this.networks],
       networkBySlug: [...this.networkBySlug],
       networkMemberships: this.networkMemberships,
@@ -157,6 +166,9 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     map(this.userByEmail, state.userByEmail);
     map(this.organizations, state.organizations);
     array(this.memberships, state.memberships);
+    map(this.teamInvitations,state.teamInvitations);
+    map(this.favorites,state.favorites);
+    map(this.userPreferences,state.userPreferences);
     map(this.networks, state.networks);
     map(this.networkBySlug, state.networkBySlug);
     array(this.networkMemberships, state.networkMemberships);
@@ -212,6 +224,9 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     this.userByEmail.clear();
     this.organizations.clear();
     this.memberships.splice(0);
+    this.teamInvitations.clear();
+    this.favorites.clear();
+    this.userPreferences.clear();
     this.networks.clear();
     this.networkBySlug.clear();
     this.networkMemberships.splice(0);

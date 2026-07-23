@@ -1,6 +1,6 @@
 export type AccountRole = "user" | "platform_admin" | "reviewer";
 export type OrganizationRole = "buyer" | "provider" | "both";
-export type MembershipRole = "admin" | "member";
+export type MembershipRole = "admin" | "needs_manager" | "communication" | "viewer";
 export type NetworkRole = "network_admin" | "moderator" | "organization_admin" | "member";
 export type NetworkMembershipStatus = "pending" | "active" | "rejected" | "suspended" | "left";
 export type NetworkModule = "members" | "profiles" | "services" | "matching" | "communication" | "events" | "community" | "tasks" | "documents" | "analytics" | "notifications";
@@ -40,6 +40,9 @@ export interface MembershipRecord {
   organizationId: string;
   role: MembershipRole;
 }
+export interface TeamInvitationRecord{id:string;organizationId:string;email:string;role:MembershipRole;tokenHash:string;invitedByUserId:string;expiresAt:string;acceptedAt:string|null;createdAt:string;}
+export interface FavoriteRecord{id:string;userId:string;providerOrganizationId:string;matchId:string;list:"later"|"priority"|"contacted";note:string|null;createdAt:string;updatedAt:string;}
+export interface UserPreferenceRecord{userId:string;notifyMatches:boolean;notifyMessages:boolean;notifyNeedStatus:boolean;notifyProduct:boolean;defaultAnonymous:boolean;updatedAt:string;}
 
 export interface NetworkRecord {
   id:string; slug:string; name:string; legalName:string|null; websiteUrl:string|null;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AuthService } from "./auth/auth.service";
+import { EmailService } from "./auth/email.service";
 import { hashPassword } from "./auth/password";
 import { PortalStore } from "./core/portal.store";
 import { OrganizationsService } from "./organizations/organizations.service";
@@ -33,7 +34,7 @@ describe("registration and organization approval", () => {
   it("keeps an organization out of approval until email verification and explicit review", async () => {
     const store = new PortalStore();
     const auth = new AuthService(store);
-    const organizations = new OrganizationsService(store, auth);
+    const organizations = new OrganizationsService(store, auth, new EmailService());
     const services = new ServicesService(store, auth);
     const matching = new MatchingService(store, auth);
     const needs = new NeedsService(store, auth, matching);

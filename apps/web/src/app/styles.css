@@ -389,3 +389,58 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .v2RoleIntro>h2{font-weight:500}.v2RoleIntro>p{max-width:850px}
 @media(max-width:980px){.v2Clarity>div{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.v2HeroNetworkLink{justify-content:center;width:100%;margin-top:0;font-size:14px}.v2Clarity{padding:65px 16px}.v2Clarity>header{margin-bottom:30px}.v2Clarity>header p{font-size:16px}.v2Clarity>div{grid-template-columns:1fr}.v2Clarity article{padding:23px 20px}.v2Pill{font-size:10px;line-height:1.5}}
+
+/* Homepage: ruhige Typografie, interaktive Tiefe und grafischer Matching-Prozess. */
+.v2 :where(*){font-weight:400!important}
+.v2 :where(h1,h2,h3,h4,h5,h6,strong,b,label,button,summary,th,legend,.v2Pill,.v2Button){font-weight:500!important}
+.v2.homeMotionReady::before{content:"";position:fixed;z-index:5;left:var(--mouse-x,-400px);top:var(--mouse-y,-400px);width:430px;height:430px;border-radius:50%;background:radial-gradient(circle,rgba(28,174,163,.12),rgba(116,85,180,.045) 44%,transparent 72%);mix-blend-mode:multiply;pointer-events:none;transform:translate(-50%,-50%)}
+.v2Header,.v2>section,.v2Footer{position:relative;z-index:6}
+.homeMotionReady .homeReveal{opacity:0;transform:translateY(28px);transition:opacity .72s ease var(--reveal-delay,0ms),transform .72s cubic-bezier(.22,.75,.22,1) var(--reveal-delay,0ms)}
+.homeMotionReady .homeReveal.isVisible{opacity:1;transform:none}
+.v2Clarity article,.roleCards article,.processGrid article,.v2Trust article{transition:transform .3s ease,border-color .3s ease,box-shadow .3s ease}
+.v2Clarity article:hover,.roleCards article:hover,.processGrid article:hover,.v2Trust article:hover{transform:translateY(-5px);border-color:#9dcfc9;box-shadow:0 18px 42px rgba(14,52,65,.1)}
+@keyframes homeHeroBreath{0%{transform:scale(1.01)}100%{transform:scale(1.055)}}
+@keyframes homeHeroEntry{0%{opacity:0;transform:translateY(22px)}100%{opacity:1;transform:none}}
+.v2HeroImage{animation:homeHeroBreath 18s ease-in-out infinite alternate}
+.v2HeroContent{animation:homeHeroEntry .8s cubic-bezier(.22,.75,.22,1) both}
+
+.v2MatchingGraphic{display:grid;grid-template-columns:minmax(280px,.72fr) minmax(620px,1.28fr);gap:70px;align-items:center;overflow:hidden;padding:105px max(24px,calc((100vw - 1240px)/2));background:radial-gradient(circle at 79% 20%,rgba(37,174,162,.18),transparent 30%),linear-gradient(135deg,#0a2637,#10384a 64%,#172f4d);color:#fff}
+.matchingGraphicIntro>span{color:#78d8cf;font-size:11px;letter-spacing:.15em}
+.matchingGraphicIntro h2{margin:14px 0 18px;color:#fff;font-size:clamp(32px,3.2vw,48px);line-height:1.12;letter-spacing:-.03em}
+.matchingGraphicIntro p{max-width:510px;margin:0 0 27px;color:#c5d8df;font-size:17px;line-height:1.7}
+.matchingGraphicIntro a{display:inline-flex;align-items:center;min-height:44px;color:#fff;text-decoration:none;border-bottom:1px solid #5dd0c4}
+.matchingMap{position:relative;display:grid;grid-template-columns:minmax(150px,1fr) 68px 154px 68px minmax(150px,1fr);align-items:center;min-height:430px}
+.mapNode{display:flex;gap:14px;align-items:center;min-height:126px;padding:20px;border:1px solid rgba(255,255,255,.17);border-radius:16px;background:rgba(255,255,255,.08);box-shadow:0 20px 48px rgba(0,0,0,.16);backdrop-filter:blur(8px)}
+.mapNode>span,.mapNetwork>span{display:grid;flex:0 0 45px;place-items:center;width:45px;height:45px;border-radius:13px;background:#fff;color:#0d746f}
+.mapNode small,.mapNetwork small{display:block;margin-bottom:6px;color:#84dcd3;font-size:9px;letter-spacing:.12em}
+.mapNode b,.mapNetwork b{display:block;color:#fff;font-size:16px;line-height:1.3}
+.mapNode p{margin:5px 0 0;color:#bcd0d7;font-size:12px;line-height:1.45}
+.mapNode.provider>span{color:#5668ce}
+.mapConnection{display:grid;gap:9px;text-align:center}
+.mapConnection i{position:relative;display:block;height:2px;background:linear-gradient(90deg,#4dc7bb,#7d67c3)}
+.mapConnection i::after{content:"";position:absolute;right:-1px;top:50%;width:8px;height:8px;border-top:2px solid #8d78cf;border-right:2px solid #8d78cf;transform:translateY(-50%) rotate(45deg)}
+.mapConnection small{color:#9bb2bb;font-size:8px;line-height:1.25}
+.mapCore{position:relative;display:grid;place-items:center;z-index:2;aspect-ratio:1;padding:20px;border:1px solid rgba(255,255,255,.28);border-radius:50%;background:linear-gradient(145deg,#12958d,#6552ab);box-shadow:0 0 0 11px rgba(255,255,255,.045),0 25px 60px rgba(0,0,0,.25);text-align:center}
+.mapCore>span{font-size:8px;letter-spacing:.08em}
+.mapCore strong{display:block;margin:-4px 0;color:#fff;font-family:Georgia,serif;font-size:43px;line-height:1}
+.mapCore strong small{font-size:18px}
+.mapCore>b{color:#eaf8f6;font-size:11px;line-height:1.3}
+.mapCore>div{display:flex;gap:5px}.mapCore>div i{width:5px;height:5px;border-radius:50%;background:#fff}.mapCore>div i:nth-child(2){opacity:.65}.mapCore>div i:nth-child(3){opacity:.35}
+.mapNetwork{position:absolute;left:50%;bottom:18px;display:flex;align-items:center;gap:13px;width:min(440px,72%);padding:15px 18px;border:1px solid rgba(255,255,255,.15);border-radius:14px;background:rgba(13,34,54,.88);box-shadow:0 18px 40px rgba(0,0,0,.2);transform:translateX(-50%)}
+.mapNetwork>span{flex-basis:40px;width:40px;height:40px;background:#7455b4;color:#fff}
+
+@media(max-width:1100px){.v2MatchingGraphic{grid-template-columns:1fr;gap:44px}.matchingGraphicIntro{max-width:750px}.matchingMap{width:min(820px,100%);margin:auto}}
+@media(max-width:720px){
+  .v2MatchingGraphic{padding:75px 18px}
+  .matchingMap{display:flex;min-height:auto;flex-direction:column;gap:16px}
+  .mapNode{width:100%}.mapConnection{width:2px;height:45px}.mapConnection i{width:2px;height:45px;background:linear-gradient(#4dc7bb,#7d67c3)}.mapConnection i::after{right:auto;left:50%;top:auto;bottom:0;transform:translateX(-50%) rotate(135deg)}
+  .mapConnection small{position:absolute;left:18px;margin-top:15px}
+  .mapCore{width:155px;aspect-ratio:1}
+  .mapNetwork{position:static;width:100%;transform:none}
+}
+@media(pointer:coarse){.v2.homeMotionReady::before{display:none}}
+@media(prefers-reduced-motion:reduce){
+  .v2HeroImage,.v2HeroContent{animation:none!important}
+  .homeMotionReady .homeReveal{opacity:1!important;transform:none!important;transition:none!important}
+  .v2Clarity article,.roleCards article,.processGrid article,.v2Trust article{transition:none!important}
+}

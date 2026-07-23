@@ -13,8 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["business", "productivity"],
     lang: "de-DE",
     icons: [
-      { src: "/icons/b2b-matching-symbol.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      { src: "/icons/b2b-matching-symbol.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" }
+      { src: "/icons/b2b-matching-symbol-brand.png", sizes: "1565x1341", type: "image/png", purpose: "any" },
+      { src: "/icons/b2b-matching-symbol-brand.png", sizes: "1565x1341", type: "image/png", purpose: "maskable" }
     ]
   };
 }

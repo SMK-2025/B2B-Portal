@@ -158,7 +158,7 @@ export class EmailService {
     const webUrl = this.webUrl();
     const safeLink = this.escape(link);
     const safeTitle = this.escape(title);
-    const logoUrl = `${webUrl}/images/b2b-matching-logo.png`;
+    const logoUrl = `${webUrl}/images/b2b-matching-logo-brand.png`;
     return `<!doctype html>
 <html lang="de">
 <head>

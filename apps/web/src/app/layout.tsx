@@ -18,7 +18,11 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
   category: "business"
   ,manifest: "/manifest.webmanifest",
-  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], shortcut: "/icon.svg", apple: "/icon.svg" },
+  icons: {
+    icon: [{ url: "/icons/b2b-matching-symbol-brand.png", type: "image/png" }],
+    shortcut: "/icons/b2b-matching-symbol-brand.png",
+    apple: "/icons/b2b-matching-symbol-brand.png"
+  },
   appleWebApp: { capable: true, title: "B2B Matching", statusBarStyle: "black-translucent" },
   applicationName: "B2B Matching"
 };

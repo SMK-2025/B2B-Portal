@@ -5,6 +5,8 @@ import { PortalStore } from "./core/portal.store";
 import { OrganizationsService } from "./organizations/organizations.service";
 import { AdminService } from "./admin/admin.service";
 import { ServicesService } from "./services/services.service";
+import { MatchingService } from "./matching/matching.service";
+import { NeedsService } from "./matching/needs.service";
 
 describe("registration and organization approval", () => {
   it("provisions the platform owner without public registration", async () => {
@@ -33,7 +35,9 @@ describe("registration and organization approval", () => {
     const auth = new AuthService(store);
     const organizations = new OrganizationsService(store, auth);
     const services = new ServicesService(store, auth);
-    const admin = new AdminService(store, auth, services);
+    const matching = new MatchingService(store, auth);
+    const needs = new NeedsService(store, auth, matching);
+    const admin = new AdminService(store, auth, services, needs);
 
     const registration = await auth.register({
       email: "owner@example.de",

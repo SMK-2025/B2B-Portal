@@ -18,9 +18,9 @@ describe("network tenancy",()=>{
 
   const registration=await auth.register({email:"mitglied@example.de",password:"Sehr-Sicher-2026!",firstName:"Mara",lastName:"Klein"});auth.verifyEmail(registration.verificationToken);
   const login=await auth.login({email:"mitglied@example.de",password:"Sehr-Sicher-2026!"});const bearer=`Bearer ${login.token}`;
-  const organization=organizations.create(bearer,{legalName:"Mitglied GmbH",displayName:"Mitglied",role:"both",websiteUrl:"https://example.de",networkSlug:"test-netzwerk"});
-  expect(store.networkMemberships[0]).toMatchObject({networkId:created.id,organizationId:organization.id,status:"pending",role:"organization_admin"});
-  networks.review(adminBearer,created.id,store.networkMemberships[0].id,{decision:"active"});
+  const organization=organizations.create(bearer,{legalName:"Mitglied GmbH",displayName:"Mitglied",role:"both",websiteUrl:"https://example.de"});
+  const membership=networks.addMember(adminBearer,created.id,{organizationId:organization.id,userId:registration.user.id,role:"organization_admin"});
+  expect(membership).toMatchObject({networkId:created.id,organizationId:organization.id,status:"active",role:"organization_admin"});
   expect(networks.mine(bearer)[0].network.slug).toBe("test-netzwerk");
   expect(()=>networks.addMember(bearer,created.id,{organizationId:organization.id,userId:registration.user.id,role:"network_admin"})).toThrow();
   const networkAdmin=networks.appointAdministrator(adminBearer,created.id,{email:"mitglied@example.de"});

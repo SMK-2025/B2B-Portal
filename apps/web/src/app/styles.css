@@ -527,3 +527,22 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
   .networkTestCta h2{font-size:35px}
   .networkTestCta p{font-size:16px}
 }
+
+/* Öffentliche Unterseiten: dieselbe dezente Bewegungslogik wie auf der Startseite. */
+.homeMotionReady :is(.subHero>div,.networkPublicHero>div,.authStory,.authCardV2,.legalHero>*){
+  animation:homeHeroEntry .78s cubic-bezier(.22,.75,.22,1) both;
+}
+.homeMotionReady :is(.subHero>div,.networkPublicHero>div) p{animation-delay:.07s}
+.homeMotionReady :is(.subHero>div,.networkPublicHero>div) div{animation-delay:.13s}
+.painGrid article,.valueGrid article,.securityGrid article,.networkRoleFlow article,.networkFeatureGrid article,.networkPriceColumns article,.authTrust>div,.authAfter article,.splitContent>div{
+  transition:transform .3s ease,border-color .3s ease,box-shadow .3s ease;
+}
+.painGrid article:hover,.valueGrid article:hover,.securityGrid article:hover,.networkRoleFlow article:hover,.networkFeatureGrid article:hover,.networkPriceColumns article:hover,.authTrust>div:hover,.authAfter article:hover{
+  transform:translateY(-5px);
+  border-color:#9dcfc9;
+  box-shadow:0 18px 42px rgba(14,52,65,.1);
+}
+@media(prefers-reduced-motion:reduce){
+  .homeMotionReady :is(.subHero>div,.networkPublicHero>div,.authStory,.authCardV2,.legalHero>*){animation:none!important}
+  .painGrid article,.valueGrid article,.securityGrid article,.networkRoleFlow article,.networkFeatureGrid article,.networkPriceColumns article,.authTrust>div,.authAfter article,.splitContent>div{transition:none!important}
+}

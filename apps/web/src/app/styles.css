@@ -618,3 +618,167 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .authCardV2 .primary:hover,.authPage .primary:hover{background:var(--brand-indigo-dark)}
 .authStory>span,.authAfter>span{color:#8edfd7}
 .formGrid input:focus,.formGrid select:focus,.formGrid textarea:focus{border-color:var(--brand-indigo);box-shadow:0 0 0 3px rgba(82,103,216,.16);outline:0}
+
+/* Einheitliches Branding in Website und Portal: keine Grün- oder Türkistöne. */
+:root{
+  --teal:#5267d8;
+  --teal2:#4056c5;
+  --mint:#eceffc;
+  --soft:#f5f7fa;
+}
+.v2{
+  --brand-aqua:#4f8ee8;
+}
+.v2Pill,.v2HeroNetworkLink{color:#aeb9ff}
+.v2HeroNetworkLink{text-decoration-color:rgba(174,185,255,.72)}
+.matchingGraphicIntro>span{color:#c1c8ff}
+.v2:has(.painGrid){--t:#4f8ee8;--td:#3975c8;--public-role:#4f8ee8;--public-role-dark:#3975c8;--public-role-soft:#edf4fd}
+.v2:has(.painGrid) .subHero{background-image:linear-gradient(90deg,#071d2df7 0%,#132b4fe8 42%,#3975c875 67%,#07172018 100%),url('/images/company-landing-hero.webp')}
+.roleHeroAccent-company{background:#4f8ee8}
+.roleImpactStrip-company b{color:#9cc8ff}
+.threeRoles>article::before{background:#4f8ee8}
+.v2Clarity article:hover,.roleCards article:hover,.processGrid article:hover,.v2Trust article:hover,.painGrid article:hover,.valueGrid article:hover,.securityGrid article:hover{border-color:#aeb9e8}
+
+/* Unternehmer-, Dienstleister- und Administrationskonten. */
+.portalApp{
+  --pn:#102c42;
+  --pt:#5267d8;
+  --pbg:#f4f6fb;
+  background:radial-gradient(circle at 91% 0,rgba(82,103,216,.12),transparent 28%),#f4f6fb;
+}
+.portalSidebar{background:linear-gradient(180deg,#102c42 0%,#192f5d 58%,#222b54 100%)}
+.portalBrand b{color:#aeb9ff}
+.portalSidebar nav a>b,.portalSidebar .portalMenuGroup a>b{background:#5267d8}
+.portalSidebar nav a.active,.portalOverview.active{box-shadow:inset 3px 0 #8392ee}
+.portalHelp{background:linear-gradient(145deg,#263f80,#493d88)}
+.portalHelp p{color:#cbd2ef}
+.portalRole small{color:#aeb9d0}
+.portalUser>span,.needIcon,.compactPeople p>b,.conversationRows article>b,.reviewRows article>b,.profileSectionGrid>button>span,.teamOwner>span,.portalNext li::before,.decisionFlow p>b,.chatEmpty>span{
+  background:#eceffc;
+  color:#5267d8;
+}
+.portalWelcome>div>span,.portalPanel>header span,.portalStats small,.matchRows span,.profileQuality>div>span b,.profileQuality li b,.profileSectionGrid>button>b,.workspaceTabs button.active,.inboxTabs button.active{
+  color:#5267d8;
+}
+.portalPrimary{border-color:#5267d8;background:#5267d8;box-shadow:0 8px 20px rgba(82,103,216,.22)}
+.portalPrimary:hover{background:#4056c5}
+.portalLink{color:#5267d8}
+.portalStatus.teal{background:#eceffc;color:#4056c5}
+.matchRows article>b,.opportunities article>b{background:#eceffc;color:#5267d8}
+.portalAi,.profileHero{background:radial-gradient(circle at 95% 0,rgba(116,85,180,.3),transparent 35%),linear-gradient(135deg,#102c42,#4056c5)}
+.portalAi .aiMark{color:#bdc5ff}
+.portalAi .portalPrimary{color:#4056c5}
+.miniChart b,.chartPlot b{background:linear-gradient(#8090ed,#5267d8)}
+.activity p>span,.conversationRows i,.profileQuality i,.chartLegend span b{background:#5267d8}
+.qualityRing{background:conic-gradient(#5267d8 0 86%,#e5e8f2 86%)}
+.taskRows input,.adminModuleSelection input{accent-color:#5267d8}
+.portalPanel,.portalStats article,.profileSectionGrid>button{border-color:#dfe3ef}
+.workspaceTabs{background:#e9ecf5}
+.workspaceTabs button b{background:#dde2f2}
+.portalSearch{border-color:#dce1ed;background:#f8f9fc}
+.portalTop{border-bottom-color:#dfe3ed}
+.adminGate{background:radial-gradient(circle at 80% 10%,rgba(82,103,216,.18),transparent 31%),#f4f6fb}
+.adminGate span{color:#5267d8}.adminGate a{background:#5267d8}
+.adminNetworkNotice{background:linear-gradient(120deg,#102c42,#4056c5)}
+.adminNetworkCard>header{background:linear-gradient(115deg,#eef1fb,#fff)}
+.adminNetworkIdentity>span{background:linear-gradient(145deg,#102c42,#5267d8)}
+.adminNetworkIdentity small,.adminNetworkFacts small{color:#5267d8}
+.adminNetworkDialogActions>.portalPrimary{border-color:#5267d8;background:#5267d8}
+.adminNetworkTestLogin{border-color:#aeb9e8;background:#f0f2fc;color:#4056c5}
+.adminNetworkTestSummary{background:#f0f2fc}
+.adminNetworkTestSummary>strong{background:#5267d8}
+.adminNetworkTestSummary small{color:#5267d8}
+
+/* Geschlossene Netzwerkbereiche im selben Navy-Indigo-Violett-System. */
+.networkPortal{
+  --forest:#263f80;
+  --forest2:#4056c5;
+  --gold:#7455b4;
+  --cream:#f5f7fa;
+  --network-accent:#7455b4;
+  --network-dark:#5f439a;
+  --network-soft:#f2eefb;
+  --network-line:#d4c8ed;
+  background:radial-gradient(circle at 92% 0,rgba(116,85,180,.12),transparent 28%),#f4f6fb;
+  color:#193149;
+}
+.networkSidebar{background:linear-gradient(180deg,#102c42,#252b58 60%,#352a63)}
+.networkBrand>span{background:linear-gradient(135deg,#5267d8,#7455b4);color:#fff}
+.networkBrand small,.networkSidebar nav a span,.networkSupport a{color:#c8b9eb}
+.networkSwitcher small,.networkSidebar nav section>small,.networkSupport p{color:#bdc5d9}
+.networkSidebar nav a{color:#c1c9dd}
+.networkSidebar nav a.active{box-shadow:inset 3px 0 #9a82d2}
+.networkContext>span,.networkTopActions>a,.networkMemberAvatar,.networkActivity p>b{
+  background:#eceffc;
+  color:#5267d8;
+}
+.networkTopActions>button{color:#263f80}
+.networkTopActions>button>span{background:linear-gradient(135deg,#5267d8,#7455b4)}
+.networkAccountMenu a:hover,.networkAccountMenu button:hover,.networkMobileNav summary{background:#f0f2f8}
+.networkWelcome h1{color:#193149}
+.networkWelcome>div>span,.networkCard header span,.networkCard>span,.networkModuleHero>span,.networkHero>div>span{color:#8f79c8}
+.networkPrimary{background:#7455b4;border-color:#7455b4;box-shadow:0 8px 20px rgba(116,85,180,.22)}
+.networkPrimary:hover{background:#5f439a}
+.networkHero,.networkModuleHero{background:radial-gradient(circle at 90% 0,rgba(116,85,180,.34),transparent 35%),linear-gradient(115deg,#102c42,#4056c5)}
+.networkHero p,.networkHero>strong small,.networkModuleHero p{color:#d2d8ec}
+.networkStats article,.networkCard,.networkFeatureGrid article{border-color:#dfe3ef}
+.networkStats strong,.networkActivity p>b,.networkMemberAvatar{color:#5267d8}
+.networkEventRows time,.networkActivity p>b{background:#eef0fa}
+.networkEventRows time b,.networkEventRows time small,.networkCard header>a,.networkCard header>button,.networkQuality>a,.networkModuleEmpty a{color:#7455b4}
+.networkQuality>i{background:#e5e8f2}
+.networkQuality>i span{background:linear-gradient(90deg,#5267d8,#7455b4)}
+.networkMemberStats button{color:#193149;border-color:#dfe3ef}
+.networkMemberStats button.active{border-color:#9b8bd0;box-shadow:inset 3px 0 #7455b4}
+.networkMemberStatus,.networkMemberStatus.aktiv,.networkMemberStatus.active,.networkMemberStatus.published{background:#eceffc;color:#4056c5}
+.networkMemberStatus.eingeladen{background:#f1edfa;color:#674c9e}
+.networkModalBackdrop{background:rgba(16,44,66,.72)}
+.networkModal header button,.networkModal form>p{background:#f0f2f8}
+.networkNotice{background:linear-gradient(135deg,#4056c5,#7455b4);box-shadow:0 15px 40px rgba(25,35,82,.3)}
+.networkRowActions button{color:#4056c5}.networkRowActions button:hover{border-color:#5267d8;background:#f0f2fc}
+.networkReadOnlyNotice{background:#f2eefb;color:#5f439a}
+.networkAccessState{background:#f4f6fb}
+.networkAccessState a{background:#7455b4}
+
+/* Dialoge, Formulare, Rollenwahl und Detailansichten ohne alte Türkisreste. */
+.portalRole-unternehmen,.portalRole-admin{--role-accent:#5267d8;--role-dark:#4056c5;--role-soft:#eceffc;--role-line:#aeb9e8}
+.portalRole-dienstleister{--role-accent:#5267d8;--role-dark:#4056c5;--role-soft:#eceffc;--role-line:#aeb9e8}
+.portalDialog>header span,.needPreview section>span,.needPreview section small,.needLivePreview dt,.providerPreview>section>span,.previewCategory,.adminReviewDetails dt,.adminProfileData b,.adminMemberSummary b,.settingsRows b{color:#5267d8}
+.portalDialog>header>button{background:#f0f2f8}
+.portalDialog :is(input,select,textarea):focus{outline:3px solid rgba(82,103,216,.18);border-color:#5267d8}
+.dialogAiHint,.dialogMessage,.reviewSummary,.portalEmpty>span,.authorityBox,.privacyChoices,.anonymousBanner,.anonymousPreview,.previewGrid article,.needLivePreview dl>div,.adminReviewDetails>dl>div,.adminProfileData>div,.adminMemberSummary span{
+  background:#f0f2fa;
+}
+.dialogAiHint,.reviewSummary>span,.portalEmpty>span,.keywordExamples span,.weightGrid label b,.uploadBox>span,.anonymousBanner>strong,.previewGrid small,.anonymousPreview>span,.needProviderPreview dt,.contextNotice{
+  color:#5267d8;
+}
+.reviewSummary>span{background:#e4e8f8}
+.portalToast>span{background:#5267d8}
+.portalSetup,.needFormIntro,.profilePrivacyIntro,.providerPreviewHero,.needBuilderSection>header,.needLivePreview>div:first-child{
+  background:radial-gradient(circle at 92% 0,rgba(116,85,180,.26),transparent 34%),linear-gradient(120deg,#102c42,#4056c5);
+}
+.portalSetup>div:first-child span,.needFormIntro>span,.profilePrivacyIntro>span,.providerPreviewHero small,.needBuilderSection>header>span,.needLivePreview>div:first-child>span{color:#c1c8ff}
+.setupBar i,.portalSetup li.done::before{background:#8392ee;border-color:#8392ee}
+.keywordExamples span{background:#eceffc}
+.weightGrid input,.privacyChoices input,.authorityBox input,.toggleRows input{accent-color:#5267d8}
+.anonymousBanner,.anonymousPreview{background:#f0f2fa}
+.anonymousBanner>span,.anonymousPreview>span{background:#5267d8;color:#fff}
+.needPreview section>span,.needLivePreview dt,.providerPreviewNav button.active,.trustChecklist b{color:#5267d8}
+.trustChecklist b{background:#eceffc}
+.previewPrivacyNote,.dialogContextNotice{border-left-color:#5267d8;background:#f0f2fa}
+.needBuilderFields :is(input,select,textarea):required{border-left-color:#5267d8}
+.contextNotice{background:#f0f2fa}
+.previewInlineTitle:hover,.previewInlineTitle:focus,.previewInlineText:hover,.previewInlineText:focus{border-color:#8797df;box-shadow:0 0 0 3px rgba(82,103,216,.12)}
+.registrationProgress{background:#e4e7f0}.registrationProgress>span{background:linear-gradient(90deg,#5267d8,#7455b4)}
+.roleChoice label.roleBuyer.active{border-color:#4f8ee8;background:#edf4fd;box-shadow:0 0 0 2px rgba(79,142,232,.15)}
+.roleChoice label.roleBuyer input{accent-color:#4f8ee8}
+.roleChoice label.roleProvider.active{border-color:#5267d8;background:#eceffc;box-shadow:0 0 0 2px rgba(82,103,216,.15)}
+.roleChoice label.roleProvider input{accent-color:#5267d8}
+.roleChoice label.roleNetwork.active{border-color:#7455b4;background:#f2eefb;box-shadow:0 0 0 2px rgba(116,85,180,.15)}
+.roleChoice label.roleNetwork input{accent-color:#7455b4}
+.v2Cta-company{background:radial-gradient(circle at 82% 42%,rgba(116,85,180,.38),transparent 40%),radial-gradient(circle at 8% 120%,rgba(79,142,232,.24),transparent 38%),linear-gradient(115deg,#102c42,#3975c8 58%,#5267d8)}
+.v2Clarity article>b{background:#eceffc;color:#5267d8}
+.v2Clarity>header>span{color:#5267d8}
+.mapNode.company>span{color:#4f8ee8}
+.mapCore{background:linear-gradient(145deg,#4f8ee8,#5267d8 55%,#7455b4)}
+.mapConnection i{background:linear-gradient(90deg,#4f8ee8,#5267d8,#7455b4)}
+.matchingGraphicIntro>span{color:#c1c8ff}

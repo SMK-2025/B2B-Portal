@@ -13,6 +13,7 @@ export class MatchingController{
  @Post("needs/:id/pause")pause(@Headers("authorization")a:string|undefined,@Param("id")id:string){return this.needs.pause(a,id);}
  @Post("needs/:id/activate")activate(@Headers("authorization")a:string|undefined,@Param("id")id:string){return this.needs.activate(a,id);}
  @Get("needs/:id/matches")matches(@Headers("authorization")a:string|undefined,@Param("id")id:string){return this.matching.buyerMatches(a,id);}
+ @Get("needs/:id/match-details")matchDetails(@Headers("authorization")a:string|undefined,@Param("id")id:string){return this.matching.buyerMatchDetails(a,id);}
  @Post("matches/:id/release")release(@Headers("authorization")a:string|undefined,@Param("id")id:string){return this.matching.release(a,id);}
  @Post("matches/:id/reject")reject(@Headers("authorization")a:string|undefined,@Param("id")id:string){return this.matching.rejectBuyer(a,id);}
  @Get("provider/matches")inbox(@Headers("authorization")a:string|undefined){return this.matching.providerInbox(a);}

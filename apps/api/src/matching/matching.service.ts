@@ -9,6 +9,15 @@ export class MatchingService{
   constructor(@Inject(PortalStore) private readonly store:PortalStore,@Inject(AuthService) private readonly auth:AuthService){}
   recalculate(needId:string){const need=this.need(needId);if(need.status!=="active")return[];const networkOrganizations=need.networkId?new Set(this.store.networkMemberships.filter(m=>m.networkId===need.networkId&&m.status==="active").map(m=>m.organizationId)):null;const pages=[...this.store.servicePages.values()].filter(p=>p.matchingEligible&&p.reviewStatus==="approved"&&p.organizationId!==need.organizationId&&p.categoryId===need.categoryId&&(!networkOrganizations||networkOrganizations.has(p.organizationId)));return pages.map(page=>this.upsert(need,page)).sort((a,b)=>b.score-a.score);}
   buyerMatches(authHeader:string|undefined,needId:string){const user=this.auth.authenticate(authHeader);const need=this.need(needId);this.requireMember(user.id,need.organizationId);return [...this.store.matches.values()].filter(m=>m.needId===needId);}
+  buyerMatchDetails(authHeader:string|undefined,needId:string){
+    const matches=this.buyerMatches(authHeader,needId);
+    return matches.map(match=>{
+      const servicePage=this.store.servicePages.get(match.servicePageId);
+      const provider=this.store.organizations.get(match.providerOrganizationId);
+      if(!servicePage||!provider)throw new NotFoundException("Dienstleisterprofil des Matches nicht gefunden.");
+      return{match,servicePage,provider:{id:provider.id,displayName:provider.displayName,legalName:provider.legalName,websiteUrl:provider.websiteUrl,profileData:provider.profileData||{}}};
+    });
+  }
   release(authHeader:string|undefined,matchId:string){const user=this.auth.authenticate(authHeader);const match=this.match(matchId);this.requireMember(user.id,match.buyerOrganizationId);if(!["buyer_review","deferred"].includes(match.status))throw new BadRequestException("Der Match kann nicht freigegeben werden.");match.status="released_anonymously";match.buyerDecisionAt=new Date().toISOString();return match;}
   rejectBuyer(authHeader:string|undefined,matchId:string){const user=this.auth.authenticate(authHeader);const match=this.match(matchId);this.requireMember(user.id,match.buyerOrganizationId);match.status="rejected_by_buyer";match.buyerDecisionAt=new Date().toISOString();return match;}
   providerInbox(authHeader:string|undefined){const user=this.auth.authenticate(authHeader);const orgs=new Set(this.store.memberships.filter(m=>m.userId===user.id).map(m=>m.organizationId));return [...this.store.matches.values()].filter(m=>orgs.has(m.providerOrganizationId)&&["released_anonymously","provider_interested","mutual_match"].includes(m.status)).map(m=>({match:m,need:this.anonymousNeed(this.need(m.needId))}));}

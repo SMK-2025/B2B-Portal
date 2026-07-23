@@ -373,3 +373,19 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 :where(.portalApp,.networkPortal,.networkTrialGate) :where(h1,h2,h3,h4,h5,h6,strong,b,label,button,summary,th,legend){font-weight:500!important}
 :where(.portalApp,.networkPortal,.networkTrialGate) :where(input,select,textarea,option,p,small,span,a,li,td){font-weight:400!important}
 :where(.portalApp,.networkPortal,.networkTrialGate) :where(.portalStatus,.networkMemberStatus,.networkReadOnlyNotice,.networkBookingSummary>span,.networkBookingSection>header>span){font-weight:500!important}
+
+/* Startseite: Leistungsversprechen in wenigen Sekunden verständlich machen. */
+.v2HeroNetworkLink{display:inline-flex;margin:-13px 0 22px;color:#a9e7de;font-size:15px;text-decoration:underline;text-underline-offset:4px}
+.v2Clarity{padding:88px max(22px,calc((100vw - 1140px)/2));background:#f4f8f7}
+.v2Clarity>header{max-width:850px;margin-bottom:42px}
+.v2Clarity>header>span{font-size:11px;letter-spacing:1.5px;color:#0b817b;font-weight:500}
+.v2Clarity>header h2{margin:13px 0 12px;font-size:clamp(31px,3.3vw,46px);font-weight:500;line-height:1.17;letter-spacing:-.025em}
+.v2Clarity>header p{max-width:790px;margin:0;color:#536b77;font-size:18px;line-height:1.65}
+.v2Clarity>div{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.v2Clarity article{padding:27px 24px;border:1px solid #d7e4e1;border-radius:13px;background:#fff}
+.v2Clarity article>b{display:grid;place-items:center;width:36px;height:36px;border-radius:9px;background:#e4f3f0;color:#087d78;font-size:13px;font-weight:500}
+.v2Clarity article h3{margin:20px 0 10px;color:#173746;font-size:18px;font-weight:500;line-height:1.35}
+.v2Clarity article p{margin:0;color:#5c727c;font-size:15px;line-height:1.68}
+.v2RoleIntro>h2{font-weight:500}.v2RoleIntro>p{max-width:850px}
+@media(max-width:980px){.v2Clarity>div{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.v2HeroNetworkLink{justify-content:center;width:100%;margin-top:0;font-size:14px}.v2Clarity{padding:65px 16px}.v2Clarity>header{margin-bottom:30px}.v2Clarity>header p{font-size:16px}.v2Clarity>div{grid-template-columns:1fr}.v2Clarity article{padding:23px 20px}.v2Pill{font-size:10px;line-height:1.5}}

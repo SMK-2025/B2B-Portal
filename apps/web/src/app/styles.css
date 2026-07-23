@@ -642,6 +642,15 @@ button.portalUser{border:0;background:transparent;color:inherit;padding:0;text-a
 .v2HeroNetworkLink{text-decoration-color:rgba(174,185,255,.72)}
 .matchingGraphicIntro>span{color:#c1c8ff}
 
+/* Lesbare Typografie: Überschriften und interaktive Beschriftungen bleiben
+   im gesamten öffentlichen Auftritt und Portal bewusst bei maximal 500. */
+:where(h1,h2,h3,h4,h5,h6,button,summary,strong,b){font-weight:500!important}
+.registrationStory h2{font-family:Georgia,"Times New Roman",serif;font-size:49px;line-height:1.08;margin:18px 0}
+@media(max-width:820px){.registrationStory h2{font-size:43px}}
+@media(max-width:600px){.registrationStory h2{font-size:36px}}
+@media(max-width:380px){.registrationStory h2{font-size:33px}}
+.activityTimeline{list-style:none;padding:0;margin:0;display:grid}.activityTimeline li{position:relative;display:grid;grid-template-columns:18px 1fr;gap:13px;padding:14px 0;border-top:1px solid #e0e2ec}.activityTimeline li>span{width:11px;height:11px;margin-top:5px;border:3px solid #d9def8;border-radius:50%;background:#5267d8}.activityTimeline time{color:#74798e;font-size:10px}.activityTimeline h3{margin:4px 0;font-size:13px}.activityTimeline p{margin:0;color:#626880;font-size:11px}.activitySummary{display:grid;gap:8px;margin:0}.activitySummary>div{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #e0e2ec}.activitySummary dt{color:#666c84;font-size:11px}.activitySummary dd{margin:0;font:500 20px Georgia,serif;color:#283a9c}
+
 /* Die neu farbkorrigierte Unternehmergrafik ersetzt das frÃ¼here grÃ¼nliche Motiv. */
 .v2:has(.painGrid) .subHero{background-image:linear-gradient(90deg,#071d2df7 0%,#132b4fe8 42%,#3975c875 67%,#07172018 100%),url('/images/company-landing-hero.png')}
 .v2Logo{width:220px!important}

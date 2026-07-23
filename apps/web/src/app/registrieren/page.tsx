@@ -154,13 +154,13 @@ export default function RegistrationPage() {
     <main className="v2">
       <SiteHeader />
       <section className="authPage">
-        <aside className="authStory">
+        <aside className="authStory registrationStory">
           <span>IHR START BEI B2B MATCHING</span>
-          <h1>
+          <h2>
             Ein Profil.
             <br />
             Neue Möglichkeiten.
-          </h1>
+          </h2>
           <p>
             Erstellen Sie zunächst nur Ihren Zugang und wählen Sie anschließend,
             wie Sie B2B Matching nutzen möchten. Alle ausführlichen Profildaten

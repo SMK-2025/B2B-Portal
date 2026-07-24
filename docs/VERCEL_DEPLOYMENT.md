@@ -66,7 +66,41 @@ Nach der einmaligen Verbindung sind keine manuellen Deploymentbefehle nötig:
 - Merge oder Push nach `main`: Vercel veröffentlicht die Produktionsversion.
 - Ein fehlgeschlagener CI-Build sollte nicht nach `main` übernommen werden.
 
-## 6. Eigene Domain
+## 6. Verbindliche automatische Produktionsdeployments
+
+Damit nicht manuell zwischen Branches, Vorschauen und Produktionsständen
+unterschieden werden muss, gelten dauerhaft diese Einstellungen:
+
+### Vercel – Weboberfläche
+
+- Git Production Branch: `main`
+- Root Directory: `apps/web`
+- Skip deployment for unaffected projects: aktiviert
+- Eigene Domain: `b2b-matching.de`
+
+Vercel veröffentlicht dadurch automatisch nur dann eine neue Produktionsversion,
+wenn sich die Weboberfläche oder eine von ihr verwendete Workspace-Abhängigkeit
+ändert. Reine API-Änderungen werden bewusst übersprungen.
+
+### Railway – API
+
+- Service: `@portal/api`
+- GitHub-Repository: `SMK-2025/B2B-Portal`
+- Branch connected to production: `main`
+- Railway Config File: `/apps/api/railway.json`
+- Root Directory: leer lassen
+
+Die relevanten Watch-Pfade sind in `apps/api/railway.json` versioniert. Änderungen
+an API, Verträgen, Datenbankpaket oder Workspace-Konfiguration lösen damit
+automatisch ein API-Deployment aus.
+
+### Arbeitsweise
+
+Entwicklungsbranches erzeugen nur Vorschauen. Produktion wird ausschließlich
+durch einen Push oder Merge nach `main` aktualisiert. Ein Commit muss deshalb
+nicht mehr manuell in Vercel oder Railway ausgewählt werden.
+
+## 7. Eigene Domain
 
 Die Domain wird im Webprojekt hinterlegt. Für die API empfiehlt sich eine Subdomain wie `api.example.de`. Danach werden `NEXT_PUBLIC_API_URL` und `WEB_ORIGIN` auf die endgültigen Domains geändert.
 

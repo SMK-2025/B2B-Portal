@@ -67,6 +67,20 @@ export interface NetworkContentRecord {
   visibility:"members"|"administrators"; data:Record<string,unknown>; createdAt:string; updatedAt:string;
 }
 
+export interface NetworkAttendanceRecord {
+  id:string; networkId:string; eventId:string; membershipId:string; userId:string;
+  response:"registered"|"declined"; attendance:"pending"|"present"|"absent";
+  guestNames:string[]; companionCount:number; note:string|null;
+  updatedByUserId:string; createdAt:string; updatedAt:string;
+}
+
+export interface NetworkRevenueRecord {
+  id:string; networkId:string; referringMembershipId:string; beneficiaryMembershipId:string;
+  amountNetCents:number; periodFrom:string; periodTo:string;
+  status:"recorded"|"confirmed"|"paid"|"cancelled"; note:string|null;
+  createdByUserId:string; createdAt:string; updatedAt:string;
+}
+
 export interface NetworkOrderRecord {
   id:string; networkId:string; orderedByUserId:string;
   invoiceCompany:string; invoiceContact:string; invoiceEmail:string;

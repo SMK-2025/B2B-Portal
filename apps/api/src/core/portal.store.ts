@@ -19,6 +19,8 @@ import type {
   NetworkMembershipRecord,
   NetworkContentRecord,
   NetworkOrderRecord,
+  NetworkAttendanceRecord,
+  NetworkRevenueRecord,
   NotificationRecord,
   OrganizationRecord,
   PasswordResetRecord,
@@ -49,6 +51,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   readonly networkMemberships: NetworkMembershipRecord[] = [];
   readonly networkContents = new Map<string, NetworkContentRecord>();
   readonly networkOrders = new Map<string, NetworkOrderRecord>();
+  readonly networkAttendances = new Map<string, NetworkAttendanceRecord>();
+  readonly networkRevenues = new Map<string, NetworkRevenueRecord>();
   readonly sessions = new Map<string, SessionRecord>();
   readonly verificationTokens = new Map<string, VerificationRecord>();
   readonly passwordResetTokens = new Map<string, PasswordResetRecord>();
@@ -108,6 +112,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       networkMemberships: this.networkMemberships,
       networkContents: [...this.networkContents],
       networkOrders: [...this.networkOrders],
+      networkAttendances: [...this.networkAttendances],
+      networkRevenues: [...this.networkRevenues],
       sessions: [...this.sessions],
       verificationTokens: [...this.verificationTokens],
       passwordResetTokens: [...this.passwordResetTokens],
@@ -179,6 +185,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     array(this.networkMemberships, state.networkMemberships);
     map(this.networkContents, state.networkContents);
     map(this.networkOrders, state.networkOrders);
+    map(this.networkAttendances, state.networkAttendances);
+    map(this.networkRevenues, state.networkRevenues);
     map(this.sessions, state.sessions);
     map(this.verificationTokens, state.verificationTokens);
     map(this.passwordResetTokens, state.passwordResetTokens);
@@ -237,6 +245,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     this.networkMemberships.splice(0);
     this.networkContents.clear();
     this.networkOrders.clear();
+    this.networkAttendances.clear();
+    this.networkRevenues.clear();
     this.sessions.clear();
     this.verificationTokens.clear();
     this.passwordResetTokens.clear();

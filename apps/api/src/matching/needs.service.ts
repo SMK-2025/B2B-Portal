@@ -72,23 +72,23 @@ export class NeedsService {
 
   reviewQueue(){return [...this.store.needs.values()].filter(need=>need.status==="submitted");}
 
-  decide(id:string,decision:"approved"|"changes_requested"|"rejected",reason:string){
+  async decide(id:string,decision:"approved"|"changes_requested"|"rejected",reason:string){
     const need=this.store.needs.get(id);
     if(!need)throw new BadRequestException("Bedarf nicht gefunden.");
     if(need.status!=="submitted")throw new BadRequestException("Nur eingereichte Bedarfe können geprüft werden.");
     need.status=decision==="approved"?"active":decision;
     need.reviewedAt=new Date().toISOString();
     need.reviewReason=reason;
-    if(need.status==="active")this.matching.recalculate(id);
+    if(need.status==="active")await this.matching.recalculate(id);
     return need;
   }
 
-  activate(authHeader:string|undefined,id:string){
+  async activate(authHeader:string|undefined,id:string){
     const user=this.auth.authenticate(authHeader);const need=this.store.needs.get(id);
     if(!need)throw new BadRequestException("Bedarf nicht gefunden.");
     if(!this.store.memberships.some(m=>m.userId===user.id&&m.organizationId===need.organizationId))throw new ForbiddenException();
     if(need.status!=="paused")throw new BadRequestException("Nur ein pausierter Bedarf kann reaktiviert werden.");
-    need.status="active";return {need,matches:this.matching.recalculate(id)};
+    need.status="active";return {need,matches:await this.matching.recalculate(id)};
   }
 
   private owned(userId:string,id:string){const need=this.store.needs.get(id);if(!need)throw new BadRequestException("Bedarf nicht gefunden.");if(!this.store.memberships.some(m=>m.userId===userId&&m.organizationId===need.organizationId))throw new ForbiddenException();return need;}

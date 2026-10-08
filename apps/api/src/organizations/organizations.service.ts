@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import { randomUUID } from "node:crypto";
 import { AuthService } from "../auth/auth.service";
 import { PortalStore } from "../core/portal.store";
-import type { MembershipRole, OrganizationRole } from "../core/domain";
+import type { MembershipRole, NetworkRole, OrganizationRole } from "../core/domain";
 import type { OrganizationRecord } from "../core/domain";
 import { emailAddress, requiredText, safeUrl } from "../core/validation";
 import {opaqueToken,tokenHash} from "../auth/password";
@@ -15,14 +15,14 @@ export class OrganizationsService {
     const user = this.auth.authenticate(authorization); if (!user.emailVerifiedAt) throw new ForbiddenException("E-Mail-Adresse nicht bestätigt.");
     const role = input.role as OrganizationRole; if (!["buyer","provider","both"].includes(role)) throw new BadRequestException("Ungültige Unternehmensrolle.");
     const inviteToken=typeof input.networkInviteToken==="string"?input.networkInviteToken:"";const invitation=inviteToken?[...this.store.networkContents.values()].find(item=>item.data.kind==="network_invitation"&&item.data.inviteTokenHash===tokenHash(inviteToken)&&item.data.email===user.email&&!item.data.usedAt&&item.endsAt&&Date.parse(item.endsAt)>Date.now()):undefined;
-    const requestedNetwork=invitation?this.store.networks.get(invitation.networkId):typeof input.networkSlug==="string"&&input.networkSlug.trim()?this.store.networks.get(this.store.networkBySlug.get(input.networkSlug.trim())||""):undefined;
+    const requestedNetwork=invitation?this.store.networks.get(invitation.networkId):undefined;
     const networkAccessible=requestedNetwork&&(requestedNetwork.status==="active"||(requestedNetwork.status==="trial"&&requestedNetwork.trialEndsAt&&Date.parse(requestedNetwork.trialEndsAt)>Date.now()));
-    if(typeof input.networkSlug==="string"&&input.networkSlug.trim()&&!networkAccessible)throw new BadRequestException("Das gewählte Netzwerk wurde nicht gefunden oder durch die Plattformadministration noch nicht freigeschaltet.");
-    if(requestedNetwork&&!invitation&&!requestedNetwork.settings.selfRegistration)throw new ForbiddenException("Dieses Netzwerk nimmt ausschließlich persönliche Einladungen an.");
+    if(typeof input.networkSlug==="string"&&input.networkSlug.trim()&&!invitation)throw new ForbiddenException("Der Beitritt zu einem Partnernetzwerk ist ausschließlich über einen persönlichen Einladungslink möglich.");
+    if(invitation&&!networkAccessible)throw new BadRequestException("Die Netzwerkeinladung ist nicht mehr verfügbar.");
     const websiteUrl = safeUrl(input.websiteUrl); const organization:OrganizationRecord = { id: randomUUID(), legalName: requiredText(input.legalName,"Rechtlicher Firmenname",2,200), displayName: requiredText(input.displayName,"Anzeigename",2,200), role, websiteUrl, emailDomain: websiteUrl ? new URL(websiteUrl).hostname.replace(/^www\./,"") : null, reviewStatus: "draft", submittedAt: null, approvedAt: null, createdAt: new Date().toISOString() };
     this.store.organizations.set(organization.id, organization); this.store.memberships.push({ organizationId: organization.id, userId: user.id, role: "admin" });
     if(requestedNetwork){
-      const now=new Date().toISOString(),role=invitation&&typeof invitation.data.role==="string"?invitation.data.role as "moderator"|"organization_admin"|"member":"organization_admin";this.store.networkMemberships.push({id:randomUUID(),networkId:requestedNetwork.id,organizationId:organization.id,userId:user.id,role,status:invitation?"active":"pending",invitedByUserId:invitation?.createdByUserId||null,reviewedByUserId:null,reviewedAt:null,createdAt:now,updatedAt:now});if(invitation)invitation.data.usedAt=now;
+      const now=new Date().toISOString(),role:NetworkRole=invitation&&typeof invitation.data.role==="string"?invitation.data.role as NetworkRole:"organization_admin";this.store.networkMemberships.push({id:randomUUID(),networkId:requestedNetwork.id,organizationId:organization.id,userId:user.id,role,status:"active",invitedByUserId:invitation?.createdByUserId||null,reviewedByUserId:invitation?.createdByUserId||null,reviewedAt:now,createdAt:now,updatedAt:now});if(invitation)invitation.data.usedAt=now;
     }
     return organization;
   }

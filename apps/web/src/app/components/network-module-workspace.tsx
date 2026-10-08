@@ -4,15 +4,15 @@ import {FormEvent,useEffect,useMemo,useState} from "react";
 import {getPortalSession,portalRequest} from "../lib/portal-api";
 import {useNetworkAccess} from "./network-shell";
 
-type ContentType="event"|"topic"|"task"|"document"|"conversation"|"need";
+type ContentType="event"|"topic"|"task"|"document"|"conversation"|"need"|"service";
 type Status="draft"|"published"|"active"|"completed"|"archived";
-type Item={id:string;type:ContentType;title:string;description:string;status:Status;startsAt:string|null;visibility:"members"|"administrators";updatedAt:string};
+type Item={id:string;type:ContentType;title:string;description:string;status:Status;startsAt:string|null;visibility:"members"|"administrators";updatedAt:string;attendanceSummary?:{registrations:number;persons:number}};
 type Attendance={id:string;membershipId:string;memberName:string;organizationName:string;response:"registered"|"declined";attendance:"pending"|"present"|"absent";guestNames:string[];companionCount:number;note:string|null};
 type Config={type:ContentType;singular:string;plural:string;empty:string};
 
 const configs:Record<string,Config>={
  veranstaltungen:{type:"event",singular:"Veranstaltung",plural:"Veranstaltungen",empty:"Noch keine Veranstaltungen angelegt"},
- matching:{type:"need",singular:"Netzwerkbedarf",plural:"Bedarfe und Angebote",empty:"Noch keine internen Bedarfe veröffentlicht"},
+ angebote:{type:"service",singular:"Angebot",plural:"Angebote und Leistungen",empty:"Noch keine Leistungen oder Kooperationsangebote veröffentlicht"},
  kommunikation:{type:"conversation",singular:"Gespräch",plural:"Gespräche",empty:"Noch keine freigegebenen Gespräche vorhanden"},
  themen:{type:"topic",singular:"Netzwerkthema",plural:"Themen und Ankündigungen",empty:"Noch keine Netzwerkthemen veröffentlicht"},
  aufgaben:{type:"task",singular:"Aufgabe",plural:"Aufgaben",empty:"Noch keine Aufgaben erfasst"},
@@ -44,7 +44,7 @@ export function NetworkModuleWorkspace({module,slug}:{module:string;slug:string}
  }
  const visible=useMemo(()=>items.filter(item=>(filter==="Alle"||labels[item.status]===filter)&&`${item.title} ${item.description}`.toLowerCase().includes(query.toLowerCase())),[items,query,filter]);
  if(!config)return null;
- const memberCanCreate=["kommunikation","matching","themen"].includes(module);
+ const memberCanCreate=["kommunikation","angebote","themen"].includes(module);
  const canCreate=Boolean(!access?.readOnly&&(access?.canManage||memberCanCreate));
 
  async function submit(event:FormEvent<HTMLFormElement>){
@@ -79,7 +79,7 @@ export function NetworkModuleWorkspace({module,slug}:{module:string;slug:string}
   <div className="networkMemberStats"><button className={filter==="Alle"?"active":""} onClick={()=>setFilter("Alle")}><strong>{items.length}</strong><span>Gesamt</span></button>{(["published","active","completed"] as const).map(value=><button key={value} className={filter===labels[value]?"active":""} onClick={()=>setFilter(labels[value])}><strong>{items.filter(item=>item.status===value).length}</strong><span>{labels[value]}</span></button>)}</div>
   <section className="networkCard">
    <header><div><span>NETZWERKMODUL</span><h2>{config.plural}</h2></div><button type="button" onClick={exportCsv} disabled={!visible.length}>CSV exportieren</button></header>
-   <div className="networkContentRows">{visible.map(item=><article key={item.id}><div><span className={`networkMemberStatus ${item.status}`}>{labels[item.status]}</span><h3>{item.title}</h3><p>{item.description}</p><small>{item.startsAt?new Date(item.startsAt).toLocaleString("de-DE"):"Ohne Termin"} · {item.visibility==="administrators"?"Nur Verwaltung":"Alle Mitglieder"}</small></div><div className="networkRowActions">{module==="veranstaltungen"&&<button onClick={()=>void openAttendance(item)} title="Teilnahme und Anwesenheit" aria-label="Teilnahme und Anwesenheit">♙</button>}{item.status!=="published"&&item.status!=="completed"&&<button onClick={()=>void change(item,"published")} title="Veröffentlichen" aria-label="Veröffentlichen">✓</button>}{item.status!=="completed"&&<button onClick={()=>void change(item,"completed")} title="Erledigen" aria-label="Erledigen">○</button>}{item.status!=="archived"&&<button onClick={()=>void change(item,"archived")} title="Archivieren" aria-label="Archivieren">⌑</button>}</div></article>)}</div>
+   <div className="networkContentRows">{visible.map(item=><article key={item.id}><div><span className={`networkMemberStatus ${item.status}`}>{labels[item.status]}</span><h3>{item.title}</h3><p>{item.description}</p><small>{item.startsAt?new Date(item.startsAt).toLocaleString("de-DE"):"Ohne Termin"} · {item.visibility==="administrators"?"Nur Verwaltung":"Alle Mitglieder"}{module==="veranstaltungen"&&item.attendanceSummary?` · ${item.attendanceSummary.registrations} Zusagen · ${item.attendanceSummary.persons} Personen`:""}</small></div><div className="networkRowActions">{module==="veranstaltungen"&&<button onClick={()=>void openAttendance(item)} title="Teilnahme und Anwesenheit" aria-label="Teilnahme und Anwesenheit">♙</button>}{item.status!=="published"&&item.status!=="completed"&&<button onClick={()=>void change(item,"published")} title="Veröffentlichen" aria-label="Veröffentlichen">✓</button>}{item.status!=="completed"&&<button onClick={()=>void change(item,"completed")} title="Erledigen" aria-label="Erledigen">○</button>}{item.status!=="archived"&&<button onClick={()=>void change(item,"archived")} title="Archivieren" aria-label="Archivieren">⌑</button>}</div></article>)}</div>
    {!visible.length&&<div className="networkEmpty"><b>{config.empty}</b><p>{canCreate?"Legen Sie den ersten Eintrag an oder ändern Sie den Filter.":"Sobald Inhalte freigegeben wurden, erscheinen sie hier."}</p>{canCreate&&<button className="networkPrimary" onClick={()=>setDialog(true)}>＋ Jetzt {config.singular.toLowerCase()} anlegen</button>}</div>}
   </section>
   {canCreate&&dialog&&<div className="networkModalBackdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setDialog(false)}}><section className="networkModal networkContentModal" role="dialog" aria-modal="true">

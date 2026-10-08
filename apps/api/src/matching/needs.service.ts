@@ -21,6 +21,7 @@ export class NeedsService {
     if(!organization||!["submitted","approved"].includes(organization.reviewStatus))throw new ForbiddenException("Das Unternehmensprofil muss zuerst eingereicht werden.");
     const networkId=typeof input.networkId==="string"&&input.networkId.trim()?input.networkId.trim():null;
     if(networkId&&!this.store.networkMemberships.some(m=>m.networkId===networkId&&m.organizationId===organizationId&&m.status==="active"))throw new ForbiddenException("Das Unternehmen ist in diesem Netzwerk nicht aktiv.");
+    if(networkId)throw new ForbiddenException("Bedarfe und intelligentes Matching stehen ausschließlich im allgemeinen B2B-Portal zur Verfügung, nicht innerhalb geschlossener Partnernetzwerke.");
     const modes=this.arr(input.deliveryModes) as NeedRecord["deliveryModes"];
     if(!modes.length||modes.some(mode=>!["online","onsite","hybrid"].includes(mode)))throw new BadRequestException("Ungültiges Liefermodell.");
     const submitted=Boolean(input.submitForReview);

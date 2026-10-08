@@ -24,6 +24,7 @@ export class MatchingService {
   async recalculate(needId: string) {
     const need = this.need(needId);
     if (need.status !== "active") return [];
+    if(need.networkId)throw new ForbiddenException("Intelligentes Matching ist in geschlossenen Partnernetzwerken nicht verfügbar.");
     const networkOrganizations = need.networkId
       ? new Set(
           this.store.networkMemberships
@@ -75,6 +76,7 @@ export class MatchingService {
     const user = this.auth.authenticate(authHeader);
     const need = this.need(needId);
     this.requireMember(user.id, need.organizationId);
+    if (need.networkId) this.requireNetworkMatching(user.id, need.networkId);
     return [...this.store.matches.values()].filter(
       (match) => match.needId === needId,
     );
@@ -108,6 +110,7 @@ export class MatchingService {
     const user = this.auth.authenticate(authHeader);
     const match = this.match(matchId);
     this.requireMember(user.id, match.buyerOrganizationId);
+    this.requireMatchNetworkAccess(user.id, match);
     if (!["buyer_review", "deferred"].includes(match.status))
       throw new BadRequestException("Der Match kann nicht freigegeben werden.");
     match.status = "released_anonymously";
@@ -119,6 +122,7 @@ export class MatchingService {
     const user = this.auth.authenticate(authHeader);
     const match = this.match(matchId);
     this.requireMember(user.id, match.buyerOrganizationId);
+    this.requireMatchNetworkAccess(user.id, match);
     match.status = "rejected_by_buyer";
     match.buyerDecisionAt = new Date().toISOString();
     return match;
@@ -135,6 +139,7 @@ export class MatchingService {
       .filter(
         (match) =>
           organizations.has(match.providerOrganizationId) &&
+          this.hasMatchNetworkAccess(user.id, match) &&
           [
             "released_anonymously",
             "provider_interested",
@@ -155,6 +160,7 @@ export class MatchingService {
     const user = this.auth.authenticate(authHeader);
     const match = this.match(matchId);
     this.requireMember(user.id, match.providerOrganizationId);
+    this.requireMatchNetworkAccess(user.id, match);
     if (match.status !== "released_anonymously")
       throw new BadRequestException(
         "Der Match kann nicht beantwortet werden.",
@@ -168,6 +174,7 @@ export class MatchingService {
     const user = this.auth.authenticate(authHeader);
     const match = this.match(matchId);
     this.requireMember(user.id, match.buyerOrganizationId);
+    this.requireMatchNetworkAccess(user.id, match);
     if (match.status !== "provider_interested")
       throw new BadRequestException(
         "Die Identität kann erst nach Interesse des Dienstleisters freigegeben werden.",
@@ -304,5 +311,29 @@ export class MatchingService {
       )
     )
       throw new ForbiddenException();
+  }
+
+  private requireMatchNetworkAccess(userId: string, match: MatchRecord) {
+    const networkId = this.need(match.needId).networkId;
+    if (networkId) this.requireNetworkMatching(userId, networkId);
+  }
+
+  private hasMatchNetworkAccess(userId: string, match: MatchRecord) {
+    const networkId = this.need(match.needId).networkId;
+    if (!networkId) return true;
+    try {
+      this.requireNetworkMatching(userId, networkId);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private requireNetworkMatching(userId: string, networkId: string) {
+    void userId;
+    void networkId;
+    throw new ForbiddenException(
+      "Intelligentes Matching ist in geschlossenen Partnernetzwerken nicht verfügbar.",
+    );
   }
 }

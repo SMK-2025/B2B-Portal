@@ -21,7 +21,7 @@ type Network = {
   latestOrder?: {
     id:string; status:"submitted"|"accepted"|"rejected"|"cancelled";
     submittedAt:string; invoiceCompany:string; invoiceContact:string; invoiceEmail:string;
-    billingCycle:"annual"|"semiannual";
+    billingCycle:"annual"; participantCount:number; selectedModules:string[]; pricingMode:"individual"|"complete"; monthlyNetCents:number;
   } | null;
 };
 type Dialog = "create" | "trial" | "admin" | null;
@@ -82,7 +82,6 @@ export function AdminNetworkWorkspace() {
           slug: form.get("slug"),
           legalName: form.get("legalName"),
           websiteUrl: form.get("websiteUrl"),
-          enabledModules: form.getAll("modules"),
         },
       });
       setNetworks((items) => [...items, created]);
@@ -109,7 +108,7 @@ export function AdminNetworkWorkspace() {
           body: {
             status,
             ...(days ? { trialDays: days } : {}),
-            selfRegistration: status === "active" || status === "trial",
+            selfRegistration: false,
           },
         },
       );
@@ -143,7 +142,7 @@ export function AdminNetworkWorkspace() {
     const email = String(new FormData(event.currentTarget).get("email"));
     setBusy(true);
     try {
-      await portalRequest(`/networks/${selected}/administrator`, {
+      const result=await portalRequest<{invited?:boolean;registrationRequired?:boolean}>(`/networks/${selected}/administrator`, {
         token,
         body: { email },
       });
@@ -152,9 +151,9 @@ export function AdminNetworkWorkspace() {
       });
       setNetworks(refreshed);
       setDialog(null);
-      setNotice(
-        "Die Netzwerkadministrator-Rolle wurde verbindlich zugewiesen.",
-      );
+      setNotice(result.invited
+        ? "Die persönliche Admin-Einladung wurde versendet. Nach der Registrierung wird die eingeladene Person automatisch Netzwerkadministrator."
+        : "Die Netzwerkadministrator-Rolle wurde verbindlich zugewiesen.");
     } catch (error) {
       showError(error);
     } finally {
@@ -265,11 +264,9 @@ export function AdminNetworkWorkspace() {
                 <article>
                   <small>Mitgliederregistrierung</small>
                   <b>
-                    {network.settings.selfRegistration
-                      ? "Aktiviert"
-                      : "Deaktiviert"}
+                    Nur per Einladung
                   </b>
-                  <span>Nur im freigegebenen Mandanten</span>
+                  <span>Keine freie Anmeldung oder öffentliche Auffindbarkeit</span>
                 </article>
                 <article>
                   <small>Mandant</small>
@@ -278,7 +275,7 @@ export function AdminNetworkWorkspace() {
                 </article>
               </div>
               {network.latestOrder?.status === "submitted" && <section className="adminNetworkOrderNotice">
-                <div><small>VERBINDLICHE BESTELLUNG EINGEGANGEN</small><b>{network.latestOrder.invoiceCompany}</b><span>{new Date(network.latestOrder.submittedAt).toLocaleString("de-DE")} · {network.latestOrder.billingCycle === "annual" ? "jährliche Vorauszahlung" : "halbjährliche Abrechnung"}</span></div>
+                <div><small>VERBINDLICHE MODULBUCHUNG EINGEGANGEN</small><b>{network.latestOrder.invoiceCompany}</b><span>{network.latestOrder.participantCount} Nutzer · {network.latestOrder.selectedModules.length} kostenpflichtige Module · {(network.latestOrder.monthlyNetCents/100).toLocaleString("de-DE",{style:"currency",currency:"EUR"})} netto / Monat</span><span>{new Date(network.latestOrder.submittedAt).toLocaleString("de-DE")} · zwölf Monate im Voraus</span></div>
                 <div><span>Bestellnummer</span><code>{network.latestOrder.id}</code><div className="adminNetworkOrderActions"><button type="button" disabled={busy} onClick={()=>void decideOrder(network,"accepted")}>Annehmen &amp; aktivieren</button><button type="button" disabled={busy} onClick={()=>void decideOrder(network,"rejected")}>Ablehnen</button></div></div>
               </section>}
               <footer className="adminNetworkActions">
@@ -305,19 +302,7 @@ export function AdminNetworkWorkspace() {
                 >
                   Administrator bestimmen
                 </button>
-                {network.latestOrder?.status === "submitted" ? null : network.status !== "active" ? (
-                  <button
-                    disabled={busy}
-                    className="portalPrimary"
-                    type="button"
-                    onClick={() => {
-                      setSelected(network.id);
-                      void updateAccessFor(network.id, "active");
-                    }}
-                  >
-                    Aktivieren
-                  </button>
-                ) : (
+                {network.status === "active" ? (
                   <button
                     disabled={busy}
                     className="portalReject adminNetworkBlock"
@@ -329,7 +314,7 @@ export function AdminNetworkWorkspace() {
                   >
                     Sperren
                   </button>
-                )}
+                ) : null}
                 <button disabled={busy} className="portalReject" type="button" title="Netzwerk vollständig löschen" aria-label={`${network.name} vollständig löschen`} onClick={()=>void deleteNetwork(network)}>⌫</button>
               </footer>
             </section>
@@ -356,7 +341,7 @@ export function AdminNetworkWorkspace() {
                     ? "Neuen Netzwerkpartner anlegen"
                     : dialog === "trial"
                       ? "Testzugang erteilen"
-                      : "Netzwerkadministrator bestimmen"}
+                      : "Netzwerkadministrator einladen"}
                 </h2>
               </div>
               <button
@@ -400,30 +385,9 @@ export function AdminNetworkWorkspace() {
                     placeholder="https://www.beispiel.de"
                   />
                 </label>
-                <fieldset className="adminModuleSelection">
-                  <legend>Startmodule</legend>
-                  {[
-                    ["members", "Mitglieder"],
-                    ["profiles", "Profile"],
-                    ["matching", "Matching"],
-                    ["communication", "Kommunikation"],
-                    ["events", "Veranstaltungen"],
-                    ["documents", "Dokumente"],
-                  ].map(([value, label]) => (
-                    <label key={value}>
-                      <input
-                        type="checkbox"
-                        name="modules"
-                        value={value}
-                        defaultChecked={["members", "profiles"].includes(value)}
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </fieldset>
                 <p>
-                  Das Netzwerk wird ohne Zugriff und ohne Administratorrolle als
-                  Entwurf angelegt.
+                  Das Netzwerk wird als leere, geschlossene Hülle ohne Zugriff,
+                  Administrator und gebuchte Module angelegt.
                 </p>
                 <div className="adminNetworkDialogActions">
                   <button type="button" onClick={() => setDialog(null)}>
@@ -483,15 +447,17 @@ export function AdminNetworkWorkspace() {
                   </select>
                 </label>
                 <p>
-                  Das Konto muss registriert und einem Unternehmen zugeordnet
-                  sein. Die Rechte gelten nur für den ausgewählten Mandanten.
+                  Ist noch kein Konto vorhanden, wird ein persönlicher, 14 Tage
+                  gültiger Einladungslink versendet. Die eingeladene Person richtet
+                  ihr Unternehmen ein und wird ausschließlich in diesem Mandanten
+                  zum Netzwerkadministrator.
                 </p>
                 <div className="adminNetworkDialogActions">
                   <button type="button" onClick={() => setDialog(null)}>
                     Abbrechen
                   </button>
                   <button disabled={busy} className="portalPrimary">
-                    Rolle zuweisen
+                    Admin einladen oder zuweisen
                   </button>
                 </div>
               </form>
@@ -554,7 +520,7 @@ export function AdminNetworkWorkspace() {
     try {
       const updated = await portalRequest<Network>(`/networks/${id}/access`, {
         token,
-        body: { status, selfRegistration: status === "active" },
+        body: { status, selfRegistration: false },
       });
       setNetworks((items) =>
         items.map((item) => (item.id === id ? { ...item, ...updated } : item)),

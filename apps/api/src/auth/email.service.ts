@@ -78,14 +78,16 @@ export class EmailService {
     });
   }
 
-  async sendNetworkOrderConfirmation(input:{email:string;contact:string;networkName:string;orderId:string;billingCycle:"annual"|"semiannual"}):Promise<void>{
+  async sendNetworkOrderConfirmation(input:{email:string;contact:string;networkName:string;orderId:string;billingCycle:"annual";monthlyNetCents:number}):Promise<void>{
     const link=`${this.webUrl()}/portal`;
-    const cycle=input.billingCycle==="annual"?"jährliche Vorauszahlung":"halbjährliche Abrechnung";
+    const cycle="zwölf Monate im Voraus";
+    const monthly=(input.monthlyNetCents/100).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const annual=(input.monthlyNetCents*12/100).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
     await this.send({
       to:input.email,
-      subject:`Eingangsbestätigung Ihrer Netzwerkportal-Bestellung ${input.orderId}`,
-      text:`Hallo ${input.contact},\n\nwir bestätigen den Eingang Ihrer verbindlichen Bestellung für ${input.networkName}.\nBestellnummer: ${input.orderId}\nAbrechnung: ${cycle}\nNetzwerkpauschale: 390,00 EUR netto pro Monat\nEinmalige Einrichtung: 2.990,00 EUR netto\nMindestlaufzeit: 12 Monate\n\nDer Vertrag kommt entsprechend unseren AGB durch unsere Auftragsbestätigung zustande. Rechnung und Auftragsbestätigung folgen gesondert.`,
-      html:this.template("Ihre verbindliche Bestellung",`Hallo ${this.escape(input.contact)}, wir bestätigen den Eingang Ihrer Bestellung für das Netzwerkportal <strong>${this.escape(input.networkName)}</strong>.<br><br><strong>Bestellnummer:</strong> ${this.escape(input.orderId)}<br><strong>Abrechnung:</strong> ${this.escape(cycle)}<br><strong>Netzwerkpauschale:</strong> 390,00 € netto pro Monat<br><strong>Einrichtung:</strong> 2.990,00 € netto einmalig<br><strong>Mindestlaufzeit:</strong> 12 Monate`,"Zum Portal",link,"Der Vertrag kommt entsprechend unseren AGB durch unsere gesonderte Auftragsbestätigung zustande. Rechnung und Auftragsbestätigung folgen separat."),
+      subject:`Bestätigung Ihrer Netzwerk-Modulbuchung ${input.orderId}`,
+      text:`Hallo ${input.contact},\n\nIhre verbindliche persönliche Modulbuchung für ${input.networkName} ist aktiv.\nBestellnummer: ${input.orderId}\nMonatlicher Preis: ${monthly} EUR netto\nAbrechnung: ${annual} EUR netto für zwölf Monate im Voraus\nMindestlaufzeit: 12 Monate\nZahlungsziel: 14 Tage nach Rechnungsstellung\nEinrichtungsgebühr: keine\n\nDie Rechnung folgt gesondert. Bei ausbleibender Zahlung kann der Portalbetreiber den Zugang sperren.`,
+      html:this.template("Ihre Modulbuchung ist aktiv",`Hallo ${this.escape(input.contact)}, Ihre verbindliche persönliche Modulbuchung für <strong>${this.escape(input.networkName)}</strong> ist aktiv.<br><br><strong>Bestellnummer:</strong> ${this.escape(input.orderId)}<br><strong>Monatlicher Preis:</strong> ${this.escape(monthly)} € netto<br><strong>Jahresbetrag:</strong> ${this.escape(annual)} € netto<br><strong>Abrechnung:</strong> ${this.escape(cycle)}<br><strong>Mindestlaufzeit:</strong> 12 Monate<br><strong>Zahlungsziel:</strong> 14 Tage nach Rechnungsstellung<br><strong>Einrichtungsgebühr:</strong> keine`,"Zum Netzwerkportal",link,"Die Rechnung folgt gesondert. Bei ausbleibender Zahlung kann der Portalbetreiber den Zugang sperren."),
     });
   }
 

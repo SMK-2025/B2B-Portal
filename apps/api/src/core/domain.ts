@@ -3,7 +3,7 @@ export type OrganizationRole = "buyer" | "provider" | "both";
 export type MembershipRole = "admin" | "needs_manager" | "communication" | "viewer";
 export type NetworkRole = "network_admin" | "moderator" | "organization_admin" | "member";
 export type NetworkMembershipStatus = "pending" | "active" | "rejected" | "suspended" | "left";
-export type NetworkModule = "members" | "profiles" | "services" | "matching" | "communication" | "events" | "community" | "tasks" | "documents" | "analytics" | "notifications";
+export type NetworkModule = "members" | "profiles" | "services" | "matching" | "communication" | "events" | "community" | "tasks" | "documents" | "analytics" | "notifications" | "revenue" | "branding";
 export type ReviewStatus = "draft" | "submitted" | "changes_requested" | "approved" | "rejected" | "suspended";
 
 export interface UserRecord {
@@ -33,6 +33,28 @@ export interface OrganizationRecord {
   profileRequiredTotal?: number;
   profileRequiredCompleted?: number;
   profileRequiredSections?: boolean[];
+  networkProfile?: NetworkPartnerProfile;
+}
+
+export interface NetworkPartnerProfile {
+  status:"draft"|"published";
+  logoUrl:string|null;
+  companyName:string;
+  tagline:string;
+  description:string;
+  services:string;
+  industries:string;
+  street:string;
+  postalCode:string;
+  city:string;
+  country:string;
+  websiteUrl:string|null;
+  contactName:string;
+  contactPosition:string;
+  contactEmail:string;
+  contactPhone:string;
+  updatedAt:string;
+  publishedAt:string|null;
 }
 
 export interface MembershipRecord {
@@ -85,12 +107,16 @@ export interface NetworkOrderRecord {
   id:string; networkId:string; orderedByUserId:string;
   invoiceCompany:string; invoiceContact:string; invoiceEmail:string;
   invoiceStreet:string; invoicePostalCode:string; invoiceCity:string; invoiceCountry:string;
-  billingCycle:"annual"|"semiannual"; purchaseOrderReference:string|null;
-  monthlyNetCents:39000; setupNetCents:299000; minimumTermMonths:12;
+  billingCycle:"annual"; purchaseOrderReference:string|null;
+  participantCount:number; selectedModules:NetworkModule[]; pricingMode:"individual"|"complete";
+  moduleUnitPrices:Partial<Record<NetworkModule,number>>;
+  monthlyNetCents:number; setupNetCents:number; minimumTermMonths:12;
   termsVersion:string; pricingVersion:string;
   authorityConfirmed:boolean; termsAccepted:boolean; paymentObligationAccepted:boolean;
   status:"submitted"|"accepted"|"rejected"|"cancelled";
   submittedAt:string; decidedAt:string|null; decidedByUserId:string|null;
+  paymentStatus?:"open"|"paid"|"overdue"; paymentDueAt?:string|null; paidAt?:string|null;
+  serviceStartsAt?:string|null; serviceEndsAt?:string|null;
 }
 
 export interface ReviewDecisionRecord {

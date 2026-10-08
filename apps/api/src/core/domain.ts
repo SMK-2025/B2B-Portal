@@ -1,5 +1,5 @@
 export type AccountRole = "user" | "platform_admin" | "reviewer";
-export type OrganizationRole = "buyer" | "provider" | "both";
+export type OrganizationRole = "buyer" | "provider" | "both" | "network";
 export type MembershipRole = "admin" | "needs_manager" | "communication" | "viewer";
 export type NetworkRole = "network_admin" | "moderator" | "organization_admin" | "member";
 export type NetworkMembershipStatus = "pending" | "active" | "rejected" | "suspended" | "left";

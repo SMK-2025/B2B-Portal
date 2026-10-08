@@ -11,7 +11,7 @@ import {
 } from "../lib/portal-api";
 
 type Step = "account" | "verify" | "organization" | "submitted";
-type OrganizationRole = "buyer" | "provider" | "both";
+type OrganizationRole = "buyer" | "provider" | "both" | "network";
 type RegistrationRole = OrganizationRole;
 type RegisterResult = {
   verificationToken?: string;
@@ -31,6 +31,7 @@ export default function RegistrationPage() {
   const [networkSlug, setNetworkSlug] = useState("");
   const [invitedEmail, setInvitedEmail] = useState("");
   const [networkInviteToken, setNetworkInviteToken] = useState("");
+  const networkRegistration=Boolean(networkSlug&&networkInviteToken);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNetworkSlug(params.get("network") || "");
@@ -152,9 +153,7 @@ export default function RegistrationPage() {
             Neue Möglichkeiten.
           </h2>
           <p>
-            Erstellen Sie zunächst nur Ihren Zugang und wählen Sie anschließend,
-            wie Sie B2B Matching nutzen möchten. Alle ausführlichen Profildaten
-            ergänzen Sie später geführt im Portal.
+            {networkRegistration?"Erstellen Sie Ihren persönlichen Zugang zum geschlossenen Partnernetzwerk. Die Partnerseite Ihres Unternehmens ergänzen Sie anschließend geführt im Netzwerkportal.":"Erstellen Sie zunächst nur Ihren Zugang und wählen Sie anschließend, wie Sie B2B Matching nutzen möchten. Alle ausführlichen Profildaten ergänzen Sie später geführt im Portal."}
           </p>
           <div className="authBenefits">
             <article>
@@ -167,10 +166,9 @@ export default function RegistrationPage() {
             <article>
               <b>02</b>
               <div>
-                <strong>Unternehmen und Rolle wählen</strong>
+                <strong>{networkRegistration?"Unternehmen zuordnen":"Unternehmen und Rolle wählen"}</strong>
                 <p>
-                  Dienstleistungen suchen, anbieten oder beide Möglichkeiten
-                  verbinden.
+                  {networkRegistration?"Ihr Unternehmen wird ausschließlich dem eingeladenen Netzwerk zugeordnet.":"Dienstleistungen suchen, anbieten oder beide Möglichkeiten verbinden."}
                 </p>
               </div>
             </article>
@@ -301,10 +299,9 @@ export default function RegistrationPage() {
           )}
           {step === "organization" && (
             <>
-              <h1>Unternehmen und Nutzung</h1>
+              <h1>{networkRegistration?"Unternehmen im Netzwerk":"Unternehmen und Nutzung"}</h1>
               <p className="lead">
-                Diese drei Angaben reichen für den Start. Das vollständige
-                Profil folgt später im Portal.
+                {networkRegistration?"Diese zwei Angaben reichen für den Start. Ihre interne Partnerseite vervollständigen Sie anschließend im geschlossenen Netzwerk.":"Diese drei Angaben reichen für den Start. Das vollständige Profil folgt später im Portal."}
               </p>
               <form onSubmit={createOrganization} className="formGrid">
                 <label className="full">
@@ -324,7 +321,7 @@ export default function RegistrationPage() {
                     placeholder="https://www.unternehmen.de"
                   />
                 </label>
-                <fieldset className="full roleChoice">
+                {!networkRegistration&&<fieldset className="full roleChoice">
                   <legend>Wie möchten Sie B2B Matching nutzen?</legend>
                   <label className={`roleBuyer ${role === "buyer" ? "active" : ""}`}>
                     <input
@@ -371,8 +368,8 @@ export default function RegistrationPage() {
                       </small>
                     </span>
                   </label>
-                </fieldset>
-                <div className="full pricingClarity">
+                </fieldset>}
+                {networkRegistration?<div className="full pricingClarity"><b>Persönlich eingeladener Netzwerkzugang</b><p>Es wird keine Rolle für das allgemeine B2B-Matching ausgewählt. Ihr Unternehmen bleibt ausschließlich innerhalb des geschlossenen Partnernetzwerks sichtbar.</p></div>:<div className="full pricingClarity">
                   <b>
                     {role === "buyer"
                       ? "Für Unternehmen kostenlos"
@@ -387,7 +384,7 @@ export default function RegistrationPage() {
                         ? "Registrierung und Profilerstellung sind kostenlos. Vor der aktiven Teilnahme wird ein Tarif mit mindestens drei Monaten Laufzeit transparent bestätigt."
                         : "Die Suche nach Dienstleistern bleibt kostenlos. Für das Anbieten eigener Leistungen gelten später die Dienstleistertarife."}
                   </p>
-                </div>
+                </div>}
                 <button className="primary full" disabled={loading}>
                   {loading
                     ? "Registrierung wird gespeichert …"
@@ -404,8 +401,8 @@ export default function RegistrationPage() {
                 Das Unternehmen wurde angelegt und zur Prüfung vorgemerkt. Im
                 Portal können Sie Ihr Profil jetzt in Ruhe vervollständigen.
               </p>
-              <Link className="primary linkButton" href={routeForRole(role)}>
-                Zum persönlichen Arbeitsbereich
+              <Link className="primary linkButton" href={(networkRegistration?`/portal/netzwerk/${networkSlug}`:routeForRole(role as "buyer"|"provider"|"both")) as never}>
+                {networkRegistration?"Zum Netzwerkportal":"Zum persönlichen Arbeitsbereich"}
               </Link>
               <small className="successNote">
                 Ihr Profil ist bis zur administrativen Freigabe nicht

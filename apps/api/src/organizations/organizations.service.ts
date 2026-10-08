@@ -13,8 +13,8 @@ export class OrganizationsService {
   constructor(@Inject(PortalStore) private readonly store: PortalStore, @Inject(AuthService) private readonly auth: AuthService,@Inject(EmailService)private readonly email:EmailService) {}
   create(authorization: string | undefined, input: Record<string, unknown>) {
     const user = this.auth.authenticate(authorization); if (!user.emailVerifiedAt) throw new ForbiddenException("E-Mail-Adresse nicht bestätigt.");
-    const role = input.role as OrganizationRole; if (!["buyer","provider","both"].includes(role)) throw new BadRequestException("Ungültige Unternehmensrolle.");
     const inviteToken=typeof input.networkInviteToken==="string"?input.networkInviteToken:"";const invitation=inviteToken?[...this.store.networkContents.values()].find(item=>item.data.kind==="network_invitation"&&item.data.inviteTokenHash===tokenHash(inviteToken)&&item.data.email===user.email&&!item.data.usedAt&&item.endsAt&&Date.parse(item.endsAt)>Date.now()):undefined;
+    const requestedRole=input.role as OrganizationRole;const role:OrganizationRole=invitation?"network":requestedRole;if(!["buyer","provider","both","network"].includes(role)||(!invitation&&role==="network"))throw new BadRequestException("Ungültige Unternehmensrolle.");
     const requestedNetwork=invitation?this.store.networks.get(invitation.networkId):undefined;
     const networkAccessible=requestedNetwork&&(requestedNetwork.status==="active"||(requestedNetwork.status==="trial"&&requestedNetwork.trialEndsAt&&Date.parse(requestedNetwork.trialEndsAt)>Date.now()));
     if(typeof input.networkSlug==="string"&&input.networkSlug.trim()&&!invitation)throw new ForbiddenException("Der Beitritt zu einem Partnernetzwerk ist ausschließlich über einen persönlichen Einladungslink möglich.");

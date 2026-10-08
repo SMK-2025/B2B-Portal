@@ -52,22 +52,40 @@ export class NetworksService{
  remove(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
   const actor=this.auth.authenticate(authorization);this.requirePlatformAdmin(actor.id);const network=this.raw(networkId);
   if(input.confirmSlug!==network.slug)throw new BadRequestException("Zur Bestätigung muss die exakte Netzwerk-Kennung angegeben werden.");
-  const needIds=new Set([...this.store.needs.values()].filter(item=>item.networkId===networkId).map(item=>item.id));
-  const matchIds=new Set([...this.store.matches.values()].filter(item=>needIds.has(item.needId)).map(item=>item.id));
+  const networkMemberships=this.store.networkMemberships.filter(item=>item.networkId===networkId);
+  const organizationIds=new Set(networkMemberships.map(item=>item.organizationId));
+  const userIds=new Set(networkMemberships.map(item=>item.userId).filter(userId=>this.store.users.get(userId)?.accountRole!=="platform_admin"));
+  let expanded=true;while(expanded){expanded=false;for(const membership of this.store.memberships){if(userIds.has(membership.userId)&&!organizationIds.has(membership.organizationId)){organizationIds.add(membership.organizationId);expanded=true}if(organizationIds.has(membership.organizationId)&&this.store.users.get(membership.userId)?.accountRole!=="platform_admin"&&!userIds.has(membership.userId)){userIds.add(membership.userId);expanded=true}}}
+  const removedNetworkMembershipIds=new Set(this.store.networkMemberships.filter(item=>item.networkId===networkId||organizationIds.has(item.organizationId)||userIds.has(item.userId)).map(item=>item.id));
+  const servicePageIds=new Set([...this.store.servicePages.values()].filter(item=>organizationIds.has(item.organizationId)).map(item=>item.id));
+  const needIds=new Set([...this.store.needs.values()].filter(item=>item.networkId===networkId||organizationIds.has(item.organizationId)).map(item=>item.id));
+  const matchIds=new Set([...this.store.matches.values()].filter(item=>needIds.has(item.needId)||servicePageIds.has(item.servicePageId)||organizationIds.has(item.buyerOrganizationId)||organizationIds.has(item.providerOrganizationId)).map(item=>item.id));
   const conversationIds=new Set([...this.store.conversations.values()].filter(item=>matchIds.has(item.matchId)).map(item=>item.id));
-  for(const [id,item] of this.store.networkContents)if(item.networkId===networkId)this.store.networkContents.delete(id);
-  for(const [id,item] of this.store.networkAttendances)if(item.networkId===networkId)this.store.networkAttendances.delete(id);
-  for(const [id,item] of this.store.networkRevenues)if(item.networkId===networkId)this.store.networkRevenues.delete(id);
-  for(const [id,item] of this.store.needs)if(item.networkId===networkId)this.store.needs.delete(id);
+  for(const [id,item] of this.store.networkContents)if(item.networkId===networkId||userIds.has(item.createdByUserId)||userIds.has(item.assignedToUserId||""))this.store.networkContents.delete(id);
+  for(const [id,item] of this.store.networkAttendances)if(item.networkId===networkId||removedNetworkMembershipIds.has(item.membershipId)||userIds.has(item.userId)||userIds.has(item.updatedByUserId))this.store.networkAttendances.delete(id);
+  for(const [id,item] of this.store.networkRevenues)if(item.networkId===networkId||removedNetworkMembershipIds.has(item.referringMembershipId)||removedNetworkMembershipIds.has(item.beneficiaryMembershipId)||userIds.has(item.createdByUserId))this.store.networkRevenues.delete(id);
+  for(const [id,item] of this.store.networkOrders)if(item.networkId===networkId||userIds.has(item.orderedByUserId))this.store.networkOrders.delete(id);
+  for(const [id,item] of this.store.servicePages)if(servicePageIds.has(id))this.store.servicePages.delete(id);
+  for(const [id] of this.store.needs)if(needIds.has(id))this.store.needs.delete(id);
   for(const id of matchIds)this.store.matches.delete(id);
   for(const id of conversationIds)this.store.conversations.delete(id);
-  for(const [id,item] of this.store.meetings)if(matchIds.has(item.matchId))this.store.meetings.delete(id);
-  this.store.messages.splice(0,this.store.messages.length,...this.store.messages.filter(item=>!conversationIds.has(item.conversationId)));
-  this.store.networkMemberships.splice(0,this.store.networkMemberships.length,...this.store.networkMemberships.filter(item=>item.networkId!==networkId));
-  this.store.activities.splice(0,this.store.activities.length,...this.store.activities.filter(item=>item.data.networkId!==networkId&&(!item.matchId||!matchIds.has(item.matchId))));
-  this.store.notifications.splice(0,this.store.notifications.length,...this.store.notifications.filter(item=>item.data.networkId!==networkId));
+  for(const [id,item] of this.store.meetings)if(matchIds.has(item.matchId)||userIds.has(item.createdByUserId))this.store.meetings.delete(id);
+  for(const [id,item] of this.store.teamInvitations)if(organizationIds.has(item.organizationId)||userIds.has(item.invitedByUserId))this.store.teamInvitations.delete(id);
+  for(const [id,item] of this.store.favorites)if(userIds.has(item.userId)||organizationIds.has(item.providerOrganizationId)||matchIds.has(item.matchId))this.store.favorites.delete(id);
+  for(const [id,item] of this.store.userPreferences)if(userIds.has(item.userId))this.store.userPreferences.delete(id);
+  for(const [id,item] of this.store.sessions)if(userIds.has(item.userId))this.store.sessions.delete(id);
+  for(const [id,item] of this.store.verificationTokens)if(userIds.has(item.userId))this.store.verificationTokens.delete(id);
+  for(const [id,item] of this.store.passwordResetTokens)if(userIds.has(item.userId))this.store.passwordResetTokens.delete(id);
+  this.store.messages.splice(0,this.store.messages.length,...this.store.messages.filter(item=>!conversationIds.has(item.conversationId)&&!userIds.has(item.senderUserId)));
+  this.store.networkMemberships.splice(0,this.store.networkMemberships.length,...this.store.networkMemberships.filter(item=>!removedNetworkMembershipIds.has(item.id)));
+  this.store.memberships.splice(0,this.store.memberships.length,...this.store.memberships.filter(item=>!organizationIds.has(item.organizationId)&&!userIds.has(item.userId)));
+  this.store.reviewDecisions.splice(0,this.store.reviewDecisions.length,...this.store.reviewDecisions.filter(item=>!organizationIds.has(item.organizationId)&&!userIds.has(item.reviewerId)));
+  this.store.activities.splice(0,this.store.activities.length,...this.store.activities.filter(item=>item.data.networkId!==networkId&&!organizationIds.has(item.organizationId||"")&&!userIds.has(item.actorUserId||"")&&(!item.matchId||!matchIds.has(item.matchId))));
+  this.store.notifications.splice(0,this.store.notifications.length,...this.store.notifications.filter(item=>!userIds.has(item.userId)&&item.data.networkId!==networkId));
+  for(const organizationId of organizationIds)this.store.organizations.delete(organizationId);
+  for(const userId of userIds){const user=this.store.users.get(userId);if(user)this.store.userByEmail.delete(user.email);this.store.users.delete(userId)}
   this.store.networks.delete(networkId);this.store.networkBySlug.delete(network.slug);
-  return{deleted:true,id:networkId,slug:network.slug};
+  return{deleted:true,id:networkId,slug:network.slug,deletedOrganizations:organizationIds.size,deletedUsers:userIds.size};
  }
 
  publicBySlug(authorization:string|undefined,slug:string){

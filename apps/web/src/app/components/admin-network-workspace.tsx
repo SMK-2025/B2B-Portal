@@ -161,7 +161,7 @@ export function AdminNetworkWorkspace() {
     }
   }
   async function deleteNetwork(network:Network){
-    const confirmation=window.prompt(`„${network.name}“ einschließlich Mitgliedschaften und Inhalten dauerhaft löschen? Geben Sie zur Bestätigung ${network.slug} ein:`);
+    const confirmation=window.prompt(`„${network.name}“ einschließlich aller Unternehmen, Benutzerkonten, E-Mail-Adressen, Anmeldedaten und Inhalte dauerhaft löschen? Die betroffenen Personen können sich anschließend neu registrieren. Geben Sie zur Bestätigung ${network.slug} ein:`);
     if(confirmation!==network.slug)return;
     const token=getPortalSession();if(!token)return setNotice("Bitte melden Sie sich erneut als Plattformadministrator an.");
     setBusy(true);try{await portalRequest(`/networks/${network.id}/delete`,{token,body:{confirmSlug:confirmation}});setNetworks(items=>items.filter(item=>item.id!==network.id));setNotice(`${network.name} wurde vollständig gelöscht.`)}catch(error){showError(error)}finally{setBusy(false)}

@@ -46,5 +46,14 @@ describe("network tenancy",()=>{
   expect(second).toMatchObject({status:"draft",trialEndsAt:null});
   expect(second.settings.selfRegistration).toBe(false);
   expect(networks.adminList(adminBearer)).toHaveLength(2);
+  const removed=networks.remove(adminBearer,created.id,{confirmSlug:"test-netzwerk"});
+  expect(removed).toMatchObject({deleted:true,deletedOrganizations:1,deletedUsers:2});
+  expect(store.users.has(registration.user.id)).toBe(false);
+  expect(store.users.has(outsiderRegistration.user.id)).toBe(false);
+  expect(store.userByEmail.has("mitglied@example.de")).toBe(false);
+  expect(store.userByEmail.has("extern@example.de")).toBe(false);
+  expect(store.organizations.has(organization.id)).toBe(false);
+  expect(store.users.has(adminId)).toBe(true);
+  expect(store.networks.has(created.id)).toBe(false);
  });
 });

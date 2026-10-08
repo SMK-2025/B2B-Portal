@@ -14,6 +14,7 @@ import {
   hashPassword,
   opaqueToken,
   tokenHash,
+  validatePasswordStrength,
   verifyPassword,
 } from "./password";
 import { EmailService } from "./email.service";
@@ -85,6 +86,7 @@ export class AuthService implements OnModuleInit {
         "Für diese E-Mail-Adresse besteht bereits ein Konto.",
       );
     const password = requiredText(input.password, "Passwort", 12, 200);
+    validatePasswordStrength(password);
     const user = {
       id: randomUUID(),
       email,
@@ -191,6 +193,7 @@ export class AuthService implements OnModuleInit {
   async resetPassword(input: Record<string, unknown>) {
     const raw = requiredText(input.token, "Zurücksetzungscode", 20, 200);
     const password = requiredText(input.password, "Passwort", 12, 200);
+    validatePasswordStrength(password);
     const record = this.store.passwordResetTokens.get(tokenHash(raw));
     if (!record || record.usedAt || Date.parse(record.expiresAt) <= Date.now())
       throw new BadRequestException(

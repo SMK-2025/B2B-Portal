@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 const scrypt = promisify(nodeScrypt);
 
 export async function hashPassword(password: string): Promise<string> {
-  validatePasswordStrength(password);
+  if (password.length < 12) throw new Error("Das Passwort muss mindestens 12 Zeichen enthalten.");
   const salt = randomBytes(16); const derived = await scrypt(password, salt, 64) as Buffer;
   return `scrypt$${salt.toString("base64url")}$${derived.toString("base64url")}`;
 }

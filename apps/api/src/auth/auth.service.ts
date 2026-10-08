@@ -78,6 +78,8 @@ export class AuthService implements OnModuleInit {
 
   async register(input: Record<string, unknown>) {
     const email = emailAddress(input.email);
+    const networkInviteToken=typeof input.networkInviteToken==="string"?input.networkInviteToken:"";
+    if(networkInviteToken){const invitation=[...this.store.networkContents.values()].find(item=>item.data.kind==="network_invitation"&&item.data.role==="network_admin"&&item.data.inviteTokenHash===tokenHash(networkInviteToken)&&!item.data.usedAt&&item.endsAt&&Date.parse(item.endsAt)>Date.now());if(!invitation||invitation.data.email!==email)throw new BadRequestException("Die Initiator-Einladung ist ungültig, abgelaufen oder für eine andere E-Mail-Adresse ausgestellt.")}
     if (this.store.userByEmail.has(email))
       throw new ConflictException(
         "Für diese E-Mail-Adresse besteht bereits ein Konto.",

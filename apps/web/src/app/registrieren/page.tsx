@@ -8,7 +8,6 @@ import {
   getPortalSession,
   portalRequest,
   routeForRole,
-  savePortalSession,
 } from "../lib/portal-api";
 
 type Step = "account" | "verify" | "organization" | "submitted";
@@ -18,7 +17,6 @@ type RegisterResult = {
   verificationToken?: string;
   verificationRequired: boolean;
 };
-type LoginResult = { token: string };
 type OrganizationResult = { id: string };
 
 export default function RegistrationPage() {
@@ -27,7 +25,6 @@ export default function RegistrationPage() {
   const [message, setMessage] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
   const [sessionToken, setSessionToken] = useState("");
-  const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [role, setRole] = useState<RegistrationRole>("buyer");
   const [loading, setLoading] = useState(false);
   const [networkSlug, setNetworkSlug] = useState("");
@@ -62,9 +59,9 @@ export default function RegistrationPage() {
           lastName: form.get("lastName"),
           email,
           password,
+          ...(networkInviteToken ? { networkInviteToken } : {}),
         },
       });
-      setCredentials({ email, password });
       setVerificationToken(result.verificationToken ?? "");
       setStep("verify");
     } catch (error) {
@@ -85,14 +82,7 @@ export default function RegistrationPage() {
       await portalRequest("/auth/verify-email", {
         body: { token: verificationToken },
       });
-      const login = await portalRequest<LoginResult>("/auth/login", {
-        body: credentials,
-      });
-      setSessionToken(login.token);
-      savePortalSession(login.token, true);
-      const claimed=await portalRequest<{claimed?:boolean;network?:{slug:string}}>("/networks/invitations/claim",{token:login.token,body:{}});
-      if(claimed.network?.slug){router.push(`/portal/netzwerk/${claimed.network.slug}` as never);return}
-      setStep("organization");
+      router.push("/anmelden");
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -202,9 +192,9 @@ export default function RegistrationPage() {
           </div>
           {step === "account" && (
             <>
-              <h1>Konto erstellen</h1>
+              <h1>{networkRegistration?"Als Initiator registrieren":"Konto erstellen"}</h1>
               <p className="lead">
-                Starten Sie mit Ihrer geschäftlichen Identität.
+                {networkRegistration?"Ihre E-Mail-Adresse wurde durch den Plattforminhaber verbindlich vorgegeben. Legen Sie jetzt Ihren persönlichen, sicheren Zugang fest.":"Starten Sie mit Ihrer geschäftlichen Identität."}
               </p>
               <form onSubmit={register} className="formGrid">
                 <label>
@@ -232,6 +222,7 @@ export default function RegistrationPage() {
                     type="email"
                     required
                     defaultValue={invitedEmail}
+                    readOnly={networkRegistration}
                     autoComplete="email"
                   />
                 </label>
@@ -242,9 +233,11 @@ export default function RegistrationPage() {
                     type="password"
                     required
                     minLength={12}
+                    pattern="(?=.*[a-zäöüß])(?=.*[A-ZÄÖÜ])(?=.*[0-9])(?=.*[^A-Za-zÄÖÜäöüß0-9]).{12,}"
+                    title="Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen"
                     autoComplete="new-password"
                   />
-                  <small>Mindestens 12 Zeichen</small>
+                  <small>Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen</small>
                 </label>
                 <label className="full legalConsent">
                   <input type="checkbox" required />{" "}

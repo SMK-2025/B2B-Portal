@@ -12,7 +12,7 @@ import {
 
 type LoginResult = { token: string; user: { accountRole: string } };
 type Organization = { role: "buyer" | "provider" | "both" | "network" };
-type NetworkAccess = { membership: { role: string }; network: { slug: string } };
+type NetworkAccess = { membership: { role: string }; network: { slug: string;settings?:{setupCompletedAt?:string|null} } };
 
 export default function Anmelden() {
   const router = useRouter();
@@ -40,7 +40,7 @@ export default function Anmelden() {
       await portalRequest("/networks/invitations/claim", {token:result.token,body:{}});
       const networks=await portalRequest<NetworkAccess[]>("/networks/mine",{token:result.token});
       const initiated=networks.find(item=>item.membership.role==="network_admin");
-      if(initiated){router.push(`/portal/netzwerk/${initiated.network.slug}` as never);return}
+      if(initiated){router.push((initiated.network.settings?.setupCompletedAt?`/portal/netzwerk/${initiated.network.slug}`:`/portal/netzwerk/${initiated.network.slug}/einstellungen?setup=1`) as never);return}
       const organizations = await portalRequest<Organization[]>(
         "/organizations/mine",
         { token: result.token },

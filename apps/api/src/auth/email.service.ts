@@ -68,6 +68,23 @@ export class EmailService {
     });
   }
 
+  async sendNetworkAccessGranted(input: { email: string; networkName: string; networkSlug: string }): Promise<void> {
+    const redirect = `/portal/netzwerk/${encodeURIComponent(input.networkSlug)}`;
+    const link = `${this.webUrl()}/anmelden?redirect=${encodeURIComponent(redirect)}`;
+    await this.send({
+      to: input.email,
+      subject: `Ihr Zugang zum Netzwerk ${input.networkName}`,
+      text: `Ihr bestehendes B2B-Matching-Konto wurde für das geschlossene Unternehmensnetzwerk ${input.networkName} freigeschaltet.\n\nJetzt anmelden:\n${link}`,
+      html: this.template(
+        "Ihr Netzwerkzugang ist freigeschaltet",
+        `Ihr bestehendes B2B-Matching-Konto wurde für das geschlossene Unternehmensnetzwerk <strong>${this.escape(input.networkName)}</strong> freigeschaltet.`,
+        "Zum Netzwerk anmelden",
+        link,
+        "Melden Sie sich mit Ihrer bestehenden E-Mail-Adresse und Ihrem vorhandenen Passwort an.",
+      ),
+    });
+  }
+
   async sendTeamInvitation(input:{email:string;organizationName:string;inviterName:string;token:string}):Promise<void>{
     const link=`${this.webUrl()}/team-einladung?token=${encodeURIComponent(input.token)}`;
     await this.send({

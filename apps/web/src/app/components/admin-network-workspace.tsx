@@ -152,8 +152,8 @@ export function AdminNetworkWorkspace() {
       setNetworks(refreshed);
       setDialog(null);
       setNotice(result.invited
-        ? "Die persönliche Admin-Einladung wurde versendet. Nach der Registrierung wird die eingeladene Person automatisch Netzwerkadministrator."
-        : "Die Netzwerkadministrator-Rolle wurde verbindlich zugewiesen.");
+        ? "Die persönliche Initiator-Einladung wurde versendet. Nach der Registrierung wird die Person automatisch Initiator und Netzwerkadministrator."
+        : "Die Rolle Initiator / Netzwerkadministrator wurde verbindlich zugewiesen.");
     } catch (error) {
       showError(error);
     } finally {
@@ -443,21 +443,21 @@ export function AdminNetworkWorkspace() {
                 <label>
                   Rolle
                   <select disabled>
-                    <option>Netzwerkadministrator</option>
+                    <option>Initiator / Netzwerkadministrator</option>
                   </select>
                 </label>
                 <p>
                   Ist noch kein Konto vorhanden, wird ein persönlicher, 14 Tage
-                  gültiger Einladungslink versendet. Die eingeladene Person richtet
-                  ihr Unternehmen ein und wird ausschließlich in diesem Mandanten
-                  zum Netzwerkadministrator.
+                  gültiger Einladungslink versendet. Die eingeladene Person wird
+                  ausschließlich als Initiator dieses Mandanten registriert und
+                  nach der Anmeldung direkt in die Netzwerkoberfläche geführt.
                 </p>
                 <div className="adminNetworkDialogActions">
                   <button type="button" onClick={() => setDialog(null)}>
                     Abbrechen
                   </button>
                   <button disabled={busy} className="portalPrimary">
-                    Admin einladen oder zuweisen
+                    Initiator einladen oder zuweisen
                   </button>
                 </div>
               </form>

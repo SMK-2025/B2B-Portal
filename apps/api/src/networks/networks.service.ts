@@ -38,15 +38,16 @@ export class NetworksService{
  }
 
  async appointAdministrator(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
-  const actor=this.auth.authenticate(authorization);this.requirePlatformAdmin(actor.id);this.raw(networkId);
+  const actor=this.auth.authenticate(authorization);this.requirePlatformAdmin(actor.id);const network=this.raw(networkId);
   const email=requiredText(input.email,"Geschäftliche E-Mail-Adresse",5,250).toLowerCase();
   const userId=this.store.userByEmail.get(email);if(!userId){
-   const network=this.raw(networkId),inviteToken=opaqueToken(),now=new Date().toISOString(),invitation:NetworkContentRecord={id:randomUUID(),networkId,type:"announcement",title:`Administrator-Einladung ${email}`,description:"Persönliche Einladung zur Einrichtung und Verwaltung des Netzwerkmandanten",status:"active",createdByUserId:actor.id,assignedToUserId:null,startsAt:null,endsAt:new Date(Date.now()+14*86_400_000).toISOString(),visibility:"administrators",data:{kind:"network_invitation",email,role:"network_admin",inviteTokenHash:tokenHash(inviteToken),usedAt:null},createdAt:now,updatedAt:now};
+   const inviteToken=opaqueToken(),now=new Date().toISOString(),invitation:NetworkContentRecord={id:randomUUID(),networkId,type:"announcement",title:`Initiator-Einladung ${email}`,description:"Persönliche Einladung als Initiator und Netzwerkadministrator",status:"active",createdByUserId:actor.id,assignedToUserId:null,startsAt:null,endsAt:new Date(Date.now()+14*86_400_000).toISOString(),visibility:"administrators",data:{kind:"network_invitation",email,role:"network_admin",inviteTokenHash:tokenHash(inviteToken),usedAt:null},createdAt:now,updatedAt:now};
    this.store.networkContents.set(invitation.id,invitation);await this.email.sendNetworkInvitation({email,networkName:network.name,networkSlug:network.slug,inviteToken});return{invited:true,email,registrationRequired:true,role:"network_admin"};
   }
-  const companyMembership=this.store.memberships.find(item=>item.userId===userId);
-  if(!companyMembership)throw new BadRequestException("Das Benutzerkonto ist noch keinem Unternehmen zugeordnet.");
-  return this.addMember(authorization,networkId,{organizationId:companyMembership.organizationId,userId,role:"network_admin"});
+  let companyMembership=this.store.memberships.find(item=>item.userId===userId);
+  if(!companyMembership){const organization=this.createInitiatorOrganization(userId,network);companyMembership={organizationId:organization.id,userId,role:"admin"}}
+  const membership=this.addMember(authorization,networkId,{organizationId:companyMembership.organizationId,userId,role:"network_admin"});
+  await this.email.sendNetworkAccessGranted({email,networkName:network.name,networkSlug:network.slug});return membership;
  }
 
  remove(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
@@ -96,6 +97,18 @@ export class NetworksService{
  mine(authorization:string|undefined){
   const user=this.auth.authenticate(authorization);
   return this.store.networkMemberships.filter(item=>item.userId===user.id&&item.status==="active").map(item=>({membership:item,network:this.get(item.networkId),organization:this.store.organizations.get(item.organizationId)}));
+ }
+
+ claimInitiatorInvitation(authorization:string|undefined){
+  const user=this.auth.authenticate(authorization);
+  const existing=this.store.networkMemberships.find(item=>item.userId===user.id&&item.role==="network_admin"&&item.status==="active");
+  if(existing){const network=this.raw(existing.networkId);return{claimed:false,alreadyAssigned:true,network:{id:network.id,slug:network.slug,name:network.name},membership:existing}}
+  const invitation=[...this.store.networkContents.values()].filter(item=>item.data.kind==="network_invitation"&&item.data.role==="network_admin"&&item.data.email===user.email&&!item.data.usedAt&&item.endsAt&&Date.parse(item.endsAt)>Date.now()).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];
+  if(!invitation)return{claimed:false,alreadyAssigned:false};
+  const network=this.raw(invitation.networkId);const accessible=network.status==="active"||(network.status==="trial"&&network.trialEndsAt&&Date.parse(network.trialEndsAt)>Date.now());if(!accessible)throw new BadRequestException("Die Initiator-Einladung ist nicht mehr verfügbar.");
+  let companyMembership=this.store.memberships.find(item=>item.userId===user.id);if(!companyMembership){const organization=this.createInitiatorOrganization(user.id,network);companyMembership={organizationId:organization.id,userId:user.id,role:"admin"}}
+  const now=new Date().toISOString(),membership=this.record(network.id,companyMembership.organizationId,user.id,"network_admin","active",invitation.createdByUserId);membership.reviewedByUserId=invitation.createdByUserId;membership.reviewedAt=now;membership.updatedAt=now;this.store.networkMemberships.push(membership);invitation.data.usedAt=now;
+  return{claimed:true,alreadyAssigned:false,network:{id:network.id,slug:network.slug,name:network.name},membership};
  }
 
  applyAsPartner(authorization:string|undefined,input:Record<string,unknown>){
@@ -266,6 +279,7 @@ export class NetworksService{
  }
 
  private record(networkId:string,organizationId:string,userId:string,role:NetworkRole,status:NetworkMembershipRecord["status"],invitedByUserId:string|null):NetworkMembershipRecord{const now=new Date().toISOString();return{id:randomUUID(),networkId,organizationId,userId,role,status,invitedByUserId,reviewedByUserId:null,reviewedAt:null,createdAt:now,updatedAt:now}}
+ private createInitiatorOrganization(userId:string,network:NetworkRecord){const websiteUrl=network.websiteUrl;const organization={id:randomUUID(),legalName:network.legalName||network.name,displayName:network.name,role:"network" as const,websiteUrl,emailDomain:websiteUrl?new URL(websiteUrl).hostname.replace(/^www\./,""):null,reviewStatus:"draft" as const,submittedAt:null,approvedAt:null,createdAt:new Date().toISOString()};this.store.organizations.set(organization.id,organization);this.store.memberships.push({organizationId:organization.id,userId,role:"admin"});return organization}
  private bySlug(slug:string){const id=this.store.networkBySlug.get(slug);if(!id)throw new NotFoundException("Netzwerk nicht gefunden.");return this.get(id)}
  private get(id:string){const network=this.raw(id);if(network.status==="active")return network;if(network.status==="trial"&&network.trialEndsAt&&Date.parse(network.trialEndsAt)>Date.now())return network;throw new NotFoundException("Netzwerk nicht gefunden oder nicht freigeschaltet.")}
  private raw(id:string){const network=this.store.networks.get(id);if(!network)throw new NotFoundException("Netzwerk nicht gefunden.");return network}

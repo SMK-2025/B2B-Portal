@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SiteFooter, SiteHeader } from "../components/site-chrome";
 import {
   getPortalSession,
@@ -21,6 +22,7 @@ type LoginResult = { token: string };
 type OrganizationResult = { id: string };
 
 export default function RegistrationPage() {
+  const router = useRouter();
   const [step, setStep] = useState<Step>("account");
   const [message, setMessage] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
@@ -88,6 +90,8 @@ export default function RegistrationPage() {
       });
       setSessionToken(login.token);
       savePortalSession(login.token, true);
+      const claimed=await portalRequest<{claimed?:boolean;network?:{slug:string}}>("/networks/invitations/claim",{token:login.token,body:{}});
+      if(claimed.network?.slug){router.push(`/portal/netzwerk/${claimed.network.slug}` as never);return}
       setStep("organization");
     } catch (error) {
       setMessage(

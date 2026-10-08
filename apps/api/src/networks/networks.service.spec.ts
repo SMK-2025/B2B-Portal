@@ -31,6 +31,14 @@ describe("network tenancy",()=>{
   const networkAdmin=await networks.appointAdministrator(adminBearer,created.id,{email:"mitglied@example.de"});
   expect(networkAdmin.role).toBe("network_admin");
   expect(networks.adminList(adminBearer)[0].administrator?.user?.email).toBe("mitglied@example.de");
+  const invited=await networks.appointAdministrator(adminBearer,created.id,{email:"initiator@example.de"});
+  expect(invited).toMatchObject({invited:true,registrationRequired:true,role:"network_admin"});
+  const initiatorRegistration=await auth.register({email:"initiator@example.de",password:"Sehr-Sicher-2026!",firstName:"Ina",lastName:"Initiator"});auth.verifyEmail(initiatorRegistration.verificationToken);
+  const initiatorLogin=await auth.login({email:"initiator@example.de",password:"Sehr-Sicher-2026!"});const initiatorBearer=`Bearer ${initiatorLogin.token}`;
+  const claimed=networks.claimInitiatorInvitation(initiatorBearer);
+  expect(claimed).toMatchObject({claimed:true,network:{slug:"test-netzwerk"},membership:{role:"network_admin",status:"active"}});
+  expect(organizations.listMine(initiatorBearer)[0]).toMatchObject({role:"network",displayName:"Test Netzwerk"});
+  expect(networks.mine(initiatorBearer)[0]).toMatchObject({membership:{role:"network_admin"},network:{slug:"test-netzwerk"}});
   networks.updateSettings(bearer,created.id,{enabledModules:["profiles","events"],name:"Test Netzwerk"});
   networks.setAccess(adminBearer,created.id,{status:"active"});
   const order=networks.order(bearer,created.id,{invoiceCompany:"Mitglied GmbH",invoiceContact:"Mara Klein",invoiceEmail:"rechnung@example.de",invoiceStreet:"Musterstraße 1",invoicePostalCode:"12345",invoiceCity:"Musterstadt",invoiceCountry:"Deutschland",billingCycle:"annual",participantCount:1,pricingMode:"individual",selectedModules:["profiles","events"],authorityConfirmed:true,termsAccepted:true,paymentObligationAccepted:true});
@@ -47,11 +55,12 @@ describe("network tenancy",()=>{
   expect(second.settings.selfRegistration).toBe(false);
   expect(networks.adminList(adminBearer)).toHaveLength(2);
   const removed=networks.remove(adminBearer,created.id,{confirmSlug:"test-netzwerk"});
-  expect(removed).toMatchObject({deleted:true,deletedOrganizations:1,deletedUsers:2});
+  expect(removed).toMatchObject({deleted:true,deletedOrganizations:2,deletedUsers:3});
   expect(store.users.has(registration.user.id)).toBe(false);
   expect(store.users.has(outsiderRegistration.user.id)).toBe(false);
   expect(store.userByEmail.has("mitglied@example.de")).toBe(false);
   expect(store.userByEmail.has("extern@example.de")).toBe(false);
+  expect(store.userByEmail.has("initiator@example.de")).toBe(false);
   expect(store.organizations.has(organization.id)).toBe(false);
   expect(store.users.has(adminId)).toBe(true);
   expect(store.networks.has(created.id)).toBe(false);

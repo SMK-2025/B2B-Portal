@@ -11,7 +11,8 @@ import {
 } from "../lib/portal-api";
 
 type LoginResult = { token: string; user: { accountRole: string } };
-type Organization = { role: "buyer" | "provider" | "both" };
+type Organization = { role: "buyer" | "provider" | "both" | "network" };
+type NetworkAccess = { membership: { role: string }; network: { slug: string } };
 
 export default function Anmelden() {
   const router = useRouter();
@@ -36,6 +37,10 @@ export default function Anmelden() {
         router.push("/portal/admin");
         return;
       }
+      await portalRequest("/networks/invitations/claim", {token:result.token,body:{}});
+      const networks=await portalRequest<NetworkAccess[]>("/networks/mine",{token:result.token});
+      const initiated=networks.find(item=>item.membership.role==="network_admin");
+      if(initiated){router.push(`/portal/netzwerk/${initiated.network.slug}` as never);return}
       const organizations = await portalRequest<Organization[]>(
         "/organizations/mine",
         { token: result.token },
@@ -44,7 +49,8 @@ export default function Anmelden() {
         router.push("/registrieren?onboarding=1");
         return;
       }
-      router.push(routeForRole(organizations[0]?.role));
+      if(organizations[0]?.role==="network"&&networks[0]){router.push(`/portal/netzwerk/${networks[0].network.slug}` as never);return}
+      router.push(routeForRole(organizations[0]?.role as "buyer"|"provider"|"both"));
     } catch (error) {
       setMessage(
         error instanceof Error

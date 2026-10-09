@@ -4,10 +4,12 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SiteFooter, SiteHeader } from "../components/site-chrome";
+import {NetworkAuthFrame,useNetworkBrand} from "../components/network-auth-brand";
 import { portalRequest } from "../lib/portal-api";
 
 function Confirmation() {
   const token = useSearchParams().get("token") ?? "";
+  const network = useSearchParams().get("network") ?? "";
   const [state, setState] = useState<"loading" | "success" | "error">(
     "loading",
   );
@@ -46,7 +48,7 @@ function Confirmation() {
         <p className="lead">
           Ihr Zugang ist aktiviert. Sie können sich jetzt sicher anmelden.
         </p>
-        <Link className="primary linkButton" href="/anmelden">
+        <Link className="primary linkButton" href={(network?`/anmelden?network=${encodeURIComponent(network)}`:"/anmelden") as never}>
           Jetzt anmelden
         </Link>
       </div>
@@ -65,6 +67,11 @@ function Confirmation() {
 }
 
 export default function EmailBestaetigenPage() {
+  const [network,setNetwork]=useState("");
+  useEffect(()=>setNetwork(new URLSearchParams(window.location.search).get("network")||""),[]);
+  const brand=useNetworkBrand(network);
+  const confirmation=<section className="authCard authCardV2"><p className="sectionKicker">E-MAIL-PRÜFUNG</p><Suspense fallback={<p className="lead">Bestätigungslink wird geprüft …</p>}><Confirmation /></Suspense></section>;
+  if(brand)return <NetworkAuthFrame brand={brand} kind="register">{confirmation}</NetworkAuthFrame>;
   return (
     <main className="v2">
       <SiteHeader />
@@ -77,14 +84,7 @@ export default function EmailBestaetigenPage() {
             Benachrichtigungen zuverlässig ankommen.
           </p>
         </aside>
-        <section className="authCard authCardV2">
-          <p className="sectionKicker">E-MAIL-PRÜFUNG</p>
-          <Suspense
-            fallback={<p className="lead">Bestätigungslink wird geprüft …</p>}
-          >
-            <Confirmation />
-          </Suspense>
-        </section>
+        {confirmation}
       </section>
       <SiteFooter />
     </main>

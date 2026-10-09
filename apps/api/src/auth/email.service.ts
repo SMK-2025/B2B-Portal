@@ -16,8 +16,10 @@ export class EmailService {
     email: string;
     firstName: string;
     token: string;
+    networkSlug?: string;
   }): Promise<void> {
-    const link = `${this.webUrl()}/email-bestaetigen?token=${encodeURIComponent(input.token)}`;
+    const networkQuery=input.networkSlug?`&network=${encodeURIComponent(input.networkSlug)}`:"";
+    const link = `${this.webUrl()}/email-bestaetigen?token=${encodeURIComponent(input.token)}${networkQuery}`;
     await this.send({
       to: input.email,
       subject: "E-Mail-Adresse bei B2B Matching bestätigen",

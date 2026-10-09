@@ -80,7 +80,8 @@ export class AuthService implements OnModuleInit {
   async register(input: Record<string, unknown>) {
     const email = emailAddress(input.email);
     const networkInviteToken=typeof input.networkInviteToken==="string"?input.networkInviteToken:"";
-    if(networkInviteToken){const invitation=[...this.store.networkContents.values()].find(item=>item.data.kind==="network_invitation"&&item.data.role==="network_admin"&&item.data.inviteTokenHash===tokenHash(networkInviteToken)&&!item.data.usedAt&&item.endsAt&&Date.parse(item.endsAt)>Date.now());if(!invitation||invitation.data.email!==email)throw new BadRequestException("Die Initiator-Einladung ist ungültig, abgelaufen oder für eine andere E-Mail-Adresse ausgestellt.")}
+    const networkInvitation=networkInviteToken?[...this.store.networkContents.values()].find(item=>item.data.kind==="network_invitation"&&item.data.inviteTokenHash===tokenHash(networkInviteToken)&&!item.data.usedAt&&item.endsAt&&Date.parse(item.endsAt)>Date.now()):undefined;
+    if(networkInviteToken&&(!networkInvitation||networkInvitation.data.email!==email))throw new BadRequestException("Die Netzwerkeinladung ist ungültig, abgelaufen oder für eine andere E-Mail-Adresse ausgestellt.");
     if (this.store.userByEmail.has(email))
       throw new ConflictException(
         "Für diese E-Mail-Adresse besteht bereits ein Konto.",
@@ -111,6 +112,7 @@ export class AuthService implements OnModuleInit {
         email: user.email,
         firstName: user.firstName,
         token: verificationToken,
+        ...(networkInvitation?{networkSlug:this.store.networks.get(networkInvitation.networkId)?.slug}:{}),
       });
     } catch (error) {
       this.store.verificationTokens.delete(tokenHash(verificationToken));

@@ -28,6 +28,11 @@ export class NetworksService{
 
  moduleCatalog(){return{modules:NETWORK_MODULE_CATALOG,completeUnitNetCents:NETWORK_COMPLETE_UNIT_NET_CENTS,setupNetCents:NETWORK_SETUP_NET_CENTS,currency:"EUR",billingUnit:"active_network_user",includedModules:NETWORK_INCLUDED_MODULES}}
 
+ branding(slug:string){
+  const network=this.bySlug(slug);const accessible=network.status==="active"||(network.status==="trial"&&Boolean(network.trialEndsAt)&&Date.parse(network.trialEndsAt!)>Date.now());if(!accessible)throw new NotFoundException("Netzwerkportal nicht gefunden.");
+  return{slug:network.slug,name:network.name,logoUrl:network.logoUrl,primaryColor:network.primaryColor,secondaryColor:network.secondaryColor,websiteUrl:network.websiteUrl};
+ }
+
  setAccess(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
   const user=this.auth.authenticate(authorization);this.requirePlatformAdmin(user.id);const network=this.raw(networkId);
   const status=input.status;if(!["draft","trial","active","suspended"].includes(String(status)))throw new BadRequestException("Ungültiger Netzwerkstatus.");

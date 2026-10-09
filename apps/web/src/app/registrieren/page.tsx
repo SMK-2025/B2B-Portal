@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteFooter, SiteHeader } from "../components/site-chrome";
+import {useNetworkBrand} from "../components/network-auth-brand";
 import {
   getPortalSession,
   portalRequest,
@@ -31,6 +32,7 @@ export default function RegistrationPage() {
   const [invitedEmail, setInvitedEmail] = useState("");
   const [networkInviteToken, setNetworkInviteToken] = useState("");
   const networkRegistration=Boolean(networkSlug&&networkInviteToken);
+  const networkBrand=useNetworkBrand(networkSlug);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNetworkSlug(params.get("network") || "");
@@ -82,7 +84,7 @@ export default function RegistrationPage() {
       await portalRequest("/auth/verify-email", {
         body: { token: verificationToken },
       });
-      router.push("/anmelden");
+      router.push(networkSlug?`/anmelden?network=${encodeURIComponent(networkSlug)}`:"/anmelden");
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -136,11 +138,11 @@ export default function RegistrationPage() {
           ? 3
           : 4;
   return (
-    <main className="v2">
-      <SiteHeader />
+    <main className={networkBrand?"v2 networkRegistrationBranded":"v2"} style={networkBrand?{"--auth-primary":networkBrand.primaryColor,"--auth-secondary":networkBrand.secondaryColor} as CSSProperties:undefined}>
+      {networkBrand?<header className="networkAuthHeader"><Link href={`/anmelden?network=${encodeURIComponent(networkBrand.slug)}` as never}>{networkBrand.logoUrl?<img src={networkBrand.logoUrl} alt={`${networkBrand.name} Logo`}/>:<span>{networkBrand.name.slice(0,2).toUpperCase()}</span>}<div><b>{networkBrand.name}</b><small>Geschütztes Partnerportal</small></div></Link><em>Persönliche Einladung</em></header>:<SiteHeader />}
       <section className="authPage">
         <aside className="authStory registrationStory">
-          <span>IHR START BEI B2B MATCHING</span>
+          <span>{networkBrand?`IHR START BEI ${networkBrand.name.toUpperCase()}`:"IHR START BEI B2B MATCHING"}</span>
           <h2>
             Ein Profil.
             <br />
@@ -435,7 +437,7 @@ export default function RegistrationPage() {
           </p>
         </div>
       </section>
-      <SiteFooter />
+      {networkBrand?<footer className="networkAuthFooter"><span>© {new Date().getFullYear()} {networkBrand.name}</span><span>Technisch bereitgestellt durch B2B Matching</span></footer>:<SiteFooter />}
     </main>
   );
 }

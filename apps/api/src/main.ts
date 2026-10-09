@@ -1,9 +1,16 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
+  // Branding- und Partnerlogos werden als geprüfte Bilddaten übertragen. Das
+  // Anfrage-Limit bleibt bewusst knapp über der anwendungsseitigen Dateigrenze.
+  app.useBodyParser("json", { limit: "3mb" });
+  app.useBodyParser("urlencoded", { limit: "3mb", extended: true });
   const originConfiguration =
     process.env.WEB_ORIGINS ??
     process.env.WEB_ORIGIN ??

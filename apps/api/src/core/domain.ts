@@ -70,7 +70,7 @@ export interface NetworkRecord {
   id:string; slug:string; name:string; legalName:string|null; websiteUrl:string|null;
   logoUrl:string|null; primaryColor:string; secondaryColor:string;
   status:"draft"|"trial"|"active"|"suspended"; trialEndsAt:string|null; enabledModules:NetworkModule[];
-  settings:{closedNetwork:boolean;selfRegistration:boolean;crossNetworkMatching:boolean;admissionRules:string|null;setupCompletedAt?:string|null};
+  settings:{closedNetwork:boolean;selfRegistration:boolean;crossNetworkMatching:boolean;admissionRules:string|null;setupCompletedAt?:string|null;billingMode?:"standard"|"cooperation_free"};
   createdAt:string; updatedAt:string;
 }
 

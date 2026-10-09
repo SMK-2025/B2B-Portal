@@ -13,7 +13,7 @@ type Network = {
   websiteUrl: string | null;
   status: NetworkStatus;
   trialEndsAt: string | null;
-  settings: { selfRegistration: boolean };
+  settings: { selfRegistration: boolean; billingMode?: "standard" | "cooperation_free" };
   administrator: {
     userId: string;
     user?: { firstName: string; lastName: string; email: string };
@@ -166,6 +166,11 @@ export function AdminNetworkWorkspace() {
     const token=getPortalSession();if(!token)return setNotice("Bitte melden Sie sich erneut als Plattformadministrator an.");
     setBusy(true);try{await portalRequest(`/networks/${network.id}/delete`,{token,body:{confirmSlug:confirmation}});setNetworks(items=>items.filter(item=>item.id!==network.id));setNotice(`${network.name} wurde vollständig gelöscht.`)}catch(error){showError(error)}finally{setBusy(false)}
   }
+  async function activateCooperation(network:Network){
+    if(!window.confirm(`${network.name} jetzt dauerhaft als kostenfreie Kooperation aktivieren? Alle Netzwerkmodule stehen dann Initiator und eingeladenen Partnern ohne Buchung oder Rechnung zur Verfügung.`))return;
+    const token=getPortalSession();if(!token)return setNotice("Bitte melden Sie sich erneut als Plattformadministrator an.");
+    setBusy(true);try{const updated=await portalRequest<Network>(`/networks/${network.id}/access`,{token,body:{status:"active",billingMode:"cooperation_free",selfRegistration:false}});setNetworks(items=>items.map(item=>item.id===updated.id?{...item,...updated}:item));setNotice(`${network.name} ist als kostenfreie Kooperation vollständig aktiviert.`)}catch(error){showError(error)}finally{setBusy(false)}
+  }
   async function decideOrder(network:Network,decision:"accepted"|"rejected"){
     const order=network.latestOrder;if(!order)return;
     const text=decision==="accepted"?"Diese verbindliche Bestellung annehmen und das Netzwerk produktiv aktivieren?":"Diese verbindliche Bestellung ablehnen?";
@@ -242,17 +247,17 @@ export function AdminNetworkWorkspace() {
                     )}
                   </div>
                 </div>
-                <Status tone={tone}>{labels[network.status]}</Status>
+                <Status tone={tone}>{network.status==="active"&&network.settings.billingMode==="cooperation_free"?"Kooperation · kostenfrei":labels[network.status]}</Status>
               </header>
               <div className="adminNetworkFacts">
                 <article>
                   <small>Zugangsstatus</small>
-                  <b>{labels[network.status]}</b>
+                  <b>{network.status==="active"&&network.settings.billingMode==="cooperation_free"?"Kostenfreie Kooperation":labels[network.status]}</b>
                   <span>
                     {trialEnd
                       ? `Testzugang bis ${trialEnd}`
                       : network.status === "active"
-                        ? "Dauerhaft freigeschaltet"
+                        ? network.settings.billingMode==="cooperation_free"?"Alle Module ohne Berechnung freigeschaltet":"Dauerhaft freigeschaltet"
                         : "Nicht öffentlich nutzbar"}
                   </span>
                 </article>
@@ -302,6 +307,11 @@ export function AdminNetworkWorkspace() {
                 >
                   Administrator bestimmen
                 </button>
+                {network.status !== "active" || network.settings.billingMode !== "cooperation_free" ? (
+                  <button disabled={busy} className="portalPrimary" type="button" onClick={()=>void activateCooperation(network)}>
+                    Kostenfrei aktivieren
+                  </button>
+                ) : null}
                 {network.status === "active" ? (
                   <button
                     disabled={busy}

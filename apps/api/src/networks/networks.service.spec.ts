@@ -63,6 +63,9 @@ describe("network tenancy",()=>{
   networks.addMember(adminBearer,created.id,{organizationId:organization.id,userId:outsiderRegistration.user.id,role:"member"});
   expect(networks.listMembers(bearer,created.id)[0].organization?.networkProfile?.services).toContain("Beratung");
   expect(networks.publicBySlug(`Bearer ${outsiderLogin.token}`,"test-netzwerk").enabledModules).not.toContain("events");
+  networks.setAccess(adminBearer,created.id,{status:"active",billingMode:"cooperation_free"});
+  expect(networks.publicBySlug(`Bearer ${outsiderLogin.token}`,"test-netzwerk").enabledModules).toEqual(expect.arrayContaining(["profiles","events","communication","community","services","documents","tasks","analytics","revenue"]));
+  expect(()=>networks.order(`Bearer ${outsiderLogin.token}`,created.id,{billingCycle:"annual"})).toThrow("vollständig kostenfrei");
   const second=networks.create(adminBearer,{name:"Zweites Netzwerk",slug:"zweites-netzwerk",websiteUrl:"https://zweites.example",enabledModules:["members","events"]});
   expect(second).toMatchObject({status:"draft",trialEndsAt:null});
   expect(second.settings.selfRegistration).toBe(false);

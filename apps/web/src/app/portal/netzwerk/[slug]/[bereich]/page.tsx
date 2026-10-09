@@ -6,10 +6,12 @@ import {NetworkAdministrationWorkspace} from "../../../../components/network-adm
 import {NetworkRevenueWorkspace} from "../../../../components/network-revenue-workspace";
 import {NetworkProfileWorkspace} from "../../../../components/network-profile-workspace";
 import {NetworkEventRecapWorkspace} from "../../../../components/network-event-recap-workspace";
+import {NetworkGameScheduleWorkspace} from "../../../../components/network-game-schedule-workspace";
 const pages:Record<string,[string,string]>={
  mitglieder:["Mitgliederverwaltung","Unternehmen persönlich einladen, prüfen und rollenbasiert verwalten."],
  profil:["Meine Partnerseite","Unternehmen, Leistungen und persönliche Ansprechpartner für das geschlossene Netzwerk präsentieren."],
  veranstaltungen:["Veranstaltungen und Treffen","Termine, Anmeldungen, Gäste und tatsächliche Anwesenheit dokumentieren."],
+ spielplan:["ProB-Spielplan 2026/27","Spiele, Ergebnisse und den öffentlichen Austausch mit allen Netzwerkpartnern verbinden."],
  rueckblicke:["Veranstaltungsrückblicke","Bilder, Inhalte und Ergebnisse vergangener Netzwerktreffen chronologisch festhalten."],
  angebote:["Angebote und Leistungen","Leistungen und Kooperationsangebote ausschließlich im geschlossenen Partnernetzwerk sichtbar machen."],
  kommunikation:["Kommunikation","Freigegebene Kontakte und interne Gespräche geschützt führen."],
@@ -30,6 +32,7 @@ export default async function Page({params}:{params:Promise<{slug:string;bereich
  else if(bereich==="einstellungen")body=<NetworkAdministrationWorkspace mode="settings" slug={slug}/>;
  else if(bereich==="umsaetze")body=<NetworkRevenueWorkspace/>;
  else if(bereich==="rueckblicke")body=<NetworkEventRecapWorkspace/>;
+ else if(bereich==="spielplan")body=<NetworkGameScheduleWorkspace/>;
  else body=<NetworkModuleWorkspace module={bereich} slug={slug}/>;
  return <NetworkShell slug={slug} networkName={name} title={page[0]} intro={page[1]}>{body}</NetworkShell>
 }

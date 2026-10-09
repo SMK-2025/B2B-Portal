@@ -1,0 +1,72 @@
+.networkMoreNav {
+  margin-top: 8px;
+  border-block: 1px solid #ffffff14;
+}
+
+.networkMoreNav > summary {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 10px;
+  color: #e6e9f2;
+  cursor: pointer;
+  list-style: none;
+}
+
+.networkMoreNav > summary::-webkit-details-marker { display: none; }
+.networkMoreNav > summary b { font-size: 12px; font-weight: 500; }
+.networkMoreNav > summary span {
+  color: color-mix(in srgb, var(--network-accent) 48%, #fff);
+  transition: transform .18s;
+}
+.networkMoreNav[open] > summary span { transform: rotate(45deg); }
+.networkMoreNav nav { display: grid; gap: 2px; padding: 0 0 8px; }
+.networkMoreNav nav a { padding-left: 15px; }
+
+.networkPortal .networkSidebar nav a span,
+.networkPortal .networkSupport a {
+  color: color-mix(in srgb, var(--network-accent) 48%, #fff);
+}
+
+.networkPortal .networkSidebar nav a.active {
+  border-color: var(--network-accent);
+  background: color-mix(in srgb, var(--network-accent) 15%, transparent);
+}
+
+.networkAdminNav > summary small,
+.networkPortal .networkTopActions > button > span {
+  color: #fff;
+  background: var(--network-accent);
+}
+
+.networkPortal .networkWelcome > div > span,
+.networkPortal .networkCard header span,
+.networkPortal .networkCard > span,
+.networkPortal .networkTrialCopy > span,
+.networkPortal .networkStats strong {
+  color: var(--network-accent);
+}
+
+.networkPortal .networkTrialBanner {
+  border-color: color-mix(in srgb, var(--network-accent) 22%, #d9dce8);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--network-accent) 7%, #fff), #fff 56%, color-mix(in srgb, var(--network-dark) 6%, #fff));
+}
+
+.networkPortal .networkTrialBooking {
+  background: linear-gradient(135deg, var(--network-dark), color-mix(in srgb, var(--network-dark) 78%, #000));
+}
+
+.networkPortal .networkTrialBooking a {
+  color: #fff;
+  background: var(--network-accent);
+}
+
+.networkPortal .networkBrandedHero h2,
+.networkPortal .networkBrandedHero p,
+.networkPortal .networkBrandedHero > strong { color: #fff !important; }
+.networkPortal .networkBrandedHero span { color: #fff; }
+.networkPortal .networkQuickLinks a:hover {
+  color: var(--network-accent);
+  background: var(--network-soft);
+}

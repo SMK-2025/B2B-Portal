@@ -284,6 +284,11 @@
   color: var(--network-accent);
   background: var(--network-soft);
 }
+.gameActions .deleteResult {
+  border-color: #efc6c6;
+  color: #b42318;
+  background: #fff7f6;
+}
 .gameResultForm,
 .gameDiscussion {
   grid-column: 1/-1;

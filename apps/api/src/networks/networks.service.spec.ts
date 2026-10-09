@@ -17,6 +17,7 @@ describe("network tenancy",()=>{
   expect(networks.proBSchedule(partnerBearer,network.id).games).toHaveLength(28);
   networks.updateProBResult(initiatorBearer,network.id,"2026-10-11-weimar",{giantsScore:91,opponentScore:84});networks.updateProBDiscussion(initiatorBearer,network.id,"2026-10-11-weimar",{open:true,prompt:"Was war gut und was verbessern wir?"});const updated=networks.addProBComment(partnerBearer,network.id,"2026-10-11-weimar",{body:"Der Austausch vor dem Spiel war sehr wertvoll."});
   expect(updated).toMatchObject({giantsScore:91,opponentScore:84,discussionOpen:true});expect(updated.comments).toHaveLength(1);
+  expect(networks.updateProBResult(initiatorBearer,network.id,"2026-10-11-weimar",{giantsScore:null,opponentScore:null})).toMatchObject({giantsScore:null,opponentScore:null,homeScore:null,awayScore:null});
  });
  it("allows only the platform owner to activate trials and appoint network administrators",async()=>{
   const store=new PortalStore();const auth=new AuthService(store);const organizations=new OrganizationsService(store,auth,new EmailService());const networks=new NetworksService(store,auth,new EmailService());

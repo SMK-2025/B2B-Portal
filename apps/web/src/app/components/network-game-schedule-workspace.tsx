@@ -161,6 +161,29 @@ export function NetworkGameScheduleWorkspace() {
       setBusy(false);
     }
   }
+  async function clearResult(game: Game) {
+    if (!window.confirm("Möchten Sie dieses Ergebnis wirklich löschen?")) return;
+    const token = getPortalSession();
+    if (!token) return;
+    setBusy(true);
+    try {
+      await portalRequest(
+        `/networks/${networkId}/prob-schedule/${game.id}/result`,
+        { token, body: { giantsScore: null, opponentScore: null } },
+      );
+      await load();
+      setEditResult(null);
+      setNotice("Das Ergebnis wurde gelöscht. Das Spiel ist wieder offen.");
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : "Das Ergebnis konnte nicht gelöscht werden.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   async function configureDiscussion(
     event: FormEvent<HTMLFormElement>,
     game: Game,
@@ -344,6 +367,15 @@ export function NetworkGameScheduleWorkspace() {
                     }
                   >
                     Ergebnis pflegen
+                  </button>
+                )}
+                {data.canManage && hasResult && (
+                  <button
+                    className="deleteResult"
+                    disabled={busy}
+                    onClick={() => void clearResult(game)}
+                  >
+                    Ergebnis löschen
                   </button>
                 )}
                 {game.discussionOpen ? (

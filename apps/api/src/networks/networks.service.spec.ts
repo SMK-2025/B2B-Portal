@@ -21,6 +21,8 @@ describe("network tenancy",()=>{
   const organization=organizations.create(bearer,{legalName:"Mitglied GmbH",displayName:"Mitglied",role:"both",websiteUrl:"https://example.de"});
   const membership=networks.addMember(adminBearer,created.id,{organizationId:organization.id,userId:registration.user.id,role:"organization_admin"});
   expect(membership).toMatchObject({networkId:created.id,organizationId:organization.id,status:"active",role:"organization_admin"});
+  const partnerProfile=networks.updateOwnProfile(bearer,created.id,{companyName:"Mitglied GmbH",tagline:"Gemeinsam besser zusammenarbeiten",description:"Wir unterstützen Netzwerkpartner persönlich und zuverlässig bei anspruchsvollen Projekten.",services:"Beratung, Projektmanagement und Umsetzung",industries:"Mittelstand, Sport",street:"Musterstraße 1",postalCode:"12345",city:"Musterstadt",country:"Deutschland",websiteUrl:"https://example.de",contactName:"Mara Klein",contactPosition:"Geschäftsführung",contactEmail:"mitglied@example.de",contactPhone:"+49 123 456789",publish:true});
+  expect(partnerProfile.status).toBe("published");
   expect(networks.mine(bearer)[0].network.slug).toBe("test-netzwerk");
   expect(networks.publicBySlug(bearer,"test-netzwerk").slug).toBe("test-netzwerk");
   const outsiderRegistration=await auth.register({email:"extern@example.de",password:"Sehr-Sicher-2026!",firstName:"Eva",lastName:"Extern"});auth.verifyEmail(outsiderRegistration.verificationToken);
@@ -30,6 +32,8 @@ describe("network tenancy",()=>{
   expect(()=>networks.addMember(bearer,created.id,{organizationId:organization.id,userId:registration.user.id,role:"network_admin"})).toThrow();
   const networkAdmin=await networks.appointAdministrator(adminBearer,created.id,{email:"mitglied@example.de"});
   expect(networkAdmin.role).toBe("network_admin");
+  expect(networks.listMembers(bearer,created.id)).toHaveLength(0);
+  expect(()=>networks.ownProfile(bearer,created.id)).toThrow(/keine eigene Partnerseite/);
   expect(networks.adminList(adminBearer)[0].administrator?.user?.email).toBe("mitglied@example.de");
   const invited=await networks.appointAdministrator(adminBearer,created.id,{email:"initiator@example.de"});
   expect(invited).toMatchObject({invited:true,registrationRequired:true,role:"network_admin"});
@@ -44,11 +48,9 @@ describe("network tenancy",()=>{
   const order=networks.order(bearer,created.id,{invoiceCompany:"Mitglied GmbH",invoiceContact:"Mara Klein",invoiceEmail:"rechnung@example.de",invoiceStreet:"Musterstraße 1",invoicePostalCode:"12345",invoiceCity:"Musterstadt",invoiceCountry:"Deutschland",billingCycle:"annual",participantCount:1,pricingMode:"individual",selectedModules:["profiles","events"],authorityConfirmed:true,termsAccepted:true,paymentObligationAccepted:true});
   expect(order.monthlyNetCents).toBe(2600);expect(order.selectedModules).toEqual(["profiles","events"]);expect(order.status).toBe("accepted");expect(order.paymentStatus).toBe("open");
   expect(networks.publicBySlug(bearer,"test-netzwerk").enabledModules).toEqual(expect.arrayContaining(["members","branding","profiles","events"]));
-  const partnerProfile=networks.updateOwnProfile(bearer,created.id,{companyName:"Mitglied GmbH",tagline:"Gemeinsam besser zusammenarbeiten",description:"Wir unterstützen Netzwerkpartner persönlich und zuverlässig bei anspruchsvollen Projekten.",services:"Beratung, Projektmanagement und Umsetzung",industries:"Mittelstand, Sport",street:"Musterstraße 1",postalCode:"12345",city:"Musterstadt",country:"Deutschland",websiteUrl:"https://example.de",contactName:"Mara Klein",contactPosition:"Geschäftsführung",contactEmail:"mitglied@example.de",contactPhone:"+49 123 456789",publish:true});
-  expect(partnerProfile.status).toBe("published");
-  expect(networks.listMembers(bearer,created.id)[0].organization?.networkProfile?.services).toContain("Beratung");
   expect(()=>networks.revenues(adminBearer,created.id)).toThrow(/nicht angeboten/);
   networks.addMember(adminBearer,created.id,{organizationId:organization.id,userId:outsiderRegistration.user.id,role:"member"});
+  expect(networks.listMembers(bearer,created.id)[0].organization?.networkProfile?.services).toContain("Beratung");
   expect(networks.publicBySlug(`Bearer ${outsiderLogin.token}`,"test-netzwerk").enabledModules).not.toContain("events");
   const second=networks.create(adminBearer,{name:"Zweites Netzwerk",slug:"zweites-netzwerk",websiteUrl:"https://zweites.example",enabledModules:["members","events"]});
   expect(second).toMatchObject({status:"draft",trialEndsAt:null});

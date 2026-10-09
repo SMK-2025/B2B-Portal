@@ -44,6 +44,7 @@ const teamLogos: Record<string, string> = {
   "BG Hessing Leitershofen": "/network/bayer-giants/teams/bg-hessing-leitershofen.png",
   "Basketball Löwen": "/network/bayer-giants/teams/basketball-loewen.png",
   "CATL Basketball Löwen": "/network/bayer-giants/teams/basketball-loewen.png",
+  "CATL Basketball Löwen Erfurt": "/network/bayer-giants/teams/basketball-loewen.png",
   "Culture City Weimar": "/network/bayer-giants/teams/culture-city-weimar.png",
   "Dragons Rhöndorf": "/network/bayer-giants/teams/dragons-rhoendorf.png",
   "Dresden Titans": "/network/bayer-giants/teams/dresden-titans.png",

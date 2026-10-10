@@ -61,6 +61,121 @@
   color: var(--network-accent);
 }
 
+/* Das jeweilige Netzwerk-Branding prägt alle Karten, Zustände und Aktionen. */
+.networkPortal .networkPrimary {
+  border-color: transparent;
+  background: linear-gradient(
+    120deg,
+    var(--network-dark),
+    var(--network-accent)
+  );
+  color: #fff;
+}
+
+.networkPortal .networkPrimary:hover,
+.networkPortal .networkPrimary:focus-visible {
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--network-dark) 88%, #000),
+    color-mix(in srgb, var(--network-accent) 86%, #000)
+  );
+}
+
+.networkPortal .adminNetworkDialogActions > .networkPrimary,
+.networkPortal .networkPrimary:disabled {
+  border-color: transparent;
+  color: #fff;
+}
+
+.networkPortal .networkPrimary:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.networkPortal .networkMemberStats button,
+.networkPortal .networkStats article {
+  border-color: color-mix(in srgb, var(--network-accent) 18%, #d6d9e4);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--network-accent) 6%, #fff),
+    #fff 62%
+  );
+}
+
+.networkPortal .networkMemberStats button strong,
+.networkPortal .networkStats article strong {
+  color: var(--network-accent);
+}
+
+.networkPortal .networkMemberStats button.active {
+  border-color: var(--network-accent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--network-accent) 14%, #fff),
+    #fff 72%
+  );
+  box-shadow: inset 4px 0 var(--network-accent);
+}
+
+.networkPortal .networkCard,
+.networkPortal .networkPartnerCard,
+.networkPortal .networkRecapGrid > article {
+  border-color: color-mix(in srgb, var(--network-accent) 16%, #d6d9e4);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--network-dark) 9%, transparent);
+}
+
+.networkPortal .networkCard > header,
+.networkPortal .networkModal > header {
+  border-bottom: 0;
+  background:
+    radial-gradient(
+      circle at 88% 0,
+      color-mix(in srgb, #fff 14%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(120deg, var(--network-dark), var(--network-accent));
+  color: #fff;
+}
+
+.networkPortal .networkCard > header :is(h2, h3, p, span),
+.networkPortal .networkModal > header :is(h2, h3, p, span) {
+  color: #fff;
+}
+
+.networkPortal .networkCard > header :is(a, button),
+.networkPortal .networkModal > header button {
+  border: 1px solid #ffffff4d;
+  background: #ffffff12;
+  color: #fff;
+}
+
+.networkPortal .networkCard > header :is(a, button):hover,
+.networkPortal .networkModal > header button:hover {
+  background: #ffffff26;
+}
+
+.networkPortal .networkRowActions button:not(.networkDeleteAction),
+.networkPortal .networkMemberActions button,
+.networkPortal .networkEventRows time,
+.networkPortal .networkActivity p > b {
+  border-color: color-mix(in srgb, var(--network-accent) 30%, #d4d8e4);
+  background: color-mix(in srgb, var(--network-accent) 8%, #fff);
+  color: var(--network-accent);
+}
+
+.networkPortal .networkRowActions button:not(.networkDeleteAction):hover,
+.networkPortal .networkRowActions button.active,
+.networkPortal .networkMemberActions button:hover {
+  border-color: var(--network-accent);
+  background: var(--network-accent);
+  color: #fff;
+}
+
+.networkPortal :is(input, select, textarea):focus {
+  border-color: var(--network-accent);
+  outline: 3px solid color-mix(in srgb, var(--network-accent) 16%, transparent);
+}
+
 .networkPortal .networkTrialBanner {
   border-color: color-mix(in srgb, var(--network-accent) 22%, #d9dce8);
   background: linear-gradient(
@@ -290,13 +405,14 @@
   background: #fff7f6;
 }
 .networkRowActions .networkDeleteAction {
-  border-color: #efc6c6;
-  color: #b42318;
-  background: #fff7f6;
+  border-color: color-mix(in srgb, var(--network-accent) 30%, #d4d8e4);
+  color: var(--network-accent);
+  background: color-mix(in srgb, var(--network-accent) 8%, #fff);
 }
 .networkRowActions .networkDeleteAction:hover {
-  border-color: #d92d20;
-  background: #fee4e2;
+  border-color: var(--network-accent);
+  color: #fff;
+  background: var(--network-accent);
 }
 .gameResultForm,
 .gameDiscussion {

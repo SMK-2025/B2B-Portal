@@ -57,7 +57,7 @@ describe("network tenancy",()=>{
   expect(claimed).toMatchObject({claimed:true,network:{slug:"test-netzwerk"},membership:{role:"network_admin",status:"active"}});
   expect(organizations.listMine(initiatorBearer)[0]).toMatchObject({role:"network",displayName:"Test Netzwerk"});
   expect(networks.mine(initiatorBearer)[0]).toMatchObject({membership:{role:"network_admin"},network:{slug:"test-netzwerk"}});
-  networks.updateSettings(bearer,created.id,{enabledModules:["profiles","events"],name:"Test Netzwerk"});
+  networks.updateSettings(bearer,created.id,{enabledModules:["profiles","events"],name:"Test Netzwerk",primaryColor:"#14532d",secondaryColor:"#052e16"});
   networks.setAccess(adminBearer,created.id,{status:"active"});
   const order=networks.order(bearer,created.id,{invoiceCompany:"Mitglied GmbH",invoiceContact:"Mara Klein",invoiceEmail:"rechnung@example.de",invoiceStreet:"Musterstraße 1",invoicePostalCode:"12345",invoiceCity:"Musterstadt",invoiceCountry:"Deutschland",billingCycle:"annual",participantCount:1,pricingMode:"individual",selectedModules:["profiles","events"],authorityConfirmed:true,termsAccepted:true,paymentObligationAccepted:true});
   expect(order.monthlyNetCents).toBe(2600);expect(order.selectedModules).toEqual(["profiles","events"]);expect(order.status).toBe("accepted");expect(order.paymentStatus).toBe("open");
@@ -72,6 +72,9 @@ describe("network tenancy",()=>{
   const second=networks.create(adminBearer,{name:"Zweites Netzwerk",slug:"zweites-netzwerk",websiteUrl:"https://zweites.example",enabledModules:["members","events"]});
   expect(second).toMatchObject({status:"draft",trialEndsAt:null});
   expect(second.settings.selfRegistration).toBe(false);
+  networks.updateSettings(adminBearer,second.id,{primaryColor:"#1d4ed8",secondaryColor:"#172554"});
+  networks.setAccess(adminBearer,second.id,{status:"active"});
+  expect(networks.branding("test-netzwerk")).toMatchObject({primaryColor:"#14532d",secondaryColor:"#052e16"});expect(networks.branding("zweites-netzwerk")).toMatchObject({primaryColor:"#1d4ed8",secondaryColor:"#172554"});expect(()=>networks.publicBySlug(bearer,"zweites-netzwerk")).toThrow(/Kein Zugriff/);
   expect(networks.adminList(adminBearer)).toHaveLength(2);
   const removed=networks.remove(adminBearer,created.id,{confirmSlug:"test-netzwerk"});
   expect(removed).toMatchObject({deleted:true,deletedOrganizations:2,deletedUsers:3});

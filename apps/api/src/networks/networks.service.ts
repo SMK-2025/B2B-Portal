@@ -203,6 +203,12 @@ export class NetworksService{
   record.updatedAt=new Date().toISOString();return record;
  }
 
+ deleteContent(authorization:string|undefined,networkId:string,contentId:string){
+  const user=this.auth.authenticate(authorization);this.requireNetworkManagement(user.id,networkId);const record=this.store.networkContents.get(contentId);if(!record||record.networkId!==networkId)throw new NotFoundException("Netzwerkinhalt nicht gefunden.");this.ensureModule(this.raw(networkId),record.type,user.id);
+  if(record.type==="event")for(const [id,attendance] of this.store.networkAttendances)if(attendance.networkId===networkId&&attendance.eventId===contentId)this.store.networkAttendances.delete(id);
+  this.store.networkContents.delete(contentId);return{deleted:true,id:contentId};
+ }
+
  attendance(authorization:string|undefined,networkId:string,eventId:string){
   const actor=this.auth.authenticate(authorization);this.requireNetworkAccess(actor.id,networkId);this.requireEnabledModule(networkId,"events",actor.id);this.event(networkId,eventId);
   const own=this.store.networkMemberships.find(item=>item.networkId===networkId&&item.userId===actor.id&&item.status==="active");

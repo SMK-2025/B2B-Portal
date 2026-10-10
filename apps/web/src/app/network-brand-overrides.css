@@ -220,6 +220,46 @@
   background: var(--network-soft);
 }
 
+.networkPortal .networkModulePurpose {
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--network-accent) 28%, #d8dce8);
+  border-left: 4px solid var(--network-accent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--network-soft) 52%, #fff);
+}
+.networkPortal .networkModulePurpose strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--network-dark);
+  font-size: 16px;
+}
+.networkPortal .networkModulePurpose p {
+  margin: 0;
+  color: #596178;
+  line-height: 1.6;
+}
+.networkPortal .networkContentCategory {
+  display: inline-flex;
+  margin-left: 8px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--network-soft);
+  color: var(--network-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+.networkPortal .networkContentModal input[type="file"] {
+  min-height: auto;
+  padding: 12px;
+  border: 1px dashed color-mix(in srgb, var(--network-accent) 55%, #cbd0dd);
+  background: var(--network-soft);
+}
+.networkPortal .networkContentModal label > small {
+  color: #687086;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
 .networkPortal .gameScheduleIntro h2 {
   color: #fff;
 }

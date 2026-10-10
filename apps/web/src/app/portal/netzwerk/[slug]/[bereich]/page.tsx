@@ -8,19 +8,19 @@ import {NetworkProfileWorkspace} from "../../../../components/network-profile-wo
 import {NetworkEventRecapWorkspace} from "../../../../components/network-event-recap-workspace";
 import {NetworkGameScheduleWorkspace} from "../../../../components/network-game-schedule-workspace";
 const pages:Record<string,[string,string]>={
- mitglieder:["Mitgliederverwaltung","Unternehmen persönlich einladen, prüfen und rollenbasiert verwalten."],
+ mitglieder:["Partnerverzeichnis","Unternehmen im geschlossenen Partnerkreis finden, kennenlernen und gezielt miteinander in Kontakt bringen."],
  profil:["Meine Partnerseite","Unternehmen, Leistungen und persönliche Ansprechpartner für das geschlossene Netzwerk präsentieren."],
  veranstaltungen:["Veranstaltungen und Treffen","Termine, Anmeldungen, Gäste und tatsächliche Anwesenheit dokumentieren."],
- spielplan:["ProB-Spielplan 2026/27","Spiele, Ergebnisse und den öffentlichen Austausch mit allen Netzwerkpartnern verbinden."],
+ spielplan:["ProB-Spielplan 2026/27","Spiele, Ergebnisse und den gemeinsamen Austausch mit allen eingetragenen Partnern verbinden."],
  rueckblicke:["Veranstaltungsrückblicke","Bilder, Inhalte und Ergebnisse vergangener Netzwerktreffen chronologisch festhalten."],
  angebote:["Angebote und Leistungen","Leistungen und Kooperationsangebote ausschließlich im geschlossenen Partnernetzwerk sichtbar machen."],
- kommunikation:["Kommunikation","Freigegebene Kontakte und interne Gespräche geschützt führen."],
- themen:["Themen und Gruppen","Ankündigungen, Fachthemen, Umfragen und Austausch bündeln."],
- aufgaben:["Aufgaben","Zuständigkeiten, Wiedervorlagen und Folgetermine verwalten."],
- dokumente:["Dokumente und Wissen","Protokolle, Vorlagen und geschützte Netzwerkunterlagen bereitstellen."],
+ kommunikation:["Direktnachrichten und Partnergespräche","Geschäftliche Anfragen, Kooperationen und persönlichen Austausch geschützt anstoßen."],
+ themen:["Community und Austausch","Neuigkeiten teilen, Meinungen einholen, Erfolge sichtbar machen und gemeinsam Ideen entwickeln."],
+ aufgaben:["Aufgaben und Zusammenarbeit","Aus Gesprächen konkrete nächste Schritte, klare Zuständigkeiten und verlässliche Zusammenarbeit machen."],
+ dokumente:["Dokumente und Wissen","PDFs, Bilder, Protokolle, Vorlagen und Partnerinformationen zentral und geschützt bereitstellen."],
  auswertungen:["Statistiken","Mitglieder, Aktivitäten, Veranstaltungen und Inhalte auswerten."],
  umsaetze:["Vermittelter Umsatz","Vertrauliche Vermittlungsumsätze erfassen und ausschließlich intern auswerten."],
- einstellungen:["Netzwerkeinstellungen","Branding, Regeln und freigeschaltete Module verwalten."]
+ einstellungen:["Partnerportal einrichten","Branding, Regeln und freigeschaltete Module zentral verwalten."]
 };
 export default async function Page({params}:{params:Promise<{slug:string;bereich:string}>}){
  const{slug,bereich}=await params,page=pages[bereich];if(!page)notFound();

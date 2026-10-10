@@ -207,6 +207,14 @@
 .networkPortal .networkBrandedHero span {
   color: #fff;
 }
+.networkPortal .networkBrandedHero > img {
+  width: auto;
+  max-width: 220px;
+  max-height: 92px;
+  margin: 0;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
 .networkPortal .networkQuickLinks a:hover {
   color: var(--network-accent);
   background: var(--network-soft);

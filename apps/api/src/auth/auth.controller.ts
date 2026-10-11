@@ -5,7 +5,7 @@ import { AuthService } from "./auth.service";
 export class AuthController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
   @Post("register") register(@Body() body: Record<string, unknown>) {
-    return this.auth.register(body);
+    return this.auth.register(body, true);
   }
   @Post("verify-email") verifyEmail(@Body("token") token: unknown) {
     return this.auth.verifyEmail(token);

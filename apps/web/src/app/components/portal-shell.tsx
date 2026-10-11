@@ -15,34 +15,10 @@ const overview = {
 const groups: Record<Role, MenuGroup[]> = {
   admin: [
     {
-      label: "Netzwerkpartner",
+      label: "Partnerportale",
       icon: "N",
-      items: [["Netzwerke", "/portal/admin/netzwerke"]],
-    },
-    {
-      label: "Mitglieder & Qualität",
-      icon: "◇",
       items: [
-        ["Freigaben", "#freigaben"],
-        ["Mitglieder", "#mitglieder"],
-        ["Prüfprotokoll", "#protokoll"],
-      ],
-    },
-    {
-      label: "Vermittlung",
-      icon: "◎",
-      items: [
-        ["Bedarfe", "#bedarfe"],
-        ["Matches", "#matches"],
-        ["Kommunikation", "#kommunikation"],
-      ],
-    },
-    {
-      label: "Betrieb",
-      icon: "⚙",
-      items: [
-        ["Abonnements", "#abonnements"],
-        ["Einstellungen", "#einstellungen"],
+        ["Alle Netzwerke", "/portal/admin/netzwerke"],
       ],
     },
   ],
@@ -92,7 +68,7 @@ const groups: Record<Role, MenuGroup[]> = {
   ],
 };
 const labels = {
-  admin: "Administration",
+  admin: "Plattformbetreiber",
   unternehmen: "Unternehmer",
   dienstleister: "Dienstleister",
 };
@@ -149,7 +125,7 @@ export function PortalShell({
           <Link href="/" className="portalBrand">
             <img src="/icons/b2b-matching-symbol-brand.png" alt="" />
             <span>
-              B2B <b>Matching</b>
+              B2B <b>Partnerportale</b>
             </span>
           </Link>
           <div className="portalRole">
@@ -210,7 +186,7 @@ export function PortalShell({
               <div>
                 <span>
                   {role === "admin"
-                    ? "PORTALSTEUERUNG"
+                    ? "PARTNERPORTAL-STEUERUNG"
                     : role === "unternehmen"
                       ? "IHR UNTERNEHMENSBEREICH"
                       : "IHR ANBIETERBEREICH"}

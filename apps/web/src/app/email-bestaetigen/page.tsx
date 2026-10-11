@@ -10,6 +10,7 @@ import { portalRequest } from "../lib/portal-api";
 function Confirmation() {
   const token = useSearchParams().get("token") ?? "";
   const network = useSearchParams().get("network") ?? "";
+  const invite = useSearchParams().get("invite") ?? "";
   const [state, setState] = useState<"loading" | "success" | "error">(
     "loading",
   );
@@ -48,7 +49,7 @@ function Confirmation() {
         <p className="lead">
           Ihr Zugang ist aktiviert. Sie können sich jetzt sicher anmelden.
         </p>
-        <Link className="primary linkButton" href={(network?`/anmelden?network=${encodeURIComponent(network)}`:"/anmelden") as never}>
+        <Link className="primary linkButton" href={(network?`/anmelden?network=${encodeURIComponent(network)}${invite?`&invite=${encodeURIComponent(invite)}`:""}`:"/anmelden") as never}>
           Jetzt anmelden
         </Link>
       </div>

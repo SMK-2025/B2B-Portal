@@ -1,2 +1,1 @@
-import {CompanyTeamWorkspace} from "../../../components/company-team-workspace";
-export default function Page(){return <CompanyTeamWorkspace/>}
+import {redirect} from "next/navigation";export default function Page(){redirect("/anmelden")}

@@ -1,2 +1,1 @@
-import {BuyerSettingsWorkspace} from "../../../components/buyer-settings-workspace";
-export default function Page(){return <BuyerSettingsWorkspace/>}
+import {redirect} from "next/navigation";export default function Page(){redirect("/anmelden")}

@@ -5,8 +5,8 @@ export default function AdminNetworksPage() {
   return (
     <PortalShell
       role="admin"
-      title="Netzwerkpartner verwalten"
-      intro="Legen Sie Netzwerkmandanten an, steuern Sie Test- und Dauerzugänge und vergeben Sie die verantwortliche Netzwerkrolle."
+      title="Partnerportale verwalten"
+      intro="Legen Sie strikt getrennte Netzwerkmandanten an, bestimmen Sie Initiatoren und steuern Sie Zugänge, Module sowie Laufzeiten zentral."
     >
       <AdminNetworkWorkspace />
     </PortalShell>

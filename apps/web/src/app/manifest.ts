@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "B2B Matching – Bedarf trifft Kompetenz",
+    name: "B2B Matching – Partnerportal für Netzwerke",
     short_name: "B2B Matching",
-    description: "Das geschützte Netzwerk für passende B2B-Kooperationen.",
+    description: "Das geschlossene Partnerportal für starke Netzwerke und bessere Zusammenarbeit.",
     start_url: "/",
     scope: "/",
     display: "standalone",

@@ -17,15 +17,17 @@ export class EmailService {
     firstName: string;
     token: string;
     networkSlug?: string;
+    networkInviteToken?: string;
   }): Promise<void> {
     const networkQuery=input.networkSlug?`&network=${encodeURIComponent(input.networkSlug)}`:"";
-    const link = `${this.webUrl()}/email-bestaetigen?token=${encodeURIComponent(input.token)}${networkQuery}`;
+    const inviteQuery=input.networkInviteToken?`&invite=${encodeURIComponent(input.networkInviteToken)}`:"";
+    const link = `${this.webUrl()}/email-bestaetigen?token=${encodeURIComponent(input.token)}${networkQuery}${inviteQuery}`;
     await this.send({
       to: input.email,
-      subject: "E-Mail-Adresse bei B2B Matching bestätigen",
+      subject: "E-Mail-Adresse für Ihr Partnerportal bestätigen",
       text: `Hallo ${input.firstName},\n\nbestätigen Sie Ihre geschäftliche E-Mail-Adresse:\n${link}\n\nDer Link ist 24 Stunden gültig.`,
       html: this.template(
-        "Ihre Registrierung",
+        "Ihr Partnerportal-Zugang",
         `Hallo ${this.escape(input.firstName)}, bestätigen Sie bitte Ihre geschäftliche E-Mail-Adresse, um Ihr Konto zu aktivieren.`,
         "E-Mail-Adresse bestätigen",
         link,
@@ -58,11 +60,11 @@ export class EmailService {
     const link = `${this.webUrl()}/registrieren?network=${encodeURIComponent(input.networkSlug)}&email=${encodeURIComponent(input.email)}&invite=${encodeURIComponent(input.inviteToken)}`;
     await this.send({
       to: input.email,
-      subject: `Einladung in das Netzwerk ${input.networkName}`,
-      text: `Sie wurden in das geschlossene Unternehmensnetzwerk ${input.networkName} eingeladen.\n\nRegistrierung starten:\n${link}`,
+      subject: `Einladung in das Partnerportal ${input.networkName}`,
+      text: `Sie wurden in das geschlossene Partnerportal ${input.networkName} eingeladen.\n\nRegistrierung starten:\n${link}`,
       html: this.template(
         "Ihre Netzwerkeinladung",
-        `Sie wurden eingeladen, dem geschlossenen Unternehmensnetzwerk <strong>${this.escape(input.networkName)}</strong> beizutreten.`,
+        `Sie wurden eingeladen, dem geschlossenen Partnerportal <strong>${this.escape(input.networkName)}</strong> beizutreten.`,
         "Registrierung starten",
         link,
         "Die Aufnahme erfolgt nach Prüfung durch die Netzwerkverwaltung.",

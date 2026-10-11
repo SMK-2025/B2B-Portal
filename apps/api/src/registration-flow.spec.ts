@@ -12,6 +12,7 @@ import { NeedsService } from "./matching/needs.service";
 describe("registration and organization approval", () => {
   it("rejects weak passwords and never accepts a different login password",async()=>{
     const store=new PortalStore();const auth=new AuthService(store);
+    await expect(auth.register({email:"open@example.de",password:"Sicher-Portal-2026!",firstName:"Ohne",lastName:"Einladung"},true)).rejects.toThrow(/Netzwerkeinladung/);
     await expect(auth.register({email:"security@example.de",password:"aaaaaaaaaaaa",firstName:"Sina",lastName:"Sicher"})).rejects.toThrow(/Passwort/);
     const registration=await auth.register({email:"security@example.de",password:"Sicher-Portal-2026!",firstName:"Sina",lastName:"Sicher"});auth.verifyEmail(registration.verificationToken);
     await expect(auth.login({email:"security@example.de",password:"Irgendein-Passwort-2026!"})).rejects.toThrow(/falsch/);

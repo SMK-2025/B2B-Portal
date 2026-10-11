@@ -77,10 +77,11 @@ export class AuthService implements OnModuleInit {
     return this.publicUser(user);
   }
 
-  async register(input: Record<string, unknown>) {
+  async register(input: Record<string, unknown>, requireNetworkInvitation = false) {
     const email = emailAddress(input.email);
     const networkInviteToken=typeof input.networkInviteToken==="string"?input.networkInviteToken:"";
     const networkInvitation=networkInviteToken?[...this.store.networkContents.values()].find(item=>item.data.kind==="network_invitation"&&item.data.inviteTokenHash===tokenHash(networkInviteToken)&&!item.data.usedAt&&item.endsAt&&Date.parse(item.endsAt)>Date.now()):undefined;
+    if(requireNetworkInvitation&&!networkInviteToken)throw new BadRequestException("Die Registrierung ist ausschließlich über eine persönliche Netzwerkeinladung möglich.");
     if(networkInviteToken&&(!networkInvitation||networkInvitation.data.email!==email))throw new BadRequestException("Die Netzwerkeinladung ist ungültig, abgelaufen oder für eine andere E-Mail-Adresse ausgestellt.");
     if (this.store.userByEmail.has(email))
       throw new ConflictException(
@@ -112,6 +113,7 @@ export class AuthService implements OnModuleInit {
         email: user.email,
         firstName: user.firstName,
         token: verificationToken,
+        ...(networkInviteToken?{networkInviteToken}:{}),
         ...(networkInvitation?{networkSlug:this.store.networks.get(networkInvitation.networkId)?.slug}:{}),
       });
     } catch (error) {

@@ -1,2 +1,1 @@
-import {BuyerFavoritesWorkspace} from "../../../components/buyer-favorites-workspace";
-export default function Page(){return <BuyerFavoritesWorkspace/>}
+import {redirect} from "next/navigation";export default function Page(){redirect("/anmelden")}

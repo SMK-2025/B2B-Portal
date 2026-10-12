@@ -39,6 +39,9 @@
   letter-spacing:-.035em!important;
   line-height:1.16!important;
   color:var(--card-ink)!important;
+  overflow-wrap:anywhere;
+  hyphens:auto;
+  text-wrap:balance;
 }
 .publicSite :is(.audienceGrid>a,.solutionOverview>div>a,.valueGrid>article,.promiseSteps>article,.capabilitySection>div>article,.introductionPath li,.v2Trust article,.functionPrinciples article,.moduleCatalogue article,.publicSecurityGrid article,.howGrid article,.solutionStories article) p {
   margin:0!important;
@@ -80,6 +83,33 @@
 .publicSite :is(.contentLead,.solutionOutcome){text-align:left}
 .publicSite .contentLead p,.publicSite .solutionOutcome p{margin-left:0;margin-right:0}
 .publicSite h2{font-weight:650;letter-spacing:-.035em}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a,.capabilitySection>div>article,.valueGrid>article) h3{font-size:clamp(22px,1.6vw,28px)!important;max-width:100%;overflow-wrap:anywhere;hyphens:auto;text-wrap:balance}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a)>div{min-width:0}
+.publicSite .editorialAudience .audienceGrid{grid-template-columns:1.25fr 1fr 1fr}
+.publicSite .editorialAudience .audienceGrid>a:first-child{grid-column:1;grid-row:1/3;min-height:0}
+.publicSite .editorialAudience .audienceGrid>a:nth-child(n+6){grid-column:auto}
+.publicSite .editorialAudience .audienceGrid>a:last-child{grid-column:2/4}
+.publicSite .editorialAudience .audienceGrid>a:first-child>div{justify-content:flex-end}
+.publicSite .editorialAudience .audienceGrid>a:first-child h3{font-size:clamp(26px,2.1vw,34px)!important}
 @media(max-width:1000px){.publicSite .solutionOverview>div{grid-template-columns:repeat(2,minmax(0,1fr))}.publicSite .solutionOverview>div>a:nth-child(n){grid-row:auto;grid-column:auto}.publicSite .solutionOverview>div>a:last-child{grid-column:1/-1}}
+@media(max-width:1100px){.publicSite .editorialAudience .audienceGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.publicSite .editorialAudience .audienceGrid>a:nth-child(n){grid-column:auto;grid-row:auto;min-height:0}.publicSite .editorialAudience .audienceGrid>a:last-child{grid-column:1/-1}}
+@media(max-width:650px){.publicSite .editorialAudience .audienceGrid{grid-template-columns:minmax(0,1fr)}.publicSite .editorialAudience .audienceGrid>a:nth-child(n){grid-column:1;grid-row:auto}}
 @media(max-width:650px){.publicSite{--card-padding:28px}.publicSite .promiseSteps,.publicSite .solutionOverview>div{grid-template-columns:1fr}.publicSite .solutionOverview>div>a:nth-child(n){grid-column:1;grid-row:auto}.publicSite :is(.audienceGrid>a,.solutionOverview>div>a){padding-bottom:28px!important}.publicSite :is(.audienceGrid>a,.solutionOverview>div>a,.valueGrid>article,.promiseSteps>article,.capabilitySection>div>article,.introductionPath li,.v2Trust article,.functionPrinciples article,.moduleCatalogue article,.publicSecurityGrid article,.howGrid article,.solutionStories article) h3{font-size:25px!important}}
 @media(prefers-reduced-motion:reduce){.publicSite :is(article,a){transition:none!important}}
+
+/* Long audience names get real horizontal space, never a narrow side column. */
+.publicSite .editorialAudience .audienceGrid,.publicSite .solutionOverview>div{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.publicSite .editorialAudience .audienceGrid>a:nth-child(n),.publicSite .solutionOverview>div>a:nth-child(n){grid-column:auto;grid-row:auto;min-height:320px}
+.publicSite .editorialAudience .audienceGrid>a:last-child,.publicSite .solutionOverview>div>a:last-child{grid-column:1/-1;min-height:260px}
+.publicSite .editorialAudience .audienceGrid>a:first-child h3{font-size:28px!important}
+.publicSite :is(.audienceGrid,.solutionOverview) h3{overflow-wrap:normal;hyphens:manual;text-wrap:balance}
+.publicCardArtwork{position:absolute!important;right:24px;top:24px;width:138px;height:138px;pointer-events:none;opacity:.07;color:var(--card-ink);transform:translate(var(--art-x,0px),var(--art-y,0px)) rotate(-12deg);transition:transform .3s ease,opacity .3s ease;z-index:0}
+.publicCardArtwork svg{width:100%;height:100%}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a)>b:has(.publicCardBadgeIcon){font-size:0!important;display:grid;place-items:center}
+.publicCardBadgeIcon{display:block!important;width:30px;height:30px;margin:0!important;padding:0!important;border:0!important}
+.publicCardBadgeIcon svg{display:block;width:100%;height:100%}
+.publicSite :is(article,a,li):hover>.publicCardArtwork{opacity:.13;transform:translate(var(--art-x,0px),var(--art-y,0px)) rotate(-4deg) scale(1.06)}
+.publicSite :is(article,a,li):has(>.publicCardArtwork){isolation:isolate;overflow:hidden}
+.publicSite :is(article,a,li):has(>.publicCardArtwork)>:not(.publicCardArtwork){position:relative;z-index:1}
+@media(max-width:760px){.publicSite .editorialAudience .audienceGrid,.publicSite .solutionOverview>div{grid-template-columns:minmax(0,1fr)!important}.publicSite .editorialAudience .audienceGrid>a:nth-child(n),.publicSite .solutionOverview>div>a:nth-child(n){grid-column:1;min-height:0}.publicSite :is(.audienceGrid,.solutionOverview) h3{overflow-wrap:anywhere;hyphens:auto}.publicCardArtwork{width:112px;height:112px}}
+@media(prefers-reduced-motion:reduce){.publicCardArtwork,.publicSite :is(article,a,li):hover>.publicCardArtwork{transition:none;transform:rotate(-12deg)}}

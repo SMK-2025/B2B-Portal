@@ -128,3 +128,28 @@
 @media(max-width:650px){.editorialAudience .audienceGrid,.publicSite .capabilitySection>div{grid-template-columns:1fr}.editorialAudience .audienceGrid>a,.editorialAudience .audienceGrid>a.featured{min-height:245px}.editorialAudience .audienceGrid>a:nth-child(7){grid-column:auto}.publicSite .capabilitySection article{min-height:260px}}
 @media(max-width:500px){.editorialHero{min-height:630px}.editorialHeroCopy{padding:68px 14px 42px}.editorialHero h1{font-size:34px}.editorialHeroCopy>p{font-size:15px;line-height:1.55}.editorialActions{width:100%;margin:27px 0 24px}.editorialHeroCopy>small{display:none}.editorialAudience{padding-top:80px;padding-bottom:80px}}
 @media(prefers-reduced-motion:reduce){.editorialAudience .audienceGrid>a,.capabilityIcon,.publicSite .capabilitySection article{transition:none}}
+
+.solutionStories{max-width:1120px;margin:0 auto;padding:80px 28px}.solutionStories>div:last-child{display:grid;gap:24px;margin-top:40px}.solutionStories article{display:flex;gap:28px;padding:32px;border-radius:20px;background:var(--solution-bg,#eef3ff);border:1px solid var(--solution-border,#dce5ff)}.solutionStories article>span{font-size:28px;color:var(--solution-accent,#6474dd);font-weight:600}.solutionStories h3{margin:0 0 16px;font-size:25px;line-height:1.25}.solutionStories p{margin:0;font-size:17px;line-height:1.8;color:#4e6073}@media(max-width:650px){.solutionStories{padding:50px 20px}.solutionStories article{padding:24px;gap:16px}.solutionStories h3{font-size:22px}}
+/* Durchgängige Fotografie: volle Breite, ohne deckende Seitenfläche. */
+.publicSite .editorialHero{width:100%;height:800px;min-height:800px;align-items:center}
+.publicSite .editorialPhoto{background-image:url('/images/network-meeting-home.webp');background-position:center;background-size:cover;filter:none}
+.publicSite .editorialHeroMedia::before{background:rgba(17,26,58,.38)}
+.publicSite .editorialHeroCopy{padding:60px 28px 130px;text-shadow:0 2px 18px rgba(9,15,33,.4)}
+.publicSite .editorialActions{text-shadow:none}
+.v2.solutionPage .subHero.solutionHero{position:relative;isolation:isolate;width:100%;height:800px;min-height:800px;box-sizing:border-box;display:flex;justify-content:center;text-align:center;background-image:var(--solution-photo);background-position:center;background-size:cover;padding:70px 24px;color:#fff}
+.solutionPage .solutionHero::before{content:"";position:absolute;inset:0;z-index:-1;background:rgba(17,26,58,.43)}
+.solutionPage .solutionHero::after{display:none}
+.solutionPage .solutionHero>div{width:min(940px,100%);position:relative;text-shadow:0 2px 18px rgba(9,15,33,.4)}
+.solutionPage .solutionHero>div>span{color:var(--solution-bg)}
+.solutionPage .solutionHero h1{max-width:940px;margin:24px auto;font-size:clamp(42px,4.4vw,66px);line-height:1.06;text-wrap:balance}
+.solutionPage .solutionHero p{max-width:750px;margin:0 auto;font-size:19px;line-height:1.65;color:#fff;text-wrap:balance}
+.solutionPage .solutionHero>div>div{display:flex;justify-content:center;gap:16px;margin-top:32px;text-shadow:none}
+.solutionPage .solutionHero>aside{display:none}
+.solutionTone-economy{--solution-photo:url('/images/network-meeting-economy.webp')}
+.solutionTone-associations{--solution-photo:url('/images/network-meeting-associations.webp')}
+.solutionTone-sport{--solution-photo:url('/images/network-meeting-sport.webp')}
+.solutionTone-franchise{--solution-photo:url('/images/network-meeting-franchise.webp')}
+.solutionTone-location{--solution-photo:url('/images/network-meeting-location.webp')}
+.solutionTone-club{--solution-photo:url('/images/network-meeting-club.webp')}
+.solutionTone-ecosystem{--solution-photo:url('/images/network-meeting-ecosystem.webp')}
+@media(max-width:650px){.publicSite .editorialHeroCopy{padding:60px 20px}.publicSite .editorialHero h1{font-size:34px}.publicSite .editorialHeroMedia::before{background:rgba(17,26,58,.46)}.solutionPage .solutionHero h1{font-size:38px}.solutionPage .solutionHero p{font-size:17px}.solutionPage .solutionHero>div>div{flex-direction:column;align-items:center}.solutionPage .solutionHero .v2Button{width:min(300px,100%)}}

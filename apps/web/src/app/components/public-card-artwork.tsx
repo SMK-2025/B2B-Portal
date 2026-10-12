@@ -9,7 +9,11 @@ const cards = ".publicSite :is(.audienceGrid>a,.solutionOverview>div>a,.valueGri
 // Original line illustrations: one visual vocabulary for every public card.
 function Artwork({ title }: { title: string }) {
   let motif;
-  if (/sport|sponsor/i.test(title)) motif = <><path d="M18 12h28v12c0 13-7 20-14 20s-14-7-14-20Z M18 16H9v8c0 7 5 11 12 11M46 16h9v8c0 7-5 11-12 11M32 44v10M23 55h18"/><path d="m32 19 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z"/></>;
+  if (/sichtbar|kennenlernen|entdecken/i.test(title)) motif = <><path d="M5 32s10-16 27-16 27 16 27 16-10 16-27 16S5 32 5 32Z"/><circle cx="32" cy="32" r="8"/></>;
+  else if (/begegnung/i.test(title)) motif = <><circle cx="18" cy="18" r="7"/><circle cx="46" cy="18" r="7"/><path d="M6 49V39c0-8 5-12 12-12s12 4 12 12v10M34 49V39c0-8 5-12 12-12s12 4 12 12v10M26 19h12M33 14l5 5-5 5"/></>;
+  else if (/vertrauen/i.test(title)) motif = <><path d="M32 53S8 38 8 22c0-15 18-19 24-6 6-13 24-9 24 6 0 16-24 31-24 31Z"/><path d="m23 29 6 6 13-13"/></>;
+  else if (/zusammenarbeit|kooperation|gemeinsam handeln/i.test(title)) motif = <><path d="m6 23 12-10 14 7 12-7 14 10-8 22-12 7-8-4-8 3-11-9ZM21 23l10 8 12-10M21 38l17 14M29 34l18 13M38 30l14 11"/></>;
+  else if (/sport|sponsor/i.test(title)) motif = <><path d="M18 12h28v12c0 13-7 20-14 20s-14-7-14-20Z M18 16H9v8c0 7 5 11 12 11M46 16h9v8c0 7-5 11-12 11M32 44v10M23 55h18"/><path d="m32 19 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z"/></>;
   else if (/veranstalt|treffen|kalender/i.test(title)) motif = <><rect x="10" y="14" width="44" height="42" rx="7"/><path d="M10 26h44M22 8v13M42 8v13M21 35h7M36 35h7M21 45h7M36 45h7"/></>;
   else if (/nachricht|kommunik|austausch|gespräch|community/i.test(title)) motif = <><path d="M9 10h37v27H23L9 46ZM28 43h13l13 10V25h-5"/><path d="M18 20h19M18 28h13"/></>;
   else if (/dokument|wissen|information/i.test(title)) motif = <><path d="M15 8h24l11 11v37H15ZM39 8v13h11M24 30h17M24 38h17M24 46h11"/></>;
@@ -20,7 +24,8 @@ function Artwork({ title }: { title: string }) {
   else if (/club|empfehl/i.test(title)) motif = <><path d="m7 28 10-13 12 6 7-3 21 14-12 19-11-5-8 5-19-16ZM19 25l12 8 8-7M26 40l8 6M38 37l7 5"/></>;
   else if (/ökosystem|partnerprogramm/i.test(title)) motif = <><circle cx="32" cy="32" r="9"/><circle cx="10" cy="12" r="5"/><circle cx="54" cy="12" r="5"/><circle cx="10" cy="52" r="5"/><circle cx="54" cy="52" r="5"/><path d="m14 16 11 10M39 26l11-10M14 48l11-10M39 38l11 10"/></>;
   else if (/umsatz|auswert|nutzen|geschäft/i.test(title)) motif = <><path d="M10 54h45M17 47V34M30 47V25M43 47V15M13 26l15-13 12 4L54 7M45 7h9v9"/></>;
-  else motif = <><circle cx="32" cy="16" r="7"/><circle cx="14" cy="43" r="7"/><circle cx="50" cy="43" r="7"/><path d="M28 23 18 36M36 23l10 13M21 43h22M23 9l-8 9M41 9l8 9M11 53v4h42v-4"/></>;
+  else if (/netzwerk|partner|mitglied/i.test(title)) motif = <><circle cx="32" cy="16" r="7"/><circle cx="14" cy="43" r="7"/><circle cx="50" cy="43" r="7"/><path d="M28 23 18 36M36 23l10 13M21 43h22"/></>;
+  else return null;
   return <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{motif}</svg>;
 }
 

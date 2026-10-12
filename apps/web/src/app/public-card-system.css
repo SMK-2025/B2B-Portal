@@ -108,6 +108,8 @@
 .publicSite :is(.audienceGrid>a,.solutionOverview>div>a)>b:has(.publicCardBadgeIcon){font-size:0!important;display:grid;place-items:center}
 .publicCardBadgeIcon{display:block!important;width:30px;height:30px;margin:0!important;padding:0!important;border:0!important}
 .publicCardBadgeIcon svg{display:block;width:100%;height:100%}
+.publicSite :is(.valueGrid>article,.promiseSteps>article,.capabilitySection>div>article,.introductionPath li,.functionPrinciples article,.moduleCatalogue article,.publicSecurityGrid article,.howGrid article)>b{border-bottom:0!important;padding-bottom:0!important;margin-bottom:12px!important}
+.publicSite .promiseSteps article h3{font-size:24px!important;hyphens:manual;overflow-wrap:normal}
 .publicSite :is(article,a,li):hover>.publicCardArtwork{opacity:.13;transform:translate(var(--art-x,0px),var(--art-y,0px)) rotate(-4deg) scale(1.06)}
 .publicSite :is(article,a,li):has(>.publicCardArtwork){isolation:isolate;overflow:hidden}
 .publicSite :is(article,a,li):has(>.publicCardArtwork)>:not(.publicCardArtwork){position:relative;z-index:1}

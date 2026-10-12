@@ -8,5 +8,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/loesungen/businessclubs-und-empfehlungsnetzwerke", "monthly", .9], ["/loesungen/partnerprogramme-und-oekosysteme", "monthly", .9],
     ["/impressum", "yearly", .3], ["/agb", "yearly", .3],
     ["/datenschutz/unternehmen", "yearly", .3], ["/cookies", "yearly", .3], ["/barrierefreiheit", "yearly", .3]
-  ].map(([path, changeFrequency, priority]) => ({ url: `${base}${path}`, lastModified: new Date(), changeFrequency, priority })) as MetadataRoute.Sitemap;
+  ].map(([path, changeFrequency, priority]) => ({ url: `${base}${path}`, changeFrequency, priority })) as MetadataRoute.Sitemap;
 }

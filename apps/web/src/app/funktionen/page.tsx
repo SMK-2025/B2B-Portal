@@ -1,7 +1,8 @@
 import type {Metadata} from "next";
 import {coreCapabilities} from "../components/public-site-data";
 import {SiteFooter,SiteHeader} from "../components/site-chrome";
-export const metadata:Metadata={title:"Funktionen des Partnerportals",description:"Mitgliederprofile, Kommunikation, Veranstaltungen, Dokumente, Zusammenarbeit und Auswertungen für geschlossene Netzwerke.",alternates:{canonical:"/funktionen"}};
+import {publicMetadata} from "../components/public-metadata";
+export const metadata:Metadata=publicMetadata("Funktionen des Partnerportals für Netzwerke","Mitgliederprofile, Kommunikation, Veranstaltungen, Dokumente, Zusammenarbeit und Auswertungen für geschlossene Netzwerke.","/funktionen");
 const modules=[
   ["Verpflichtende Basis","Unternehmensseiten & Partnerverzeichnis","Jeder Partner erhält eine interne Seite mit Logo, Ansprechpartnern, Kontaktdaten, Beschreibung, Kompetenzen und Leistungen."],
   ["Begegnung","Veranstaltungen & Rückblicke","Termine, Zu- und Absagen, Gäste, Anwesenheiten, Exporte, Fotos und chronologische Rückblicke."],

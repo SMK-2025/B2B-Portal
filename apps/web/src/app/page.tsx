@@ -1,8 +1,13 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { SiteFooter, SiteHeader } from "./components/site-chrome";
 import { coreCapabilities, targetAudiences } from "./components/public-site-data";
+import { publicMetadata } from "./components/public-metadata";
+
+export const metadata: Metadata = publicMetadata("Partnerportal für Netzwerke", "Ihr geschlossenes Partnerportal für Netzwerke: Mitglieder verbinden, Kommunikation bündeln und Zusammenarbeit fördern. In Ihrer Marke, mit Zugang nur auf Einladung.", "/");
 
 const faqs = [
+  ["Was ist ein Partnerportal für Netzwerke?", "Ein Partnerportal ist der geschlossene digitale Treffpunkt eines bestehenden Netzwerks. Eingeladene Mitglieder finden Unternehmensprofile, teilen Informationen, führen Gespräche und organisieren Zusammenarbeit. B2B Matching stellt die Plattform im Branding des Netzwerks bereit; der Initiator verwaltet seinen Partnerkreis. Es ist kein öffentlicher Marktplatz für einzelne Unternehmen oder Dienstleister."],
   ["Für welche Netzwerke ist das Partnerportal geeignet?", "Für Wirtschaftsnetzwerke, Verbände, Sport- und Sponsorennetzwerke, Verbundgruppen, Standortinitiativen, Business Clubs und organisierte Partnerprogramme."],
   ["Kann sich ein Netzwerk selbst registrieren?", "Nein. Jedes Partnerportal wird persönlich angefragt, durch den Plattformbetreiber eingerichtet und anschließend an den Initiator übergeben."],
   ["Sind Mitglieder oder Inhalte öffentlich auffindbar?", "Nein. Der Zugang ist einladungsbasiert. Inhalte, Profile und Kommunikation bleiben ausschließlich im jeweiligen Netzwerk."],

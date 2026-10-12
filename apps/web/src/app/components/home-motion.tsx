@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 export function HomeMotion(){
+  const pathname=usePathname();
   useEffect(()=>{
     const root=document.querySelector<HTMLElement>("main.v2");
     if(!root)return;
@@ -16,6 +18,6 @@ export function HomeMotion(){
     const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add("isVisible");observer.unobserve(entry.target)}}),{threshold:.12,rootMargin:"0px 0px -7% 0px"});
     elements.forEach(element=>observer.observe(element));
     return()=>{observer.disconnect();window.removeEventListener("pointermove",move);root.classList.remove("homeMotionReady")};
-  },[]);
+  },[pathname]);
   return null;
 }

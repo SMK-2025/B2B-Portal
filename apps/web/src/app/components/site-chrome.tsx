@@ -4,7 +4,7 @@ import { HomeMotion } from "./home-motion";
 import { targetAudiences } from "./public-site-data";
 
 export function Logo() {
-  return <Link className="v2Logo" href="/" aria-label="B2B Matching Startseite"><span className="brandSymbol" aria-hidden="true"/><span className="brandWordmark"><b>B2B</b><span>Matching</span></span></Link>;
+  return <Link className="v2Logo" href="/" aria-label="B2B Matching Startseite"><img src="/images/b2b-matching-logo-full.png" alt="B2B Matching"/></Link>;
 }
 
 export function SiteHeader() {

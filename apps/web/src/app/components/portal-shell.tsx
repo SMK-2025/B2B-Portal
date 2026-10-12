@@ -123,10 +123,7 @@ export function PortalShell({
       <main className={`portalApp portalRole-${role}`}>
         <aside className="portalSidebar">
           <Link href="/" className="portalBrand">
-            <img src="/icons/b2b-matching-symbol-brand.png" alt="" />
-            <span>
-              B2B <b>Partnerportale</b>
-            </span>
+            <img src="/images/b2b-matching-logo-full.png" alt="B2B Matching" />
           </Link>
           <div className="portalRole">
             <small>ARBEITSBEREICH</small>

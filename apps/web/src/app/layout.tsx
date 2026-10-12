@@ -22,9 +22,9 @@ export const metadata: Metadata = {
   category: "business"
   ,manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icons/b2b-matching-symbol-brand.png", type: "image/png" }],
-    shortcut: "/icons/b2b-matching-symbol-brand.png",
-    apple: "/icons/b2b-matching-symbol-brand.png"
+    icon: [{ url: "/images/b2b-matching-logo-full.png", type: "image/png" }],
+    shortcut: "/images/b2b-matching-logo-full.png",
+    apple: "/images/b2b-matching-logo-full.png"
   },
   appleWebApp: { capable: true, title: "B2B Matching", statusBarStyle: "black-translucent" },
   applicationName: "B2B Matching"

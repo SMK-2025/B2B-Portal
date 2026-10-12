@@ -1,0 +1,85 @@
+/* One public card language. Layout may vary; component anatomy never does. */
+.publicSite {
+  --card-radius:24px;
+  --card-padding:34px;
+  --card-surface:linear-gradient(145deg,#fff,#edf4ff);
+  --card-ink:#19263d;
+  --card-copy:#536780;
+  --card-line:rgba(101,126,164,.2);
+  --card-shadow:0 18px 48px rgba(24,43,77,.09);
+}
+.publicSite :is(.networkPromise,.capabilitySection,.introductionPath,.darkStatement) {
+  --card-surface:linear-gradient(145deg,#253552,#1d2c46);
+  --card-ink:#fff;
+  --card-copy:#cfdbed;
+  --card-line:rgba(176,202,236,.2);
+  --card-shadow:0 18px 48px rgba(2,12,28,.16);
+}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a,.valueGrid>article,.promiseSteps>article,.capabilitySection>div>article,.introductionPath li,.v2Trust article,.functionPrinciples article,.moduleCatalogue article,.publicSecurityGrid article,.howGrid article,.solutionStories article,.relatedAudiences a,.darkStatement>div>article) {
+  position:relative;
+  padding:var(--card-padding)!important;
+  border:1px solid var(--card-line)!important;
+  border-radius:var(--card-radius)!important;
+  background:var(--card-surface)!important;
+  box-shadow:var(--card-shadow)!important;
+  color:var(--card-ink)!important;
+  box-sizing:border-box;
+  transition:transform .22s ease,box-shadow .22s ease;
+}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a,.relatedAudiences a):hover {
+  transform:translateY(-4px)!important;
+  box-shadow:0 24px 54px rgba(24,43,77,.14)!important;
+}
+.publicSite :is(.audienceGrid,.solutionOverview>div,.valueGrid,.promiseSteps,.capabilitySection>div,.introductionPath ol,.v2Trust>div:last-child,.functionPrinciples>div,.moduleCatalogue>div,.publicSecurityGrid,.howGrid,.solutionStories>div:last-child,.relatedAudiences>div,.darkStatement>div) {gap:24px!important}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a,.valueGrid>article,.promiseSteps>article,.capabilitySection>div>article,.introductionPath li,.v2Trust article,.functionPrinciples article,.moduleCatalogue article,.publicSecurityGrid article,.howGrid article,.solutionStories article) h3 {
+  margin:24px 0 16px!important;
+  font-family:inherit!important;
+  font-size:28px!important;
+  font-weight:650!important;
+  letter-spacing:-.035em!important;
+  line-height:1.16!important;
+  color:var(--card-ink)!important;
+}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a,.valueGrid>article,.promiseSteps>article,.capabilitySection>div>article,.introductionPath li,.v2Trust article,.functionPrinciples article,.moduleCatalogue article,.publicSecurityGrid article,.howGrid article,.solutionStories article) p {
+  margin:0!important;
+  font-size:16px!important;
+  line-height:1.75!important;
+  color:var(--card-copy)!important;
+}
+.publicSite :is(.valueGrid>article,.promiseSteps>article,.capabilitySection>div>article,.introductionPath li,.functionPrinciples article,.moduleCatalogue article,.publicSecurityGrid article,.howGrid article)>b {
+  position:static!important;
+  display:block;
+  width:auto!important;height:auto!important;
+  padding:0 0 24px!important;margin:0 0 24px!important;
+  border:0!important;border-bottom:1px solid var(--card-line)!important;
+  border-radius:0!important;
+  background:none!important;
+  color:var(--card-copy)!important;
+  font-family:inherit;font-size:13px;font-weight:500;line-height:1.4;
+  font-style:normal!important;
+}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a) {display:flex!important;flex-direction:column;gap:0!important}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a)>b,
+.publicSite .capabilityIcon {width:44px!important;height:44px!important;border-radius:12px!important;background:rgba(123,153,220,.12)!important;color:var(--card-ink)!important;box-shadow:none!important;margin:0 0 20px!important}
+.publicSite :is(.audienceGrid>a,.solutionOverview>div>a)>div{flex:1;display:flex;flex-direction:column;padding:0!important}
+.publicSite :is(.audienceGrid a span,.solutionOverview a>span) {position:static!important;display:block;margin-top:auto;padding-top:24px;border-top:1px solid var(--card-line);color:var(--card-ink)!important;font-weight:650;font-size:14px}
+.publicSite .audienceGrid a p{margin-bottom:24px!important}
+.publicSite .audienceGrid>a:first-child,.publicSite .capabilitySection>div>article:first-child {
+  --card-surface:linear-gradient(145deg,#dcefff,#bfceff);
+  --card-ink:#19263d;--card-copy:#435d7b;--card-line:rgba(59,86,131,.2);
+}
+.publicSite .audienceGrid>a:nth-child(2n):not(:first-child),.publicSite .howGrid article:nth-child(2n){--card-surface:linear-gradient(145deg,#f4f0ff,#e7e5fb)}
+.publicSite .solutionPage :is(.valueGrid,.solutionStories){--card-surface:linear-gradient(145deg,#fff,var(--solution-bg,#edf4ff))}
+.publicSite .valueGrid>article:first-child{--card-surface:linear-gradient(145deg,var(--solution-bg,#dcefff),#dbe5fb)}
+.publicSite .valueGrid>article:nth-child(4){--card-surface:linear-gradient(145deg,#253552,#1d2c46);--card-ink:#fff;--card-copy:#cfdbed;--card-line:rgba(176,202,236,.2)}
+.publicSite .promiseSteps {display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));border:0!important}
+.publicSite .introductionPath ol{background:none!important}
+.publicSite .solutionOverview>div{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.publicSite .solutionOverview>div>a:first-child{grid-column:span 2;grid-row:span 2;justify-content:flex-end;--card-surface:linear-gradient(145deg,#dcefff,#bfceff)}
+.publicSite .solutionOverview>div>a:nth-child(n+6){grid-column:span 2}
+.publicSite :is(.contentLead,.solutionOutcome){text-align:left}
+.publicSite .contentLead p,.publicSite .solutionOutcome p{margin-left:0;margin-right:0}
+.publicSite h2{font-weight:650;letter-spacing:-.035em}
+@media(max-width:1000px){.publicSite .solutionOverview>div{grid-template-columns:repeat(2,minmax(0,1fr))}.publicSite .solutionOverview>div>a:nth-child(n){grid-row:auto;grid-column:auto}.publicSite .solutionOverview>div>a:last-child{grid-column:1/-1}}
+@media(max-width:650px){.publicSite{--card-padding:28px}.publicSite .promiseSteps,.publicSite .solutionOverview>div{grid-template-columns:1fr}.publicSite .solutionOverview>div>a:nth-child(n){grid-column:1;grid-row:auto}.publicSite :is(.audienceGrid>a,.solutionOverview>div>a){padding-bottom:28px!important}.publicSite :is(.audienceGrid>a,.solutionOverview>div>a,.valueGrid>article,.promiseSteps>article,.capabilitySection>div>article,.introductionPath li,.v2Trust article,.functionPrinciples article,.moduleCatalogue article,.publicSecurityGrid article,.howGrid article,.solutionStories article) h3{font-size:25px!important}}
+@media(prefers-reduced-motion:reduce){.publicSite :is(article,a){transition:none!important}}

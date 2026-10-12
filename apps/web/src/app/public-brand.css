@@ -88,13 +88,14 @@
 @media(max-width:500px){.editorialHero h1{font-size:38px;line-height:1.05}}
 
 /* Moderne Startseite: zentrierter Marken-Hero, Produktionsstand Oktober 2026. */
-.editorialHero{min-height:calc(100svh - 76px);justify-content:center;text-align:center}
-.editorialHeroMedia::before{background:linear-gradient(135deg,rgba(20,29,80,.94) 0%,rgba(61,72,155,.82) 48%,rgba(105,91,174,.7) 100%)}
-.editorialHeroCopy{width:min(1040px,calc(100% - 40px));max-width:1040px;padding:105px 30px 160px;align-items:center}
+.editorialHero{height:auto;min-height:clamp(610px,68vh,690px);justify-content:center;text-align:center}
+.editorialPhoto{background-position:62% 44%;background-size:cover;filter:saturate(.98) contrast(1.03)}
+.editorialHeroMedia::before{background:linear-gradient(135deg,rgba(26,37,105,.68) 0%,rgba(65,71,157,.52) 48%,rgba(92,78,166,.38) 100%)}
+.editorialHeroCopy{width:min(940px,calc(100% - 40px));max-width:940px;padding:58px 28px 118px;align-items:center}
 .editorialKicker{justify-content:center;color:#d8eaff}.editorialKicker i{background:#a9d6ff}
-.editorialHero h1{max-width:980px;font-size:clamp(47px,5vw,72px);line-height:1.01;text-wrap:balance}
-.editorialHeroCopy>p{max-width:760px;color:#eef2ff;font-size:19px;text-wrap:balance}
-.editorialActions{justify-content:center}.editorialHeroCopy>small{padding:16px 0 0;border-left:0;border-top:2px solid rgba(193,207,255,.55);color:#d7ddf1}
+.editorialHero h1{max-width:900px;font-size:clamp(45px,4.4vw,66px);line-height:1.02;text-wrap:balance}
+.editorialHeroCopy>p{max-width:720px;color:#eef2ff;font-size:18px;line-height:1.6;text-wrap:balance}
+.editorialActions{justify-content:center;margin:27px 0 24px}.editorialHeroCopy>small{padding:12px 0 0;border-left:0;border-top:2px solid rgba(193,207,255,.55);color:#d7ddf1}
 .editorialActions .v2Button{min-width:210px}.editorialActions>a:last-child{min-width:190px}
 
 /* Zielgruppen als eigenständige Pastellkarten. */
@@ -123,7 +124,7 @@
 .solutionPage .valueGrid article{border-color:color-mix(in srgb,var(--solution-accent) 22%,#fff);background:linear-gradient(145deg,#fff,color-mix(in srgb,var(--solution-bg) 48%,#fff))}.solutionPage .valueGrid article>b{color:var(--solution-accent)}
 
 @media(max-width:1000px){.editorialAudience .audienceGrid,.publicSite .capabilitySection>div{grid-template-columns:repeat(2,1fr)}.editorialAudience .audienceGrid>a:nth-child(7){grid-column:auto}}
-@media(max-width:800px){.editorialHeroCopy{width:min(100% - 28px,760px);padding:120px 18px 92px}.editorialHero h1{font-size:clamp(38px,9.5vw,52px)}.editorialHeroCopy>p{font-size:17px}.editorialPrinciples{display:none}}
+@media(max-width:800px){.editorialHero{min-height:650px}.editorialHeroCopy{width:min(100% - 28px,760px);padding:76px 18px 58px}.editorialPhoto{background-position:64% center}.editorialHeroMedia::before{background:linear-gradient(180deg,rgba(30,39,105,.34) 0%,rgba(42,49,122,.58) 46%,rgba(26,31,83,.88) 100%)}.editorialHero h1{font-size:clamp(38px,9.5vw,52px)}.editorialHeroCopy>p{font-size:17px}.editorialPrinciples{display:none}}
 @media(max-width:650px){.editorialAudience .audienceGrid,.publicSite .capabilitySection>div{grid-template-columns:1fr}.editorialAudience .audienceGrid>a,.editorialAudience .audienceGrid>a.featured{min-height:245px}.editorialAudience .audienceGrid>a:nth-child(7){grid-column:auto}.publicSite .capabilitySection article{min-height:260px}}
-@media(max-width:500px){.editorialHero{min-height:calc(100svh - 70px)}.editorialHeroCopy{padding:95px 14px 70px}.editorialHero h1{font-size:36px}.editorialHeroCopy>p{font-size:16px}.editorialActions{width:100%;margin:27px 0 24px}.editorialHeroCopy>small{font-size:10px}.editorialAudience{padding-top:80px;padding-bottom:80px}}
+@media(max-width:500px){.editorialHero{min-height:630px}.editorialHeroCopy{padding:68px 14px 42px}.editorialHero h1{font-size:34px}.editorialHeroCopy>p{font-size:15px;line-height:1.55}.editorialActions{width:100%;margin:27px 0 24px}.editorialHeroCopy>small{display:none}.editorialAudience{padding-top:80px;padding-bottom:80px}}
 @media(prefers-reduced-motion:reduce){.editorialAudience .audienceGrid>a,.capabilityIcon,.publicSite .capabilitySection article{transition:none}}

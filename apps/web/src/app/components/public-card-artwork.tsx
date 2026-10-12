@@ -58,7 +58,8 @@ export function PublicCardArtwork() {
     const title = element.querySelector("h3")?.textContent || "Partner";
     const artwork = Artwork({title});
     const group = element.parentElement!;
-    const signature = artwork ? JSON.stringify(artwork.props.children) : "";
+    // React development elements may contain circular owner references.
+    const signature = artwork ? JSON.stringify(artwork.props.children, (key,value)=>key.startsWith("_") ? undefined : value) : "";
     const used = seen.get(group) || new Set<string>();
     const decorate = !!artwork && !used.has(signature);
     used.add(signature); seen.set(group, used);

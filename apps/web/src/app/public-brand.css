@@ -135,11 +135,11 @@
 .publicSite .editorialHeroMedia{height:800px;bottom:auto;width:100%}
 .publicSite .editorialPrinciples{position:relative;grid-column:1;grid-row:2;width:100%;box-sizing:border-box;left:auto;right:auto;bottom:auto}
 .publicSite .editorialPhoto{background-image:url('/images/network-meeting-home.webp');background-position:center;background-size:cover;filter:none}
-.publicSite .editorialHeroMedia::before{background:rgba(17,26,58,.66)}
+.publicSite .editorialHeroMedia::before{background:rgba(17,26,58,.8)}
 .publicSite .editorialHeroCopy{grid-column:1;grid-row:1;padding:60px 28px;text-shadow:0 2px 18px rgba(9,15,33,.6)}
 .publicSite .editorialActions{text-shadow:none}
 .v2.solutionPage .subHero.solutionHero{position:relative;isolation:isolate;width:100%;height:800px;min-height:800px;box-sizing:border-box;display:flex;justify-content:center;text-align:center;background-image:var(--solution-photo);background-position:center;background-size:cover;padding:70px 24px;color:#fff}
-.solutionPage .solutionHero::before{content:"";position:absolute;inset:0;z-index:-1;background:rgba(17,26,58,.66)}
+.solutionPage .solutionHero::before{content:"";position:absolute;inset:0;z-index:-1;background:rgba(17,26,58,.8)}
 .solutionPage .solutionHero::after{display:none}
 .solutionPage .solutionHero>div{width:min(940px,100%);position:relative;text-shadow:0 2px 18px rgba(9,15,33,.4)}
 .solutionPage .solutionHero>div>span{color:var(--solution-bg)}
@@ -154,4 +154,4 @@
 .solutionTone-location{--solution-photo:url('/images/network-meeting-location.webp')}
 .solutionTone-club{--solution-photo:url('/images/network-meeting-club.webp')}
 .solutionTone-ecosystem{--solution-photo:url('/images/network-meeting-ecosystem.webp')}
-@media(max-width:650px){.publicSite .editorialHeroCopy{padding:60px 20px}.publicSite .editorialHero h1{font-size:34px}.publicSite .editorialHeroMedia::before{background:rgba(17,26,58,.7)}.solutionPage .solutionHero h1{font-size:38px}.solutionPage .solutionHero p{font-size:17px}.solutionPage .solutionHero>div>div{flex-direction:column;align-items:center}.solutionPage .solutionHero .v2Button{width:min(300px,100%)}}
+@media(max-width:650px){.publicSite .editorialHeroCopy{padding:60px 20px}.publicSite .editorialHero h1{font-size:34px}.publicSite .editorialHeroMedia::before,.solutionPage .solutionHero::before{background:rgba(17,26,58,.84)}.solutionPage .solutionHero h1{font-size:38px}.solutionPage .solutionHero p{font-size:17px}.solutionPage .solutionHero>div>div{flex-direction:column;align-items:center}.solutionPage .solutionHero .v2Button{width:min(300px,100%)}}

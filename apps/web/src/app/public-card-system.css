@@ -100,8 +100,10 @@
 
 /* Long audience names get real horizontal space, never a narrow side column. */
 .publicSite .editorialAudience .audienceGrid,.publicSite .solutionOverview>div{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-.publicSite .editorialAudience .audienceGrid>a:nth-child(n),.publicSite .solutionOverview>div>a:nth-child(n){grid-column:auto;grid-row:auto;min-height:320px}
-.publicSite .editorialAudience .audienceGrid>a:last-child,.publicSite .solutionOverview>div>a:last-child{grid-column:1/-1;min-height:260px}
+.publicSite .editorialAudience .audienceGrid>a:nth-child(n),.publicSite .solutionOverview>div>a:nth-child(n){grid-column:auto!important;grid-row:auto!important;min-height:0!important;height:auto!important}
+.publicSite .editorialAudience .audienceGrid>a:last-child,.publicSite .solutionOverview>div>a:last-child{grid-column:1/-1!important;min-height:0!important}
+.publicSite .editorialAudience .audienceGrid>a:first-child>div{justify-content:flex-start!important}
+.publicSite .editorialAudience .audienceGrid>a:first-child h3{max-width:none!important}
 .publicSite .editorialAudience .audienceGrid>a:first-child h3{font-size:28px!important}
 .publicSite :is(.audienceGrid,.solutionOverview) h3{overflow-wrap:normal;hyphens:manual;text-wrap:balance}
 .publicCardArtwork{position:absolute!important;right:24px;top:24px;width:138px;height:138px;pointer-events:none;opacity:.07;color:var(--card-ink);transform:translate(var(--art-x,0px),var(--art-y,0px)) rotate(-12deg);transition:transform .3s ease,opacity .3s ease;z-index:0}

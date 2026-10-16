@@ -1,92 +1,473 @@
-import {describe,expect,it} from "vitest";
-import {AuthService} from "../auth/auth.service";
-import {EmailService} from "../auth/email.service";
-import {hashPassword} from "../auth/password";
-import {PortalStore} from "../core/portal.store";
-import {OrganizationsService} from "../organizations/organizations.service";
-import {NetworksService} from "./networks.service";
+import { describe, expect, it } from "vitest";
+import { AuthService } from "../auth/auth.service";
+import { EmailService } from "../auth/email.service";
+import { hashPassword } from "../auth/password";
+import { PortalStore } from "../core/portal.store";
+import { OrganizationsService } from "../organizations/organizations.service";
+import { NetworksService } from "./networks.service";
 
-describe("network tenancy",()=>{
- it("provides the official Giants schedule and partner discussions controlled by the initiator",async()=>{
-  const store=new PortalStore(),auth=new AuthService(store),email=new EmailService(),organizations=new OrganizationsService(store,auth,email),networks=new NetworksService(store,auth,email),now=new Date().toISOString();
-  store.users.set("owner",{id:"owner",email:"owner@example.de",passwordHash:await hashPassword("Sehr-Sicher-2026!"),firstName:"Portal",lastName:"Owner",accountRole:"platform_admin",emailVerifiedAt:now,createdAt:now});store.userByEmail.set("owner@example.de","owner");
-  const ownerToken=(await auth.login({email:"owner@example.de",password:"Sehr-Sicher-2026!"})).token,ownerBearer=`Bearer ${ownerToken}`,network=networks.create(ownerBearer,{name:"Bayer Giants",slug:"bayer-giants"});
-  const initiatorRegistration=await auth.register({email:"initiator@giants.de",password:"Sehr-Sicher-2026!",firstName:"Ina",lastName:"Initiator"});auth.verifyEmail(initiatorRegistration.verificationToken);const initiatorBearer=`Bearer ${(await auth.login({email:"initiator@giants.de",password:"Sehr-Sicher-2026!"})).token}`,initiatorOrganization=organizations.create(initiatorBearer,{legalName:"Giants Netzwerk",displayName:"Giants Netzwerk",role:"both",websiteUrl:"https://giants-leverkusen.de"});
-  networks.addMember(ownerBearer,network.id,{organizationId:initiatorOrganization.id,userId:initiatorRegistration.user.id,role:"network_admin"});networks.updateSettings(initiatorBearer,network.id,{enabledModules:["profiles","events","documents"]});networks.setAccess(ownerBearer,network.id,{status:"active"});
-  const partnerRegistration=await auth.register({email:"partner@example.de",password:"Sehr-Sicher-2026!",firstName:"Paula",lastName:"Partner"});auth.verifyEmail(partnerRegistration.verificationToken);const partnerBearer=`Bearer ${(await auth.login({email:"partner@example.de",password:"Sehr-Sicher-2026!"})).token}`,partnerOrganization=organizations.create(partnerBearer,{legalName:"Partner GmbH",displayName:"Partner GmbH",role:"both",websiteUrl:"https://partner.example"});networks.addMember(ownerBearer,network.id,{organizationId:partnerOrganization.id,userId:partnerRegistration.user.id,role:"organization_admin"});
-  expect(networks.proBSchedule(partnerBearer,network.id).games).toHaveLength(28);
-  networks.updateProBResult(initiatorBearer,network.id,"2026-10-11-weimar",{giantsScore:91,opponentScore:84});networks.updateProBDiscussion(initiatorBearer,network.id,"2026-10-11-weimar",{open:true,prompt:"Was war gut und was verbessern wir?"});const updated=networks.addProBComment(partnerBearer,network.id,"2026-10-11-weimar",{body:"Der Austausch vor dem Spiel war sehr wertvoll."});
-  expect(updated).toMatchObject({giantsScore:91,opponentScore:84,discussionOpen:true});expect(updated.comments).toHaveLength(1);
-  expect(networks.updateProBResult(initiatorBearer,network.id,"2026-10-11-weimar",{giantsScore:null,opponentScore:null})).toMatchObject({giantsScore:null,opponentScore:null,homeScore:null,awayScore:null});
-  expect(()=>networks.createContent(initiatorBearer,network.id,{type:"document",title:"Protokoll",description:"Ergebnisse des Treffens",status:"published",data:{category:"Freitext",file:null}})).toThrow(/vorgegebenen Kategorien/i);
-  const document=networks.createContent(initiatorBearer,network.id,{type:"document",title:"Protokoll",description:"Ergebnisse des Treffens",status:"published",data:{category:"Protokoll & Ergebnis",file:{name:"protokoll.pdf",mimeType:"application/pdf",size:4,dataUrl:"data:application/pdf;base64,AA=="}}});expect(document.data.file).toMatchObject({name:"protokoll.pdf",mimeType:"application/pdf"});
-  const event=networks.createContent(initiatorBearer,network.id,{type:"event",title:"Partnerabend",description:"Gemeinsamer Austausch",status:"published",startsAt:"2026-11-01T18:00:00.000Z",data:{category:"Netzwerkveranstaltung",recapSummary:"Ein erfolgreicher Partnerabend.",recapImages:["data:image/png;base64,AA=="]}});networks.updateOwnAttendance(initiatorBearer,network.id,event.id,{response:"registered",companionCount:1});expect(networks.attendance(initiatorBearer,network.id,event.id)).toHaveLength(1);expect(networks.dashboard(initiatorBearer,network.id).eventRecaps).toContainEqual(expect.objectContaining({id:event.id}));
-  expect(networks.deleteContent(initiatorBearer,network.id,event.id)).toEqual({deleted:true,id:event.id});expect(networks.listContent(initiatorBearer,network.id,"event")).not.toContainEqual(expect.objectContaining({id:event.id}));expect(networks.dashboard(initiatorBearer,network.id).eventRecaps).not.toContainEqual(expect.objectContaining({id:event.id}));expect(networks.dashboard(initiatorBearer,network.id).upcomingEvents).not.toContainEqual(expect.objectContaining({id:event.id}));expect(()=>networks.attendance(initiatorBearer,network.id,event.id)).toThrow(/nicht gefunden/i);
- });
- it("allows only the platform owner to activate trials and appoint network administrators",async()=>{
-  const store=new PortalStore();const auth=new AuthService(store);const organizations=new OrganizationsService(store,auth,new EmailService());const networks=new NetworksService(store,auth,new EmailService());
-  const adminId="platform-admin";store.users.set(adminId,{id:adminId,email:"admin@b2bmatching.de",passwordHash:await hashPassword("Sehr-Sicher-2026!"),firstName:"Portal",lastName:"Admin",accountRole:"platform_admin",emailVerifiedAt:new Date().toISOString(),createdAt:new Date().toISOString()});store.userByEmail.set("admin@b2bmatching.de",adminId);
-  const adminLogin=await auth.login({email:"admin@b2bmatching.de",password:"Sehr-Sicher-2026!"});const adminBearer=`Bearer ${adminLogin.token}`;
-  expect(()=>networks.publicBySlug(undefined,"test-netzwerk")).toThrow();
-  const created=networks.create(adminBearer,{name:"Test Netzwerk",slug:"test-netzwerk",websiteUrl:"https://netzwerk.example",enabledModules:["members","events"]});
-  const trial=networks.setAccess(adminBearer,created.id,{status:"trial",trialDays:10,selfRegistration:false});
-  expect(trial.status).toBe("trial");expect(trial.trialEndsAt).not.toBeNull();
+describe("network tenancy", () => {
+  it("provides the official Giants schedule and partner discussions controlled by the initiator", async () => {
+    const store = new PortalStore(),
+      auth = new AuthService(store),
+      email = new EmailService(),
+      organizations = new OrganizationsService(store, auth, email),
+      networks = new NetworksService(store, auth, email),
+      now = new Date().toISOString();
+    store.users.set("owner", {
+      id: "owner",
+      email: "owner@example.de",
+      passwordHash: await hashPassword("Sehr-Sicher-2026!"),
+      firstName: "Portal",
+      lastName: "Owner",
+      accountRole: "platform_admin",
+      emailVerifiedAt: now,
+      createdAt: now,
+    });
+    store.userByEmail.set("owner@example.de", "owner");
+    const ownerToken = (
+        await auth.login({
+          email: "owner@example.de",
+          password: "Sehr-Sicher-2026!",
+        })
+      ).token,
+      ownerBearer = `Bearer ${ownerToken}`,
+      network = networks.create(ownerBearer, {
+        name: "Bayer Giants",
+        slug: "bayer-giants",
+      });
+    const initiatorRegistration = await auth.register({
+      email: "initiator@giants.de",
+      password: "Sehr-Sicher-2026!",
+      firstName: "Ina",
+      lastName: "Initiator",
+    });
+    auth.verifyEmail(initiatorRegistration.verificationToken);
+    const initiatorBearer = `Bearer ${(await auth.login({ email: "initiator@giants.de", password: "Sehr-Sicher-2026!" })).token}`,
+      initiatorOrganization = organizations.create(initiatorBearer, {
+        legalName: "Giants Netzwerk",
+        displayName: "Giants Netzwerk",
+        role: "both",
+        websiteUrl: "https://giants-leverkusen.de",
+      });
+    networks.addMember(ownerBearer, network.id, {
+      organizationId: initiatorOrganization.id,
+      userId: initiatorRegistration.user.id,
+      role: "network_admin",
+    });
+    networks.updateSettings(initiatorBearer, network.id, {
+      enabledModules: ["profiles", "events", "documents"],
+    });
+    networks.setAccess(ownerBearer, network.id, {
+      status: "active",
+      billingMode: "cooperation_free",
+    });
+    const partnerRegistration = await auth.register({
+      email: "partner@example.de",
+      password: "Sehr-Sicher-2026!",
+      firstName: "Paula",
+      lastName: "Partner",
+    });
+    auth.verifyEmail(partnerRegistration.verificationToken);
+    const partnerBearer = `Bearer ${(await auth.login({ email: "partner@example.de", password: "Sehr-Sicher-2026!" })).token}`,
+      partnerOrganization = organizations.create(partnerBearer, {
+        legalName: "Partner GmbH",
+        displayName: "Partner GmbH",
+        role: "both",
+        websiteUrl: "https://partner.example",
+      });
+    networks.addMember(ownerBearer, network.id, {
+      organizationId: partnerOrganization.id,
+      userId: partnerRegistration.user.id,
+      role: "organization_admin",
+    });
+    expect(networks.proBSchedule(partnerBearer, network.id).games).toHaveLength(
+      28,
+    );
+    networks.updateProBResult(
+      initiatorBearer,
+      network.id,
+      "2026-10-11-weimar",
+      { giantsScore: 91, opponentScore: 84 },
+    );
+    networks.updateProBDiscussion(
+      initiatorBearer,
+      network.id,
+      "2026-10-11-weimar",
+      { open: true, prompt: "Was war gut und was verbessern wir?" },
+    );
+    const updated = networks.addProBComment(
+      partnerBearer,
+      network.id,
+      "2026-10-11-weimar",
+      { body: "Der Austausch vor dem Spiel war sehr wertvoll." },
+    );
+    expect(updated).toMatchObject({
+      giantsScore: 91,
+      opponentScore: 84,
+      discussionOpen: true,
+    });
+    expect(updated.comments).toHaveLength(1);
+    expect(
+      networks.updateProBResult(
+        initiatorBearer,
+        network.id,
+        "2026-10-11-weimar",
+        { giantsScore: null, opponentScore: null },
+      ),
+    ).toMatchObject({
+      giantsScore: null,
+      opponentScore: null,
+      homeScore: null,
+      awayScore: null,
+    });
+    expect(() =>
+      networks.createContent(initiatorBearer, network.id, {
+        type: "document",
+        title: "Protokoll",
+        description: "Ergebnisse des Treffens",
+        status: "published",
+        data: { category: "Freitext", file: null },
+      }),
+    ).toThrow(/vorgegebenen Kategorien/i);
+    const document = networks.createContent(initiatorBearer, network.id, {
+      type: "document",
+      title: "Protokoll",
+      description: "Ergebnisse des Treffens",
+      status: "published",
+      data: {
+        category: "Protokoll & Ergebnis",
+        file: {
+          name: "protokoll.pdf",
+          mimeType: "application/pdf",
+          size: 4,
+          dataUrl: "data:application/pdf;base64,AA==",
+        },
+      },
+    });
+    expect(document.data.file).toMatchObject({
+      name: "protokoll.pdf",
+      mimeType: "application/pdf",
+    });
+    const event = networks.createContent(initiatorBearer, network.id, {
+      type: "event",
+      title: "Partnerabend",
+      description: "Gemeinsamer Austausch",
+      status: "published",
+      startsAt: "2026-11-01T18:00:00.000Z",
+      data: {
+        category: "Netzwerkveranstaltung",
+        recapSummary: "Ein erfolgreicher Partnerabend.",
+        recapImages: ["data:image/png;base64,AA=="],
+      },
+    });
+    networks.updateOwnAttendance(initiatorBearer, network.id, event.id, {
+      response: "registered",
+      companionCount: 1,
+    });
+    expect(
+      networks.attendance(initiatorBearer, network.id, event.id),
+    ).toHaveLength(1);
+    expect(
+      networks.dashboard(initiatorBearer, network.id).eventRecaps,
+    ).toContainEqual(expect.objectContaining({ id: event.id }));
+    expect(
+      networks.deleteContent(initiatorBearer, network.id, event.id),
+    ).toEqual({ deleted: true, id: event.id });
+    expect(
+      networks.listContent(initiatorBearer, network.id, "event"),
+    ).not.toContainEqual(expect.objectContaining({ id: event.id }));
+    expect(
+      networks.dashboard(initiatorBearer, network.id).eventRecaps,
+    ).not.toContainEqual(expect.objectContaining({ id: event.id }));
+    expect(
+      networks.dashboard(initiatorBearer, network.id).upcomingEvents,
+    ).not.toContainEqual(expect.objectContaining({ id: event.id }));
+    expect(() =>
+      networks.attendance(initiatorBearer, network.id, event.id),
+    ).toThrow(/nicht gefunden/i);
+  });
+  it("allows only the platform owner to activate trials and appoint network administrators", async () => {
+    const store = new PortalStore();
+    const auth = new AuthService(store);
+    const organizations = new OrganizationsService(
+      store,
+      auth,
+      new EmailService(),
+    );
+    const networks = new NetworksService(store, auth, new EmailService());
+    const adminId = "platform-admin";
+    store.users.set(adminId, {
+      id: adminId,
+      email: "admin@b2bmatching.de",
+      passwordHash: await hashPassword("Sehr-Sicher-2026!"),
+      firstName: "Portal",
+      lastName: "Admin",
+      accountRole: "platform_admin",
+      emailVerifiedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+    store.userByEmail.set("admin@b2bmatching.de", adminId);
+    const adminLogin = await auth.login({
+      email: "admin@b2bmatching.de",
+      password: "Sehr-Sicher-2026!",
+    });
+    const adminBearer = `Bearer ${adminLogin.token}`;
+    expect(() => networks.publicBySlug(undefined, "test-netzwerk")).toThrow();
+    const created = networks.create(adminBearer, {
+      name: "Test Netzwerk",
+      slug: "test-netzwerk",
+      websiteUrl: "https://netzwerk.example",
+      enabledModules: ["members", "events"],
+    });
+    const trial = networks.setAccess(adminBearer, created.id, {
+      status: "trial",
+      trialDays: 10,
+      selfRegistration: false,
+    });
+    expect(trial.status).toBe("trial");
+    expect(trial.trialEndsAt).not.toBeNull();
 
-  const registration=await auth.register({email:"mitglied@example.de",password:"Sehr-Sicher-2026!",firstName:"Mara",lastName:"Klein"});auth.verifyEmail(registration.verificationToken);
-  const login=await auth.login({email:"mitglied@example.de",password:"Sehr-Sicher-2026!"});const bearer=`Bearer ${login.token}`;
-  const organization=organizations.create(bearer,{legalName:"Mitglied GmbH",displayName:"Mitglied",role:"both",websiteUrl:"https://example.de"});
-  const membership=networks.addMember(adminBearer,created.id,{organizationId:organization.id,userId:registration.user.id,role:"organization_admin"});
-  expect(membership).toMatchObject({networkId:created.id,organizationId:organization.id,status:"active",role:"organization_admin"});
-  const partnerProfile=networks.updateOwnProfile(bearer,created.id,{companyName:"Mitglied GmbH",tagline:"Gemeinsam besser zusammenarbeiten",description:"Wir unterstützen Netzwerkpartner persönlich und zuverlässig bei anspruchsvollen Projekten.",services:"Beratung, Projektmanagement und Umsetzung",industries:"Mittelstand, Sport",street:"Musterstraße 1",postalCode:"12345",city:"Musterstadt",country:"Deutschland",websiteUrl:"https://example.de",contactName:"Mara Klein",contactPosition:"Geschäftsführung",contactEmail:"mitglied@example.de",contactPhone:"+49 123 456789",publish:true});
-  expect(partnerProfile.status).toBe("published");
-  expect(networks.mine(bearer)[0].network.slug).toBe("test-netzwerk");
-  expect(networks.publicBySlug(bearer,"test-netzwerk").slug).toBe("test-netzwerk");
-  const outsiderRegistration=await auth.register({email:"extern@example.de",password:"Sehr-Sicher-2026!",firstName:"Eva",lastName:"Extern"});auth.verifyEmail(outsiderRegistration.verificationToken);
-  const outsiderLogin=await auth.login({email:"extern@example.de",password:"Sehr-Sicher-2026!"});
-  expect(()=>networks.publicBySlug(`Bearer ${outsiderLogin.token}`,"test-netzwerk")).toThrow();
-  expect(()=>networks.apply(`Bearer ${outsiderLogin.token}`,"test-netzwerk",{organizationId:organization.id})).toThrow(/Einladungslink/);
-  expect(()=>networks.addMember(bearer,created.id,{organizationId:organization.id,userId:registration.user.id,role:"network_admin"})).toThrow();
-  const networkAdmin=await networks.appointAdministrator(adminBearer,created.id,{email:"mitglied@example.de"});
-  expect(networkAdmin.role).toBe("network_admin");
-  expect(networks.listMembers(bearer,created.id)).toHaveLength(0);
-  expect(()=>networks.ownProfile(bearer,created.id)).toThrow(/keine eigene Partnerseite/);
-  expect(networks.adminList(adminBearer)[0].administrator?.user?.email).toBe("mitglied@example.de");
-  const invited=await networks.appointAdministrator(adminBearer,created.id,{email:"initiator@example.de"});
-  expect(invited).toMatchObject({invited:true,registrationRequired:true,role:"network_admin"});
-  const initiatorRegistration=await auth.register({email:"initiator@example.de",password:"Sehr-Sicher-2026!",firstName:"Ina",lastName:"Initiator"});auth.verifyEmail(initiatorRegistration.verificationToken);
-  const initiatorLogin=await auth.login({email:"initiator@example.de",password:"Sehr-Sicher-2026!"});const initiatorBearer=`Bearer ${initiatorLogin.token}`;
-  const claimed=networks.claimInitiatorInvitation(initiatorBearer);
-  expect(claimed).toMatchObject({claimed:true,network:{slug:"test-netzwerk"},membership:{role:"network_admin",status:"active"}});
-  expect(organizations.listMine(initiatorBearer)[0]).toMatchObject({role:"network",displayName:"Test Netzwerk"});
-  expect(networks.mine(initiatorBearer)[0]).toMatchObject({membership:{role:"network_admin"},network:{slug:"test-netzwerk"}});
-  networks.updateSettings(bearer,created.id,{enabledModules:["profiles","events"],name:"Test Netzwerk",primaryColor:"#14532d",secondaryColor:"#052e16"});
-  networks.setAccess(adminBearer,created.id,{status:"active"});
-  const order=networks.order(bearer,created.id,{invoiceCompany:"Mitglied GmbH",invoiceContact:"Mara Klein",invoiceEmail:"rechnung@example.de",invoiceStreet:"Musterstraße 1",invoicePostalCode:"12345",invoiceCity:"Musterstadt",invoiceCountry:"Deutschland",billingCycle:"annual",participantCount:1,pricingMode:"individual",selectedModules:["profiles","events"],authorityConfirmed:true,termsAccepted:true,paymentObligationAccepted:true});
-  expect(order.monthlyNetCents).toBe(2600);expect(order.selectedModules).toEqual(["profiles","events"]);expect(order.status).toBe("accepted");expect(order.paymentStatus).toBe("open");
-  expect(networks.publicBySlug(bearer,"test-netzwerk").enabledModules).toEqual(expect.arrayContaining(["members","branding","profiles","events"]));
-  expect(()=>networks.revenues(adminBearer,created.id)).toThrow(/nicht angeboten/);
-  networks.addMember(adminBearer,created.id,{organizationId:organization.id,userId:outsiderRegistration.user.id,role:"member"});
-  expect(networks.listMembers(bearer,created.id)[0].organization?.networkProfile?.services).toContain("Beratung");
-  expect(networks.publicBySlug(`Bearer ${outsiderLogin.token}`,"test-netzwerk").enabledModules).not.toContain("events");
-  networks.setAccess(adminBearer,created.id,{status:"active",billingMode:"cooperation_free"});
-  expect(networks.publicBySlug(`Bearer ${outsiderLogin.token}`,"test-netzwerk").enabledModules).toEqual(expect.arrayContaining(["profiles","events","communication","community","services","documents","tasks","analytics","revenue"]));
-  expect(()=>networks.order(`Bearer ${outsiderLogin.token}`,created.id,{billingCycle:"annual"})).toThrow("vollständig kostenfrei");
-  const second=networks.create(adminBearer,{name:"Zweites Netzwerk",slug:"zweites-netzwerk",websiteUrl:"https://zweites.example",enabledModules:["members","events"]});
-  expect(second).toMatchObject({status:"draft",trialEndsAt:null});
-  expect(second.settings.selfRegistration).toBe(false);
-  networks.updateSettings(adminBearer,second.id,{primaryColor:"#1d4ed8",secondaryColor:"#172554"});
-  networks.setAccess(adminBearer,second.id,{status:"active"});
-  expect(networks.branding("test-netzwerk")).toMatchObject({primaryColor:"#14532d",secondaryColor:"#052e16"});expect(networks.branding("zweites-netzwerk")).toMatchObject({primaryColor:"#1d4ed8",secondaryColor:"#172554"});expect(()=>networks.publicBySlug(bearer,"zweites-netzwerk")).toThrow(/Kein Zugriff/);
-  expect(networks.adminList(adminBearer)).toHaveLength(2);
-  const removed=networks.remove(adminBearer,created.id,{confirmSlug:"test-netzwerk"});
-  expect(removed).toMatchObject({deleted:true,deletedOrganizations:2,deletedUsers:3});
-  expect(store.users.has(registration.user.id)).toBe(false);
-  expect(store.users.has(outsiderRegistration.user.id)).toBe(false);
-  expect(store.userByEmail.has("mitglied@example.de")).toBe(false);
-  expect(store.userByEmail.has("extern@example.de")).toBe(false);
-  expect(store.userByEmail.has("initiator@example.de")).toBe(false);
-  expect(store.organizations.has(organization.id)).toBe(false);
-  expect(store.users.has(adminId)).toBe(true);
-  expect(store.networks.has(created.id)).toBe(false);
- });
+    const registration = await auth.register({
+      email: "mitglied@example.de",
+      password: "Sehr-Sicher-2026!",
+      firstName: "Mara",
+      lastName: "Klein",
+    });
+    auth.verifyEmail(registration.verificationToken);
+    const login = await auth.login({
+      email: "mitglied@example.de",
+      password: "Sehr-Sicher-2026!",
+    });
+    const bearer = `Bearer ${login.token}`;
+    const organization = organizations.create(bearer, {
+      legalName: "Mitglied GmbH",
+      displayName: "Mitglied",
+      role: "both",
+      websiteUrl: "https://example.de",
+    });
+    const membership = networks.addMember(adminBearer, created.id, {
+      organizationId: organization.id,
+      userId: registration.user.id,
+      role: "organization_admin",
+    });
+    expect(membership).toMatchObject({
+      networkId: created.id,
+      organizationId: organization.id,
+      status: "active",
+      role: "organization_admin",
+    });
+    const partnerProfile = networks.updateOwnProfile(bearer, created.id, {
+      companyName: "Mitglied GmbH",
+      tagline: "Gemeinsam besser zusammenarbeiten",
+      description:
+        "Wir unterstützen Netzwerkpartner persönlich und zuverlässig bei anspruchsvollen Projekten.",
+      services: "Beratung, Projektmanagement und Umsetzung",
+      industries: "Mittelstand, Sport",
+      street: "Musterstraße 1",
+      postalCode: "12345",
+      city: "Musterstadt",
+      country: "Deutschland",
+      websiteUrl: "https://example.de",
+      contactName: "Mara Klein",
+      contactPosition: "Geschäftsführung",
+      contactEmail: "mitglied@example.de",
+      contactPhone: "+49 123 456789",
+      publish: true,
+    });
+    expect(partnerProfile.status).toBe("published");
+    expect(networks.mine(bearer)[0].network.slug).toBe("test-netzwerk");
+    expect(networks.publicBySlug(bearer, "test-netzwerk").slug).toBe(
+      "test-netzwerk",
+    );
+    const outsiderRegistration = await auth.register({
+      email: "extern@example.de",
+      password: "Sehr-Sicher-2026!",
+      firstName: "Eva",
+      lastName: "Extern",
+    });
+    auth.verifyEmail(outsiderRegistration.verificationToken);
+    const outsiderLogin = await auth.login({
+      email: "extern@example.de",
+      password: "Sehr-Sicher-2026!",
+    });
+    expect(() =>
+      networks.publicBySlug(`Bearer ${outsiderLogin.token}`, "test-netzwerk"),
+    ).toThrow();
+    expect(() =>
+      networks.apply(`Bearer ${outsiderLogin.token}`, "test-netzwerk", {
+        organizationId: organization.id,
+      }),
+    ).toThrow(/Einladungslink/);
+    expect(() =>
+      networks.addMember(bearer, created.id, {
+        organizationId: organization.id,
+        userId: registration.user.id,
+        role: "network_admin",
+      }),
+    ).toThrow();
+    const networkAdmin = await networks.appointAdministrator(
+      adminBearer,
+      created.id,
+      { email: "mitglied@example.de" },
+    );
+    expect(networkAdmin.role).toBe("network_admin");
+    expect(networks.listMembers(bearer, created.id)).toHaveLength(0);
+    expect(() => networks.ownProfile(bearer, created.id)).toThrow(
+      /keine eigene Partnerseite/,
+    );
+    expect(networks.adminList(adminBearer)[0].administrator?.user?.email).toBe(
+      "mitglied@example.de",
+    );
+    const invited = await networks.appointAdministrator(
+      adminBearer,
+      created.id,
+      { email: "initiator@example.de" },
+    );
+    expect(invited).toMatchObject({
+      invited: true,
+      registrationRequired: true,
+      role: "network_admin",
+    });
+    const initiatorRegistration = await auth.register({
+      email: "initiator@example.de",
+      password: "Sehr-Sicher-2026!",
+      firstName: "Ina",
+      lastName: "Initiator",
+    });
+    auth.verifyEmail(initiatorRegistration.verificationToken);
+    const initiatorLogin = await auth.login({
+      email: "initiator@example.de",
+      password: "Sehr-Sicher-2026!",
+    });
+    const initiatorBearer = `Bearer ${initiatorLogin.token}`;
+    const claimed = networks.claimInitiatorInvitation(initiatorBearer);
+    expect(claimed).toMatchObject({
+      claimed: true,
+      network: { slug: "test-netzwerk" },
+      membership: { role: "network_admin", status: "active" },
+    });
+    expect(organizations.listMine(initiatorBearer)[0]).toMatchObject({
+      role: "network",
+      displayName: "Test Netzwerk",
+    });
+    expect(networks.mine(initiatorBearer)[0]).toMatchObject({
+      membership: { role: "network_admin" },
+      network: { slug: "test-netzwerk" },
+    });
+    networks.updateSettings(bearer, created.id, {
+      enabledModules: ["profiles", "events"],
+      name: "Test Netzwerk",
+      primaryColor: "#14532d",
+      secondaryColor: "#052e16",
+    });
+    networks.setAccess(adminBearer, created.id, { status: "active" });
+    const order = networks.order(bearer, created.id, {
+      invoiceCompany: "Mitglied GmbH",
+      invoiceContact: "Mara Klein",
+      invoiceEmail: "rechnung@example.de",
+      invoiceStreet: "Musterstraße 1",
+      invoicePostalCode: "12345",
+      invoiceCity: "Musterstadt",
+      invoiceCountry: "Deutschland",
+      billingCycle: "annual",
+      participantCount: 1,
+      pricingMode: "individual",
+      selectedModules: ["profiles", "events"],
+      authorityConfirmed: true,
+      termsAccepted: true,
+      paymentObligationAccepted: true,
+    });
+    expect(order.monthlyNetCents).toBe(2600);
+    expect(order.selectedModules).toEqual(["profiles", "events"]);
+    expect(order.status).toBe("accepted");
+    expect(order.paymentStatus).toBe("open");
+    expect(
+      networks.publicBySlug(bearer, "test-netzwerk").enabledModules,
+    ).toEqual(
+      expect.arrayContaining(["members", "branding", "profiles", "events"]),
+    );
+    expect(() => networks.revenues(adminBearer, created.id)).toThrow(
+      /nicht angeboten/,
+    );
+    networks.addMember(adminBearer, created.id, {
+      organizationId: organization.id,
+      userId: outsiderRegistration.user.id,
+      role: "member",
+    });
+    expect(
+      networks.listMembers(bearer, created.id)[0].organization?.networkProfile
+        ?.services,
+    ).toContain("Beratung");
+    expect(
+      networks.publicBySlug(`Bearer ${outsiderLogin.token}`, "test-netzwerk")
+        .enabledModules,
+    ).not.toContain("events");
+    networks.setAccess(adminBearer, created.id, {
+      status: "active",
+      billingMode: "cooperation_free",
+    });
+    expect(
+      networks.publicBySlug(`Bearer ${outsiderLogin.token}`, "test-netzwerk")
+        .enabledModules,
+    ).toEqual(
+      expect.arrayContaining([
+        "profiles",
+        "events",
+        "communication",
+        "community",
+        "services",
+        "documents",
+        "tasks",
+        "analytics",
+        "revenue",
+      ]),
+    );
+    expect(() =>
+      networks.order(`Bearer ${outsiderLogin.token}`, created.id, {
+        billingCycle: "annual",
+      }),
+    ).toThrow("vollständig kostenfrei");
+    const second = networks.create(adminBearer, {
+      name: "Zweites Netzwerk",
+      slug: "zweites-netzwerk",
+      websiteUrl: "https://zweites.example",
+      enabledModules: ["members", "events"],
+    });
+    expect(second).toMatchObject({ status: "draft", trialEndsAt: null });
+    expect(second.settings.selfRegistration).toBe(false);
+    networks.updateSettings(adminBearer, second.id, {
+      primaryColor: "#1d4ed8",
+      secondaryColor: "#172554",
+    });
+    networks.setAccess(adminBearer, second.id, { status: "active" });
+    expect(networks.branding("test-netzwerk")).toMatchObject({
+      primaryColor: "#14532d",
+      secondaryColor: "#052e16",
+    });
+    expect(networks.branding("zweites-netzwerk")).toMatchObject({
+      primaryColor: "#1d4ed8",
+      secondaryColor: "#172554",
+    });
+    expect(() => networks.publicBySlug(bearer, "zweites-netzwerk")).toThrow(
+      /Kein Zugriff/,
+    );
+    expect(networks.adminList(adminBearer)).toHaveLength(2);
+    const removed = networks.remove(adminBearer, created.id, {
+      confirmSlug: "test-netzwerk",
+    });
+    expect(removed).toMatchObject({
+      deleted: true,
+      deletedOrganizations: 2,
+      deletedUsers: 3,
+    });
+    expect(store.users.has(registration.user.id)).toBe(false);
+    expect(store.users.has(outsiderRegistration.user.id)).toBe(false);
+    expect(store.userByEmail.has("mitglied@example.de")).toBe(false);
+    expect(store.userByEmail.has("extern@example.de")).toBe(false);
+    expect(store.userByEmail.has("initiator@example.de")).toBe(false);
+    expect(store.organizations.has(organization.id)).toBe(false);
+    expect(store.users.has(adminId)).toBe(true);
+    expect(store.networks.has(created.id)).toBe(false);
+  });
 });

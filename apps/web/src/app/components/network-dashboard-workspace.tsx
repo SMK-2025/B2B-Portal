@@ -1,23 +1,269 @@
 "use client";
 import Link from "next/link";
-import {useEffect,useState} from "react";
-import {getPortalSession,portalRequest} from "../lib/portal-api";
-import {useNetworkAccess} from "./network-shell";
-type Item={id:string;type:string;title:string;description:string;startsAt:string|null;updatedAt:string;data:Record<string,unknown>};
-type Dashboard={network:{id:string;name:string;status:string;trialEndsAt:string|null;logoUrl:string|null;primaryColor:string;secondaryColor:string;settings?:{setupCompletedAt?:string|null}};members:{total:number;active:number;pending:number};content:{total:number;events:number;topics:number;tasks:number;documents:number};recent:Item[];recentMembers:Array<{id:string;name:string;joinedAt:string;logoUrl:string|null}>;upcomingEvents:Item[];eventRecaps:Item[];announcements:Item[]};
-export function NetworkDashboardWorkspace({slug}:{slug:string}){
- const access=useNetworkAccess(),[data,setData]=useState<Dashboard|null>(null),[message,setMessage]=useState(""),base=`/portal/netzwerk/${slug}`;
- useEffect(()=>{const token=getPortalSession();if(!token){setMessage("Bitte melden Sie sich erneut an.");return}portalRequest<{id:string}>(`/networks/public/${slug}`,{token}).then(network=>portalRequest<Dashboard>(`/networks/${network.id}/dashboard`,{token})).then(setData).catch(error=>setMessage(error instanceof Error?error.message:"Die Netzwerkübersicht konnte nicht geladen werden."))},[slug]);
- if(!data)return <section className="networkCard networkLoading"><p>{message||"Netzwerkübersicht wird geladen …"}</p></section>;
- return <>
-  {data.network.status!=="trial"&&!access?.isInitiator&&!access?.enabledModules.includes("profiles")&&<section className="networkTrialBanner"><div className="networkTrialCopy"><span>IHR PERSÖNLICHER ZUGANG</span><h2>Module auswählen und Netzwerkzugang aktivieren</h2><p>Der Initiator hat die verfügbaren Funktionen festgelegt. Buchen Sie Unternehmensseiten und Ihre gewünschten Zusatzmodule.</p></div><div className="networkTrialBooking"><p><strong>ab 19 €</strong><span>netto je Monat<br/>für Ihren Nutzerzugang</span></p><small>Immer zwölf Monate im Voraus</small><Link href={`${base}/buchen` as never}>Persönliche Module auswählen →</Link></div></section>}
-  <section className="networkBrandedHero" style={{background:`radial-gradient(circle at 85% 15%, ${data.network.primaryColor}88, transparent 38%),linear-gradient(120deg,${data.network.secondaryColor},${data.network.primaryColor})`}}><div><span>GEMEINSAME PARTNERSTARTSEITE</span><h2>{data.network.name}</h2><p>Informationen, Kontakte und Aktivitäten Ihres geschlossenen Partnerportals an einem Ort.</p></div>{data.network.logoUrl&&<img src={data.network.logoUrl} alt={`${data.network.name} Logo`}/>}</section>
-  <div className="networkDashboardGrid"><div>
-   {access?.enabledModules.includes("community")&&<section className="networkCard"><header><div><span>MITTEILUNGEN</span><h2>Neuigkeiten des Initiators</h2></div><Link href={`${base}/themen` as never}>Alle ansehen →</Link></header><div className="networkNewsList">{data.announcements.map(item=><article key={item.id}><time>{new Date(item.updatedAt).toLocaleDateString("de-DE")}</time><div><h3>{item.title}</h3><p>{item.description}</p></div></article>)}{!data.announcements.length&&<div className="networkEmpty"><b>Noch keine Mitteilungen</b><p>Neuigkeiten des Initiators erscheinen hier.</p></div>}</div></section>}
-   {access?.enabledModules.includes("events")&&<section className="networkCard"><header><div><span>KALENDER</span><h2>Kommende Veranstaltungen</h2></div><Link href={`${base}/veranstaltungen` as never}>Kalender öffnen →</Link></header><div className="networkEventRows">{data.upcomingEvents.map(item=><article key={item.id}><time><small>{new Date(item.startsAt!).toLocaleString("de-DE",{month:"short"})}</small><strong>{new Date(item.startsAt!).getDate()}</strong></time><div><h3>{item.title}</h3><p>{item.description}</p></div><Link href={`${base}/veranstaltungen` as never}>Details</Link></article>)}{!data.upcomingEvents.length&&<div className="networkEmpty"><b>Keine bevorstehenden Termine</b></div>}</div></section>}
-   {access?.enabledModules.includes("events")&&data.eventRecaps.length>0&&<section className="networkCard"><header><div><span>RÜCKBLICKE</span><h2>Das waren unsere letzten Treffen</h2></div><Link href={`${base}/rueckblicke` as never}>Alle Rückblicke →</Link></header><div className="networkRecapPreview">{data.eventRecaps.map(item=><Link key={item.id} href={`${base}/rueckblicke` as never}>{Array.isArray(item.data.recapImages)&&typeof item.data.recapImages[0]==="string"&&<img src={item.data.recapImages[0]} alt=""/>}<span><small>{new Date(item.startsAt||item.updatedAt).toLocaleDateString("de-DE")}</small><b>{item.title}</b><p>{String(item.data.recapSummary||"")}</p></span></Link>)}</div></section>}
-  </div><aside>
-   <section className="networkCard"><header><div><span>SCHNELLZUGRIFF</span><h2>Ihre Partnerbereiche</h2></div></header><nav className="networkQuickLinks">{[["profil","Meine Partnerseite","profiles"],["mitglieder","Partnerverzeichnis","profiles"],["veranstaltungen","Veranstaltungen","events"],["rueckblicke","Rückblicke","events"],["kommunikation","Nachrichten","communication"],["auswertungen","Auswertungen","analytics"],["einstellungen","Netzwerk-Verwaltung",""]].filter(([path,,module])=>(!module||access?.enabledModules.includes(module))&&!(access?.isInitiator&&path==="profil")&&(!access?.isInitiator||path!=="auswertungen"||access.enabledModules.includes("analytics"))).map(([path,label])=><Link key={path} href={`${base}/${path}` as never}>{label}<b>→</b></Link>)}</nav></section>
-  </aside></div>
- </>
+import { useEffect, useState } from "react";
+import { getPortalSession, portalRequest } from "../lib/portal-api";
+import { useNetworkAccess } from "./network-shell";
+type Item = {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  startsAt: string | null;
+  updatedAt: string;
+  data: Record<string, unknown>;
+};
+type Dashboard = {
+  network: {
+    id: string;
+    name: string;
+    status: string;
+    trialEndsAt: string | null;
+    logoUrl: string | null;
+    primaryColor: string;
+    secondaryColor: string;
+    settings?: { setupCompletedAt?: string | null };
+  };
+  members: { total: number; active: number; pending: number };
+  content: {
+    total: number;
+    events: number;
+    topics: number;
+    tasks: number;
+    documents: number;
+  };
+  recent: Item[];
+  recentMembers: Array<{
+    id: string;
+    name: string;
+    joinedAt: string;
+    logoUrl: string | null;
+  }>;
+  upcomingEvents: Item[];
+  eventRecaps: Item[];
+  announcements: Item[];
+};
+export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
+  const access = useNetworkAccess(),
+    [data, setData] = useState<Dashboard | null>(null),
+    [message, setMessage] = useState(""),
+    base = `/portal/netzwerk/${slug}`;
+  useEffect(() => {
+    const token = getPortalSession();
+    if (!token) {
+      setMessage("Bitte melden Sie sich erneut an.");
+      return;
+    }
+    portalRequest<{ id: string }>(`/networks/public/${slug}`, { token })
+      .then((network) =>
+        portalRequest<Dashboard>(`/networks/${network.id}/dashboard`, {
+          token,
+        }),
+      )
+      .then(setData)
+      .catch((error) =>
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : "Die Netzwerkübersicht konnte nicht geladen werden.",
+        ),
+      );
+  }, [slug]);
+  if (!data)
+    return (
+      <section className="networkCard networkLoading">
+        <p>{message || "Netzwerkübersicht wird geladen …"}</p>
+      </section>
+    );
+  return (
+    <>
+      {data.network.status !== "trial" &&
+        !access?.isInitiator &&
+        !access?.enabledModules.includes("profiles") && (
+          <section className="networkTrialBanner">
+            <div className="networkTrialCopy">
+              <span>IHR PERSÖNLICHER ZUGANG</span>
+              <h2>Module auswählen und Netzwerkzugang aktivieren</h2>
+              <p>
+                Der Initiator hat die verfügbaren Funktionen festgelegt. Buchen
+                Sie Unternehmensseiten und Ihre gewünschten Zusatzmodule.
+              </p>
+            </div>
+            <div className="networkTrialBooking">
+              <p>
+                <strong>ab 19 €</strong>
+                <span>
+                  netto je Monat
+                  <br />
+                  für Ihren Nutzerzugang
+                </span>
+              </p>
+              <small>Immer zwölf Monate im Voraus</small>
+              <Link href={`${base}/buchen` as never}>
+                Persönliche Module auswählen →
+              </Link>
+            </div>
+          </section>
+        )}
+      <section
+        className="networkBrandedHero"
+        style={{
+          background: `radial-gradient(circle at 85% 15%, ${data.network.primaryColor}88, transparent 38%),linear-gradient(120deg,${data.network.secondaryColor},${data.network.primaryColor})`,
+        }}
+      >
+        <div>
+          <span>GEMEINSAME PARTNERSTARTSEITE</span>
+          <h2>{data.network.name}</h2>
+          <p>
+            Informationen, Kontakte und Aktivitäten Ihres geschlossenen
+            Partnerportals an einem Ort.
+          </p>
+        </div>
+        {data.network.logoUrl && (
+          <img src={data.network.logoUrl} alt={`${data.network.name} Logo`} />
+        )}
+      </section>
+      <div className="networkDashboardGrid">
+        <div>
+          {access?.enabledModules.includes("community") && (
+            <section className="networkCard">
+              <header>
+                <div>
+                  <span>MITTEILUNGEN</span>
+                  <h2>Neuigkeiten des Initiators</h2>
+                </div>
+                <Link href={`${base}/themen` as never}>Alle ansehen →</Link>
+              </header>
+              <div className="networkNewsList">
+                {data.announcements.map((item) => (
+                  <article key={item.id}>
+                    <time>
+                      {new Date(item.updatedAt).toLocaleDateString("de-DE")}
+                    </time>
+                    <div>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </div>
+                  </article>
+                ))}
+                {!data.announcements.length && (
+                  <div className="networkEmpty">
+                    <b>Noch keine Mitteilungen</b>
+                    <p>Neuigkeiten des Initiators erscheinen hier.</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+          {access?.enabledModules.includes("events") && (
+            <section className="networkCard">
+              <header>
+                <div>
+                  <span>KALENDER</span>
+                  <h2>Kommende Veranstaltungen</h2>
+                </div>
+                <Link href={`${base}/veranstaltungen` as never}>
+                  Kalender öffnen →
+                </Link>
+              </header>
+              <div className="networkEventRows">
+                {data.upcomingEvents.map((item) => (
+                  <article key={item.id}>
+                    <time>
+                      <small>
+                        {new Date(item.startsAt!).toLocaleString("de-DE", {
+                          month: "short",
+                        })}
+                      </small>
+                      <strong>{new Date(item.startsAt!).getDate()}</strong>
+                    </time>
+                    <div>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </div>
+                    <Link href={`${base}/veranstaltungen` as never}>
+                      Details
+                    </Link>
+                  </article>
+                ))}
+                {!data.upcomingEvents.length && (
+                  <div className="networkEmpty">
+                    <b>Keine bevorstehenden Termine</b>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+          {access?.enabledModules.includes("events") &&
+            data.eventRecaps.length > 0 && (
+              <section className="networkCard">
+                <header>
+                  <div>
+                    <span>RÜCKBLICKE</span>
+                    <h2>Das waren unsere letzten Treffen</h2>
+                  </div>
+                  <Link href={`${base}/rueckblicke` as never}>
+                    Alle Rückblicke →
+                  </Link>
+                </header>
+                <div className="networkRecapPreview">
+                  {data.eventRecaps.map((item) => (
+                    <Link key={item.id} href={`${base}/rueckblicke` as never}>
+                      {Array.isArray(item.data.recapImages) &&
+                        typeof item.data.recapImages[0] === "string" && (
+                          <img src={item.data.recapImages[0]} alt="" />
+                        )}
+                      <span>
+                        <small>
+                          {new Date(
+                            item.startsAt || item.updatedAt,
+                          ).toLocaleDateString("de-DE")}
+                        </small>
+                        <b>{item.title}</b>
+                        <p>{String(item.data.recapSummary || "")}</p>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+        </div>
+        <aside>
+          <section className="networkCard">
+            <header>
+              <div>
+                <span>SCHNELLZUGRIFF</span>
+                <h2>Ihre Partnerbereiche</h2>
+              </div>
+            </header>
+            <nav className="networkQuickLinks">
+              {[
+                ["profil", "Meine Partnerseite", "profiles"],
+                ["mitglieder", "Partnerverzeichnis", "profiles"],
+                ["veranstaltungen", "Veranstaltungen", "events"],
+                ["rueckblicke", "Rückblicke", "events"],
+                ["kommunikation", "Nachrichten", "communication"],
+                ["auswertungen", "Auswertungen", "analytics"],
+                ["einstellungen", "Netzwerk-Verwaltung", ""],
+              ]
+                .filter(
+                  ([path, , module]) =>
+                    (!module || access?.enabledModules.includes(module)) &&
+                    (path !== "einstellungen" || access?.isInitiator) &&
+                    !(access?.isInitiator && path === "profil") &&
+                    (!access?.isInitiator ||
+                      path !== "auswertungen" ||
+                      access.enabledModules.includes("analytics")),
+                )
+                .map(([path, label]) => (
+                  <Link key={path} href={`${base}/${path}` as never}>
+                    {label}
+                    <b>→</b>
+                  </Link>
+                ))}
+            </nav>
+          </section>
+        </aside>
+      </div>
+    </>
+  );
 }

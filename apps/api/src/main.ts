@@ -7,10 +7,10 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
-  // Branding- und Partnerlogos werden als geprüfte Bilddaten übertragen. Das
-  // Anfrage-Limit bleibt bewusst knapp über der anwendungsseitigen Dateigrenze.
-  app.useBodyParser("json", { limit: "3mb" });
-  app.useBodyParser("urlencoded", { limit: "3mb", extended: true });
+  // Einzeldateien bleiben anwendungsseitig begrenzt. Veranstaltungsrückblicke
+  // dürfen sechs Bilder enthalten; Base64-Overhead wird hier berücksichtigt.
+  app.useBodyParser("json", { limit: "16mb" });
+  app.useBodyParser("urlencoded", { limit: "16mb", extended: true });
   const originConfiguration =
     process.env.WEB_ORIGINS ??
     process.env.WEB_ORIGIN ??
@@ -23,7 +23,10 @@ async function bootstrap() {
     throw new Error("WEB_ORIGINS muss für den Produktivbetrieb gesetzt sein.");
   }
   app.enableCors({
-    origin(origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
+    origin(
+      origin: string | undefined,
+      callback: (error: Error | null, allow?: boolean) => void,
+    ) {
       if (!origin || allowedOrigins.includes(origin.replace(/\/$/, "")))
         return callback(null, true);
       return callback(

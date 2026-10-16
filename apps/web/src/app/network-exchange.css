@@ -1,0 +1,165 @@
+.networkExchangeModal {
+  width: min(900px, calc(100vw - 32px));
+  max-height: 90dvh;
+  overflow: auto;
+}
+.networkExchangeModal > header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(
+    120deg,
+    var(--network-dark),
+    var(--network-accent)
+  );
+  color: white;
+  z-index: 1;
+}
+.networkExchangeModal > header p {
+  color: inherit;
+  opacity: 0.9;
+  font-size: 13px;
+  max-width: 680px;
+}
+.networkExchangeMessages {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+}
+.networkExchangeMessages article {
+  padding: 20px;
+  border: 1px solid var(--network-soft);
+  border-radius: 16px;
+  background: #f7f9fc;
+  overflow-wrap: anywhere;
+}
+.networkExchangeMessages article.own {
+  background: var(--network-soft);
+}
+.networkExchangeMessages article > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.networkExchangeMessages article p {
+  white-space: pre-wrap;
+}
+.networkExchangeMessages button,
+.networkExchangeAction button {
+  border: 1px solid var(--network-soft);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--network-dark);
+  background: white;
+  cursor: pointer;
+}
+.networkExchangeAction {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--network-soft);
+  padding-top: 16px;
+  margin-top: 20px;
+}
+.networkExchangeAction > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.networkExchangeComposer {
+  border-top: 1px solid var(--network-soft);
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+}
+.networkExchangeFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+.networkExchangeModal label,
+.networkExchangeComposer label {
+  display: grid;
+  gap: 8px;
+}
+.networkExchangeComposer textarea,
+.networkExchangeComposer input,
+.networkExchangeComposer select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #cbd2dd;
+  border-radius: 8px;
+  font: inherit;
+}
+.networkParticipantPicker {
+  max-height: 240px;
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.networkParticipantPicker label {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.networkParticipantPicker input {
+  width: auto;
+}
+.networkParticipantPicker small {
+  display: block;
+  color: #65748b;
+}
+.networkFileLink {
+  display: block;
+  margin: 12px 0;
+}
+.networkNotificationPanel {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  width: min(380px, calc(100vw - 40px));
+  max-height: 65vh;
+  overflow: auto;
+  background: white;
+  border: 1px solid var(--network-soft);
+  border-radius: 16px;
+  box-shadow: 0 15px 45px #172b4b26;
+  z-index: 50;
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+}
+.networkNotificationPanel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.networkNotificationPanel > button {
+  display: grid !important;
+  width: 100%;
+  text-align: left;
+  padding: 14px !important;
+  border-radius: 10px;
+}
+.networkNotificationPanel > button small {
+  display: block;
+}
+.networkNotificationPanel .unread {
+  background: var(--network-soft);
+}
+@media (max-width: 640px) {
+  .networkExchangeMessages,
+  .networkExchangeComposer {
+    padding: 16px;
+  }
+  .networkExchangeModal {
+    max-height: 94dvh;
+  }
+  .networkExchangeMessages article > header {
+    display: grid;
+    gap: 5px;
+  }
+}

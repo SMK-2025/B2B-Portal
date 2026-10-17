@@ -628,7 +628,7 @@ export function NetworkModuleWorkspace({
                     onClick={() => setThreadId(item.id)}
                     title="Austausch, Termine und nächste Schritte"
                   >
-                    Austausch →
+                    Austausch
                   </button>
                   {module === "angebote" &&
                     access?.enabledModules.includes("communication") &&

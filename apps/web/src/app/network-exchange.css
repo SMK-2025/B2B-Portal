@@ -3,9 +3,11 @@
   flex-direction: column;
   align-items: stretch;
   gap: 20px;
-  width: 240px;
+  /* Four 39px icon buttons plus three 8px gaps. */
+  width: 180px;
   max-width: 100%;
   min-width: 0;
+  justify-self: end;
 }
 .networkTextActions {
   display: grid;
@@ -23,10 +25,10 @@
   min-height: 44px;
   padding: 10px 16px;
   margin: 0;
-  border: 1px solid var(--network-accent);
+  border: 1px solid #181818;
   border-radius: 8px;
-  background: var(--network-soft);
-  color: var(--network-dark);
+  background: #181818;
+  color: #fff;
   font: inherit;
   font-size: 14px;
   line-height: 1.4;
@@ -36,8 +38,10 @@
   overflow-wrap: anywhere;
   cursor: pointer;
 }
+.networkPortal .networkRowActions .networkTextActions > button:hover,
 .networkPortal .networkRowActions .networkTextActions > a:hover {
-  background: var(--network-accent);
+  border-color: #333;
+  background: #333;
   color: white;
 }
 .networkIconActions {
@@ -48,11 +52,6 @@
 }
 .networkIconActions > button {
   flex: 0 0 39px;
-}
-@media (max-width: 620px) {
-  .networkPortal .networkRowActionsStacked {
-    width: 100%;
-  }
 }
 .networkExchangeModal {
   width: min(900px, calc(100vw - 32px));

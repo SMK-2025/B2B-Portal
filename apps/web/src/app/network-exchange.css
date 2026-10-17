@@ -1,3 +1,59 @@
+.networkPortal .networkRowActionsStacked {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+  width: 240px;
+  max-width: 100%;
+  min-width: 0;
+}
+.networkTextActions {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.networkPortal .networkRowActions .networkTextActions > button,
+.networkPortal .networkRowActions .networkTextActions > a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  padding: 10px 16px;
+  margin: 0;
+  border: 1px solid var(--network-accent);
+  border-radius: 8px;
+  background: var(--network-soft);
+  color: var(--network-dark);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.networkPortal .networkRowActions .networkTextActions > a:hover {
+  background: var(--network-accent);
+  color: white;
+}
+.networkIconActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.networkIconActions > button {
+  flex: 0 0 39px;
+}
+@media (max-width: 620px) {
+  .networkPortal .networkRowActionsStacked {
+    width: 100%;
+  }
+}
 .networkExchangeModal {
   width: min(900px, calc(100vw - 32px));
   max-height: 90dvh;

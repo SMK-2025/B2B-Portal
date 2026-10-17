@@ -622,99 +622,103 @@ export function NetworkModuleWorkspace({
                     : ""}
                 </small>
               </div>
-              <div className="networkRowActions">
-                <button
-                  onClick={() => setThreadId(item.id)}
-                  title="Austausch, Termine und nächste Schritte"
-                >
-                  Austausch →
-                </button>
-                {module === "angebote" &&
-                  access?.enabledModules.includes("communication") &&
-                  item.createdByUserId !== access.currentUserId && (
-                    <a
-                      href={`/portal/netzwerk/${slug}/kommunikation?partner=${item.createdByUserId}`}
-                    >
-                      Vertraulich anfragen →
-                    </a>
-                  )}
-                {(access?.canManage ||
-                  item.createdByUserId === access?.currentUserId) && (
+              <div className="networkRowActions networkRowActionsStacked">
+                <div className="networkTextActions">
                   <button
-                    onClick={() => {
-                      setEditing(item);
-                      setDialog(true);
-                    }}
-                    title="Inhalt bearbeiten"
+                    onClick={() => setThreadId(item.id)}
+                    title="Austausch, Termine und nächste Schritte"
                   >
-                    Bearbeiten
+                    Austausch →
                   </button>
-                )}
-                {module === "dokumente" && item.data.file && (
-                  <button
-                    onClick={() => openDocument(item)}
-                    title="Dokument öffnen"
-                    aria-label={`${item.title} öffnen`}
-                  >
-                    ↗
-                  </button>
-                )}
-                {module === "veranstaltungen" && (
-                  <button
-                    onClick={() => void openAttendance(item)}
-                    title="Teilnahme und Anwesenheit"
-                    aria-label="Teilnahme und Anwesenheit"
-                  >
-                    ♙
-                  </button>
-                )}
-                {(access?.canManage ||
-                  item.createdByUserId === access?.currentUserId) &&
-                  !(module === "veranstaltungen" && !access?.canManage) &&
-                  item.status !== "published" &&
-                  item.status !== "completed" && (
+                  {module === "angebote" &&
+                    access?.enabledModules.includes("communication") &&
+                    item.createdByUserId !== access.currentUserId && (
+                      <a
+                        href={`/portal/netzwerk/${slug}/kommunikation?partner=${item.createdByUserId}`}
+                      >
+                        Vertraulich anfragen →
+                      </a>
+                    )}
+                  {(access?.canManage ||
+                    item.createdByUserId === access?.currentUserId) && (
                     <button
-                      onClick={() => void change(item, "published")}
-                      title="Veröffentlichen"
-                      aria-label="Veröffentlichen"
+                      onClick={() => {
+                        setEditing(item);
+                        setDialog(true);
+                      }}
+                      title="Inhalt bearbeiten"
                     >
-                      ✓
+                      Bearbeiten
                     </button>
                   )}
-                {(access?.canManage ||
-                  item.createdByUserId === access?.currentUserId) &&
-                  item.status !== "completed" && (
+                </div>
+                <div className="networkIconActions">
+                  {module === "dokumente" && item.data.file && (
                     <button
-                      onClick={() => void change(item, "completed")}
-                      title="Erledigen"
-                      aria-label="Erledigen"
+                      onClick={() => openDocument(item)}
+                      title="Dokument öffnen"
+                      aria-label={`${item.title} öffnen`}
                     >
-                      ○
+                      ↗
                     </button>
                   )}
-                {(access?.canManage ||
-                  item.createdByUserId === access?.currentUserId) &&
-                  item.status !== "archived" && (
+                  {module === "veranstaltungen" && (
                     <button
-                      onClick={() => void change(item, "archived")}
-                      title="Archivieren"
-                      aria-label="Archivieren"
+                      onClick={() => void openAttendance(item)}
+                      title="Teilnahme und Anwesenheit"
+                      aria-label="Teilnahme und Anwesenheit"
                     >
-                      ⌑
+                      ♙
                     </button>
                   )}
-                {(access?.canManage ||
-                  item.createdByUserId === access?.currentUserId) && (
-                  <button
-                    className="networkDeleteAction"
-                    disabled={busy}
-                    onClick={() => void remove(item)}
-                    title="Endgültig löschen"
-                    aria-label={`${item.title} endgültig löschen`}
-                  >
-                    🗑
-                  </button>
-                )}
+                  {(access?.canManage ||
+                    item.createdByUserId === access?.currentUserId) &&
+                    !(module === "veranstaltungen" && !access?.canManage) &&
+                    item.status !== "published" &&
+                    item.status !== "completed" && (
+                      <button
+                        onClick={() => void change(item, "published")}
+                        title="Veröffentlichen"
+                        aria-label="Veröffentlichen"
+                      >
+                        ✓
+                      </button>
+                    )}
+                  {(access?.canManage ||
+                    item.createdByUserId === access?.currentUserId) &&
+                    item.status !== "completed" && (
+                      <button
+                        onClick={() => void change(item, "completed")}
+                        title="Erledigen"
+                        aria-label="Erledigen"
+                      >
+                        ○
+                      </button>
+                    )}
+                  {(access?.canManage ||
+                    item.createdByUserId === access?.currentUserId) &&
+                    item.status !== "archived" && (
+                      <button
+                        onClick={() => void change(item, "archived")}
+                        title="Archivieren"
+                        aria-label="Archivieren"
+                      >
+                        ⌑
+                      </button>
+                    )}
+                  {(access?.canManage ||
+                    item.createdByUserId === access?.currentUserId) && (
+                    <button
+                      className="networkDeleteAction"
+                      disabled={busy}
+                      onClick={() => void remove(item)}
+                      title="Endgültig löschen"
+                      aria-label={`${item.title} endgültig löschen`}
+                    >
+                      🗑
+                    </button>
+                  )}
+                </div>
               </div>
             </article>
           ))}

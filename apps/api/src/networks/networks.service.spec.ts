@@ -264,7 +264,7 @@ describe("network tenancy", () => {
         m.userId === registration.user.id &&
         m.organizationId === organization.id,
     )!;
-    companyMembership.role = "member";
+    companyMembership.role = "viewer";
     expect(networks.ownProfile(bearer, created.id).canEdit).toBe(false);
     expect(() => networks.updateOwnProfile(bearer, created.id, {})).toThrow(
       /Unternehmensadministrator/,

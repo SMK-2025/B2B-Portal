@@ -875,6 +875,27 @@ export class NetworksService {
           ? value.trim().slice(0, max)
           : "";
     const profile: NetworkPartnerProfile = {
+      personalMessage:
+        input.personalMessage === undefined
+          ? previous?.personalMessage
+          : requiredText(
+              input.personalMessage,
+              "Persönliche Mitteilung",
+              0,
+              3000,
+            ),
+      offers:
+        input.offers === undefined
+          ? previous?.offers
+          : requiredText(input.offers, "Angebote", 0, 2000),
+      lookingFor:
+        input.lookingFor === undefined
+          ? previous?.lookingFor
+          : requiredText(input.lookingFor, "Gesuche", 0, 2000),
+      meetingUrl:
+        input.meetingUrl === undefined
+          ? previous?.meetingUrl
+          : safeUrl(input.meetingUrl),
       primaryColor: brandColor(input.primaryColor, previous?.primaryColor),
       secondaryColor: brandColor(
         input.secondaryColor,

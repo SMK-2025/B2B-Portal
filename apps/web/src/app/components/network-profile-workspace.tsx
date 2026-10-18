@@ -12,6 +12,10 @@ import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
 
 type Profile = {
+  personalMessage?: string;
+  offers?: string;
+  lookingFor?: string;
+  meetingUrl?: string | null;
   primaryColor?: string;
   secondaryColor?: string;
   status: "draft" | "published";
@@ -111,6 +115,10 @@ export function NetworkProfileWorkspace() {
             contactEmail: form.get("contactEmail"),
             contactPhone: form.get("contactPhone"),
             logoUrl: logo,
+            personalMessage: form.get("personalMessage"),
+            offers: form.get("offers"),
+            lookingFor: form.get("lookingFor"),
+            meetingUrl: form.get("meetingUrl"),
             primaryColor: form.get("primaryColor"),
             secondaryColor: form.get("secondaryColor"),
             publish,
@@ -521,6 +529,69 @@ export function NetworkProfileWorkspace() {
                     defaultValue={p?.contactPhone || ""}
                     disabled={!data.canEdit}
                   />
+                </label>
+              </div>
+            </section>
+            <section className="networkCard">
+              <header>
+                <div>
+                  <span>OPTIONAL · PERSÖNLICH IM NETZWERK</span>
+                  <h2>Persönliches & Zusammenarbeit</h2>
+                  <p>
+                    Was möchten Sie mit anderen Partnern teilen? Zeigen Sie
+                    Angebote, Gesuche und Gesprächsanlässe aus Ihrer
+                    persönlichen Sicht.
+                  </p>
+                </div>
+              </header>
+              <div className="networkProfileFields">
+                <label className="wide">
+                  Meine Mitteilung an das Netzwerk
+                  <textarea
+                    name="personalMessage"
+                    rows={5}
+                    maxLength={3000}
+                    defaultValue={p.personalMessage || ""}
+                    placeholder="Was bewegt Sie gerade? Worüber möchten Sie sich austauschen?"
+                    disabled={!data.canEdit}
+                  />
+                </label>
+                <label className="wide">
+                  Das biete ich an
+                  <textarea
+                    name="offers"
+                    rows={4}
+                    maxLength={2000}
+                    defaultValue={p.offers || ""}
+                    placeholder="Aktuelle Angebote, Unterstützung oder gemeinsame Projekte"
+                    disabled={!data.canEdit}
+                  />
+                </label>
+                <label className="wide">
+                  Das suche ich
+                  <textarea
+                    name="lookingFor"
+                    rows={4}
+                    maxLength={2000}
+                    defaultValue={p.lookingFor || ""}
+                    placeholder="Gesuchte Kontakte, Leistungen, Kooperationen oder Erfahrungen"
+                    disabled={!data.canEdit}
+                  />
+                </label>
+                <label className="wide">
+                  Link zur Online-Terminbuchung
+                  <input
+                    name="meetingUrl"
+                    type="url"
+                    maxLength={500}
+                    defaultValue={p.meetingUrl || ""}
+                    placeholder="https://… – z. B. Ihre Terminbuchungsseite"
+                    disabled={!data.canEdit}
+                  />
+                  <small>
+                    Besucher öffnen Ihre externe Buchungsseite und wählen dort
+                    einen Termin. Es wird nichts automatisch gebucht.
+                  </small>
                 </label>
               </div>
             </section>

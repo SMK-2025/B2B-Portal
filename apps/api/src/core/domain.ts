@@ -67,6 +67,10 @@ export interface OrganizationRecord {
 }
 
 export interface NetworkPartnerProfile {
+  personalMessage?: string;
+  offers?: string;
+  lookingFor?: string;
+  meetingUrl?: string | null;
   primaryColor?: string;
   secondaryColor?: string;
   status: "draft" | "published";

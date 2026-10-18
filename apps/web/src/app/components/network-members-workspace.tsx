@@ -5,6 +5,10 @@ import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
 type Profile = {
+  personalMessage?: string;
+  offers?: string;
+  lookingFor?: string;
+  meetingUrl?: string | null;
   primaryColor?: string;
   secondaryColor?: string;
   status: "draft" | "published";
@@ -526,9 +530,40 @@ function ProfileDialog({
                 </p>
               )}
             </section>
+            {p.personalMessage && (
+              <section>
+                <small>PERSÖNLICH IM NETZWERK</small>
+                <h3>Meine Mitteilung an die Partner</h3>
+                <p>{p.personalMessage}</p>
+              </section>
+            )}
+            {p.offers && (
+              <section>
+                <small>ANGEBOTE & UNTERSTÜTZUNG</small>
+                <h3>Das biete ich an</h3>
+                <p>{p.offers}</p>
+              </section>
+            )}
+            {p.lookingFor && (
+              <section>
+                <small>GESUCHE & KOOPERATIONEN</small>
+                <h3>Das suche ich</h3>
+                <p>{p.lookingFor}</p>
+              </section>
+            )}
           </main>
           <aside>
             <h3>Direkter Kontakt</h3>
+            {p.meetingUrl && (
+              <a
+                className="networkPrimary"
+                href={p.meetingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Online-Termin vereinbaren ↗
+              </a>
+            )}
             {access?.enabledModules.includes("communication") &&
               member.userId !== access.currentUserId && (
                 <Link

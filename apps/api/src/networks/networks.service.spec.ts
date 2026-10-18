@@ -284,6 +284,10 @@ describe("network tenancy", () => {
     const partnerProfile = networks.updateOwnProfile(bearer, created.id, {
       primaryColor: "#0077AA",
       secondaryColor: "#ffffff",
+      personalMessage: "Ich freue mich auf den persönlichen Austausch.",
+      offers: "Unterstützung bei Digitalprojekten",
+      lookingFor: "Kooperationspartner für Veranstaltungen",
+      meetingUrl: "https://example.de/termin",
       companyName: "Mitglied GmbH",
       tagline: "Gemeinsam besser zusammenarbeiten",
       description:
@@ -304,6 +308,15 @@ describe("network tenancy", () => {
     expect(partnerProfile.status).toBe("published");
     expect(partnerProfile.primaryColor).toBe("#0077aa");
     expect(partnerProfile.secondaryColor).toBe("#ffffff");
+    expect(partnerProfile.lookingFor).toBe(
+      "Kooperationspartner für Veranstaltungen",
+    );
+    expect(partnerProfile.meetingUrl).toBe("https://example.de/termin");
+    expect(() =>
+      networks.updateOwnProfile(bearer, created.id, {
+        meetingUrl: "javascript:alert(1)",
+      }),
+    ).toThrow();
     expect(() =>
       networks.updateOwnProfile(bearer, created.id, {
         primaryColor: "red; background:url(example)",

@@ -294,13 +294,13 @@ export function NetworkMembersWorkspace() {
                       ))}
                   </div>
                 )}
-                <footer>
+                <div className="networkPartnerCardActions">
                   <button
                     type="button"
                     onClick={() => setSelected(member)}
                     disabled={!profile}
                   >
-                    Profil ansehen →
+                    Partnerseite besuchen
                   </button>
                   {canManage && (
                     <div className="networkMemberActions">
@@ -348,7 +348,7 @@ export function NetworkMembersWorkspace() {
                       )}
                     </div>
                   )}
-                </footer>
+                </div>
                 {member.billing && (
                   <small className="networkBillingHint">
                     {member.billing.status === "paid"

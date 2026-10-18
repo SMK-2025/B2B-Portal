@@ -1,17 +1,27 @@
 .networkPortal .networkPartnerGrid {
   gap: 24px;
   padding: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
 }
 .networkPortal .networkPartnerCard {
   position: relative;
   box-sizing: border-box;
   min-width: 0;
-  max-width: 540px;
+  max-width: none;
   padding: 28px;
   gap: 20px;
   text-align: center;
+}
+@media (max-width: 1000px) {
+  .networkPortal .networkPartnerGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .networkPortal .networkPartnerGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .networkPortal .networkPartnerCardTop {
   display: flex;

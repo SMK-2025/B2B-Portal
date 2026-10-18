@@ -330,22 +330,6 @@ export function NetworkMembersWorkspace() {
                           </button>
                         </>
                       )}
-                      {member.status === "active" && (
-                        <button
-                          onClick={() => void change(member, "suspended")}
-                          title="Deaktivieren"
-                        >
-                          ⊘
-                        </button>
-                      )}
-                      {["suspended", "rejected"].includes(member.status) && (
-                        <button
-                          onClick={() => void change(member, "active")}
-                          title="Reaktivieren"
-                        >
-                          ↻
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>

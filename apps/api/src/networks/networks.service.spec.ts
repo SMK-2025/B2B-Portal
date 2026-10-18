@@ -257,6 +257,30 @@ describe("network tenancy", () => {
       status: "active",
       role: "organization_admin",
     });
+    membership.role = "member";
+    expect(networks.ownProfile(bearer, created.id).canEdit).toBe(true);
+    const companyMembership = store.memberships.find(
+      (m) =>
+        m.userId === registration.user.id &&
+        m.organizationId === organization.id,
+    )!;
+    companyMembership.role = "member";
+    expect(networks.ownProfile(bearer, created.id).canEdit).toBe(false);
+    expect(() => networks.updateOwnProfile(bearer, created.id, {})).toThrow(
+      /Unternehmensadministrator/,
+    );
+    companyMembership.role = "admin";
+    const incomplete = networks.updateOwnProfile(bearer, created.id, {
+      companyName: "Mitglied GmbH",
+    });
+    expect(incomplete.status).toBe("draft");
+    expect(incomplete.contactEmail).toBe("");
+    expect(() =>
+      networks.updateOwnProfile(bearer, created.id, {
+        companyName: "Mitglied GmbH",
+        publish: true,
+      }),
+    ).toThrow();
     const partnerProfile = networks.updateOwnProfile(bearer, created.id, {
       companyName: "Mitglied GmbH",
       tagline: "Gemeinsam besser zusammenarbeiten",

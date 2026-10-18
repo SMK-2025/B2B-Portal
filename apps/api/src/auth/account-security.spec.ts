@@ -26,6 +26,32 @@ describe("personal account security", () => {
     }
     return { store, email, auth, password, next, user };
   }
+  it("keeps a new registration separate after the original account changes email", async () => {
+    const f = await fixture(),
+      original = await f.user("original@example.de");
+    f.store.memberships.push({
+      organizationId: "old-company",
+      userId: original.id,
+      role: "admin",
+    });
+    const change = await f.auth.requestEmailChange(original.bearer, {
+      newEmail: "changed@example.de",
+      currentPassword: f.password,
+    });
+    await f.auth.confirmEmailChange({
+      token: change.confirmationToken,
+      currentPassword: f.password,
+    });
+    const fresh = await f.user("original@example.de");
+    expect(fresh.id).not.toBe(original.id);
+    expect(f.store.memberships.filter((m) => m.userId === fresh.id)).toEqual(
+      [],
+    );
+    expect(
+      f.store.memberships.find((m) => m.organizationId === "old-company")
+        ?.userId,
+    ).toBe(original.id);
+  });
   it("requires the current password and matching strong new passwords; revokes all sessions and reset links", async () => {
     const f = await fixture(),
       u = await f.user("one@example.invalid"),

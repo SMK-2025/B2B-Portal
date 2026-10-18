@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 type Profile = {
@@ -443,12 +443,44 @@ function ProfileDialog({
 }) {
   const access = useNetworkAccess();
   const p = member.organization!.networkProfile!;
+  const dialog = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null,
+      overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialog.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+      if (event.key === "Tab") {
+        const elements = dialog.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not(:disabled), [tabindex="0"]',
+        );
+        if (!elements?.length) return;
+        const first = elements[0],
+          last = elements[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener("keydown", key);
+      previous?.focus();
+    };
+  }, [onClose]);
   return (
     <div
       className="networkModalBackdrop"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
     >
       <section
+        ref={dialog}
         className="networkPartnerProfileModal"
         role="dialog"
         aria-modal="true"
@@ -483,7 +515,19 @@ function ProfileDialog({
             <section>
               <small>LEISTUNGEN</small>
               <h3>Damit unterstützen wir Netzwerkpartner</h3>
-              <p>{p.services}</p>
+              <div className="networkCompanyServices">
+                {p.services
+                  .split(/\n+/)
+                  .filter((line) => line.trim())
+                  .map((line, index) => (
+                    <article key={index}>
+                      <span aria-hidden="true">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <p>{line.replace(/^[-•]\s*/, "")}</p>
+                    </article>
+                  ))}
+              </div>
               {p.industries && (
                 <p>
                   <b>Branchen und Zielgruppen:</b> {p.industries}

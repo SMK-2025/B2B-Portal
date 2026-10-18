@@ -1,3 +1,111 @@
+.networkPortal .networkProfilePreview {
+  background: linear-gradient(
+    135deg,
+    var(--network-dark),
+    var(--network-accent)
+  );
+  color: white;
+}
+.networkPortal .networkProfilePreview h2,
+.networkPortal .networkProfilePreview > small {
+  color: white;
+}
+.networkCompanyImport {
+  margin: 20px 0;
+}
+.networkCompanyImport > form {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+}
+.networkCompanyImport label:not(.networkImportCheck) {
+  display: grid;
+  gap: 8px;
+}
+.networkCompanyImport input[type="url"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #c6ccd6;
+  border-radius: 8px;
+  font: inherit;
+}
+.networkCompanyImport .networkImportCheck {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+}
+.networkCompanyImport input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+.networkCompanyImport button {
+  justify-self: start;
+  padding: 12px 20px;
+  border-radius: 8px;
+}
+.networkCompanyImport details {
+  overflow-wrap: anywhere;
+}
+.networkPortal .networkPartnerProfileModal {
+  width: min(1180px, calc(100vw - 32px));
+  max-height: 94dvh;
+}
+.networkPortal .networkPartnerProfileModal > header {
+  min-height: 220px;
+  padding: 48px;
+  background: linear-gradient(
+    120deg,
+    var(--network-dark, #292929),
+    var(--network-accent, #d90000)
+  );
+}
+.networkPortal .networkPartnerProfileModal > header h2 {
+  color: white;
+  font-size: clamp(28px, 4vw, 48px);
+  overflow-wrap: anywhere;
+}
+.networkPortal .networkPartnerProfileBody {
+  grid-template-columns: minmax(0, 1fr) 310px;
+  padding: 40px;
+  gap: 32px;
+}
+.networkPortal .networkPartnerProfileBody main > section {
+  padding: 24px;
+  border: 1px solid #e0e3e8;
+  border-radius: 16px;
+}
+.networkCompanyServices {
+  display: grid;
+  gap: 20px;
+}
+.networkCompanyServices article {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 16px;
+  background: #f5f6f8;
+  border-radius: 10px;
+}
+.networkCompanyServices article > span {
+  color: var(--network-accent, #292929);
+  font-weight: 600;
+}
+.networkCompanyServices article > p {
+  margin: 0;
+}
+@media (max-width: 800px) {
+  .networkPortal .networkPartnerProfileBody {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 20px;
+  }
+  .networkPortal .networkPartnerProfileModal > header {
+    padding: 52px 24px 28px;
+    flex-direction: column;
+    align-items: start;
+  }
+}
 .networkPortal .networkRowActionsStacked {
   display: flex;
   flex-direction: column;

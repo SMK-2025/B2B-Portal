@@ -142,6 +142,13 @@ export class NetworksController {
   ) {
     return this.networks.updateOwnProfile(authorization, networkId, body);
   }
+  @Post(":networkId/profile/import") importProfile(
+    @Headers("authorization") authorization: string | undefined,
+    @Param("networkId") networkId: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.importOwnProfile(authorization, networkId, body);
+  }
   @Post(":networkId/memberships") add(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,

@@ -24,6 +24,7 @@ import type {
 } from "../core/domain";
 import { PortalStore } from "../core/portal.store";
 import { emailAddress, requiredText, safeUrl } from "../core/validation";
+import { CompanyImport } from "./company-import";
 import {
   allProductModuleIds,
   expandNetworkModules,
@@ -90,6 +91,42 @@ const NETWORK_CONTENT_CATEGORIES: Partial<
 
 @Injectable()
 export class NetworksService {
+  private readonly companyImport = new CompanyImport();
+  private canEditCompany(userId: string, organizationId: string, role: string) {
+    return (
+      role === "organization_admin" ||
+      this.store.memberships.some(
+        (m) =>
+          m.userId === userId &&
+          m.organizationId === organizationId &&
+          m.role === "admin",
+      )
+    );
+  }
+  async importOwnProfile(
+    authorization: string | undefined,
+    networkId: string,
+    input: Record<string, unknown>,
+  ) {
+    const own = this.ownProfile(authorization, networkId);
+    if (!own.canEdit)
+      throw new ForbiddenException(
+        "Sie können nur Ihre eigene Unternehmensseite bearbeiten.",
+      );
+    this.requireEnabledModule(
+      networkId,
+      "profiles",
+      this.auth.authenticate(authorization).id,
+    );
+    if (input.consent !== true)
+      throw new BadRequestException(
+        "Bitte die optionale Analyse der öffentlichen Homepage bestätigen.",
+      );
+    return this.companyImport.generate(
+      this.auth.authenticate(authorization).id,
+      input.websiteUrl,
+    );
+  }
   constructor(
     @Inject(PortalStore) private readonly store: PortalStore,
     @Inject(AuthService) private readonly auth: AuthService,
@@ -770,7 +807,7 @@ export class NetworksService {
         websiteUrl: organization.websiteUrl,
       },
       profile: organization.networkProfile || null,
-      canEdit: membership.role === "organization_admin",
+      canEdit: this.canEditCompany(user.id, organization.id, membership.role),
     };
   }
 
@@ -797,7 +834,9 @@ export class NetworksService {
       throw new ForbiddenException(
         "Initiatoren verwalten das Netzwerk und führen keine eigene Partnerseite.",
       );
-    if (membership.role !== "organization_admin")
+    if (
+      !this.canEditCompany(user.id, membership.organizationId, membership.role)
+    )
       throw new ForbiddenException(
         "Nur der Unternehmensadministrator darf die Partnerseite bearbeiten.",
       );
@@ -821,6 +860,12 @@ export class NetworksService {
       );
     const previous = organization.networkProfile;
     const now = new Date().toISOString();
+    const field = (value: unknown, label: string, min: number, max: number) =>
+      publish
+        ? requiredText(value, label, min, max)
+        : typeof value === "string"
+          ? value.trim().slice(0, max)
+          : "";
     const profile: NetworkPartnerProfile = {
       status: publish ? "published" : "draft",
       logoUrl,
@@ -830,27 +875,28 @@ export class NetworksService {
         2,
         160,
       ),
-      tagline: requiredText(input.tagline, "Kurzversprechen", 5, 180),
-      description: requiredText(
+      tagline: field(input.tagline, "Kurzversprechen", 5, 180),
+      description: field(
         input.description,
         "Unternehmensbeschreibung",
         30,
         3000,
       ),
-      services: requiredText(input.services, "Leistungen", 10, 2000),
+      services: field(input.services, "Leistungen", 10, 2000),
       industries:
         typeof input.industries === "string"
           ? input.industries.trim().slice(0, 800)
           : "",
-      street: requiredText(input.street, "Straße und Hausnummer", 3, 200),
-      postalCode: requiredText(input.postalCode, "Postleitzahl", 4, 12),
-      city: requiredText(input.city, "Ort", 2, 120),
-      country: requiredText(input.country || "Deutschland", "Land", 2, 80),
+      street: field(input.street, "Straße und Hausnummer", 3, 200),
+      postalCode: field(input.postalCode, "Postleitzahl", 4, 12),
+      city: field(input.city, "Ort", 2, 120),
+      country: field(input.country || "Deutschland", "Land", 2, 80),
       websiteUrl: safeUrl(input.websiteUrl),
-      contactName: requiredText(input.contactName, "Ansprechpartner", 3, 160),
-      contactPosition: requiredText(input.contactPosition, "Position", 2, 160),
-      contactEmail: emailAddress(input.contactEmail),
-      contactPhone: requiredText(input.contactPhone, "Telefon", 5, 60),
+      contactName: field(input.contactName, "Ansprechpartner", 3, 160),
+      contactPosition: field(input.contactPosition, "Position", 2, 160),
+      contactEmail:
+        !publish && !input.contactEmail ? "" : emailAddress(input.contactEmail),
+      contactPhone: field(input.contactPhone, "Telefon", 5, 60),
       updatedAt: now,
       publishedAt: publish ? previous?.publishedAt || now : null,
     };

@@ -477,3 +477,63 @@
     gap: 5px;
   }
 }
+.networkPortal .networkPartnerCard {
+  background: var(--partner-soft, #fff);
+  border-color: var(--partner-border, #dfe2ee);
+  border-top: 4px solid var(--partner-primary, var(--network-accent));
+}
+.networkPortal .networkPartnerCard .networkPartnerServices > span {
+  background: var(--partner-soft, var(--network-soft));
+  color: #253348;
+  border: 1px solid var(--partner-border, transparent);
+}
+.networkPortal
+  .networkPartnerCard
+  .networkPartnerCardActions
+  > button:not(:disabled) {
+  background: var(--partner-primary, #292929);
+  border-color: var(--partner-primary, #292929);
+  color: var(--partner-ink, #fff);
+}
+.networkPortal .networkPartnerProfileModal[style] > header {
+  background: var(
+    --partner-hero,
+    linear-gradient(120deg, var(--network-dark), var(--network-accent))
+  );
+  border-bottom: 5px solid var(--partner-secondary, var(--network-accent));
+  color: var(--partner-ink, #fff);
+}
+.networkPortal .networkPartnerProfileModal[style] > header h2,
+.networkPortal .networkPartnerProfileModal[style] > header p,
+.networkPortal .networkPartnerProfileModal[style] > header small {
+  color: var(--partner-ink, #fff);
+}
+.networkPortal .networkPartnerProfileModal .networkPartnerProfileBody aside {
+  background: var(--partner-soft, #f2f3f9);
+  border: 1px solid var(--partner-border, #e0e3e8);
+}
+.networkPortal .networkPartnerProfileModal .networkPrimary {
+  background: var(--partner-primary, var(--network-accent));
+  color: var(--partner-ink, #fff);
+  padding: 12px;
+  border-radius: 8px;
+}
+.networkPortal .networkProfilePreview[style] {
+  background: var(
+    --partner-hero,
+    linear-gradient(135deg, var(--network-dark), var(--network-accent))
+  );
+  color: var(--partner-ink, #fff);
+}
+.networkPortal .networkProfilePreview[style] h2,
+.networkPortal .networkProfilePreview[style] p,
+.networkPortal .networkProfilePreview[style] b,
+.networkPortal .networkProfilePreview[style] > small {
+  color: var(--partner-ink, #fff);
+}
+.networkProfileFields input[type="color"] {
+  min-height: 48px;
+  max-width: 240px;
+  padding: 6px;
+  cursor: pointer;
+}

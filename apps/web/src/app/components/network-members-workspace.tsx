@@ -3,7 +3,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
+import { partnerBranding } from "../lib/partner-branding";
 type Profile = {
+  primaryColor?: string;
+  secondaryColor?: string;
   status: "draft" | "published";
   logoUrl: string | null;
   companyName: string;
@@ -254,7 +257,11 @@ export function NetworkMembersWorkspace() {
           {visible.map((member) => {
             const profile = member.organization?.networkProfile;
             return (
-              <article key={member.id} className="networkPartnerCard">
+              <article
+                key={member.id}
+                className="networkPartnerCard"
+                style={partnerBranding(profile)}
+              >
                 <div className="networkPartnerCardTop">
                   {profile?.logoUrl ? (
                     <img src={profile.logoUrl} alt="" />
@@ -466,6 +473,7 @@ function ProfileDialog({
       <section
         ref={dialog}
         className="networkPartnerProfileModal"
+        style={partnerBranding(p)}
         role="dialog"
         aria-modal="true"
         aria-labelledby="partner-profile-title"

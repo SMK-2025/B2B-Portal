@@ -282,6 +282,8 @@ describe("network tenancy", () => {
       }),
     ).toThrow();
     const partnerProfile = networks.updateOwnProfile(bearer, created.id, {
+      primaryColor: "#0077AA",
+      secondaryColor: "#ffffff",
       companyName: "Mitglied GmbH",
       tagline: "Gemeinsam besser zusammenarbeiten",
       description:
@@ -300,6 +302,16 @@ describe("network tenancy", () => {
       publish: true,
     });
     expect(partnerProfile.status).toBe("published");
+    expect(partnerProfile.primaryColor).toBe("#0077aa");
+    expect(partnerProfile.secondaryColor).toBe("#ffffff");
+    expect(() =>
+      networks.updateOwnProfile(bearer, created.id, {
+        primaryColor: "red; background:url(example)",
+      }),
+    ).toThrow(/Hex/);
+    expect(networks.ownProfile(bearer, created.id).profile?.primaryColor).toBe(
+      "#0077aa",
+    );
     expect(networks.mine(bearer)[0].network.slug).toBe("test-netzwerk");
     expect(networks.publicBySlug(bearer, "test-netzwerk").slug).toBe(
       "test-netzwerk",

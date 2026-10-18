@@ -67,6 +67,8 @@ export interface OrganizationRecord {
 }
 
 export interface NetworkPartnerProfile {
+  primaryColor?: string;
+  secondaryColor?: string;
   status: "draft" | "published";
   logoUrl: string | null;
   companyName: string;

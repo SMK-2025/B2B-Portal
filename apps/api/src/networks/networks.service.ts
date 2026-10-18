@@ -859,6 +859,14 @@ export class NetworksService {
         "Die Logodatei ist zu groß. Maximal 1,5 MB.",
       );
     const previous = organization.networkProfile;
+    const brandColor = (value: unknown, previousValue: string | undefined) => {
+      if (value === undefined) return previousValue;
+      if (typeof value !== "string" || !/^#[0-9a-fA-F]{6}$/.test(value))
+        throw new BadRequestException(
+          "Unternehmensfarben müssen gültige sechsstellige Hex-Farben sein.",
+        );
+      return value.toLowerCase();
+    };
     const now = new Date().toISOString();
     const field = (value: unknown, label: string, min: number, max: number) =>
       publish
@@ -867,6 +875,11 @@ export class NetworksService {
           ? value.trim().slice(0, max)
           : "";
     const profile: NetworkPartnerProfile = {
+      primaryColor: brandColor(input.primaryColor, previous?.primaryColor),
+      secondaryColor: brandColor(
+        input.secondaryColor,
+        previous?.secondaryColor,
+      ),
       status: publish ? "published" : "draft",
       logoUrl,
       companyName: requiredText(

@@ -9,8 +9,11 @@ import {
 } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
+import { partnerBranding } from "../lib/partner-branding";
 
 type Profile = {
+  primaryColor?: string;
+  secondaryColor?: string;
   status: "draft" | "published";
   logoUrl: string | null;
   companyName: string;
@@ -108,6 +111,8 @@ export function NetworkProfileWorkspace() {
             contactEmail: form.get("contactEmail"),
             contactPhone: form.get("contactPhone"),
             logoUrl: logo,
+            primaryColor: form.get("primaryColor"),
+            secondaryColor: form.get("secondaryColor"),
             publish,
           },
         },
@@ -300,6 +305,33 @@ export function NetworkProfileWorkspace() {
                 </div>
               </header>
               <div className="networkProfileFields">
+                <label>
+                  Unternehmensfarbe
+                  <input
+                    type="color"
+                    name="primaryColor"
+                    defaultValue={p.primaryColor || "#292929"}
+                    disabled={!data.canEdit}
+                  />
+                  <small>
+                    Für Ihre Partnerkachel und Ihre Unternehmensseite – nicht
+                    für das Netzwerkportal.
+                  </small>
+                </label>
+                <label>
+                  Zweite Unternehmensfarbe
+                  <input
+                    type="color"
+                    name="secondaryColor"
+                    defaultValue={
+                      p.secondaryColor || p.primaryColor || "#454545"
+                    }
+                    disabled={!data.canEdit}
+                  />
+                  <small>
+                    Ergänzende Farbe für Ihren Unternehmensauftritt.
+                  </small>
+                </label>
                 <label className="networkLogoUpload">
                   <span>Firmenlogo</span>
                   <div>
@@ -493,7 +525,7 @@ export function NetworkProfileWorkspace() {
               </div>
             </section>
           </div>
-          <aside className="networkProfilePreview">
+          <aside className="networkProfilePreview" style={partnerBranding(p)}>
             <small>VORSCHAU IM PARTNERVERZEICHNIS</small>
             <div className="networkProfileLogo">
               {logo ? (

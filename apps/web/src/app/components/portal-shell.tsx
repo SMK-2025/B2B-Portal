@@ -19,6 +19,7 @@ const groups: Record<Role, MenuGroup[]> = {
       icon: "N",
       items: [
         ["Alle Netzwerke", "/portal/admin/netzwerke"],
+        ["Mein Konto & Sicherheit", "/portal/konto"],
       ],
     },
   ],
@@ -54,16 +55,12 @@ const groups: Record<Role, MenuGroup[]> = {
     {
       label: "Profil & Sichtbarkeit",
       icon: "◇",
-      items: [
-        ["Leistungsprofil", "#profil"],
-      ],
+      items: [["Leistungsprofil", "#profil"]],
     },
     {
       label: "Chancen & Kontakte",
       icon: "◎",
-      items: [
-        ["Geschäftschancen", "#matches"],
-      ],
+      items: [["Geschäftschancen", "#matches"]],
     },
   ],
 };
@@ -133,9 +130,7 @@ export function PortalShell({
           <div className="portalHelp">
             <strong>Hilfe benötigt?</strong>
             <p>Unser Support begleitet Sie persönlich.</p>
-            <a href="mailto:service@b2b-matching.de">
-              Support kontaktieren
-            </a>
+            <a href="mailto:service@b2b-matching.de">Support kontaktieren</a>
           </div>
         </aside>
         <section className="portalMain">

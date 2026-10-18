@@ -14,6 +14,38 @@
   gap: 10px;
   min-width: 0;
 }
+.accountSecurityCard > form,
+.accountSecurityCard > div {
+  padding: 24px;
+  display: grid;
+  gap: 20px;
+}
+.accountSecurityCard form + form {
+  border-top: 1px solid #ddd;
+}
+.accountSecurityCard label {
+  display: grid;
+  gap: 8px;
+  max-width: 640px;
+}
+.accountSecurityCard input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #bbc3ce;
+  border-radius: 8px;
+  font: inherit;
+}
+.accountSecurityCard small {
+  color: #526174;
+}
+.accountSecurityCard button {
+  justify-self: start;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+}
 .networkPortal .networkRowActions .networkTextActions > button,
 .networkPortal .networkRowActions .networkTextActions > a {
   display: flex;

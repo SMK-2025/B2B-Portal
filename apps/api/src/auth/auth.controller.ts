@@ -4,6 +4,32 @@ import { AuthService } from "./auth.service";
 @Controller("auth")
 export class AuthController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
+  @Post("account") account(@Headers("authorization") authorization?: string) {
+    return this.auth.account(authorization);
+  }
+  @Post("password/change") changePassword(
+    @Headers("authorization") authorization: string | undefined,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.auth.changePassword(authorization, body);
+  }
+  @Post("email-change/request") requestEmailChange(
+    @Headers("authorization") authorization: string | undefined,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.auth.requestEmailChange(authorization, body);
+  }
+  @Post("email-change/confirm") confirmEmailChange(
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.auth.confirmEmailChange(body);
+  }
+  @Post("email-change/cancel") cancelEmailChange(
+    @Headers("authorization") authorization: string | undefined,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.auth.cancelEmailChange(authorization, body);
+  }
   @Post("register") register(@Body() body: Record<string, unknown>) {
     return this.auth.register(body, true);
   }

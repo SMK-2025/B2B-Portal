@@ -11,6 +11,53 @@ export class EmailService {
   directLinksEnabled(): boolean {
     return process.env.NODE_ENV !== "production";
   }
+  async sendEmailChange(input: {
+    email: string;
+    firstName: string;
+    token: string;
+    networkSlug?: string;
+  }): Promise<void> {
+    const link =
+      this.webUrl() +
+      "/konto-email-bestaetigen?token=" +
+      encodeURIComponent(input.token) +
+      (input.networkSlug
+        ? "&network=" + encodeURIComponent(input.networkSlug)
+        : "");
+    await this.send({
+      to: input.email,
+      subject: "Neue Login-E-Mail-Adresse bestätigen",
+      text:
+        "Hallo " +
+        input.firstName +
+        ",\n\nbestätigen Sie Ihre neue Login-E-Mail-Adresse:\n" +
+        link +
+        "\n\nDer Link gilt 30 Minuten. Zusätzlich wird Ihr aktuelles Passwort benötigt. Ohne Bestätigung bleibt Ihre bisherige Adresse gültig.",
+      html: this.template(
+        "Neue Login-E-Mail bestätigen",
+        "Bitte bestätigen Sie die Änderung Ihrer Login-Adresse. Ihre bisherige Adresse bleibt bis dahin gültig.",
+        "Neue Adresse bestätigen",
+        link,
+        "30 Minuten gültig. Zur Bestätigung benötigen Sie auch Ihr aktuelles Passwort.",
+      ),
+    });
+  }
+  async sendAccountSecurityNotice(
+    email: string,
+    message: string,
+  ): Promise<void> {
+    await this.send({
+      to: email,
+      subject: "Sicherheitshinweis zu Ihrem Partnerportal-Konto",
+      text:
+        message +
+        "\n\nFalls Sie diese Änderung nicht veranlasst haben, wenden Sie sich umgehend an service@b2b-matching.de.",
+      html:
+        "<p>" +
+        this.escape(message) +
+        "</p><p>Falls Sie diese Änderung nicht veranlasst haben, wenden Sie sich umgehend an service@b2b-matching.de.</p>",
+    });
+  }
 
   async sendVerification(input: {
     email: string;
@@ -19,8 +66,12 @@ export class EmailService {
     networkSlug?: string;
     networkInviteToken?: string;
   }): Promise<void> {
-    const networkQuery=input.networkSlug?`&network=${encodeURIComponent(input.networkSlug)}`:"";
-    const inviteQuery=input.networkInviteToken?`&invite=${encodeURIComponent(input.networkInviteToken)}`:"";
+    const networkQuery = input.networkSlug
+      ? `&network=${encodeURIComponent(input.networkSlug)}`
+      : "";
+    const inviteQuery = input.networkInviteToken
+      ? `&invite=${encodeURIComponent(input.networkInviteToken)}`
+      : "";
     const link = `${this.webUrl()}/email-bestaetigen?token=${encodeURIComponent(input.token)}${networkQuery}${inviteQuery}`;
     await this.send({
       to: input.email,
@@ -56,7 +107,12 @@ export class EmailService {
     });
   }
 
-  async sendNetworkInvitation(input: { email: string; networkName: string; networkSlug: string; inviteToken: string }): Promise<void> {
+  async sendNetworkInvitation(input: {
+    email: string;
+    networkName: string;
+    networkSlug: string;
+    inviteToken: string;
+  }): Promise<void> {
     const link = `${this.webUrl()}/registrieren?network=${encodeURIComponent(input.networkSlug)}&email=${encodeURIComponent(input.email)}&invite=${encodeURIComponent(input.inviteToken)}`;
     await this.send({
       to: input.email,
@@ -72,7 +128,11 @@ export class EmailService {
     });
   }
 
-  async sendNetworkAccessGranted(input: { email: string; networkName: string; networkSlug: string }): Promise<void> {
+  async sendNetworkAccessGranted(input: {
+    email: string;
+    networkName: string;
+    networkSlug: string;
+  }): Promise<void> {
     const redirect = `/portal/netzwerk/${encodeURIComponent(input.networkSlug)}`;
     const link = `${this.webUrl()}/anmelden?redirect=${encodeURIComponent(redirect)}`;
     await this.send({
@@ -89,26 +149,56 @@ export class EmailService {
     });
   }
 
-  async sendTeamInvitation(input:{email:string;organizationName:string;inviterName:string;token:string}):Promise<void>{
-    const link=`${this.webUrl()}/team-einladung?token=${encodeURIComponent(input.token)}`;
+  async sendTeamInvitation(input: {
+    email: string;
+    organizationName: string;
+    inviterName: string;
+    token: string;
+  }): Promise<void> {
+    const link = `${this.webUrl()}/team-einladung?token=${encodeURIComponent(input.token)}`;
     await this.send({
-      to:input.email,
-      subject:`Einladung zum Unternehmenskonto ${input.organizationName}`,
-      text:`${input.inviterName} hat Sie zum Unternehmenskonto ${input.organizationName} bei B2B Matching eingeladen.\n\nEinladung annehmen:\n${link}\n\nDer Link ist 14 Tage gültig.`,
-      html:this.template("Ihre Teameinladung",`${this.escape(input.inviterName)} hat Sie eingeladen, im Unternehmenskonto <strong>${this.escape(input.organizationName)}</strong> mitzuarbeiten.`,"Einladung annehmen",link,"Dieser persönliche Link ist 14 Tage gültig und kann nur mit der eingeladenen E-Mail-Adresse verwendet werden."),
+      to: input.email,
+      subject: `Einladung zum Unternehmenskonto ${input.organizationName}`,
+      text: `${input.inviterName} hat Sie zum Unternehmenskonto ${input.organizationName} bei B2B Matching eingeladen.\n\nEinladung annehmen:\n${link}\n\nDer Link ist 14 Tage gültig.`,
+      html: this.template(
+        "Ihre Teameinladung",
+        `${this.escape(input.inviterName)} hat Sie eingeladen, im Unternehmenskonto <strong>${this.escape(input.organizationName)}</strong> mitzuarbeiten.`,
+        "Einladung annehmen",
+        link,
+        "Dieser persönliche Link ist 14 Tage gültig und kann nur mit der eingeladenen E-Mail-Adresse verwendet werden.",
+      ),
     });
   }
 
-  async sendNetworkOrderConfirmation(input:{email:string;contact:string;networkName:string;orderId:string;billingCycle:"annual";monthlyNetCents:number}):Promise<void>{
-    const link=`${this.webUrl()}/portal`;
-    const cycle="zwölf Monate im Voraus";
-    const monthly=(input.monthlyNetCents/100).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
-    const annual=(input.monthlyNetCents*12/100).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
+  async sendNetworkOrderConfirmation(input: {
+    email: string;
+    contact: string;
+    networkName: string;
+    orderId: string;
+    billingCycle: "annual";
+    monthlyNetCents: number;
+  }): Promise<void> {
+    const link = `${this.webUrl()}/portal`;
+    const cycle = "zwölf Monate im Voraus";
+    const monthly = (input.monthlyNetCents / 100).toLocaleString("de-DE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const annual = ((input.monthlyNetCents * 12) / 100).toLocaleString(
+      "de-DE",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+    );
     await this.send({
-      to:input.email,
-      subject:`Bestätigung Ihrer Netzwerk-Modulbuchung ${input.orderId}`,
-      text:`Hallo ${input.contact},\n\nIhre verbindliche persönliche Modulbuchung für ${input.networkName} ist aktiv.\nBestellnummer: ${input.orderId}\nMonatlicher Preis: ${monthly} EUR netto\nAbrechnung: ${annual} EUR netto für zwölf Monate im Voraus\nMindestlaufzeit: 12 Monate\nZahlungsziel: 14 Tage nach Rechnungsstellung\nEinrichtungsgebühr: keine\n\nDie Rechnung folgt gesondert. Bei ausbleibender Zahlung kann der Portalbetreiber den Zugang sperren.`,
-      html:this.template("Ihre Modulbuchung ist aktiv",`Hallo ${this.escape(input.contact)}, Ihre verbindliche persönliche Modulbuchung für <strong>${this.escape(input.networkName)}</strong> ist aktiv.<br><br><strong>Bestellnummer:</strong> ${this.escape(input.orderId)}<br><strong>Monatlicher Preis:</strong> ${this.escape(monthly)} € netto<br><strong>Jahresbetrag:</strong> ${this.escape(annual)} € netto<br><strong>Abrechnung:</strong> ${this.escape(cycle)}<br><strong>Mindestlaufzeit:</strong> 12 Monate<br><strong>Zahlungsziel:</strong> 14 Tage nach Rechnungsstellung<br><strong>Einrichtungsgebühr:</strong> keine`,"Zum Netzwerkportal",link,"Die Rechnung folgt gesondert. Bei ausbleibender Zahlung kann der Portalbetreiber den Zugang sperren."),
+      to: input.email,
+      subject: `Bestätigung Ihrer Netzwerk-Modulbuchung ${input.orderId}`,
+      text: `Hallo ${input.contact},\n\nIhre verbindliche persönliche Modulbuchung für ${input.networkName} ist aktiv.\nBestellnummer: ${input.orderId}\nMonatlicher Preis: ${monthly} EUR netto\nAbrechnung: ${annual} EUR netto für zwölf Monate im Voraus\nMindestlaufzeit: 12 Monate\nZahlungsziel: 14 Tage nach Rechnungsstellung\nEinrichtungsgebühr: keine\n\nDie Rechnung folgt gesondert. Bei ausbleibender Zahlung kann der Portalbetreiber den Zugang sperren.`,
+      html: this.template(
+        "Ihre Modulbuchung ist aktiv",
+        `Hallo ${this.escape(input.contact)}, Ihre verbindliche persönliche Modulbuchung für <strong>${this.escape(input.networkName)}</strong> ist aktiv.<br><br><strong>Bestellnummer:</strong> ${this.escape(input.orderId)}<br><strong>Monatlicher Preis:</strong> ${this.escape(monthly)} € netto<br><strong>Jahresbetrag:</strong> ${this.escape(annual)} € netto<br><strong>Abrechnung:</strong> ${this.escape(cycle)}<br><strong>Mindestlaufzeit:</strong> 12 Monate<br><strong>Zahlungsziel:</strong> 14 Tage nach Rechnungsstellung<br><strong>Einrichtungsgebühr:</strong> keine`,
+        "Zum Netzwerkportal",
+        link,
+        "Die Rechnung folgt gesondert. Bei ausbleibender Zahlung kann der Portalbetreiber den Zugang sperren.",
+      ),
     });
   }
 

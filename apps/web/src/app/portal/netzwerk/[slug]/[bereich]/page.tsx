@@ -8,7 +8,12 @@ import { NetworkProfileWorkspace } from "../../../../components/network-profile-
 import { NetworkEventRecapWorkspace } from "../../../../components/network-event-recap-workspace";
 import { NetworkGameScheduleWorkspace } from "../../../../components/network-game-schedule-workspace";
 import { NetworkConversationsWorkspace } from "../../../../components/network-exchange-workspace";
+import { AccountSettingsWorkspace } from "../../../../components/account-settings-workspace";
 const pages: Record<string, [string, string]> = {
+  konto: [
+    "Mein Konto & Sicherheit",
+    "Persönliche Login-Adresse und Passwort sicher verwalten.",
+  ],
   mitglieder: [
     "Partnerverzeichnis",
     "Unternehmen im geschlossenen Partnerkreis finden, kennenlernen und gezielt miteinander in Kontakt bringen.",
@@ -76,6 +81,8 @@ export default async function Page({
     .join(" ");
   let body;
   if (bereich === "mitglieder") body = <NetworkMembersWorkspace />;
+  else if (bereich === "konto")
+    body = <AccountSettingsWorkspace networkSlug={slug} />;
   else if (bereich === "kommunikation")
     body = <NetworkConversationsWorkspace />;
   else if (bereich === "profil") body = <NetworkProfileWorkspace />;

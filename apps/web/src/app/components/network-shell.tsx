@@ -376,6 +376,9 @@ export function NetworkShell({
               </button>
               {account && (
                 <div className="networkAccountMenu">
+                  <Link href={`${base}/konto` as never}>
+                    Mein Konto & Sicherheit
+                  </Link>
                   {access.isInitiator ? (
                     <Link href={`${base}/einstellungen` as never}>
                       Netzwerk-Verwaltung

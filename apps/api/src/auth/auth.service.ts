@@ -22,6 +22,10 @@ import { EmailService } from "./email.service";
 @Injectable()
 export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
+  private readonly securityAttempts = new Map<
+    string,
+    { count: number; until: number }
+  >();
   constructor(
     private readonly store: PortalStore,
     @Optional() private readonly email: EmailService = new EmailService(),
@@ -52,14 +56,20 @@ export class AuthService implements OnModuleInit {
   async ensurePlatformAdmin(input: Record<string, unknown>) {
     const email = emailAddress(input.email);
     const password = requiredText(input.password, "Admin-Passwort", 16, 200);
-    const existingId = this.store.userByEmail.get(email);
+    const bootstrapAdminKey = tokenHash(email);
+    const existingId =
+      [...this.store.users.values()].find(
+        (u) =>
+          u.accountRole === "platform_admin" &&
+          u.bootstrapAdminKey === bootstrapAdminKey,
+      )?.id || this.store.userByEmail.get(email);
     const now = new Date().toISOString();
     if (existingId) {
       const existing = this.store.users.get(existingId);
       if (!existing) throw new Error("Inkonsistenter Benutzerindex.");
       existing.accountRole = "platform_admin";
       existing.emailVerifiedAt = existing.emailVerifiedAt || now;
-      existing.passwordHash = await hashPassword(password);
+      existing.bootstrapAdminKey = bootstrapAdminKey;
       return this.publicUser(existing);
     }
     const user = {
@@ -69,6 +79,7 @@ export class AuthService implements OnModuleInit {
       firstName: requiredText(input.firstName, "Vorname", 2, 100),
       lastName: requiredText(input.lastName, "Nachname", 2, 100),
       accountRole: "platform_admin" as const,
+      bootstrapAdminKey,
       emailVerifiedAt: now,
       createdAt: now,
     };
@@ -77,12 +88,36 @@ export class AuthService implements OnModuleInit {
     return this.publicUser(user);
   }
 
-  async register(input: Record<string, unknown>, requireNetworkInvitation = false) {
+  async register(
+    input: Record<string, unknown>,
+    requireNetworkInvitation = false,
+  ) {
     const email = emailAddress(input.email);
-    const networkInviteToken=typeof input.networkInviteToken==="string"?input.networkInviteToken:"";
-    const networkInvitation=networkInviteToken?[...this.store.networkContents.values()].find(item=>item.data.kind==="network_invitation"&&item.data.inviteTokenHash===tokenHash(networkInviteToken)&&!item.data.usedAt&&item.endsAt&&Date.parse(item.endsAt)>Date.now()):undefined;
-    if(requireNetworkInvitation&&!networkInviteToken)throw new BadRequestException("Die Registrierung ist ausschließlich über eine persönliche Netzwerkeinladung möglich.");
-    if(networkInviteToken&&(!networkInvitation||networkInvitation.data.email!==email))throw new BadRequestException("Die Netzwerkeinladung ist ungültig, abgelaufen oder für eine andere E-Mail-Adresse ausgestellt.");
+    const networkInviteToken =
+      typeof input.networkInviteToken === "string"
+        ? input.networkInviteToken
+        : "";
+    const networkInvitation = networkInviteToken
+      ? [...this.store.networkContents.values()].find(
+          (item) =>
+            item.data.kind === "network_invitation" &&
+            item.data.inviteTokenHash === tokenHash(networkInviteToken) &&
+            !item.data.usedAt &&
+            item.endsAt &&
+            Date.parse(item.endsAt) > Date.now(),
+        )
+      : undefined;
+    if (requireNetworkInvitation && !networkInviteToken)
+      throw new BadRequestException(
+        "Die Registrierung ist ausschließlich über eine persönliche Netzwerkeinladung möglich.",
+      );
+    if (
+      networkInviteToken &&
+      (!networkInvitation || networkInvitation.data.email !== email)
+    )
+      throw new BadRequestException(
+        "Die Netzwerkeinladung ist ungültig, abgelaufen oder für eine andere E-Mail-Adresse ausgestellt.",
+      );
     if (this.store.userByEmail.has(email))
       throw new ConflictException(
         "Für diese E-Mail-Adresse besteht bereits ein Konto.",
@@ -113,8 +148,13 @@ export class AuthService implements OnModuleInit {
         email: user.email,
         firstName: user.firstName,
         token: verificationToken,
-        ...(networkInviteToken?{networkInviteToken}:{}),
-        ...(networkInvitation?{networkSlug:this.store.networks.get(networkInvitation.networkId)?.slug}:{}),
+        ...(networkInviteToken ? { networkInviteToken } : {}),
+        ...(networkInvitation
+          ? {
+              networkSlug: this.store.networks.get(networkInvitation.networkId)
+                ?.slug,
+            }
+          : {}),
       });
     } catch (error) {
       this.store.verificationTokens.delete(tokenHash(verificationToken));
@@ -207,11 +247,218 @@ export class AuthService implements OnModuleInit {
     if (!user) throw new BadRequestException("Das Konto wurde nicht gefunden.");
     user.passwordHash = await hashPassword(password);
     record.usedAt = new Date().toISOString();
-    for (const [key, session] of this.store.sessions)
-      if (session.userId === user.id) this.store.sessions.delete(key);
+    delete user.pendingEmailChange;
+    this.revokeUserTokens(user.id);
     return { changed: true };
   }
 
+  account(authorization: string | undefined) {
+    const user = this.authenticate(authorization),
+      pending = user.pendingEmailChange;
+    return {
+      ...this.publicUser(user),
+      pendingEmail:
+        pending && Date.parse(pending.expiresAt) > Date.now()
+          ? pending.email
+          : null,
+    };
+  }
+  private async reauthenticate(
+    user: { id: string; passwordHash: string },
+    password: unknown,
+  ) {
+    const attempt = this.securityAttempts.get(user.id);
+    if (attempt && attempt.until > Date.now() && attempt.count >= 5)
+      throw new UnauthorizedException(
+        "Zu viele fehlgeschlagene Sicherheitsabfragen. Bitte nach 15 Minuten erneut versuchen.",
+      );
+    if (
+      typeof password !== "string" ||
+      password.length > 200 ||
+      !(await verifyPassword(password, user.passwordHash))
+    ) {
+      const count =
+        attempt && attempt.until > Date.now() ? attempt.count + 1 : 1;
+      this.securityAttempts.set(user.id, {
+        count,
+        until: Date.now() + 15 * 60_000,
+      });
+      throw new UnauthorizedException(
+        "Das aktuelle Passwort ist nicht korrekt.",
+      );
+    }
+    this.securityAttempts.delete(user.id);
+  }
+  private revokeUserTokens(userId: string) {
+    for (const [key, value] of this.store.sessions)
+      if (value.userId === userId) this.store.sessions.delete(key);
+    for (const [key, value] of this.store.passwordResetTokens)
+      if (value.userId === userId) this.store.passwordResetTokens.delete(key);
+    for (const [key, value] of this.store.verificationTokens)
+      if (value.userId === userId) this.store.verificationTokens.delete(key);
+  }
+  private async securityNotice(email: string, message: string) {
+    try {
+      await this.email.sendAccountSecurityNotice(email, message);
+    } catch {
+      this.logger.warn(
+        "Sicherheitsbenachrichtigung konnte nicht zugestellt werden.",
+      );
+    }
+  }
+  async changePassword(
+    authorization: string | undefined,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.authenticate(authorization),
+      previous = user.passwordHash;
+    await this.reauthenticate(user, input.currentPassword);
+    const password = requiredText(input.newPassword, "Neues Passwort", 12, 200);
+    if (password !== input.confirmPassword)
+      throw new BadRequestException(
+        "Die neuen Passwörter stimmen nicht überein.",
+      );
+    try {
+      validatePasswordStrength(password);
+    } catch (e) {
+      throw new BadRequestException(
+        e instanceof Error ? e.message : "Ungültiges Passwort.",
+      );
+    }
+    if (await verifyPassword(password, previous))
+      throw new BadRequestException(
+        "Bitte ein anderes neues Passwort verwenden.",
+      );
+    const next = await hashPassword(password);
+    if (user.passwordHash !== previous)
+      throw new ConflictException(
+        "Die Zugangsdaten wurden zwischenzeitlich geändert. Bitte erneut anmelden.",
+      );
+    user.passwordHash = next;
+    delete user.pendingEmailChange;
+    this.revokeUserTokens(user.id);
+    await this.store.persist();
+    await this.securityNotice(
+      user.email,
+      "Das Passwort Ihres Partnerportal-Kontos wurde geändert. Alle angemeldeten Sitzungen wurden beendet.",
+    );
+    return { changed: true, reauthenticationRequired: true };
+  }
+  async requestEmailChange(
+    authorization: string | undefined,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.authenticate(authorization),
+      previous = user.passwordHash,
+      previousEmail = user.email;
+    await this.reauthenticate(user, input.currentPassword);
+    const email = emailAddress(input.newEmail);
+    if (email === user.email)
+      throw new BadRequestException("Bitte eine neue E-Mail-Adresse eingeben.");
+    if (this.store.userByEmail.has(email))
+      throw new ConflictException(
+        "Diese E-Mail-Adresse kann nicht verwendet werden.",
+      );
+    if (
+      user.pendingEmailChange &&
+      Date.parse(user.pendingEmailChange.requestedAt) > Date.now() - 60_000
+    )
+      throw new BadRequestException(
+        "Bitte eine Minute warten, bevor Sie einen neuen Bestätigungslink anfordern.",
+      );
+    const token = opaqueToken(),
+      requestedAt = new Date().toISOString(),
+      pending = {
+        email,
+        tokenHash: tokenHash(token),
+        expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
+        requestedAt,
+        passwordFingerprint: tokenHash(previous),
+      };
+    const network = this.store.networkMemberships.find(
+        (m) => m.userId === user.id && m.status === "active",
+      ),
+      slug = network
+        ? this.store.networks.get(network.networkId)?.slug
+        : undefined;
+    await this.email.sendEmailChange({
+      email,
+      firstName: user.firstName,
+      token,
+      networkSlug: slug,
+    });
+    if (user.passwordHash !== previous || user.email !== previousEmail)
+      throw new ConflictException(
+        "Die Zugangsdaten wurden zwischenzeitlich geändert. Bitte erneut anmelden.",
+      );
+    user.pendingEmailChange = pending;
+    await this.store.persist();
+    await this.securityNotice(
+      user.email,
+      "Eine Änderung Ihrer Login-E-Mail-Adresse auf " +
+        email +
+        " wurde angefordert. Ohne Bestätigung bleibt Ihre bisherige Adresse gültig.",
+    );
+    return {
+      requested: true,
+      ...(this.email.directLinksEnabled() ? { confirmationToken: token } : {}),
+    };
+  }
+  async cancelEmailChange(
+    authorization: string | undefined,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.authenticate(authorization);
+    await this.reauthenticate(user, input.currentPassword);
+    delete user.pendingEmailChange;
+    await this.store.persist();
+    return { cancelled: true };
+  }
+  async confirmEmailChange(input: Record<string, unknown>) {
+    const raw = requiredText(input.token, "Bestätigungscode", 20, 200),
+      hash = tokenHash(raw),
+      user = [...this.store.users.values()].find(
+        (u) => u.pendingEmailChange?.tokenHash === hash,
+      ),
+      pending = user?.pendingEmailChange;
+    if (
+      !user ||
+      !pending ||
+      Date.parse(pending.expiresAt) <= Date.now() ||
+      pending.passwordFingerprint !== tokenHash(user.passwordHash)
+    )
+      throw new BadRequestException(
+        "Der Bestätigungslink ist ungültig oder abgelaufen.",
+      );
+    const previous = user.passwordHash;
+    await this.reauthenticate(user, input.currentPassword);
+    if (
+      user.pendingEmailChange?.tokenHash !== hash ||
+      user.passwordHash !== previous
+    )
+      throw new BadRequestException(
+        "Der Bestätigungslink ist nicht mehr gültig.",
+      );
+    if (this.store.userByEmail.has(pending.email))
+      throw new ConflictException(
+        "Diese E-Mail-Adresse kann nicht verwendet werden.",
+      );
+    const oldEmail = user.email;
+    this.store.userByEmail.delete(oldEmail);
+    user.email = pending.email;
+    user.emailVerifiedAt = new Date().toISOString();
+    this.store.userByEmail.set(user.email, user.id);
+    delete user.pendingEmailChange;
+    this.revokeUserTokens(user.id);
+    await this.store.persist();
+    await this.securityNotice(
+      oldEmail,
+      "Ihre Login-E-Mail-Adresse wurde auf " +
+        user.email +
+        " geändert. Alle Sitzungen wurden beendet.",
+    );
+    return { changed: true, reauthenticationRequired: true };
+  }
   authenticate(header: string | undefined) {
     const token = header?.startsWith("Bearer ") ? header.slice(7) : "";
     const session = this.store.sessions.get(tokenHash(token));

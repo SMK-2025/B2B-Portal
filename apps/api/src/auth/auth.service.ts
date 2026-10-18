@@ -172,12 +172,20 @@ export class AuthService implements OnModuleInit {
   verifyEmail(token: unknown) {
     const raw = requiredText(token, "Bestätigungscode", 20, 200);
     const record = this.store.verificationTokens.get(tokenHash(raw));
-    if (!record || record.usedAt || Date.parse(record.expiresAt) <= Date.now())
+    if (!record || Date.parse(record.expiresAt) <= Date.now())
       throw new BadRequestException(
         "Der Bestätigungslink ist ungültig oder abgelaufen.",
       );
     const user = this.store.users.get(record.userId);
     if (!user) throw new BadRequestException("Das Konto wurde nicht gefunden.");
+    // A branding remount, retry or mail scanner must not turn success into an error.
+    // This endpoint never creates a login session or changes credentials.
+    if (record.usedAt) {
+      if (user.emailVerifiedAt) return { verified: true };
+      throw new BadRequestException(
+        "Der Bestätigungslink ist nicht mehr gültig.",
+      );
+    }
     user.emailVerifiedAt = new Date().toISOString();
     record.usedAt = user.emailVerifiedAt;
     return { verified: true };

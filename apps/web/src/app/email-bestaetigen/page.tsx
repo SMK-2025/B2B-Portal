@@ -4,7 +4,10 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SiteFooter, SiteHeader } from "../components/site-chrome";
-import {NetworkAuthFrame,useNetworkBrand} from "../components/network-auth-brand";
+import {
+  NetworkAuthFrame,
+  useNetworkBrand,
+} from "../components/network-auth-brand";
 import { portalRequest } from "../lib/portal-api";
 
 function Confirmation() {
@@ -49,7 +52,14 @@ function Confirmation() {
         <p className="lead">
           Ihr Zugang ist aktiviert. Sie können sich jetzt sicher anmelden.
         </p>
-        <Link className="primary linkButton" href={(network?`/anmelden?network=${encodeURIComponent(network)}${invite?`&invite=${encodeURIComponent(invite)}`:""}`:"/anmelden") as never}>
+        <Link
+          className="primary linkButton"
+          href={
+            (network
+              ? `/anmelden?network=${encodeURIComponent(network)}${invite ? `&invite=${encodeURIComponent(invite)}` : ""}`
+              : "/anmelden") as never
+          }
+        >
           Jetzt anmelden
         </Link>
       </div>
@@ -60,19 +70,50 @@ function Confirmation() {
       <p className="error" role="alert">
         {message}
       </p>
-      <Link className="primary linkButton" href="/registrieren">
-        Erneut registrieren
+      <p>
+        Falls Sie die Adresse bereits bestätigt haben, können Sie sich direkt
+        anmelden. Eine erneute Registrierung ist nicht erforderlich.
+      </p>
+      <Link
+        className="primary linkButton"
+        href={
+          (network
+            ? `/anmelden?network=${encodeURIComponent(network)}${invite ? `&invite=${encodeURIComponent(invite)}` : ""}`
+            : "/anmelden") as never
+        }
+      >
+        Zur Anmeldung
       </Link>
     </>
   );
 }
 
 export default function EmailBestaetigenPage() {
-  const [network,setNetwork]=useState("");
-  useEffect(()=>setNetwork(new URLSearchParams(window.location.search).get("network")||""),[]);
-  const brand=useNetworkBrand(network);
-  const confirmation=<section className="authCard authCardV2"><p className="sectionKicker">E-MAIL-PRÜFUNG</p><Suspense fallback={<p className="lead">Bestätigungslink wird geprüft …</p>}><Confirmation /></Suspense></section>;
-  if(brand)return <NetworkAuthFrame brand={brand} kind="register">{confirmation}</NetworkAuthFrame>;
+  const [network, setNetwork] = useState("");
+  useEffect(
+    () =>
+      setNetwork(
+        new URLSearchParams(window.location.search).get("network") || "",
+      ),
+    [],
+  );
+  const brand = useNetworkBrand(network);
+  const confirmation = (
+    <section className="authCard authCardV2">
+      <p className="sectionKicker">E-MAIL-PRÜFUNG</p>
+      <Suspense
+        fallback={<p className="lead">Bestätigungslink wird geprüft …</p>}
+      >
+        <Confirmation />
+      </Suspense>
+    </section>
+  );
+  if (brand)
+    return (
+      <NetworkAuthFrame brand={brand} kind="register">
+        {confirmation}
+      </NetworkAuthFrame>
+    );
   return (
     <main className="v2">
       <SiteHeader />

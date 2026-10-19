@@ -1,12 +1,15 @@
 import {
   Injectable,
   Logger,
+  Optional,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { OPERATOR_EMAIL } from "../core/operator-mail";
+import { PortalStore } from "../core/portal.store";
 
 @Injectable()
 export class EmailService {
+  constructor(@Optional() private readonly store?: PortalStore) {}
   private readonly logger = new Logger(EmailService.name);
   async sendOperatorInformation(subject: string, text: string) {
     if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
@@ -72,10 +75,13 @@ export class EmailService {
       text:
         message +
         "\n\nFalls Sie diese Änderung nicht veranlasst haben, wenden Sie sich umgehend an service@b2b-matching.de.",
-      html:
-        "<p>" +
-        this.escape(message) +
-        "</p><p>Falls Sie diese Änderung nicht veranlasst haben, wenden Sie sich umgehend an service@b2b-matching.de.</p>",
+      html: this.template(
+        "Sicherheitshinweis zu Ihrem Konto",
+        this.escape(message),
+        "Zum Partnerportal",
+        this.webUrl() + "/anmelden",
+        "Falls Sie diese Änderung nicht veranlasst haben, wenden Sie sich umgehend an service@b2b-matching.de.",
+      ),
     });
   }
 
@@ -305,8 +311,26 @@ export class EmailService {
     const webUrl = this.webUrl();
     const safeLink = this.escape(link);
     const safeTitle = this.escape(title);
-    const logoUrl = `${webUrl}/images/b2b-matching-logo-brand.png`;
-    return `<!doctype html>
+    const url = new URL(link);
+    const slug =
+      url.searchParams.get("network") ||
+      url.searchParams
+        .get("redirect")
+        ?.match(/\/portal\/netzwerk\/([^/]+)/)?.[1];
+    const network =
+      slug && this.store
+        ? this.store.networks.get(this.store.networkBySlug.get(slug) || "")
+        : undefined;
+    const color = (value: string | undefined, fallback: string) =>
+      value && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;
+    const primary = color(network?.primaryColor, "#5158bf");
+    const secondary = color(network?.secondaryColor, "#30284f");
+    const logoUrl =
+      network?.logoUrl && /^https:\/\//i.test(network.logoUrl)
+        ? network.logoUrl
+        : `${webUrl}/images/b2b-matching-logo-brand.png`;
+    const brandName = this.escape(network?.name || "B2B Matching");
+    const html = `<!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8">
@@ -314,16 +338,16 @@ export class EmailService {
   <meta name="color-scheme" content="light">
   <title>${safeTitle} | B2B Matching</title>
 </head>
-<body style="margin:0;padding:0;background-color:#eef3f2;font-family:Arial,Helvetica,sans-serif;color:#102c42;-webkit-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background-color:#f5f6fc;font-family:Arial,Helvetica,sans-serif;color:#30284f;-webkit-text-size-adjust:100%;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${safeTitle} bei B2B Matching</div>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#eef3f2;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#f5f6fc;">
     <tr>
       <td align="center" style="padding:38px 14px;">
         <table role="presentation" width="620" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:620px;">
           <tr>
             <td align="center" style="padding:0 24px 24px;">
               <a href="${this.escape(webUrl)}" style="text-decoration:none;">
-                <img src="${this.escape(logoUrl)}" width="230" alt="B2B Matching" style="display:block;width:230px;max-width:75%;height:auto;border:0;">
+                <img src="${this.escape(logoUrl)}" width="230" alt="${brandName}" style="display:block;width:230px;max-width:75%;height:auto;border:0;">
               </a>
             </td>
           </tr>
@@ -331,25 +355,26 @@ export class EmailService {
             <td style="background-color:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 16px 45px rgba(16,44,66,.12);">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                  <td style="padding:25px 34px;background-color:#087f79;background-image:linear-gradient(120deg,#102c42 0%,#087f79 68%,#16a098 100%);">
-                    <p style="margin:0 0 7px;color:#a8e2dc;font-size:11px;line-height:16px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">B2B Matching</p>
+                  <td bgcolor="#30284f" style="padding:25px 34px;background-color:#30284f;background-image:linear-gradient(120deg,#30284f 0%,#5158bf 100%);">
+                    <p style="margin:0 0 7px;color:#c7d9ff;font-size:11px;line-height:16px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">B2B Matching · Partnerportal für Netzwerke</p>
                     <h1 style="margin:0;color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:29px;line-height:37px;font-weight:500;">${safeTitle}</h1>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:34px 34px 30px;">
                     <p style="margin:0;color:#243e50;font-size:17px;line-height:28px;">${intro}</p>
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 26px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td height="28" style="height:28px;line-height:28px;font-size:1px;">&nbsp;</td></tr></table>
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                       <tr>
-                        <td align="center" style="border-radius:9px;background-color:#078d84;">
-                          <a href="${safeLink}" style="display:inline-block;padding:15px 23px;color:#ffffff;text-decoration:none;font-size:15px;line-height:20px;font-weight:700;border-radius:9px;">${this.escape(button)}</a>
+                        <td align="center" valign="middle" bgcolor="#5158bf" style="border-radius:9px;background-color:#5158bf;padding:16px 28px;mso-padding-alt:16px 28px;">
+                          <a href="${safeLink}" style="display:inline-block;color:#ffffff!important;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:22px;font-weight:700;text-align:center;mso-line-height-rule:exactly;">${this.escape(button)}</a>
                         </td>
                       </tr>
                     </table>
-                    <div style="height:1px;background-color:#e1e9e7;margin:0 0 22px;"></div>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td height="26" style="height:26px;line-height:26px;font-size:1px;">&nbsp;</td></tr></table>
                     <p style="margin:0 0 17px;color:#607786;font-size:14px;line-height:22px;">${this.escape(note)}</p>
                     <p style="margin:0;color:#718692;font-size:12px;line-height:19px;">Falls die Schaltfläche nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:</p>
-                    <p style="margin:6px 0 0;font-size:12px;line-height:19px;word-break:break-all;"><a href="${safeLink}" style="color:#087f79;text-decoration:underline;">${safeLink}</a></p>
+                    <p style="margin:6px 0 0;font-size:12px;line-height:19px;word-break:break-all;"><a href="${safeLink}" style="color:#5158bf;text-decoration:underline;">${safeLink}</a></p>
                   </td>
                 </tr>
               </table>
@@ -359,7 +384,7 @@ export class EmailService {
             <td align="center" style="padding:24px 22px 0;color:#6b808c;font-size:11px;line-height:18px;">
               <p style="margin:0 0 7px;">Diese Nachricht wurde automatisch durch B2B Matching versendet.</p>
               <p style="margin:0;">Media Online Innovations Group · Inhaber Martin Kelm<br>Im Weidenblech 25 · 51371 Leverkusen</p>
-              <p style="margin:9px 0 0;"><a href="${this.escape(webUrl)}/impressum" style="color:#087f79;">Impressum</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="${this.escape(webUrl)}/datenschutz" style="color:#087f79;">Datenschutz</a></p>
+              <p style="margin:9px 0 0;"><a href="${this.escape(webUrl)}/impressum" style="color:#5158bf;">Impressum</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="${this.escape(webUrl)}/datenschutz" style="color:#5158bf;">Datenschutz</a></p>
             </td>
           </tr>
         </table>
@@ -368,6 +393,13 @@ export class EmailService {
   </table>
 </body>
 </html>`;
+    return html
+      .replaceAll("#5158bf", primary)
+      .replaceAll("#30284f", secondary)
+      .replace(
+        "B2B Matching · Partnerportal für Netzwerke",
+        `${brandName} · Partnerportal`,
+      );
   }
 
   private escape(value: string): string {

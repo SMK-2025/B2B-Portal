@@ -4,9 +4,28 @@ import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
 import { OperatorMailService } from "../auth/operator-mail.service";
 import { enqueueOperatorMail, OPERATOR_EMAIL } from "./operator-mail";
-import { retireLegacyInitiator } from "./retire-legacy-initiator";
+import {
+  retireLegacyInitiator,
+  resetTestMember,
+} from "./retire-legacy-initiator";
 
 describe("targeted account maintenance and durable operator notices", () => {
+  it("resets the named test identity once without removing a later registration", async () => {
+    const { store, auth } = await fixture();
+    const input = {
+      email: "mk@hey-five.de",
+      password: "Sicher-Portal-2026!",
+      firstName: "Test",
+      lastName: "Partner",
+    };
+    const registration = await auth.register(input);
+    expect(resetTestMember(store).state).toBe("removed");
+    expect(store.users.has(registration.user.id)).toBe(false);
+    const replacement = await auth.register(input);
+    resetTestMember(store);
+    expect(store.users.has(replacement.user.id)).toBe(true);
+    expect(store.userByEmail.has("service@b2b-matching.de")).toBe(true);
+  });
   async function fixture() {
     const store = new PortalStore(),
       email = new EmailService();

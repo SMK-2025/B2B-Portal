@@ -36,7 +36,10 @@ import type {
   FavoriteRecord,
   UserPreferenceRecord,
 } from "./domain";
-import { retireLegacyInitiator } from "./retire-legacy-initiator";
+import {
+  retireLegacyInitiator,
+  resetTestMember,
+} from "./retire-legacy-initiator";
 
 @Injectable()
 export class PortalStore implements OnModuleInit, OnApplicationShutdown {
@@ -102,6 +105,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     await this.restore();
     if (process.env.NODE_ENV === "production") {
       retireLegacyInitiator(this);
+      resetTestMember(this);
       await this.persist();
     }
     this.logger.log("PostgreSQL-Persistenz ist aktiv.");

@@ -1,6 +1,9 @@
 import { Controller, Get } from "@nestjs/common";
 import { PortalStore } from "./core/portal.store";
-import { RETIRE_INITIATOR_JOB } from "./core/retire-legacy-initiator";
+import {
+  RETIRE_INITIATOR_JOB,
+  RESET_TEST_MEMBER_JOB,
+} from "./core/retire-legacy-initiator";
 
 @Controller("health")
 export class HealthController {
@@ -9,6 +12,9 @@ export class HealthController {
   status() {
     return {
       status: "ok",
+      testAccountReset:
+        this.store.maintenanceReceipts.get(RESET_TEST_MEMBER_JOB)?.state ||
+        "not_run",
       service: "portal-api",
       timestamp: new Date().toISOString(),
       maintenance:

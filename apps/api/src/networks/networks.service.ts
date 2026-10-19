@@ -164,13 +164,14 @@ export class NetworksService {
     if (!order || order.kind !== "member_annual")
       throw new NotFoundException("Mitgliedsbuchung nicht gefunden.");
     if (input.invoiceSent === true) {
-      order.invoiceSentAt = new Date().toISOString();
-      order.invoiceReference = requiredText(
+      const reference = requiredText(
         input.invoiceReference,
         "Rechnungsnummer",
         1,
         100,
       );
+      order.invoiceSentAt = new Date().toISOString();
+      order.invoiceReference = reference;
     }
     if (input.paid === true) {
       order.paymentStatus = "paid";

@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
   Headers,
@@ -12,6 +13,28 @@ import { NetworksService } from "./networks.service";
 @Controller("networks")
 export class NetworksController {
   constructor(private readonly networks: NetworksService) {}
+  @Post("invitations/quote") quote(@Body() body: Record<string, unknown>) {
+    return this.networks.invitationQuote(body);
+  }
+  @Get("admin/member-registrations") registrations(
+    @Headers("authorization") auth: string | undefined,
+  ) {
+    return this.networks.memberRegistrations(auth);
+  }
+  @Post("admin/member-registrations/:id") invoice(
+    @Headers("authorization") auth: string | undefined,
+    @Param("id") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.updateMemberInvoice(auth, id, body);
+  }
+  @Post(":networkId/member-pricing") pricing(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.memberPricing(auth, id, body);
+  }
   @Get(":networkId/participants") participants(
     @Headers("authorization") auth: string | undefined,
     @Param("networkId") id: string,
@@ -336,7 +359,10 @@ export class NetworksController {
     @Param("networkId") networkId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.networks.order(authorization, networkId, body);
+    this.networks.orders(authorization, networkId);
+    throw new BadRequestException(
+      "Separate Modulbuchungen wurden eingestellt. Partnermitglieder buchen alle Funktionen bei der Registrierung als Jahresmitgliedschaft; die Initiatorverwaltung ist kostenlos.",
+    );
   }
   @Post(":networkId/orders/:orderId/decision") orderDecision(
     @Headers("authorization") authorization: string | undefined,

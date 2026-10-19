@@ -64,7 +64,7 @@ const pages: Record<string, [string, string]> = {
   ],
   einstellungen: [
     "Partnerportal einrichten",
-    "Branding, Regeln und freigeschaltete Module zentral verwalten.",
+    "Netzwerkauftritt und Regeln verwalten. Alle Funktionen sind enthalten; die Initiatorverwaltung ist kostenlos.",
   ],
 };
 export default async function Page({

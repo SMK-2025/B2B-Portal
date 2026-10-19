@@ -1,36 +1,457 @@
 "use client";
-import {FormEvent,useEffect,useState,type CSSProperties} from "react";
+import { FormEvent, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import {useRouter} from "next/navigation";
-import {SiteFooter,SiteHeader} from "../components/site-chrome";
-import {useNetworkBrand} from "../components/network-auth-brand";
-import {getPortalSession,portalRequest} from "../lib/portal-api";
+import { useRouter } from "next/navigation";
+import { SiteFooter, SiteHeader } from "../components/site-chrome";
+import { useNetworkBrand } from "../components/network-auth-brand";
+import { MemberAnnualRegistrationFields } from "../components/member-annual-registration-fields";
+import { getPortalSession, portalRequest } from "../lib/portal-api";
 
-type Step="account"|"verify"|"organization"|"submitted";
-type RegisterResult={verificationToken?:string;verificationRequired:boolean};
+type Step = "account" | "verify" | "organization" | "submitted";
+type RegisterResult = {
+  verificationToken?: string;
+  verificationRequired: boolean;
+};
 
-export default function RegistrationPage(){
- const router=useRouter();
- const [step,setStep]=useState<Step>("account"),[message,setMessage]=useState(""),[verificationToken,setVerificationToken]=useState(""),[sessionToken,setSessionToken]=useState(""),[loading,setLoading]=useState(false),[networkSlug,setNetworkSlug]=useState(""),[invitedEmail,setInvitedEmail]=useState(""),[networkInviteToken,setNetworkInviteToken]=useState(""),[ready,setReady]=useState(false);
- const networkRegistration=Boolean(networkSlug&&networkInviteToken),networkBrand=useNetworkBrand(networkSlug);
- useEffect(()=>{const params=new URLSearchParams(window.location.search);setNetworkSlug(params.get("network")||"");setInvitedEmail(params.get("email")||"");setNetworkInviteToken(params.get("invite")||"");if(params.get("onboarding")==="1"){const token=getPortalSession();if(token){setSessionToken(token);setStep("organization")}}setReady(true)},[]);
- async function register(event:FormEvent<HTMLFormElement>){event.preventDefault();setMessage("");setLoading(true);const form=new FormData(event.currentTarget);try{const result=await portalRequest<RegisterResult>("/auth/register",{body:{firstName:form.get("firstName"),lastName:form.get("lastName"),email:form.get("email"),password:form.get("password"),networkInviteToken}});setVerificationToken(result.verificationToken||"");setStep("verify")}catch(error){setMessage(error instanceof Error?error.message:"Die Registrierung ist fehlgeschlagen.")}finally{setLoading(false)}}
- async function verify(){setMessage("");setLoading(true);try{await portalRequest("/auth/verify-email",{body:{token:verificationToken}});router.push(`/anmelden?network=${encodeURIComponent(networkSlug)}&invite=${encodeURIComponent(networkInviteToken)}` as never)}catch(error){setMessage(error instanceof Error?error.message:"Die E-Mail konnte nicht bestätigt werden.")}finally{setLoading(false)}}
- async function createOrganization(event:FormEvent<HTMLFormElement>){event.preventDefault();setMessage("");setLoading(true);const form=new FormData(event.currentTarget),legalName=String(form.get("legalName"));try{await portalRequest("/organizations",{token:sessionToken,body:{legalName,displayName:legalName,role:"network",websiteUrl:form.get("websiteUrl"),networkSlug,networkInviteToken}});setStep("submitted")}catch(error){setMessage(error instanceof Error?error.message:"Die Partnerseite konnte nicht angelegt werden.")}finally{setLoading(false)}}
- if(!ready)return <main className="networkAccessState"><section><span>GESCHÜTZTER ZUGANG</span><h1>Einladung wird geprüft.</h1></section></main>;
- if(!networkRegistration)return <main className="v2"><SiteHeader/><section className="authPage loginPage"><aside className="authStory"><span>PERSÖNLICHER ZUGANG</span><h1>Partnerportale bleiben geschlossen.</h1><p>Eine Registrierung ist ausschließlich über die persönliche Einladung eines Netzwerk-Initiators möglich.</p></aside><section className="authCard authCardV2"><p className="sectionKicker">EINLADUNG ERFORDERLICH</p><h2>Kein öffentlicher Zugang</h2><p className="lead">Öffnen Sie den vollständigen Einladungslink aus Ihrer E-Mail. Möchten Sie ein neues Partnerportal einrichten, sprechen Sie uns persönlich an.</p><a className="primary linkButton wide" href="mailto:service@b2b-matching.de?subject=Partnerportal%20anfragen">Partnerportal anfragen</a><p className="authHint"><Link href="/anmelden">Bereits eingeladen? Zur Anmeldung</Link></p></section></section><SiteFooter/></main>;
- const stepNumber=step==="account"?1:step==="verify"?2:step==="organization"?3:4;
- return <main className={networkBrand?"v2 networkRegistrationBranded":"v2"} style={networkBrand?{"--auth-primary":networkBrand.primaryColor,"--auth-secondary":networkBrand.secondaryColor} as CSSProperties:undefined}>
-  {networkBrand?<header className="networkAuthHeader"><Link href={`/anmelden?network=${encodeURIComponent(networkBrand.slug)}` as never}>{networkBrand.logoUrl?<img src={networkBrand.logoUrl} alt={`${networkBrand.name} Logo`}/>:<span>{networkBrand.name.slice(0,2).toUpperCase()}</span>}<div><b>{networkBrand.name}</b><small>Geschütztes Partnerportal</small></div></Link><em>Persönliche Einladung</em></header>:<SiteHeader/>}
-  <section className="authPage"><aside className="authStory registrationStory"><span>{networkBrand?`IHR START BEI ${networkBrand.name.toUpperCase()}`:"IHR PARTNERPORTAL-ZUGANG"}</span><h2>Persönlich eingeladen.<br/>Sicher verbunden.</h2><p>Erstellen Sie Ihren persönlichen Zugang. Als Initiator verwalten Sie das Netzwerk; als Netzwerkpartner ergänzen Sie anschließend die interne Unternehmensseite.</p><div className="authBenefits"><article><b>01</b><div><strong>Zugang erstellen</strong><p>Name, fest vorgegebene E-Mail-Adresse und sicheres Passwort.</p></div></article><article><b>02</b><div><strong>E-Mail bestätigen</strong><p>Der persönliche Bestätigungslink schützt den Zugang.</p></div></article><article><b>03</b><div><strong>Im Partnerportal starten</strong><p>Ihre Rolle und Ihr Netzwerk werden automatisch aus der Einladung übernommen.</p></div></article></div><small>✓ Keine offene Registrierung &nbsp; ✓ Keine öffentliche Partnerseite &nbsp; ✓ Strikt getrennter Netzwerkbereich</small></aside>
-   <section className="authCard authCardV2"><div className="registrationProgress" aria-label={`Schritt ${stepNumber} von 4`}><span style={{width:`${stepNumber*25}%`}}/><small>SCHRITT {stepNumber} VON 4</small></div>
-    {step==="account"&&<><h1>Partnerportal-Zugang erstellen</h1><p className="lead">Die eingeladene E-Mail-Adresse ist verbindlich vorgegeben.</p><form onSubmit={register} className="formGrid"><label>Vorname<input name="firstName" required minLength={2} autoComplete="given-name"/></label><label>Nachname<input name="lastName" required minLength={2} autoComplete="family-name"/></label><label className="full">Geschäftliche E-Mail<input name="email" type="email" required value={invitedEmail} readOnly autoComplete="email"/></label><label className="full">Passwort<input name="password" type="password" required minLength={12} pattern="(?=.*[a-zäöüß])(?=.*[A-ZÄÖÜ])(?=.*[0-9])(?=.*[^A-Za-zÄÖÜäöüß0-9]).{12,}" title="Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen" autoComplete="new-password"/><small>Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen</small></label><label className="full legalConsent"><input type="checkbox" required/><span>Ich akzeptiere die <Link href="/agb" target="_blank">AGB und Nutzungsregeln</Link> sowie die <Link href="/datenschutz/unternehmen" target="_blank">Datenschutzerklärung</Link>.</span></label><button className="primary full" disabled={loading}>{loading?"Konto wird erstellt …":"Konto erstellen"}</button></form></>}
-    {step==="verify"&&<><h1>E-Mail bestätigen</h1><p className="lead">Wir haben einen persönlichen Bestätigungslink an Ihre geschäftliche E-Mail-Adresse gesendet.</p><div className="verificationNotice"><b>Bitte prüfen Sie Ihr Postfach</b><p>Der Link ist 24 Stunden gültig. Schauen Sie bei Bedarf auch in Ihren Spam-Ordner.</p></div>{verificationToken?<button className="primary wide" onClick={verify} disabled={loading}>{loading?"E-Mail wird bestätigt …":"Testbestätigung ausführen"}</button>:<Link className="primary linkButton wide" href={`/anmelden?network=${encodeURIComponent(networkSlug)}&invite=${encodeURIComponent(networkInviteToken)}` as never}>Zur Anmeldung</Link>}</>}
-    {step==="organization"&&<><h1>Ihre interne Partnerseite</h1><p className="lead">Diese Angaben reichen für den Einstieg. Das vollständige Profil ergänzen Sie anschließend geführt im Partnerportal.</p><form onSubmit={createOrganization} className="formGrid"><label className="full">Vollständiger Firmenname<input name="legalName" required autoComplete="organization" placeholder="Unternehmen inklusive Rechtsform"/></label><label className="full">Homepage <small>Optional</small><input name="websiteUrl" type="url" placeholder="https://www.unternehmen.de"/></label><div className="full pricingClarity"><b>Nur innerhalb Ihres Partnernetzwerks sichtbar</b><p>Es gibt keine öffentliche Veröffentlichung und keine Rolle im allgemeinen B2B-Matching.</p></div><button className="primary full" disabled={loading}>{loading?"Partnerseite wird angelegt …":"Partnerseite anlegen und fortfahren"}</button></form></>}
-    {step==="submitted"&&<div className="success"><div className="check">✓</div><h1>Ihr Zugang ist bereit</h1><p className="lead">Willkommen in Ihrem geschlossenen Partnerportal.</p><Link className="primary linkButton" href={`/portal/netzwerk/${networkSlug}` as never}>Zum Partnerportal</Link></div>}
-    {message&&<p className="error" role="alert">{message}</p>}
-   </section>
-  </section>
-  {networkBrand?<footer className="networkAuthFooter"><span>© {new Date().getFullYear()} {networkBrand.name}</span><span>Technisch bereitgestellt durch B2B Matching</span></footer>:<SiteFooter/>}
- </main>;
+export default function RegistrationPage() {
+  const router = useRouter();
+  const [step, setStep] = useState<Step>("account"),
+    [message, setMessage] = useState(""),
+    [verificationToken, setVerificationToken] = useState(""),
+    [sessionToken, setSessionToken] = useState(""),
+    [loading, setLoading] = useState(false),
+    [networkSlug, setNetworkSlug] = useState(""),
+    [invitedEmail, setInvitedEmail] = useState(""),
+    [networkInviteToken, setNetworkInviteToken] = useState(""),
+    [ready, setReady] = useState(false);
+  const networkRegistration = Boolean(networkSlug && networkInviteToken),
+    networkBrand = useNetworkBrand(networkSlug);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setNetworkSlug(params.get("network") || "");
+    setInvitedEmail(params.get("email") || "");
+    setNetworkInviteToken(params.get("invite") || "");
+    if (params.get("onboarding") === "1") {
+      const token = getPortalSession();
+      if (token) {
+        setSessionToken(token);
+        setStep("organization");
+      }
+    }
+    setReady(true);
+  }, []);
+  async function register(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+    setLoading(true);
+    const form = new FormData(event.currentTarget);
+    try {
+      const result = await portalRequest<RegisterResult>("/auth/register", {
+        body: {
+          firstName: form.get("firstName"),
+          lastName: form.get("lastName"),
+          email: form.get("email"),
+          password: form.get("password"),
+          networkInviteToken,
+        },
+      });
+      setVerificationToken(result.verificationToken || "");
+      setStep("verify");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Die Registrierung ist fehlgeschlagen.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function verify() {
+    setMessage("");
+    setLoading(true);
+    try {
+      await portalRequest("/auth/verify-email", {
+        body: { token: verificationToken },
+      });
+      router.push(
+        `/anmelden?network=${encodeURIComponent(networkSlug)}&invite=${encodeURIComponent(networkInviteToken)}` as never,
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Die E-Mail konnte nicht bestätigt werden.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function createOrganization(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+    setLoading(true);
+    const form = new FormData(event.currentTarget),
+      legalName = String(form.get("legalName"));
+    try {
+      await portalRequest("/organizations", {
+        token: sessionToken,
+        body: {
+          ...Object.fromEntries(form),
+          acceptedMonthlyNetCents: Number(form.get("acceptedMonthlyNetCents")),
+          authorityConfirmed: form.get("authorityConfirmed") === "on",
+          termsAccepted: form.get("termsAccepted") === "on",
+          paymentObligationAccepted:
+            form.get("paymentObligationAccepted") === "on",
+          legalName,
+          displayName: legalName,
+          role: "network",
+          websiteUrl: form.get("websiteUrl"),
+          networkSlug,
+          networkInviteToken,
+        },
+      });
+      setStep("submitted");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Die Partnerseite konnte nicht angelegt werden.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  if (!ready)
+    return (
+      <main className="networkAccessState">
+        <section>
+          <span>GESCHÜTZTER ZUGANG</span>
+          <h1>Einladung wird geprüft.</h1>
+        </section>
+      </main>
+    );
+  if (!networkRegistration)
+    return (
+      <main className="v2">
+        <SiteHeader />
+        <section className="authPage loginPage">
+          <aside className="authStory">
+            <span>PERSÖNLICHER ZUGANG</span>
+            <h1>Partnerportale bleiben geschlossen.</h1>
+            <p>
+              Eine Registrierung ist ausschließlich über die persönliche
+              Einladung eines Netzwerk-Initiators möglich.
+            </p>
+          </aside>
+          <section className="authCard authCardV2">
+            <p className="sectionKicker">EINLADUNG ERFORDERLICH</p>
+            <h2>Kein öffentlicher Zugang</h2>
+            <p className="lead">
+              Öffnen Sie den vollständigen Einladungslink aus Ihrer E-Mail.
+              Möchten Sie ein neues Partnerportal einrichten, sprechen Sie uns
+              persönlich an.
+            </p>
+            <a
+              className="primary linkButton wide"
+              href="mailto:service@b2b-matching.de?subject=Partnerportal%20anfragen"
+            >
+              Partnerportal anfragen
+            </a>
+            <p className="authHint">
+              <Link href="/anmelden">Bereits eingeladen? Zur Anmeldung</Link>
+            </p>
+          </section>
+        </section>
+        <SiteFooter />
+      </main>
+    );
+  const stepNumber =
+    step === "account"
+      ? 1
+      : step === "verify"
+        ? 2
+        : step === "organization"
+          ? 3
+          : 4;
+  return (
+    <main
+      className={networkBrand ? "v2 networkRegistrationBranded" : "v2"}
+      style={
+        networkBrand
+          ? ({
+              "--auth-primary": networkBrand.primaryColor,
+              "--auth-secondary": networkBrand.secondaryColor,
+            } as CSSProperties)
+          : undefined
+      }
+    >
+      {networkBrand ? (
+        <header className="networkAuthHeader">
+          <Link
+            href={
+              `/anmelden?network=${encodeURIComponent(networkBrand.slug)}` as never
+            }
+          >
+            {networkBrand.logoUrl ? (
+              <img
+                src={networkBrand.logoUrl}
+                alt={`${networkBrand.name} Logo`}
+              />
+            ) : (
+              <span>{networkBrand.name.slice(0, 2).toUpperCase()}</span>
+            )}
+            <div>
+              <b>{networkBrand.name}</b>
+              <small>Geschütztes Partnerportal</small>
+            </div>
+          </Link>
+          <em>Persönliche Einladung</em>
+        </header>
+      ) : (
+        <SiteHeader />
+      )}
+      <section className="authPage">
+        <aside className="authStory registrationStory">
+          <span>
+            {networkBrand
+              ? `IHR START BEI ${networkBrand.name.toUpperCase()}`
+              : "IHR PARTNERPORTAL-ZUGANG"}
+          </span>
+          <h2>
+            Persönlich eingeladen.
+            <br />
+            Sicher verbunden.
+          </h2>
+          <p>
+            Erstellen Sie Ihren persönlichen Zugang. Als Initiator verwalten Sie
+            das Netzwerk; als Netzwerkpartner ergänzen Sie anschließend die
+            interne Unternehmensseite.
+          </p>
+          <div className="authBenefits">
+            <article>
+              <b>01</b>
+              <div>
+                <strong>Zugang erstellen</strong>
+                <p>
+                  Name, fest vorgegebene E-Mail-Adresse und sicheres Passwort.
+                </p>
+              </div>
+            </article>
+            <article>
+              <b>02</b>
+              <div>
+                <strong>E-Mail bestätigen</strong>
+                <p>Der persönliche Bestätigungslink schützt den Zugang.</p>
+              </div>
+            </article>
+            <article>
+              <b>03</b>
+              <div>
+                <strong>Im Partnerportal starten</strong>
+                <p>
+                  Ihre Rolle und Ihr Netzwerk werden automatisch aus der
+                  Einladung übernommen.
+                </p>
+              </div>
+            </article>
+          </div>
+          <small>
+            ✓ Keine offene Registrierung &nbsp; ✓ Keine öffentliche Partnerseite
+            &nbsp; ✓ Strikt getrennter Netzwerkbereich
+          </small>
+        </aside>
+        <section className="authCard authCardV2">
+          <div
+            className="registrationProgress"
+            aria-label={`Schritt ${stepNumber} von 4`}
+          >
+            <span style={{ width: `${stepNumber * 25}%` }} />
+            <small>SCHRITT {stepNumber} VON 4</small>
+          </div>
+          {step === "account" && (
+            <>
+              <h1>Partnerportal-Zugang erstellen</h1>
+              <p className="lead">
+                Die eingeladene E-Mail-Adresse ist verbindlich vorgegeben.
+              </p>
+              <form onSubmit={register} className="formGrid">
+                <label>
+                  Vorname
+                  <input
+                    name="firstName"
+                    required
+                    minLength={2}
+                    autoComplete="given-name"
+                  />
+                </label>
+                <label>
+                  Nachname
+                  <input
+                    name="lastName"
+                    required
+                    minLength={2}
+                    autoComplete="family-name"
+                  />
+                </label>
+                <label className="full">
+                  Geschäftliche E-Mail
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    value={invitedEmail}
+                    readOnly
+                    autoComplete="email"
+                  />
+                </label>
+                <label className="full">
+                  Passwort
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    minLength={12}
+                    pattern="(?=.*[a-zäöüß])(?=.*[A-ZÄÖÜ])(?=.*[0-9])(?=.*[^A-Za-zÄÖÜäöüß0-9]).{12,}"
+                    title="Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen"
+                    autoComplete="new-password"
+                  />
+                  <small>
+                    Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl
+                    und Sonderzeichen
+                  </small>
+                </label>
+                <label className="full legalConsent">
+                  <input type="checkbox" required />
+                  <span>
+                    Ich akzeptiere die{" "}
+                    <Link href="/agb" target="_blank">
+                      AGB und Nutzungsregeln
+                    </Link>{" "}
+                    sowie die{" "}
+                    <Link href="/datenschutz/unternehmen" target="_blank">
+                      Datenschutzerklärung
+                    </Link>
+                    .
+                  </span>
+                </label>
+                <button className="primary full" disabled={loading}>
+                  {loading ? "Konto wird erstellt …" : "Konto erstellen"}
+                </button>
+              </form>
+              <p>
+                Bereits ein Konto?{" "}
+                <Link
+                  href={
+                    `/anmelden?network=${encodeURIComponent(networkSlug)}&invite=${encodeURIComponent(networkInviteToken)}` as never
+                  }
+                >
+                  Mit bestehendem Zugang anmelden und Einladung fortsetzen
+                </Link>
+              </p>
+            </>
+          )}
+          {step === "verify" && (
+            <>
+              <h1>E-Mail bestätigen</h1>
+              <p className="lead">
+                Wir haben einen persönlichen Bestätigungslink an Ihre
+                geschäftliche E-Mail-Adresse gesendet.
+              </p>
+              <div className="verificationNotice">
+                <b>Bitte prüfen Sie Ihr Postfach</b>
+                <p>
+                  Der Link ist 24 Stunden gültig. Schauen Sie bei Bedarf auch in
+                  Ihren Spam-Ordner.
+                </p>
+              </div>
+              {verificationToken ? (
+                <button
+                  className="primary wide"
+                  onClick={verify}
+                  disabled={loading}
+                >
+                  {loading
+                    ? "E-Mail wird bestätigt …"
+                    : "Testbestätigung ausführen"}
+                </button>
+              ) : (
+                <Link
+                  className="primary linkButton wide"
+                  href={
+                    `/anmelden?network=${encodeURIComponent(networkSlug)}&invite=${encodeURIComponent(networkInviteToken)}` as never
+                  }
+                >
+                  Zur Anmeldung
+                </Link>
+              )}
+            </>
+          )}
+          {step === "organization" && (
+            <>
+              <h1>Unternehmen & Jahresmitgliedschaft</h1>
+              <p className="lead">
+                Prüfen Sie den verbindlichen Preis und ergänzen Sie Ihre
+                Rechnungsdaten. Danach nutzen Sie alle Funktionen Ihres
+                geschlossenen Partnerportals sofort.
+              </p>
+              <form onSubmit={createOrganization} className="formGrid">
+                <label className="full">
+                  Vollständiger Firmenname / Rechnungsempfänger
+                  <input
+                    name="legalName"
+                    required
+                    autoComplete="organization"
+                    placeholder="Unternehmen inklusive Rechtsform"
+                  />
+                </label>
+                <label className="full">
+                  Homepage <small>Optional</small>
+                  <input
+                    name="websiteUrl"
+                    type="url"
+                    placeholder="https://www.unternehmen.de"
+                  />
+                </label>
+                <MemberAnnualRegistrationFields
+                  invite={networkInviteToken}
+                  loading={loading}
+                />
+              </form>
+            </>
+          )}
+          {step === "submitted" && (
+            <div className="success">
+              <div className="check">✓</div>
+              <h1>Ihr Zugang ist bereit</h1>
+              <p className="lead">
+                Willkommen in Ihrem geschlossenen Partnerportal.
+              </p>
+              <Link
+                className="primary linkButton"
+                href={`/portal/netzwerk/${networkSlug}` as never}
+              >
+                Zum Partnerportal
+              </Link>
+            </div>
+          )}
+          {message && (
+            <p className="error" role="alert">
+              {message}
+            </p>
+          )}
+        </section>
+      </section>
+      {networkBrand ? (
+        <footer className="networkAuthFooter">
+          <span>
+            © {new Date().getFullYear()} {networkBrand.name}
+          </span>
+          <span>Technisch bereitgestellt durch B2B Matching</span>
+        </footer>
+      ) : (
+        <SiteFooter />
+      )}
+    </main>
+  );
 }

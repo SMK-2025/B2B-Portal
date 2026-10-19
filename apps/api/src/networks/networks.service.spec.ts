@@ -411,6 +411,7 @@ describe("network tenancy", () => {
       secondaryColor: "#052e16",
     });
     networks.setAccess(adminBearer, created.id, { status: "active" });
+    delete created.settings.memberMonthlyNetCents; // Compatibility fixture for a historical module order.
     const order = networks.order(bearer, created.id, {
       invoiceCompany: "Mitglied GmbH",
       invoiceContact: "Mara Klein",
@@ -436,9 +437,7 @@ describe("network tenancy", () => {
     ).toEqual(
       expect.arrayContaining(["members", "branding", "profiles", "events"]),
     );
-    expect(() => networks.revenues(adminBearer, created.id)).toThrow(
-      /nicht angeboten/,
-    );
+    expect(() => networks.revenues(adminBearer, created.id)).not.toThrow();
     networks.addMember(adminBearer, created.id, {
       organizationId: organization.id,
       userId: outsiderRegistration.user.id,

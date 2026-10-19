@@ -148,6 +148,7 @@ export interface NetworkRecord {
     admissionRules: string | null;
     setupCompletedAt?: string | null;
     billingMode?: "standard" | "cooperation_free";
+    memberMonthlyNetCents?: number;
   };
   createdAt: string;
   updatedAt: string;
@@ -226,6 +227,15 @@ export interface NetworkRevenueRecord {
 }
 
 export interface NetworkOrderRecord {
+  kind?: "member_annual";
+  membershipId?: string;
+  organizationId?: string;
+  invoiceVatId?: string;
+  annualNetCents?: number;
+  vatCents?: number;
+  grossCents?: number;
+  invoiceSentAt?: string | null;
+  invoiceReference?: string | null;
   id: string;
   networkId: string;
   orderedByUserId: string;

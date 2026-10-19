@@ -1,65 +1,596 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import { AuthService } from "../auth/auth.service";
 import { PortalStore } from "../core/portal.store";
-import type { MembershipRole, NetworkRole, OrganizationRole } from "../core/domain";
+import type {
+  MembershipRole,
+  NetworkRole,
+  OrganizationRole,
+} from "../core/domain";
 import type { OrganizationRecord } from "../core/domain";
 import { emailAddress, requiredText, safeUrl } from "../core/validation";
-import {opaqueToken,tokenHash} from "../auth/password";
-import {EmailService} from "../auth/email.service";
+import { opaqueToken, tokenHash } from "../auth/password";
+import { EmailService } from "../auth/email.service";
+import { annualOrder, fullPortalModules } from "../networks/annual-membership";
 
 @Injectable()
 export class OrganizationsService {
-  constructor(@Inject(PortalStore) private readonly store: PortalStore, @Inject(AuthService) private readonly auth: AuthService,@Inject(EmailService)private readonly email:EmailService) {}
-  create(authorization: string | undefined, input: Record<string, unknown>, requireNetworkInvitation = false) {
-    const user = this.auth.authenticate(authorization); if (!user.emailVerifiedAt) throw new ForbiddenException("E-Mail-Adresse nicht bestätigt.");
-    const inviteToken=typeof input.networkInviteToken==="string"?input.networkInviteToken:"";const invitation=inviteToken?[...this.store.networkContents.values()].find(item=>item.data.kind==="network_invitation"&&item.data.inviteTokenHash===tokenHash(inviteToken)&&item.data.email===user.email&&!item.data.usedAt&&item.endsAt&&Date.parse(item.endsAt)>Date.now()):undefined;
-    if(requireNetworkInvitation&&!invitation)throw new ForbiddenException("Unternehmen können ausschließlich über eine gültige Netzwerkeinladung angelegt werden.");
-    const requestedRole=input.role as OrganizationRole;const role:OrganizationRole=invitation?"network":requestedRole;if(!["buyer","provider","both","network"].includes(role)||(!invitation&&role==="network"))throw new BadRequestException("Ungültige Unternehmensrolle.");
-    const requestedNetwork=invitation?this.store.networks.get(invitation.networkId):undefined;
-    const networkAccessible=requestedNetwork&&(requestedNetwork.status==="active"||(requestedNetwork.status==="trial"&&requestedNetwork.trialEndsAt&&Date.parse(requestedNetwork.trialEndsAt)>Date.now()));
-    if(typeof input.networkSlug==="string"&&input.networkSlug.trim()&&!invitation)throw new ForbiddenException("Der Beitritt zu einem Partnernetzwerk ist ausschließlich über einen persönlichen Einladungslink möglich.");
-    if(invitation&&!networkAccessible)throw new BadRequestException("Die Netzwerkeinladung ist nicht mehr verfügbar.");
-    const websiteUrl = safeUrl(input.websiteUrl); const organization:OrganizationRecord = { id: randomUUID(), legalName: requiredText(input.legalName,"Rechtlicher Firmenname",2,200), displayName: requiredText(input.displayName,"Anzeigename",2,200), role, websiteUrl, emailDomain: websiteUrl ? new URL(websiteUrl).hostname.replace(/^www\./,"") : null, reviewStatus: "draft", submittedAt: null, approvedAt: null, createdAt: new Date().toISOString() };
-    this.store.organizations.set(organization.id, organization); this.store.memberships.push({ organizationId: organization.id, userId: user.id, role: "admin" });
-    if(requestedNetwork){
-      const now=new Date().toISOString(),role:NetworkRole=invitation&&typeof invitation.data.role==="string"?invitation.data.role as NetworkRole:"organization_admin";this.store.networkMemberships.push({id:randomUUID(),networkId:requestedNetwork.id,organizationId:organization.id,userId:user.id,role,status:"active",invitedByUserId:invitation?.createdByUserId||null,reviewedByUserId:invitation?.createdByUserId||null,reviewedAt:now,createdAt:now,updatedAt:now});if(invitation)invitation.data.usedAt=now;
+  constructor(
+    @Inject(PortalStore) private readonly store: PortalStore,
+    @Inject(AuthService) private readonly auth: AuthService,
+    @Inject(EmailService) private readonly email: EmailService,
+  ) {}
+  create(
+    authorization: string | undefined,
+    input: Record<string, unknown>,
+    requireNetworkInvitation = false,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    if (!user.emailVerifiedAt)
+      throw new ForbiddenException("E-Mail-Adresse nicht bestätigt.");
+    const inviteToken =
+      typeof input.networkInviteToken === "string"
+        ? input.networkInviteToken
+        : "";
+    const invitation = inviteToken
+      ? [...this.store.networkContents.values()].find(
+          (item) =>
+            item.data.kind === "network_invitation" &&
+            item.data.inviteTokenHash === tokenHash(inviteToken) &&
+            item.data.email === user.email &&
+            !item.data.usedAt &&
+            item.endsAt &&
+            Date.parse(item.endsAt) > Date.now(),
+        )
+      : undefined;
+    if (requireNetworkInvitation && !invitation)
+      throw new ForbiddenException(
+        "Unternehmen können ausschließlich über eine gültige Netzwerkeinladung angelegt werden.",
+      );
+    const requestedRole = input.role as OrganizationRole;
+    const role: OrganizationRole = invitation ? "network" : requestedRole;
+    if (
+      !["buyer", "provider", "both", "network"].includes(role) ||
+      (!invitation && role === "network")
+    )
+      throw new BadRequestException("Ungültige Unternehmensrolle.");
+    const requestedNetwork = invitation
+      ? this.store.networks.get(invitation.networkId)
+      : undefined;
+    const networkAccessible =
+      requestedNetwork &&
+      (requestedNetwork.status === "active" ||
+        (requestedNetwork.status === "trial" &&
+          requestedNetwork.trialEndsAt &&
+          Date.parse(requestedNetwork.trialEndsAt) > Date.now()));
+    if (
+      typeof input.networkSlug === "string" &&
+      input.networkSlug.trim() &&
+      !invitation
+    )
+      throw new ForbiddenException(
+        "Der Beitritt zu einem Partnernetzwerk ist ausschließlich über einen persönlichen Einladungslink möglich.",
+      );
+    if (invitation && !networkAccessible)
+      throw new BadRequestException(
+        "Die Netzwerkeinladung ist nicht mehr verfügbar.",
+      );
+    if (invitation?.data.role === "network_admin")
+      throw new BadRequestException(
+        "Initiatoren nutzen die kostenlose Netzwerkverwaltung ohne Unternehmensbuchung.",
+      );
+    const memberOrder = requestedNetwork
+      ? annualOrder(requestedNetwork, user.id, input)
+      : null;
+    const websiteUrl = safeUrl(input.websiteUrl);
+    const organization: OrganizationRecord = {
+      id: randomUUID(),
+      legalName: requiredText(
+        input.legalName,
+        "Rechtlicher Firmenname",
+        2,
+        200,
+      ),
+      displayName: requiredText(input.displayName, "Anzeigename", 2, 200),
+      role,
+      websiteUrl,
+      emailDomain: websiteUrl
+        ? new URL(websiteUrl).hostname.replace(/^www\./, "")
+        : null,
+      reviewStatus: "draft",
+      submittedAt: null,
+      approvedAt: null,
+      createdAt: new Date().toISOString(),
+    };
+    this.store.organizations.set(organization.id, organization);
+    this.store.memberships.push({
+      organizationId: organization.id,
+      userId: user.id,
+      role: "admin",
+    });
+    if (requestedNetwork) {
+      const now = new Date().toISOString(),
+        role: NetworkRole =
+          invitation && typeof invitation.data.role === "string"
+            ? (invitation.data.role as NetworkRole)
+            : "organization_admin";
+      this.store.networkMemberships.push({
+        id: randomUUID(),
+        networkId: requestedNetwork.id,
+        organizationId: organization.id,
+        userId: user.id,
+        role,
+        status: "active",
+        invitedByUserId: invitation?.createdByUserId || null,
+        reviewedByUserId: invitation?.createdByUserId || null,
+        reviewedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      if (invitation) invitation.data.usedAt = now;
+    }
+    if (memberOrder && requestedNetwork) {
+      memberOrder.organizationId = organization.id;
+      memberOrder.membershipId = this.store.networkMemberships.find(
+        (m) =>
+          m.networkId === requestedNetwork.id &&
+          m.userId === user.id &&
+          m.organizationId === organization.id,
+      )?.id;
+      requestedNetwork.enabledModules = fullPortalModules();
+      this.store.networkOrders.set(memberOrder.id, memberOrder);
     }
     return organization;
   }
   submit(authorization: string | undefined, organizationId: string) {
-    const user = this.auth.authenticate(authorization); this.requireAdmin(user.id, organizationId); const organization = this.get(organizationId);
-    if (organization.reviewStatus !== "draft" && organization.reviewStatus !== "changes_requested") throw new BadRequestException("Das Profil kann in diesem Status nicht eingereicht werden.");
-    organization.reviewStatus = "submitted"; organization.submittedAt = new Date().toISOString(); return organization;
-  }
-  updateProfile(authorization:string|undefined,organizationId:string,input:Record<string,unknown>){
-    const user=this.auth.authenticate(authorization);this.requireAdmin(user.id,organizationId);const organization=this.get(organizationId);
-    const source=input.profileData;if(!source||typeof source!=="object"||Array.isArray(source))throw new BadRequestException("Profildaten fehlen.");
-    organization.profileData=Object.fromEntries(Object.entries(source as Record<string,unknown>).filter(([,value])=>typeof value==="string"||typeof value==="boolean")) as Record<string,string|boolean>;
-    organization.profileUpdatedAt=new Date().toISOString();
-    organization.profileRequiredTotal=typeof input.requiredTotal==="number"?Math.max(0,input.requiredTotal):organization.profileRequiredTotal;
-    organization.profileRequiredCompleted=typeof input.requiredCompleted==="number"?Math.max(0,input.requiredCompleted):organization.profileRequiredCompleted;
-    organization.profileRequiredSections=Array.isArray(input.requiredSections)?input.requiredSections.map(Boolean):organization.profileRequiredSections;
-    if(organization.reviewStatus==="changes_requested") organization.reviewStatus="draft";
+    const user = this.auth.authenticate(authorization);
+    this.requireAdmin(user.id, organizationId);
+    const organization = this.get(organizationId);
+    if (
+      organization.reviewStatus !== "draft" &&
+      organization.reviewStatus !== "changes_requested"
+    )
+      throw new BadRequestException(
+        "Das Profil kann in diesem Status nicht eingereicht werden.",
+      );
+    organization.reviewStatus = "submitted";
+    organization.submittedAt = new Date().toISOString();
     return organization;
   }
-  profile(authorization:string|undefined,organizationId:string){const user=this.auth.authenticate(authorization);this.requireAdmin(user.id,organizationId);return this.get(organizationId);}
-  listMine(authorization: string | undefined) { const user = this.auth.authenticate(authorization); const ids = this.store.memberships.filter(m=>m.userId===user.id).map(m=>m.organizationId); return ids.map(id=>this.get(id)); }
-  team(authorization:string|undefined,organizationId:string){const actor=this.auth.authenticate(authorization);this.requireAdmin(actor.id,organizationId);const members=this.store.memberships.filter(item=>item.organizationId===organizationId).flatMap(item=>{const user=this.store.users.get(item.userId);return user?[{userId:user.id,firstName:user.firstName,lastName:user.lastName,email:user.email,role:item.role,status:"active",createdAt:user.createdAt}]:[]});const invitations=[...this.store.teamInvitations.values()].filter(item=>item.organizationId===organizationId&&!item.acceptedAt&&Date.parse(item.expiresAt)>Date.now()).map(item=>({id:item.id,email:item.email,role:item.role,status:"invited",expiresAt:item.expiresAt}));return{members,invitations};}
-  async invite(authorization:string|undefined,organizationId:string,input:Record<string,unknown>){const actor=this.auth.authenticate(authorization);this.requireAdmin(actor.id,organizationId);const organization=this.get(organizationId),email=emailAddress(input.email),role=this.membershipRole(input.role);if(this.store.memberships.some(item=>item.organizationId===organizationId&&this.store.users.get(item.userId)?.email===email))throw new BadRequestException("Diese Person gehört bereits zum Team.");for(const [id,item]of this.store.teamInvitations)if(item.organizationId===organizationId&&item.email===email&&!item.acceptedAt)this.store.teamInvitations.delete(id);const token=opaqueToken(),now=new Date().toISOString(),record={id:randomUUID(),organizationId,email,role,tokenHash:tokenHash(token),invitedByUserId:actor.id,expiresAt:new Date(Date.now()+14*86_400_000).toISOString(),acceptedAt:null,createdAt:now};this.store.teamInvitations.set(record.id,record);await this.email.sendTeamInvitation({email,organizationName:organization.displayName,inviterName:`${actor.firstName} ${actor.lastName}`,token});return{id:record.id,email,role,status:"invited",expiresAt:record.expiresAt};}
-  acceptInvitation(authorization:string|undefined,value:unknown){const user=this.auth.authenticate(authorization),raw=requiredText(value,"Einladungscode",20,200),invitation=[...this.store.teamInvitations.values()].find(item=>item.tokenHash===tokenHash(raw));if(!invitation||invitation.acceptedAt||Date.parse(invitation.expiresAt)<=Date.now())throw new BadRequestException("Die Einladung ist ungültig oder abgelaufen.");if(invitation.email!==user.email)throw new ForbiddenException("Die Einladung wurde für eine andere E-Mail-Adresse ausgestellt.");if(!this.store.memberships.some(item=>item.userId===user.id&&item.organizationId===invitation.organizationId))this.store.memberships.push({userId:user.id,organizationId:invitation.organizationId,role:invitation.role});invitation.acceptedAt=new Date().toISOString();return{accepted:true,organization:this.get(invitation.organizationId)};}
-  teamRole(authorization:string|undefined,organizationId:string,userId:string,value:unknown){const actor=this.auth.authenticate(authorization);this.requireAdmin(actor.id,organizationId);const membership=this.store.memberships.find(item=>item.organizationId===organizationId&&item.userId===userId);if(!membership)throw new NotFoundException("Teammitglied nicht gefunden.");const role=this.membershipRole(value);if(membership.role==="admin"&&role!=="admin"&&this.store.memberships.filter(item=>item.organizationId===organizationId&&item.role==="admin").length===1)throw new BadRequestException("Mindestens ein Administrator ist erforderlich.");membership.role=role;return membership;}
-  removeTeamMember(authorization:string|undefined,organizationId:string,userId:string){const actor=this.auth.authenticate(authorization);this.requireAdmin(actor.id,organizationId);const index=this.store.memberships.findIndex(item=>item.organizationId===organizationId&&item.userId===userId);if(index<0)throw new NotFoundException("Teammitglied nicht gefunden.");const membership=this.store.memberships[index];if(membership.role==="admin"&&this.store.memberships.filter(item=>item.organizationId===organizationId&&item.role==="admin").length===1)throw new BadRequestException("Der letzte Administrator kann nicht entfernt werden.");this.store.memberships.splice(index,1);return{removed:true};}
-  favorites(authorization:string|undefined,organizationId:string){const user=this.auth.authenticate(authorization);this.requireMember(user.id,organizationId);return[...this.store.favorites.values()].filter(item=>item.userId===user.id).flatMap(item=>{const provider=this.store.organizations.get(item.providerOrganizationId),match=this.store.matches.get(item.matchId);return provider&&match?[{...item,provider:{id:provider.id,displayName:provider.displayName,legalName:provider.legalName,websiteUrl:provider.websiteUrl},match:{id:match.id,score:match.score,status:match.status},services:[...this.store.servicePages.values()].filter(page=>page.organizationId===provider.id).map(page=>({id:page.id,title:page.title,summary:page.summary}))}]:[]});}
-  addFavorite(authorization:string|undefined,organizationId:string,input:Record<string,unknown>){const user=this.auth.authenticate(authorization);this.requireMember(user.id,organizationId);const match=this.store.matches.get(requiredText(input.matchId,"Match",10,100));if(!match||match.buyerOrganizationId!==organizationId)throw new NotFoundException("Match nicht gefunden.");const existing=[...this.store.favorites.values()].find(item=>item.userId===user.id&&item.providerOrganizationId===match.providerOrganizationId);if(existing)return existing;const now=new Date().toISOString(),record={id:randomUUID(),userId:user.id,providerOrganizationId:match.providerOrganizationId,matchId:match.id,list:"later"as const,note:null,createdAt:now,updatedAt:now};this.store.favorites.set(record.id,record);return record;}
-  updateFavorite(authorization:string|undefined,organizationId:string,favoriteId:string,input:Record<string,unknown>){const user=this.auth.authenticate(authorization);this.requireMember(user.id,organizationId);const item=this.store.favorites.get(favoriteId);if(!item||item.userId!==user.id)throw new NotFoundException("Favorit nicht gefunden.");const list=String(input.list);if(["later","priority","contacted"].includes(list))item.list=list as typeof item.list;if(typeof input.note==="string")item.note=input.note.trim().slice(0,1000)||null;item.updatedAt=new Date().toISOString();return item;}
-  removeFavorite(authorization:string|undefined,organizationId:string,favoriteId:string){const user=this.auth.authenticate(authorization);this.requireMember(user.id,organizationId);const item=this.store.favorites.get(favoriteId);if(!item||item.userId!==user.id)throw new NotFoundException("Favorit nicht gefunden.");this.store.favorites.delete(favoriteId);return{removed:true};}
-  preferences(authorization:string|undefined,organizationId:string){const user=this.auth.authenticate(authorization);this.requireMember(user.id,organizationId);return this.store.userPreferences.get(user.id)||{userId:user.id,notifyMatches:true,notifyMessages:true,notifyNeedStatus:true,notifyProduct:false,defaultAnonymous:true,updatedAt:null};}
-  updatePreferences(authorization:string|undefined,organizationId:string,input:Record<string,unknown>){const user=this.auth.authenticate(authorization);this.requireMember(user.id,organizationId);const current=this.preferences(authorization,organizationId),record={...current,notifyMatches:this.boolean(input.notifyMatches,current.notifyMatches),notifyMessages:this.boolean(input.notifyMessages,current.notifyMessages),notifyNeedStatus:this.boolean(input.notifyNeedStatus,current.notifyNeedStatus),notifyProduct:this.boolean(input.notifyProduct,current.notifyProduct),defaultAnonymous:this.boolean(input.defaultAnonymous,current.defaultAnonymous),updatedAt:new Date().toISOString()};this.store.userPreferences.set(user.id,record);return record;}
-  exportData(authorization:string|undefined,organizationId:string){const user=this.auth.authenticate(authorization);this.requireMember(user.id,organizationId);return{exportedAt:new Date().toISOString(),user:{id:user.id,email:user.email,firstName:user.firstName,lastName:user.lastName},organization:this.get(organizationId),membership:this.store.memberships.find(item=>item.userId===user.id&&item.organizationId===organizationId),needs:[...this.store.needs.values()].filter(item=>item.organizationId===organizationId),favorites:[...this.store.favorites.values()].filter(item=>item.userId===user.id),preferences:this.preferences(authorization,organizationId)};}
-  get(id: string) { const organization=this.store.organizations.get(id); if(!organization) throw new NotFoundException("Unternehmen nicht gefunden."); return organization; }
-  private requireAdmin(userId:string, organizationId:string) { if(!this.store.memberships.some(m=>m.userId===userId&&m.organizationId===organizationId&&m.role==="admin")) throw new ForbiddenException(); }
-  private requireMember(userId:string,organizationId:string){if(!this.store.memberships.some(item=>item.userId===userId&&item.organizationId===organizationId))throw new ForbiddenException();}
-  private membershipRole(value:unknown):MembershipRole{const role=String(value);if(!["admin","needs_manager","communication","viewer"].includes(role))throw new BadRequestException("Ungültige Teamrolle.");return role as MembershipRole;}
-  private boolean(value:unknown,fallback:boolean){return typeof value==="boolean"?value:fallback;}
+  updateProfile(
+    authorization: string | undefined,
+    organizationId: string,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    this.requireAdmin(user.id, organizationId);
+    const organization = this.get(organizationId);
+    const source = input.profileData;
+    if (!source || typeof source !== "object" || Array.isArray(source))
+      throw new BadRequestException("Profildaten fehlen.");
+    organization.profileData = Object.fromEntries(
+      Object.entries(source as Record<string, unknown>).filter(
+        ([, value]) => typeof value === "string" || typeof value === "boolean",
+      ),
+    ) as Record<string, string | boolean>;
+    organization.profileUpdatedAt = new Date().toISOString();
+    organization.profileRequiredTotal =
+      typeof input.requiredTotal === "number"
+        ? Math.max(0, input.requiredTotal)
+        : organization.profileRequiredTotal;
+    organization.profileRequiredCompleted =
+      typeof input.requiredCompleted === "number"
+        ? Math.max(0, input.requiredCompleted)
+        : organization.profileRequiredCompleted;
+    organization.profileRequiredSections = Array.isArray(input.requiredSections)
+      ? input.requiredSections.map(Boolean)
+      : organization.profileRequiredSections;
+    if (organization.reviewStatus === "changes_requested")
+      organization.reviewStatus = "draft";
+    return organization;
+  }
+  profile(authorization: string | undefined, organizationId: string) {
+    const user = this.auth.authenticate(authorization);
+    this.requireAdmin(user.id, organizationId);
+    return this.get(organizationId);
+  }
+  listMine(authorization: string | undefined) {
+    const user = this.auth.authenticate(authorization);
+    const ids = this.store.memberships
+      .filter((m) => m.userId === user.id)
+      .map((m) => m.organizationId);
+    return ids.map((id) => this.get(id));
+  }
+  team(authorization: string | undefined, organizationId: string) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireAdmin(actor.id, organizationId);
+    const members = this.store.memberships
+      .filter((item) => item.organizationId === organizationId)
+      .flatMap((item) => {
+        const user = this.store.users.get(item.userId);
+        return user
+          ? [
+              {
+                userId: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                role: item.role,
+                status: "active",
+                createdAt: user.createdAt,
+              },
+            ]
+          : [];
+      });
+    const invitations = [...this.store.teamInvitations.values()]
+      .filter(
+        (item) =>
+          item.organizationId === organizationId &&
+          !item.acceptedAt &&
+          Date.parse(item.expiresAt) > Date.now(),
+      )
+      .map((item) => ({
+        id: item.id,
+        email: item.email,
+        role: item.role,
+        status: "invited",
+        expiresAt: item.expiresAt,
+      }));
+    return { members, invitations };
+  }
+  async invite(
+    authorization: string | undefined,
+    organizationId: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireAdmin(actor.id, organizationId);
+    const organization = this.get(organizationId),
+      email = emailAddress(input.email),
+      role = this.membershipRole(input.role);
+    if (
+      this.store.memberships.some(
+        (item) =>
+          item.organizationId === organizationId &&
+          this.store.users.get(item.userId)?.email === email,
+      )
+    )
+      throw new BadRequestException("Diese Person gehört bereits zum Team.");
+    for (const [id, item] of this.store.teamInvitations)
+      if (
+        item.organizationId === organizationId &&
+        item.email === email &&
+        !item.acceptedAt
+      )
+        this.store.teamInvitations.delete(id);
+    const token = opaqueToken(),
+      now = new Date().toISOString(),
+      record = {
+        id: randomUUID(),
+        organizationId,
+        email,
+        role,
+        tokenHash: tokenHash(token),
+        invitedByUserId: actor.id,
+        expiresAt: new Date(Date.now() + 14 * 86_400_000).toISOString(),
+        acceptedAt: null,
+        createdAt: now,
+      };
+    this.store.teamInvitations.set(record.id, record);
+    await this.email.sendTeamInvitation({
+      email,
+      organizationName: organization.displayName,
+      inviterName: `${actor.firstName} ${actor.lastName}`,
+      token,
+    });
+    return {
+      id: record.id,
+      email,
+      role,
+      status: "invited",
+      expiresAt: record.expiresAt,
+    };
+  }
+  acceptInvitation(authorization: string | undefined, value: unknown) {
+    const user = this.auth.authenticate(authorization),
+      raw = requiredText(value, "Einladungscode", 20, 200),
+      invitation = [...this.store.teamInvitations.values()].find(
+        (item) => item.tokenHash === tokenHash(raw),
+      );
+    if (
+      !invitation ||
+      invitation.acceptedAt ||
+      Date.parse(invitation.expiresAt) <= Date.now()
+    )
+      throw new BadRequestException(
+        "Die Einladung ist ungültig oder abgelaufen.",
+      );
+    if (invitation.email !== user.email)
+      throw new ForbiddenException(
+        "Die Einladung wurde für eine andere E-Mail-Adresse ausgestellt.",
+      );
+    if (
+      !this.store.memberships.some(
+        (item) =>
+          item.userId === user.id &&
+          item.organizationId === invitation.organizationId,
+      )
+    )
+      this.store.memberships.push({
+        userId: user.id,
+        organizationId: invitation.organizationId,
+        role: invitation.role,
+      });
+    invitation.acceptedAt = new Date().toISOString();
+    return {
+      accepted: true,
+      organization: this.get(invitation.organizationId),
+    };
+  }
+  teamRole(
+    authorization: string | undefined,
+    organizationId: string,
+    userId: string,
+    value: unknown,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireAdmin(actor.id, organizationId);
+    const membership = this.store.memberships.find(
+      (item) =>
+        item.organizationId === organizationId && item.userId === userId,
+    );
+    if (!membership)
+      throw new NotFoundException("Teammitglied nicht gefunden.");
+    const role = this.membershipRole(value);
+    if (
+      membership.role === "admin" &&
+      role !== "admin" &&
+      this.store.memberships.filter(
+        (item) =>
+          item.organizationId === organizationId && item.role === "admin",
+      ).length === 1
+    )
+      throw new BadRequestException(
+        "Mindestens ein Administrator ist erforderlich.",
+      );
+    membership.role = role;
+    return membership;
+  }
+  removeTeamMember(
+    authorization: string | undefined,
+    organizationId: string,
+    userId: string,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireAdmin(actor.id, organizationId);
+    const index = this.store.memberships.findIndex(
+      (item) =>
+        item.organizationId === organizationId && item.userId === userId,
+    );
+    if (index < 0) throw new NotFoundException("Teammitglied nicht gefunden.");
+    const membership = this.store.memberships[index];
+    if (
+      membership.role === "admin" &&
+      this.store.memberships.filter(
+        (item) =>
+          item.organizationId === organizationId && item.role === "admin",
+      ).length === 1
+    )
+      throw new BadRequestException(
+        "Der letzte Administrator kann nicht entfernt werden.",
+      );
+    this.store.memberships.splice(index, 1);
+    return { removed: true };
+  }
+  favorites(authorization: string | undefined, organizationId: string) {
+    const user = this.auth.authenticate(authorization);
+    this.requireMember(user.id, organizationId);
+    return [...this.store.favorites.values()]
+      .filter((item) => item.userId === user.id)
+      .flatMap((item) => {
+        const provider = this.store.organizations.get(
+            item.providerOrganizationId,
+          ),
+          match = this.store.matches.get(item.matchId);
+        return provider && match
+          ? [
+              {
+                ...item,
+                provider: {
+                  id: provider.id,
+                  displayName: provider.displayName,
+                  legalName: provider.legalName,
+                  websiteUrl: provider.websiteUrl,
+                },
+                match: {
+                  id: match.id,
+                  score: match.score,
+                  status: match.status,
+                },
+                services: [...this.store.servicePages.values()]
+                  .filter((page) => page.organizationId === provider.id)
+                  .map((page) => ({
+                    id: page.id,
+                    title: page.title,
+                    summary: page.summary,
+                  })),
+              },
+            ]
+          : [];
+      });
+  }
+  addFavorite(
+    authorization: string | undefined,
+    organizationId: string,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    this.requireMember(user.id, organizationId);
+    const match = this.store.matches.get(
+      requiredText(input.matchId, "Match", 10, 100),
+    );
+    if (!match || match.buyerOrganizationId !== organizationId)
+      throw new NotFoundException("Match nicht gefunden.");
+    const existing = [...this.store.favorites.values()].find(
+      (item) =>
+        item.userId === user.id &&
+        item.providerOrganizationId === match.providerOrganizationId,
+    );
+    if (existing) return existing;
+    const now = new Date().toISOString(),
+      record = {
+        id: randomUUID(),
+        userId: user.id,
+        providerOrganizationId: match.providerOrganizationId,
+        matchId: match.id,
+        list: "later" as const,
+        note: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+    this.store.favorites.set(record.id, record);
+    return record;
+  }
+  updateFavorite(
+    authorization: string | undefined,
+    organizationId: string,
+    favoriteId: string,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    this.requireMember(user.id, organizationId);
+    const item = this.store.favorites.get(favoriteId);
+    if (!item || item.userId !== user.id)
+      throw new NotFoundException("Favorit nicht gefunden.");
+    const list = String(input.list);
+    if (["later", "priority", "contacted"].includes(list))
+      item.list = list as typeof item.list;
+    if (typeof input.note === "string")
+      item.note = input.note.trim().slice(0, 1000) || null;
+    item.updatedAt = new Date().toISOString();
+    return item;
+  }
+  removeFavorite(
+    authorization: string | undefined,
+    organizationId: string,
+    favoriteId: string,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    this.requireMember(user.id, organizationId);
+    const item = this.store.favorites.get(favoriteId);
+    if (!item || item.userId !== user.id)
+      throw new NotFoundException("Favorit nicht gefunden.");
+    this.store.favorites.delete(favoriteId);
+    return { removed: true };
+  }
+  preferences(authorization: string | undefined, organizationId: string) {
+    const user = this.auth.authenticate(authorization);
+    this.requireMember(user.id, organizationId);
+    return (
+      this.store.userPreferences.get(user.id) || {
+        userId: user.id,
+        notifyMatches: true,
+        notifyMessages: true,
+        notifyNeedStatus: true,
+        notifyProduct: false,
+        defaultAnonymous: true,
+        updatedAt: null,
+      }
+    );
+  }
+  updatePreferences(
+    authorization: string | undefined,
+    organizationId: string,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    this.requireMember(user.id, organizationId);
+    const current = this.preferences(authorization, organizationId),
+      record = {
+        ...current,
+        notifyMatches: this.boolean(input.notifyMatches, current.notifyMatches),
+        notifyMessages: this.boolean(
+          input.notifyMessages,
+          current.notifyMessages,
+        ),
+        notifyNeedStatus: this.boolean(
+          input.notifyNeedStatus,
+          current.notifyNeedStatus,
+        ),
+        notifyProduct: this.boolean(input.notifyProduct, current.notifyProduct),
+        defaultAnonymous: this.boolean(
+          input.defaultAnonymous,
+          current.defaultAnonymous,
+        ),
+        updatedAt: new Date().toISOString(),
+      };
+    this.store.userPreferences.set(user.id, record);
+    return record;
+  }
+  exportData(authorization: string | undefined, organizationId: string) {
+    const user = this.auth.authenticate(authorization);
+    this.requireMember(user.id, organizationId);
+    return {
+      exportedAt: new Date().toISOString(),
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+      organization: this.get(organizationId),
+      membership: this.store.memberships.find(
+        (item) =>
+          item.userId === user.id && item.organizationId === organizationId,
+      ),
+      needs: [...this.store.needs.values()].filter(
+        (item) => item.organizationId === organizationId,
+      ),
+      favorites: [...this.store.favorites.values()].filter(
+        (item) => item.userId === user.id,
+      ),
+      preferences: this.preferences(authorization, organizationId),
+    };
+  }
+  get(id: string) {
+    const organization = this.store.organizations.get(id);
+    if (!organization)
+      throw new NotFoundException("Unternehmen nicht gefunden.");
+    return organization;
+  }
+  private requireAdmin(userId: string, organizationId: string) {
+    if (
+      !this.store.memberships.some(
+        (m) =>
+          m.userId === userId &&
+          m.organizationId === organizationId &&
+          m.role === "admin",
+      )
+    )
+      throw new ForbiddenException();
+  }
+  private requireMember(userId: string, organizationId: string) {
+    if (
+      !this.store.memberships.some(
+        (item) =>
+          item.userId === userId && item.organizationId === organizationId,
+      )
+    )
+      throw new ForbiddenException();
+  }
+  private membershipRole(value: unknown): MembershipRole {
+    const role = String(value);
+    if (!["admin", "needs_manager", "communication", "viewer"].includes(role))
+      throw new BadRequestException("Ungültige Teamrolle.");
+    return role as MembershipRole;
+  }
+  private boolean(value: unknown, fallback: boolean) {
+    return typeof value === "boolean" ? value : fallback;
+  }
 }

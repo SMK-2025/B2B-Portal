@@ -82,24 +82,25 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           <section className="networkTrialBanner">
             <div className="networkTrialCopy">
               <span>IHR PERSÖNLICHER ZUGANG</span>
-              <h2>Module auswählen und Netzwerkzugang aktivieren</h2>
+              <h2>Jahresmitgliedschaft prüfen</h2>
               <p>
-                Der Initiator hat die verfügbaren Funktionen festgelegt. Buchen
-                Sie Unternehmensseiten und Ihre gewünschten Zusatzmodule.
+                Ihre Mitgliedschaft ist abgelaufen oder noch nicht vollständig
+                eingerichtet. Bitte wenden Sie sich zur Verlängerung an den
+                Plattformbetreiber.
               </p>
             </div>
             <div className="networkTrialBooking">
               <p>
-                <strong>ab 19 €</strong>
+                <strong>Alle Funktionen</strong>
                 <span>
-                  netto je Monat
+                  in Ihrer Jahresmitgliedschaft
                   <br />
                   für Ihren Nutzerzugang
                 </span>
               </p>
               <small>Immer zwölf Monate im Voraus</small>
               <Link href={`${base}/buchen` as never}>
-                Persönliche Module auswählen →
+                Informationen zur Mitgliedschaft →
               </Link>
             </div>
           </section>

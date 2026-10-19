@@ -26,6 +26,12 @@ import { PortalStore } from "../core/portal.store";
 import { emailAddress, requiredText, safeUrl } from "../core/validation";
 import { CompanyImport } from "./company-import";
 import {
+  fullPortalModules,
+  pricing,
+  validMemberPrice,
+  memberPrice,
+} from "./annual-membership";
+import {
   allProductModuleIds,
   expandNetworkModules,
   NETWORK_COMPLETE_UNIT_NET_CENTS,
@@ -91,6 +97,87 @@ const NETWORK_CONTENT_CATEGORIES: Partial<
 
 @Injectable()
 export class NetworksService {
+  invitationQuote(input: Record<string, unknown>) {
+    const hash = tokenHash(requiredText(input.invite, "Einladung", 20, 200)),
+      invite = [...this.store.networkContents.values()].find(
+        (i) =>
+          i.data.kind === "network_invitation" &&
+          i.data.inviteTokenHash === hash &&
+          !i.data.usedAt &&
+          i.endsAt &&
+          Date.parse(i.endsAt) > Date.now(),
+      );
+    if (!invite)
+      throw new BadRequestException(
+        "Die Einladung ist ungültig oder abgelaufen.",
+      );
+    const network = this.raw(invite.networkId);
+    if (invite.data.role !== "network_admin" && network.status !== "active")
+      throw new BadRequestException(
+        "Das Partnernetzwerk ist noch nicht für kostenpflichtige Mitgliedschaften aktiviert.",
+      );
+    return {
+      networkName: network.name,
+      networkSlug: network.slug,
+      initiator: invite.data.role === "network_admin",
+      ...pricing(network),
+    };
+  }
+  memberPricing(
+    authorization: string | undefined,
+    id: string,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(user.id);
+    const network = this.raw(id);
+    network.settings.memberMonthlyNetCents = validMemberPrice(
+      input.monthlyNetCents,
+    );
+    network.updatedAt = new Date().toISOString();
+    return { ...network, memberPrice: pricing(network) };
+  }
+  memberRegistrations(authorization: string | undefined) {
+    const user = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(user.id);
+    return [...this.store.networkOrders.values()]
+      .filter((o) => o.kind === "member_annual")
+      .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
+      .map((o) => ({
+        ...o,
+        networkName: this.store.networks.get(o.networkId)?.name || "",
+        user: this.publicUser(o.orderedByUserId),
+        endingSoon:
+          !!o.serviceEndsAt &&
+          Date.parse(o.serviceEndsAt) <= Date.now() + 42 * 86400000,
+        expired: !!o.serviceEndsAt && Date.parse(o.serviceEndsAt) <= Date.now(),
+      }));
+  }
+  updateMemberInvoice(
+    authorization: string | undefined,
+    id: string,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(user.id);
+    const order = this.store.networkOrders.get(id);
+    if (!order || order.kind !== "member_annual")
+      throw new NotFoundException("Mitgliedsbuchung nicht gefunden.");
+    if (input.invoiceSent === true) {
+      order.invoiceSentAt = new Date().toISOString();
+      order.invoiceReference = requiredText(
+        input.invoiceReference,
+        "Rechnungsnummer",
+        1,
+        100,
+      );
+    }
+    if (input.paid === true) {
+      order.paymentStatus = "paid";
+      order.paidAt = new Date().toISOString();
+    }
+    return order;
+  }
   private readonly companyImport = new CompanyImport();
   private canEditCompany(userId: string, organizationId: string, role: string) {
     return (
@@ -168,7 +255,7 @@ export class NetworksService {
       secondaryColor: "#30264f",
       status: "draft",
       trialEndsAt: null,
-      enabledModules: [...NETWORK_INCLUDED_MODULES],
+      enabledModules: fullPortalModules(),
       settings: {
         closedNetwork: true,
         selfRegistration: false,
@@ -176,6 +263,10 @@ export class NetworksService {
         admissionRules: null,
         setupCompletedAt: null,
         billingMode: "standard",
+        memberMonthlyNetCents:
+          input.memberMonthlyNetCents === undefined
+            ? 6900
+            : validMemberPrice(input.memberMonthlyNetCents),
       },
       createdAt: now,
       updatedAt: now,
@@ -201,6 +292,7 @@ export class NetworksService {
           .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
       return {
         ...network,
+        memberPrice: pricing(network),
         administrator: membership
           ? { ...membership, user: this.publicUser(membership.userId) }
           : null,
@@ -571,7 +663,27 @@ export class NetworksService {
     const user = this.auth.authenticate(authorization);
     const network = this.bySlug(slug);
     this.requireNetworkAccess(user.id, network.id);
+    const annual = [...this.store.networkOrders.values()]
+      .filter(
+        (o) =>
+          o.kind === "member_annual" &&
+          o.networkId === network.id &&
+          o.orderedByUserId === user.id &&
+          o.status === "accepted",
+      )
+      .sort((a, b) =>
+        (b.serviceEndsAt || "").localeCompare(a.serviceEndsAt || ""),
+      )[0];
     return {
+      membershipYear: annual
+        ? {
+            startsAt: annual.serviceStartsAt,
+            endsAt: annual.serviceEndsAt,
+            endingSoon:
+              Date.parse(annual.serviceEndsAt || "") <=
+              Date.now() + 42 * 86400000,
+          }
+        : null,
       id: network.id,
       slug: network.slug,
       name: network.name,
@@ -974,6 +1086,13 @@ export class NetworksService {
   ) {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkManagement(actor.id, networkId);
+    if (
+      actor.accountRole !== "platform_admin" &&
+      this.raw(networkId).settings.memberMonthlyNetCents !== undefined
+    )
+      throw new ForbiddenException(
+        "Neue Partnermitglieder müssen ihre persönliche Jahresmitgliedschaft über die Einladung bestätigen.",
+      );
     const organizationId = requiredText(
       input.organizationId,
       "Unternehmen",
@@ -1045,7 +1164,15 @@ export class NetworksService {
         250,
       ).toLowerCase(),
       userId = this.store.userByEmail.get(email);
-    if (!userId) {
+    if (
+      !userId ||
+      !this.store.networkMemberships.some(
+        (m) =>
+          m.userId === userId &&
+          m.networkId === networkId &&
+          m.status === "active",
+      )
+    ) {
       const inviteToken = opaqueToken(),
         now = new Date().toISOString(),
         requested = String(input.role || "member"),
@@ -1807,6 +1934,10 @@ export class NetworksService {
     const user = this.auth.authenticate(authorization),
       network = this.raw(networkId);
     this.requireNetworkAccess(user.id, networkId);
+    if (network.settings.memberMonthlyNetCents !== undefined)
+      throw new BadRequestException(
+        "Eine separate Modulbuchung ist nicht mehr möglich. Die Jahresmitgliedschaft wird persönlich bei der Registrierung gebucht; Initiatoren bleiben kostenlos.",
+      );
     if (network.settings.billingMode === "cooperation_free")
       throw new BadRequestException(
         "Dieses Kooperationsnetzwerk ist vollständig kostenfrei freigeschaltet. Eine Modulbuchung ist nicht erforderlich.",
@@ -2073,6 +2204,7 @@ export class NetworksService {
       network.enabledModules = expandNetworkModules(selected);
     }
     network.settings.closedNetwork = true;
+    network.enabledModules = fullPortalModules();
     network.settings.selfRegistration = false;
     network.settings.crossNetworkMatching = false;
     if (typeof input.admissionRules === "string")
@@ -2553,6 +2685,7 @@ export class NetworksService {
   private raw(id: string) {
     const network = this.store.networks.get(id);
     if (!network) throw new NotFoundException("Netzwerk nicht gefunden.");
+    network.enabledModules = fullPortalModules();
     return network;
   }
   private validateContentData(
@@ -2721,6 +2854,7 @@ export class NetworksService {
       );
   }
   private normalizeOrder(order: NetworkOrderRecord) {
+    if (order.kind === "member_annual") return order;
     order.participantCount =
       Number.isInteger(order.participantCount) && order.participantCount > 0
         ? order.participantCount
@@ -2781,6 +2915,21 @@ export class NetworksService {
   }
   private userModules(userId: string, networkId: string) {
     const network = this.raw(networkId);
+    const annual = [...this.store.networkOrders.values()]
+      .filter(
+        (o) =>
+          o.kind === "member_annual" &&
+          o.networkId === networkId &&
+          o.orderedByUserId === userId &&
+          o.status === "accepted",
+      )
+      .sort((a, b) =>
+        (b.serviceEndsAt || "").localeCompare(a.serviceEndsAt || ""),
+      )[0];
+    if (annual && !this.isNetworkInitiator(userId, networkId))
+      return Date.parse(annual.serviceEndsAt || "") > Date.now()
+        ? fullPortalModules()
+        : [...NETWORK_INCLUDED_MODULES];
     if (
       this.isNetworkInitiator(userId, networkId) ||
       network.status === "trial" ||

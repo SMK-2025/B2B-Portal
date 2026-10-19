@@ -6,7 +6,7 @@ export default function AdminNetworksPage() {
     <PortalShell
       role="admin"
       title="Partnerportale verwalten"
-      intro="Legen Sie strikt getrennte Netzwerkmandanten an, bestimmen Sie Initiatoren und steuern Sie Zugänge, Module sowie Laufzeiten zentral."
+      intro="Legen Sie getrennte Partnernetzwerke an, bestimmen Sie kostenlose Initiatoren und legen Sie den individuellen Mitgliedspreis je Netzwerk fest."
     >
       <AdminNetworkWorkspace />
     </PortalShell>

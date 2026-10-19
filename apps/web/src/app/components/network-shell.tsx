@@ -16,6 +16,11 @@ import {
   portalRequest,
 } from "../lib/portal-api";
 type Access = {
+  membershipYear?: {
+    startsAt: string;
+    endsAt: string;
+    endingSoon: boolean;
+  } | null;
   currentUserId: string;
   networkId: string;
   slug: string;
@@ -89,7 +94,7 @@ const morePartnerItems = [
   { path: "dokumente", label: "Dokumente", icon: "▤", module: "documents" },
 ];
 const adminItems = [
-  { path: "einstellungen", label: "Branding & Module", icon: "⚙" },
+  { path: "einstellungen", label: "Branding & Einstellungen", icon: "⚙" },
   {
     path: "mitglieder",
     label: "Mitglieder & Einladungen",
@@ -160,6 +165,11 @@ export function NetworkShell({
             { token, body: {} },
           ),
           portalRequest<{
+            membershipYear?: {
+              startsAt: string;
+              endsAt: string;
+              endingSoon: boolean;
+            } | null;
             id: string;
             slug: string;
             name: string;
@@ -187,6 +197,7 @@ export function NetworkShell({
         if (active)
           setAccess({
             currentUserId: session.userId,
+            membershipYear: network.membershipYear,
             networkId: network.id,
             slug: network.slug,
             networkName: network.name,
@@ -410,6 +421,19 @@ export function NetworkShell({
               </div>
               {action}
             </header>
+            {access.membershipYear?.endingSoon && (
+              <div className="memberBillingEnding" role="status">
+                <strong>Mitgliedschaft endet</strong>
+                <p>
+                  Ihre Jahresmitgliedschaft läuft bis{" "}
+                  {new Date(
+                    Date.parse(access.membershipYear.endsAt) - 1,
+                  ).toLocaleDateString("de-DE")}
+                  . Bitte wenden Sie sich rechtzeitig zur Verlängerung an den
+                  Plattformbetreiber.
+                </p>
+              </div>
+            )}
             {children}
           </div>
         </section>

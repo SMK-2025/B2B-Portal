@@ -13,15 +13,26 @@ type Network = {
   websiteUrl: string | null;
   status: NetworkStatus;
   trialEndsAt: string | null;
-  settings: { selfRegistration: boolean; billingMode?: "standard" | "cooperation_free" };
+  settings: {
+    selfRegistration: boolean;
+    billingMode?: "standard" | "cooperation_free";
+  };
   administrator: {
     userId: string;
     user?: { firstName: string; lastName: string; email: string };
   } | null;
   latestOrder?: {
-    id:string; status:"submitted"|"accepted"|"rejected"|"cancelled";
-    submittedAt:string; invoiceCompany:string; invoiceContact:string; invoiceEmail:string;
-    billingCycle:"annual"; participantCount:number; selectedModules:string[]; pricingMode:"individual"|"complete"; monthlyNetCents:number;
+    id: string;
+    status: "submitted" | "accepted" | "rejected" | "cancelled";
+    submittedAt: string;
+    invoiceCompany: string;
+    invoiceContact: string;
+    invoiceEmail: string;
+    billingCycle: "annual";
+    participantCount: number;
+    selectedModules: string[];
+    pricingMode: "individual" | "complete";
+    monthlyNetCents: number;
   } | null;
 };
 type Dialog = "create" | "trial" | "admin" | null;
@@ -82,6 +93,9 @@ export function AdminNetworkWorkspace() {
           slug: form.get("slug"),
           legalName: form.get("legalName"),
           websiteUrl: form.get("websiteUrl"),
+          memberMonthlyNetCents: Math.round(
+            Number(form.get("memberMonthlyPrice")) * 100,
+          ),
         },
       });
       setNetworks((items) => [...items, created]);
@@ -142,7 +156,10 @@ export function AdminNetworkWorkspace() {
     const email = String(new FormData(event.currentTarget).get("email"));
     setBusy(true);
     try {
-      const result=await portalRequest<{invited?:boolean;registrationRequired?:boolean}>(`/networks/${selected}/administrator`, {
+      const result = await portalRequest<{
+        invited?: boolean;
+        registrationRequired?: boolean;
+      }>(`/networks/${selected}/administrator`, {
         token,
         body: { email },
       });
@@ -151,32 +168,116 @@ export function AdminNetworkWorkspace() {
       });
       setNetworks(refreshed);
       setDialog(null);
-      setNotice(result.invited
-        ? "Die persönliche Initiator-Einladung wurde versendet. Nach der Registrierung wird die Person automatisch Initiator und Netzwerkadministrator."
-        : "Die Rolle Initiator / Netzwerkadministrator wurde verbindlich zugewiesen.");
+      setNotice(
+        result.invited
+          ? "Die persönliche Initiator-Einladung wurde versendet. Nach der Registrierung wird die Person automatisch Initiator und Netzwerkadministrator."
+          : "Die Rolle Initiator / Netzwerkadministrator wurde verbindlich zugewiesen.",
+      );
     } catch (error) {
       showError(error);
     } finally {
       setBusy(false);
     }
   }
-  async function deleteNetwork(network:Network){
-    const confirmation=window.prompt(`„${network.name}“ einschließlich aller Unternehmen, Benutzerkonten, E-Mail-Adressen, Anmeldedaten und Inhalte dauerhaft löschen? Die betroffenen Personen können sich anschließend neu registrieren. Geben Sie zur Bestätigung ${network.slug} ein:`);
-    if(confirmation!==network.slug)return;
-    const token=getPortalSession();if(!token)return setNotice("Bitte melden Sie sich erneut als Plattformadministrator an.");
-    setBusy(true);try{await portalRequest(`/networks/${network.id}/delete`,{token,body:{confirmSlug:confirmation}});setNetworks(items=>items.filter(item=>item.id!==network.id));setNotice(`${network.name} wurde vollständig gelöscht.`)}catch(error){showError(error)}finally{setBusy(false)}
+  async function deleteNetwork(network: Network) {
+    const confirmation = window.prompt(
+      `„${network.name}“ einschließlich aller Unternehmen, Benutzerkonten, E-Mail-Adressen, Anmeldedaten und Inhalte dauerhaft löschen? Die betroffenen Personen können sich anschließend neu registrieren. Geben Sie zur Bestätigung ${network.slug} ein:`,
+    );
+    if (confirmation !== network.slug) return;
+    const token = getPortalSession();
+    if (!token)
+      return setNotice(
+        "Bitte melden Sie sich erneut als Plattformadministrator an.",
+      );
+    setBusy(true);
+    try {
+      await portalRequest(`/networks/${network.id}/delete`, {
+        token,
+        body: { confirmSlug: confirmation },
+      });
+      setNetworks((items) => items.filter((item) => item.id !== network.id));
+      setNotice(`${network.name} wurde vollständig gelöscht.`);
+    } catch (error) {
+      showError(error);
+    } finally {
+      setBusy(false);
+    }
   }
-  async function activateCooperation(network:Network){
-    if(!window.confirm(`${network.name} jetzt dauerhaft als kostenfreie Kooperation aktivieren? Alle Netzwerkmodule stehen dann Initiator und eingeladenen Partnern ohne Buchung oder Rechnung zur Verfügung.`))return;
-    const token=getPortalSession();if(!token)return setNotice("Bitte melden Sie sich erneut als Plattformadministrator an.");
-    setBusy(true);try{const updated=await portalRequest<Network>(`/networks/${network.id}/access`,{token,body:{status:"active",billingMode:"cooperation_free",selfRegistration:false}});setNetworks(items=>items.map(item=>item.id===updated.id?{...item,...updated}:item));setNotice(`${network.name} ist als kostenfreie Kooperation vollständig aktiviert.`)}catch(error){showError(error)}finally{setBusy(false)}
+  async function activateCooperation(network: Network) {
+    if (
+      !window.confirm(
+        `${network.name} jetzt dauerhaft als kostenfreie Kooperation aktivieren? Alle Netzwerkmodule stehen dann Initiator und eingeladenen Partnern ohne Buchung oder Rechnung zur Verfügung.`,
+      )
+    )
+      return;
+    const token = getPortalSession();
+    if (!token)
+      return setNotice(
+        "Bitte melden Sie sich erneut als Plattformadministrator an.",
+      );
+    setBusy(true);
+    try {
+      const updated = await portalRequest<Network>(
+        `/networks/${network.id}/access`,
+        {
+          token,
+          body: {
+            status: "active",
+            billingMode: "cooperation_free",
+            selfRegistration: false,
+          },
+        },
+      );
+      setNetworks((items) =>
+        items.map((item) =>
+          item.id === updated.id ? { ...item, ...updated } : item,
+        ),
+      );
+      setNotice(
+        `${network.name} ist als kostenfreie Kooperation vollständig aktiviert.`,
+      );
+    } catch (error) {
+      showError(error);
+    } finally {
+      setBusy(false);
+    }
   }
-  async function decideOrder(network:Network,decision:"accepted"|"rejected"){
-    const order=network.latestOrder;if(!order)return;
-    const text=decision==="accepted"?"Diese verbindliche Bestellung annehmen und das Netzwerk produktiv aktivieren?":"Diese verbindliche Bestellung ablehnen?";
-    if(!window.confirm(text))return;
-    const token=getPortalSession();if(!token)return setNotice("Bitte melden Sie sich erneut als Plattformadministrator an.");
-    setBusy(true);try{await portalRequest(`/networks/${network.id}/orders/${order.id}/decision`,{token,body:{decision}});const refreshed=await portalRequest<Network[]>("/networks/admin",{token});setNetworks(refreshed);setNotice(decision==="accepted"?"Die Bestellung wurde angenommen und das Netzwerk aktiviert.":"Die Bestellung wurde abgelehnt.")}catch(error){showError(error)}finally{setBusy(false)}
+  async function decideOrder(
+    network: Network,
+    decision: "accepted" | "rejected",
+  ) {
+    const order = network.latestOrder;
+    if (!order) return;
+    const text =
+      decision === "accepted"
+        ? "Diese verbindliche Bestellung annehmen und das Netzwerk produktiv aktivieren?"
+        : "Diese verbindliche Bestellung ablehnen?";
+    if (!window.confirm(text)) return;
+    const token = getPortalSession();
+    if (!token)
+      return setNotice(
+        "Bitte melden Sie sich erneut als Plattformadministrator an.",
+      );
+    setBusy(true);
+    try {
+      await portalRequest(
+        `/networks/${network.id}/orders/${order.id}/decision`,
+        { token, body: { decision } },
+      );
+      const refreshed = await portalRequest<Network[]>("/networks/admin", {
+        token,
+      });
+      setNetworks(refreshed);
+      setNotice(
+        decision === "accepted"
+          ? "Die Bestellung wurde angenommen und das Netzwerk aktiviert."
+          : "Die Bestellung wurde abgelehnt.",
+      );
+    } catch (error) {
+      showError(error);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -247,17 +348,17 @@ export function AdminNetworkWorkspace() {
                     )}
                   </div>
                 </div>
-                <Status tone={tone}>{network.status==="active"&&network.settings.billingMode==="cooperation_free"?"Kooperation · kostenfrei":labels[network.status]}</Status>
+                <Status tone={tone}>{labels[network.status]}</Status>
               </header>
               <div className="adminNetworkFacts">
                 <article>
                   <small>Zugangsstatus</small>
-                  <b>{network.status==="active"&&network.settings.billingMode==="cooperation_free"?"Kostenfreie Kooperation":labels[network.status]}</b>
+                  <b>{labels[network.status]}</b>
                   <span>
                     {trialEnd
                       ? `Testzugang bis ${trialEnd}`
                       : network.status === "active"
-                        ? network.settings.billingMode==="cooperation_free"?"Alle Module ohne Berechnung freigeschaltet":"Dauerhaft freigeschaltet"
+                        ? "Initiator kostenlos · Mitglieder buchen ihren Zugang selbst"
                         : "Nicht öffentlich nutzbar"}
                   </span>
                 </article>
@@ -268,10 +369,10 @@ export function AdminNetworkWorkspace() {
                 </article>
                 <article>
                   <small>Mitgliederregistrierung</small>
-                  <b>
-                    Nur per Einladung
-                  </b>
-                  <span>Keine freie Anmeldung oder öffentliche Auffindbarkeit</span>
+                  <b>Nur per Einladung</b>
+                  <span>
+                    Keine freie Anmeldung oder öffentliche Auffindbarkeit
+                  </span>
                 </article>
                 <article>
                   <small>Mandant</small>
@@ -279,10 +380,52 @@ export function AdminNetworkWorkspace() {
                   <span>Eigene Mitglieder, Inhalte und Rollen</span>
                 </article>
               </div>
-              {network.latestOrder?.status === "submitted" && <section className="adminNetworkOrderNotice">
-                <div><small>VERBINDLICHE MODULBUCHUNG EINGEGANGEN</small><b>{network.latestOrder.invoiceCompany}</b><span>{network.latestOrder.participantCount} Nutzer · {network.latestOrder.selectedModules.length} kostenpflichtige Module · {(network.latestOrder.monthlyNetCents/100).toLocaleString("de-DE",{style:"currency",currency:"EUR"})} netto / Monat</span><span>{new Date(network.latestOrder.submittedAt).toLocaleString("de-DE")} · zwölf Monate im Voraus</span></div>
-                <div><span>Bestellnummer</span><code>{network.latestOrder.id}</code><div className="adminNetworkOrderActions"><button type="button" disabled={busy} onClick={()=>void decideOrder(network,"accepted")}>Annehmen &amp; aktivieren</button><button type="button" disabled={busy} onClick={()=>void decideOrder(network,"rejected")}>Ablehnen</button></div></div>
-              </section>}
+              {network.latestOrder?.status === "submitted" && (
+                <section className="adminNetworkOrderNotice">
+                  <div>
+                    <small>VERBINDLICHE MODULBUCHUNG EINGEGANGEN</small>
+                    <b>{network.latestOrder.invoiceCompany}</b>
+                    <span>
+                      {network.latestOrder.participantCount} Nutzer ·{" "}
+                      {network.latestOrder.selectedModules.length}{" "}
+                      kostenpflichtige Module ·{" "}
+                      {(
+                        network.latestOrder.monthlyNetCents / 100
+                      ).toLocaleString("de-DE", {
+                        style: "currency",
+                        currency: "EUR",
+                      })}{" "}
+                      netto / Monat
+                    </span>
+                    <span>
+                      {new Date(network.latestOrder.submittedAt).toLocaleString(
+                        "de-DE",
+                      )}{" "}
+                      · zwölf Monate im Voraus
+                    </span>
+                  </div>
+                  <div>
+                    <span>Bestellnummer</span>
+                    <code>{network.latestOrder.id}</code>
+                    <div className="adminNetworkOrderActions">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void decideOrder(network, "accepted")}
+                      >
+                        Annehmen &amp; aktivieren
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void decideOrder(network, "rejected")}
+                      >
+                        Ablehnen
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              )}
               <footer className="adminNetworkActions">
                 {network.status === "trial" && (
                   <Link
@@ -307,9 +450,14 @@ export function AdminNetworkWorkspace() {
                 >
                   Administrator bestimmen
                 </button>
-                {network.status !== "active" || network.settings.billingMode !== "cooperation_free" ? (
-                  <button disabled={busy} className="portalPrimary" type="button" onClick={()=>void activateCooperation(network)}>
-                    Kostenfrei aktivieren
+                {network.status !== "active" ? (
+                  <button
+                    disabled={busy}
+                    className="portalPrimary"
+                    type="button"
+                    onClick={() => void updateAccessFor(network.id, "active")}
+                  >
+                    Partnerportal aktivieren
                   </button>
                 ) : null}
                 {network.status === "active" ? (
@@ -325,7 +473,16 @@ export function AdminNetworkWorkspace() {
                     Sperren
                   </button>
                 ) : null}
-                <button disabled={busy} className="portalReject" type="button" title="Netzwerk vollständig löschen" aria-label={`${network.name} vollständig löschen`} onClick={()=>void deleteNetwork(network)}>⌫</button>
+                <button
+                  disabled={busy}
+                  className="portalReject"
+                  type="button"
+                  title="Netzwerk vollständig löschen"
+                  aria-label={`${network.name} vollständig löschen`}
+                  onClick={() => void deleteNetwork(network)}
+                >
+                  ⌫
+                </button>
               </footer>
             </section>
           );
@@ -397,8 +554,26 @@ export function AdminNetworkWorkspace() {
                 </label>
                 <p>
                   Das Netzwerk wird als leere, geschlossene Hülle ohne Zugriff,
-                  Administrator und gebuchte Module angelegt.
+                  Initiator angelegt. Alle Funktionen sind enthalten; der
+                  Initiator bleibt kostenlos.
                 </p>
+                <label>
+                  Mitgliedspreis netto pro Monat (€)
+                  <input
+                    name="memberMonthlyPrice"
+                    type="number"
+                    min="0"
+                    max="1000000"
+                    step="0.01"
+                    defaultValue={69}
+                    required
+                  />
+                  <small>
+                    Pro Partnermitglied, zwölf Monate im Voraus zzgl. 19 % MwSt.
+                    Initiator kostenlos. Später unter „Anmeldungen &
+                    Mitgliedsjahre“ änderbar.
+                  </small>
+                </label>
                 <div className="adminNetworkDialogActions">
                   <button type="button" onClick={() => setDialog(null)}>
                     Abbrechen
@@ -491,22 +666,55 @@ export function AdminNetworkWorkspace() {
             <header>
               <div>
                 <span>TESTZUGANG AKTIV</span>
-                <h2 id="test-access-ready-title">Testbereich ist freigeschaltet</h2>
+                <h2 id="test-access-ready-title">
+                  Testbereich ist freigeschaltet
+                </h2>
               </div>
-              <button type="button" onClick={() => setTestAccess(null)} aria-label="Dialog schließen">×</button>
+              <button
+                type="button"
+                onClick={() => setTestAccess(null)}
+                aria-label="Dialog schließen"
+              >
+                ×
+              </button>
             </header>
             <div className="adminNetworkTestSummary">
               <strong aria-hidden="true">✓</strong>
               <div>
                 <b>{testAccess.name}</b>
-                <p>Sie können jetzt direkt in die geschützte Testansicht wechseln. Ihre bestehende Administrationssitzung bleibt dabei erhalten.</p>
-                {testAccess.trialEndsAt && <small>Testzugang gültig bis {new Date(testAccess.trialEndsAt).toLocaleDateString("de-DE")}</small>}
+                <p>
+                  Sie können jetzt direkt in die geschützte Testansicht
+                  wechseln. Ihre bestehende Administrationssitzung bleibt dabei
+                  erhalten.
+                </p>
+                {testAccess.trialEndsAt && (
+                  <small>
+                    Testzugang gültig bis{" "}
+                    {new Date(testAccess.trialEndsAt).toLocaleDateString(
+                      "de-DE",
+                    )}
+                  </small>
+                )}
               </div>
             </div>
-            {!testAccess.administrator && <p className="adminNetworkTestHint">Für einen vollständig rollengetreuen Test bestimmen Sie anschließend noch einen Netzwerkadministrator. Die Testansicht können Sie bereits jetzt öffnen.</p>}
+            {!testAccess.administrator && (
+              <p className="adminNetworkTestHint">
+                Für einen vollständig rollengetreuen Test bestimmen Sie
+                anschließend noch einen Netzwerkadministrator. Die Testansicht
+                können Sie bereits jetzt öffnen.
+              </p>
+            )}
             <div className="adminNetworkDialogActions">
-              <button type="button" onClick={() => setTestAccess(null)}>Zur Übersicht</button>
-              <Link className="portalPrimary adminNetworkLoginCta" href={`/portal/netzwerk/${testAccess.slug}` as never} onClick={() => setTestAccess(null)}><span aria-hidden="true">→</span>Testansicht jetzt öffnen</Link>
+              <button type="button" onClick={() => setTestAccess(null)}>
+                Zur Übersicht
+              </button>
+              <Link
+                className="portalPrimary adminNetworkLoginCta"
+                href={`/portal/netzwerk/${testAccess.slug}` as never}
+                onClick={() => setTestAccess(null)}
+              >
+                <span aria-hidden="true">→</span>Testansicht jetzt öffnen
+              </Link>
             </div>
           </section>
         </div>

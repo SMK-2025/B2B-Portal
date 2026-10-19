@@ -1,7 +1,7 @@
 import type { PortalStore } from "./portal.store";
 import { enqueueOperatorMail, OPERATOR_EMAIL } from "./operator-mail";
 export const RETIRE_INITIATOR_JOB = "retire-legacy-initiator-2026-10-19";
-export const RESET_TEST_MEMBER_JOB = "reset-test-member-2026-10-19-hey-five";
+export const RESET_TEST_MEMBER_JOB = "reset-test-member-2026-10-19-hey-five-second";
 export function resetTestMember(store: PortalStore) {
   return retireLegacyInitiator(store, {
     email: "mk@hey-five.de",

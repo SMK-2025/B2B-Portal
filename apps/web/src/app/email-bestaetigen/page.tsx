@@ -50,7 +50,9 @@ function Confirmation() {
         <div className="check">✓</div>
         <h1>E-Mail bestätigt</h1>
         <p className="lead">
-          Ihr Zugang ist aktiviert. Sie können sich jetzt sicher anmelden.
+          Ihre E-Mail-Adresse ist bestätigt. Melden Sie sich jetzt an, um die
+          Registrierung fortzusetzen. Als Partner ergänzen Sie anschließend
+          Unternehmen und Rechnungsdaten und bestätigen Ihren Jahresbeitrag.
         </p>
         <Link
           className="primary linkButton"
@@ -60,7 +62,7 @@ function Confirmation() {
               : "/anmelden") as never
           }
         >
-          Jetzt anmelden
+          Anmeldung & Registrierung fortsetzen
         </Link>
       </div>
     );

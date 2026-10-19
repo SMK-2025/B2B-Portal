@@ -15,6 +15,7 @@ export async function portalRequest<T>(
   let response: Response;
   try {
     response = await fetch(`${portalApiUrl}/api${path}`, {
+      signal: AbortSignal.timeout(20_000),
       method: options.method ?? (options.body === undefined ? "GET" : "POST"),
       headers: {
         accept: "application/json",

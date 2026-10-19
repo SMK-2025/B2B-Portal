@@ -248,10 +248,12 @@ export default function RegistrationPage() {
             <article>
               <b>03</b>
               <div>
-                <strong>Im Partnerportal starten</strong>
+                <strong>Unternehmen & Rechnungsdaten</strong>
                 <p>
-                  Ihre Rolle und Ihr Netzwerk werden automatisch aus der
-                  Einladung übernommen.
+                  Als Partner prüfen Sie Ihren Jahrespreis, ergänzen Ihre
+                  Rechnungsanschrift und buchen verbindlich. Erst danach ist die
+                  Mitgliedschaft vollständig eingerichtet. Initiatoren verwalten
+                  das Netzwerk kostenlos.
                 </p>
               </div>
             </article>
@@ -276,6 +278,11 @@ export default function RegistrationPage() {
                 Die eingeladene E-Mail-Adresse ist verbindlich vorgegeben.
               </p>
               <form onSubmit={register} className="formGrid">
+                <MemberAnnualRegistrationFields
+                  invite={networkInviteToken}
+                  loading={loading}
+                  summaryOnly
+                />
                 <label>
                   Vorname
                   <input
@@ -363,6 +370,11 @@ export default function RegistrationPage() {
                 <p>
                   Der Link ist 24 Stunden gültig. Schauen Sie bei Bedarf auch in
                   Ihren Spam-Ordner.
+                </p>
+                <p>
+                  Danach geht es mit der Anmeldung und Schritt 3 weiter:
+                  Unternehmen, Rechnungsdaten und verbindliche Jahresbuchung.
+                  Die E-Mail-Bestätigung allein schließt keine Buchung ab.
                 </p>
               </div>
               {verificationToken ? (

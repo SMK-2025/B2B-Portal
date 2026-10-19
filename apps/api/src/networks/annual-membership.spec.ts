@@ -122,6 +122,22 @@ describe("personal annual membership billing", () => {
     expect(() => f.orgs.create(f.member, f.input, true)).toThrow();
     expect(f.store.networkOrders.size).toBe(1);
   });
+  it("continues a verified invite through billing without granting premature access", async () => {
+    const f = await fixture();
+    expect(f.networks.claimInitiatorInvitation(f.member).claimed).toBe(false);
+    expect(f.networks.mine(f.member)).toEqual([]);
+    expect(f.networks.invitationQuote({ invite: f.invite }).initiator).toBe(
+      false,
+    );
+    expect(() =>
+      f.orgs.create(f.member, { ...f.input, invoiceStreet: "" }, true),
+    ).toThrow();
+    expect(f.networks.mine(f.member)).toEqual([]);
+    expect(f.store.networkOrders.size).toBe(0);
+    f.orgs.create(f.member, f.input, true);
+    expect(f.networks.mine(f.member)).toHaveLength(1);
+    expect(f.networks.memberRegistrations(f.owner)).toHaveLength(1);
+  });
   it("rejects missing billing data, absent consent and stale/forged prices without consuming the invitation", async () => {
     const f = await fixture();
     for (const change of [

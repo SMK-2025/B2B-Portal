@@ -15,9 +15,11 @@ const money = (n: number) =>
 export function MemberAnnualRegistrationFields({
   invite,
   loading,
+  summaryOnly = false,
 }: {
   invite: string;
   loading: boolean;
+  summaryOnly?: boolean;
 }) {
   const [quote, setQuote] = useState<Quote | null>(null),
     [error, setError] = useState("");
@@ -48,6 +50,23 @@ export function MemberAnnualRegistrationFields({
         Initiatoren verwalten das Partnernetzwerk kostenlos. Bitte melden Sie
         sich über Ihren Initiatorzugang an.
       </p>
+    );
+  if (summaryOnly)
+    return (
+      <div className="full pricingClarity">
+        <strong>Ihre Mitgliedschaft bei {quote.networkName}</strong>
+        <p>
+          {money(quote.monthlyNetCents)} netto pro Monat × 12 Monate.
+          Jahresbeitrag {money(quote.annualNetCents)} zzgl. 19 % MwSt. (
+          {money(quote.vatCents)}), insgesamt {money(quote.grossCents)} im
+          Voraus.
+        </p>
+        <p>
+          Im nächsten Schritt nach der E-Mail-Bestätigung ergänzen Sie Ihre
+          Rechnungsdaten und bestätigen die Buchung verbindlich. Jetzt wird nur
+          Ihr persönlicher Zugang angelegt. Die Rechnung erhalten Sie separat.
+        </p>
+      </div>
     );
   return (
     <>

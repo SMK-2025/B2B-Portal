@@ -290,6 +290,13 @@ export default function RegistrationPage() {
           {step === "account" && (
             <>
               <h1>Partnerportal-Zugang erstellen</h1>
+              <button
+                type="button"
+                className="registrationBack"
+                onClick={() => setStep("pricing")}
+              >
+                ← Preisübersicht erneut ansehen
+              </button>
               <p className="lead">
                 Die eingeladene E-Mail-Adresse ist verbindlich vorgegeben.
               </p>

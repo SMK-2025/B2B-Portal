@@ -222,11 +222,10 @@ export default function RegistrationPage() {
             Persönlich verbunden.
           </h2>
           <p>
-            Stärken Sie unsere Partnergemeinschaft mit einem persönlichen Ort
-            für Austausch und Zusammenarbeit. Lernen Sie die Menschen und
-            Unternehmen hinter den Kontakten kennen, bleiben Sie zwischen
-            gemeinsamen Treffen im Gespräch und entwickeln Sie neue
-            Geschäftsmöglichkeiten – geschützt innerhalb unseres Netzwerks.
+            Lerne die Menschen hinter den Unternehmen kennen und bleib auch
+            zwischen gemeinsamen Treffen im Gespräch. Teile Ideen, stell dein
+            Angebot vor und finde neue Kontakte – persönlich und geschützt
+            innerhalb unserer Partnergemeinschaft.
           </p>
           <div className="authBenefits">
             <article>
@@ -279,9 +278,9 @@ export default function RegistrationPage() {
           </div>
           {step === "pricing" && (
             <>
-              <h1>Ihre Einladung. Ihr Netzwerk.</h1>
+              <h1>Deine Einladung. Dein Netzwerk.</h1>
               <p className="lead">
-                Prüfen Sie zuerst den Beitrag für Ihre Teilnahme.
+                Dein Beitrag für Austausch und neue Kontakte.
               </p>
               <MemberAnnualRegistrationFields
                 invite={networkInviteToken}
@@ -479,9 +478,23 @@ export default function RegistrationPage() {
       {networkBrand ? (
         <footer className="networkAuthFooter">
           <span>
-            © {new Date().getFullYear()} {networkBrand.name}
+            © {new Date().getFullYear()} Media Online Innovations Group
           </span>
-          <span>Technisch bereitgestellt durch B2B Matching</span>
+          <nav aria-label="Rechtliche Informationen">
+            <Link href="/impressum" target="_blank" rel="noopener noreferrer">
+              Impressum
+            </Link>
+            <Link
+              href="/datenschutz/unternehmen"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Datenschutz
+            </Link>
+            <Link href="/agb" target="_blank" rel="noopener noreferrer">
+              AGB
+            </Link>
+          </nav>
         </footer>
       ) : (
         <SiteFooter />

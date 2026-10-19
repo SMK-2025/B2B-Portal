@@ -63,17 +63,31 @@ export function MemberAnnualRegistrationFields({
   if (summaryOnly)
     return (
       <div className="full registrationPriceStep">
-        <strong>Ihre Mitgliedschaft bei {quote.networkName}</strong>
-        <p>
-          {money(quote.monthlyNetCents)} netto pro Monat × 12 Monate.
-          Jahresbeitrag {money(quote.annualNetCents)} zzgl. 19 % MwSt. (
-          {money(quote.vatCents)}), insgesamt {money(quote.grossCents)} im
-          Voraus.
+        <p className="registrationPortalPurpose">
+          Dein Zugang zum unabhängigen Business- und Partnerportal im Umfeld von{" "}
+          {quote.networkName}. Keine Vereinsmitgliedschaft.
         </p>
-        <p>
-          Alle Funktionen sind enthalten. Laufzeit: zwölf Monate, keine
-          automatische Verlängerung. Die Jahresrechnung erhalten Sie separat;
-          keine Online-Abbuchung.
+        <dl className="registrationPriceList">
+          <div>
+            <dt>Portalnutzung · alle Funktionen</dt>
+            <dd>{money(quote.monthlyNetCents)} netto / Monat</dd>
+          </div>
+          <div>
+            <dt>12 Monate netto</dt>
+            <dd>{money(quote.annualNetCents)}</dd>
+          </div>
+          <div>
+            <dt>19 % MwSt.</dt>
+            <dd>{money(quote.vatCents)}</dd>
+          </div>
+          <div className="registrationPriceTotal">
+            <dt>Jahresbetrag im Voraus</dt>
+            <dd>{money(quote.grossCents)}</dd>
+          </div>
+        </dl>
+        <p className="registrationPriceTerms">
+          Separate Rechnung · keine Online-Abbuchung · keine automatische
+          Verlängerung
         </p>
         {onContinue && (
           <form
@@ -91,9 +105,9 @@ export function MemberAnnualRegistrationFields({
               </span>
             </label>
             <small className="full">
-              Dieses Partnerportal wird von der Media Online Innovations Group
-              bereitgestellt. Die verbindliche Jahresbuchung erfolgt nach der
-              E-Mail-Bestätigung mit Ihren vollständigen Rechnungsdaten.
+              Bereitgestellt von der Media Online Innovations Group. Die
+              Jahresbuchung schließt du nach der E-Mail-Bestätigung mit deinen
+              Rechnungsdaten ab.
             </small>
             <button className="primary full" type="submit">
               Weiter · Zugang erstellen
@@ -105,7 +119,7 @@ export function MemberAnnualRegistrationFields({
   return (
     <>
       <div className="full pricingClarity">
-        <h2>Ihre Jahresmitgliedschaft bei {quote.networkName}</h2>
+        <h2>Deine Portalnutzung für {quote.networkName}</h2>
         <p>Alle Portal-Funktionen für Ihren persönlichen Partnerzugang.</p>
         <p>
           <b>{money(quote.monthlyNetCents)} netto pro Monat × 12 Monate</b>

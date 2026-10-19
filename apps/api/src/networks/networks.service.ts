@@ -25,6 +25,7 @@ import type {
 import { PortalStore } from "../core/portal.store";
 import { emailAddress, requiredText, safeUrl } from "../core/validation";
 import { CompanyImport } from "./company-import";
+import { enqueueOperatorMail } from "../core/operator-mail";
 import {
   fullPortalModules,
   pricing,
@@ -97,6 +98,19 @@ const NETWORK_CONTENT_CATEGORIES: Partial<
 
 @Injectable()
 export class NetworksService {
+  operatorMailStatus(authorization: string | undefined) {
+    const user = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(user.id);
+    return {
+      recipient: "mk@media-online-innovations.group",
+      pending: [...this.store.operatorMails.values()].filter((m) => !m.sentAt)
+        .length,
+      messages: [...this.store.operatorMails.values()]
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .slice(0, 20)
+        .map(({ text, ...m }) => m),
+    };
+  }
   private operatorAudit(
     userId: string,
     networkId: string,
@@ -489,6 +503,12 @@ export class NetworksService {
         networkSlug: network.slug,
         inviteToken,
       });
+      enqueueOperatorMail(
+        this.store,
+        `invitation:${invitation.id}`,
+        "Neue Netzwerkeinladung versendet",
+        `Netzwerk: ${network.name}\nEingeladene E-Mail-Adresse: ${email}\nRolle: Initiator\nDie Einladung wurde versendet.`,
+      );
       return {
         invited: true,
         email,
@@ -1304,6 +1324,12 @@ export class NetworksService {
         networkSlug: network.slug,
         inviteToken,
       });
+      enqueueOperatorMail(
+        this.store,
+        `invitation:${invitation.id}`,
+        "Neue Netzwerkeinladung versendet",
+        `Netzwerk: ${network.name}\nEingeladene E-Mail-Adresse: ${email}\nRolle: ${role}\nDie Einladung wurde versendet. Eine Jahresbuchung entsteht erst bei ausdrücklicher Bestätigung durch den Partner.`,
+      );
       return { invited: true, email, registrationRequired: true };
     }
     const company = this.store.memberships.find(

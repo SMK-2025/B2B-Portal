@@ -13,6 +13,11 @@ import { NetworksService } from "./networks.service";
 @Controller("networks")
 export class NetworksController {
   constructor(private readonly networks: NetworksService) {}
+  @Get("admin/operator-mails") operatorMails(
+    @Headers("authorization") auth: string | undefined,
+  ) {
+    return this.networks.operatorMailStatus(auth);
+  }
   @Post(":networkId/operator-access") operatorAccess(
     @Headers("authorization") auth: string | undefined,
     @Param("networkId") id: string,

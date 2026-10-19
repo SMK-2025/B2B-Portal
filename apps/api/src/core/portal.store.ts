@@ -16,6 +16,8 @@ import type {
   MessageRecord,
   NeedRecord,
   NetworkRecord,
+  OperatorMailRecord,
+  MaintenanceReceipt,
   NetworkSystemMessageRecord,
   NetworkMembershipRecord,
   NetworkContentRecord,
@@ -34,6 +36,7 @@ import type {
   FavoriteRecord,
   UserPreferenceRecord,
 } from "./domain";
+import { retireLegacyInitiator } from "./retire-legacy-initiator";
 
 @Injectable()
 export class PortalStore implements OnModuleInit, OnApplicationShutdown {
@@ -48,6 +51,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   readonly favorites = new Map<string, FavoriteRecord>();
   readonly userPreferences = new Map<string, UserPreferenceRecord>();
   readonly networks = new Map<string, NetworkRecord>();
+  readonly operatorMails = new Map<string, OperatorMailRecord>();
+  readonly maintenanceReceipts = new Map<string, MaintenanceReceipt>();
   readonly networkSystemMessages = new Map<
     string,
     NetworkSystemMessageRecord
@@ -95,6 +100,10 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     });
     await this.runMigrations();
     await this.restore();
+    if (process.env.NODE_ENV === "production") {
+      retireLegacyInitiator(this);
+      await this.persist();
+    }
     this.logger.log("PostgreSQL-Persistenz ist aktiv.");
   }
 
@@ -113,6 +122,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       favorites: [...this.favorites],
       userPreferences: [...this.userPreferences],
       networks: [...this.networks],
+      operatorMails: [...this.operatorMails],
+      maintenanceReceipts: [...this.maintenanceReceipts],
       networkSystemMessages: [...this.networkSystemMessages],
       networkBySlug: [...this.networkBySlug],
       networkMemberships: this.networkMemberships,
@@ -187,6 +198,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     map(this.favorites, state.favorites);
     map(this.userPreferences, state.userPreferences);
     map(this.networks, state.networks);
+    map(this.operatorMails, state.operatorMails);
+    map(this.maintenanceReceipts, state.maintenanceReceipts);
     map(this.networkSystemMessages, state.networkSystemMessages);
     map(this.networkBySlug, state.networkBySlug);
     array(this.networkMemberships, state.networkMemberships);
@@ -248,6 +261,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     this.favorites.clear();
     this.userPreferences.clear();
     this.networks.clear();
+    this.operatorMails.clear();
+    this.maintenanceReceipts.clear();
     this.networkBySlug.clear();
     this.networkMemberships.splice(0);
     this.networkContents.clear();

@@ -18,6 +18,7 @@ import { emailAddress, requiredText, safeUrl } from "../core/validation";
 import { opaqueToken, tokenHash } from "../auth/password";
 import { EmailService } from "../auth/email.service";
 import { annualOrder, fullPortalModules } from "../networks/annual-membership";
+import { enqueueOperatorMail } from "../core/operator-mail";
 
 @Injectable()
 export class OrganizationsService {
@@ -145,6 +146,17 @@ export class OrganizationsService {
       )?.id;
       requestedNetwork.enabledModules = fullPortalModules();
       this.store.networkOrders.set(memberOrder.id, memberOrder);
+      const money = (n: number) =>
+        (n / 100).toLocaleString("de-DE", {
+          style: "currency",
+          currency: "EUR",
+        });
+      enqueueOperatorMail(
+        this.store,
+        `annual-booking:${memberOrder.id}`,
+        "Neue Jahresmitgliedschaft – Rechnung erstellen",
+        `Netzwerk: ${requestedNetwork.name}\nUnternehmen: ${memberOrder.invoiceCompany}\nNutzer: ${user.firstName} ${user.lastName} (${user.email})\nRechnungskontakt: ${memberOrder.invoiceContact}\nRechnungs-E-Mail: ${memberOrder.invoiceEmail}\nJahresbetrag netto: ${money(memberOrder.annualNetCents!)}\n19 % MwSt.: ${money(memberOrder.vatCents!)}\nGesamtbetrag brutto: ${money(memberOrder.grossCents!)}\nLaufzeit: ${memberOrder.serviceStartsAt} bis ${memberOrder.serviceEndsAt}\nBuchungsnummer: ${memberOrder.id}\nZugang sofort aktiviert. Bitte Rechnung manuell erstellen und versenden. Vollständige Rechnungsdaten sind unter Anmeldungen & Mitgliedsjahre hinterlegt.`,
+      );
     }
     return organization;
   }

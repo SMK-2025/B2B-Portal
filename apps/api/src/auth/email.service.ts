@@ -3,10 +3,30 @@ import {
   Logger,
   ServiceUnavailableException,
 } from "@nestjs/common";
+import { OPERATOR_EMAIL } from "../core/operator-mail";
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
+  async sendOperatorInformation(subject: string, text: string) {
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
+      throw new ServiceUnavailableException(
+        "Betreiber-Mailversand nicht konfiguriert.",
+      );
+    const link = this.webUrl() + "/portal/admin/anmeldungen";
+    await this.send({
+      to: OPERATOR_EMAIL,
+      subject,
+      text: text + "\n\nVerwaltung: " + link,
+      html: this.template(
+        subject,
+        this.escape(text).replace(/\n/g, "<br>"),
+        "Zur Verwaltung",
+        link,
+        "Betreiberinformation. Dies ist keine Rechnung.",
+      ),
+    });
+  }
 
   directLinksEnabled(): boolean {
     return process.env.NODE_ENV !== "production";
@@ -227,6 +247,7 @@ export class EmailService {
     ).replace(/\/$/, "");
     const response = await fetch(`${apiBaseUrl}/v3/mail/send`, {
       method: "POST",
+      signal: AbortSignal.timeout(15_000),
       headers: {
         authorization: `Bearer ${apiKey}`,
         "content-type": "application/json",

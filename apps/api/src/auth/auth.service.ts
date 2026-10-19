@@ -18,6 +18,7 @@ import {
   verifyPassword,
 } from "./password";
 import { EmailService } from "./email.service";
+import { enqueueOperatorMail } from "../core/operator-mail";
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -161,6 +162,15 @@ export class AuthService implements OnModuleInit {
       this.store.userByEmail.delete(email);
       this.store.users.delete(user.id);
       throw error;
+    }
+    if (networkInvitation) {
+      const network = this.store.networks.get(networkInvitation.networkId);
+      enqueueOperatorMail(
+        this.store,
+        `registration:${user.id}`,
+        "Neuer Zugang über Netzwerkeinladung registriert",
+        `Netzwerk: ${network?.name || "Partnernetzwerk"}\nNutzer: ${user.firstName} ${user.lastName}\nE-Mail: ${user.email}\nDer Zugang wurde registriert. E-Mail-Bestätigung und Firmabuchung sind noch offen; dies ist noch keine abrechenbare Jahresbuchung.`,
+      );
     }
     return {
       user: this.publicUser(user),

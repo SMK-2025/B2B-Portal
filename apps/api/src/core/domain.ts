@@ -178,6 +178,20 @@ export interface NetworkSystemMessageRecord {
   createdByUserId: string;
   archivedAt: string | null;
 }
+export interface OperatorMailRecord {
+  id: string;
+  subject: string;
+  text: string;
+  createdAt: string;
+  sentAt: string | null;
+  attempts: number;
+  nextAttemptAt: string;
+  lastError: string | null;
+}
+export interface MaintenanceReceipt {
+  state: "removed" | "absent" | "blocked";
+  completedAt: string;
+}
 
 export type NetworkContentType =
   | "event"

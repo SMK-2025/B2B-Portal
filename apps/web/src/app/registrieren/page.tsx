@@ -210,59 +210,71 @@ export default function RegistrationPage() {
         <SiteHeader />
       )}
       <section className="authPage">
-        <aside className="authStory registrationStory">
-          <span>
-            {networkBrand
-              ? `IHR START BEI ${networkBrand.name.toUpperCase()}`
-              : "IHR PARTNERPORTAL-ZUGANG"}
-          </span>
-          <h2>
-            Gemeinsam mehr erreichen.
-            <br />
-            Persönlich verbunden.
-          </h2>
-          <p>
-            Lerne die Menschen hinter den Unternehmen kennen und bleib auch
-            zwischen gemeinsamen Treffen im Gespräch. Teile Ideen, stell dein
-            Angebot vor und finde neue Kontakte – persönlich und geschützt
-            innerhalb unserer Partnergemeinschaft.
-          </p>
-          <div className="authBenefits">
-            <article>
-              <b>01</b>
-              <div>
-                <strong>Mitgliedschaft kennenlernen</strong>
-                <p>
-                  Preis und Leistungen prüfen und Ihren persönlichen Zugang
-                  erstellen.
-                </p>
+        <aside
+          className={`authStory registrationStory${step === "organization" ? " registrationBillingStory" : ""}`}
+        >
+          {step === "organization" ? (
+            <MemberAnnualRegistrationFields
+              invite={networkInviteToken}
+              loading={loading}
+              priceOnly
+            />
+          ) : (
+            <>
+              <span>
+                {networkBrand
+                  ? `IHR START BEI ${networkBrand.name.toUpperCase()}`
+                  : "IHR PARTNERPORTAL-ZUGANG"}
+              </span>
+              <h2>
+                Gemeinsam mehr erreichen.
+                <br />
+                Persönlich verbunden.
+              </h2>
+              <p>
+                Lerne die Menschen hinter den Unternehmen kennen und bleib auch
+                zwischen gemeinsamen Treffen im Gespräch. Teile Ideen, stell
+                dein Angebot vor und finde neue Kontakte – persönlich und
+                geschützt innerhalb unserer Partnergemeinschaft.
+              </p>
+              <div className="authBenefits">
+                <article>
+                  <b>01</b>
+                  <div>
+                    <strong>Mitgliedschaft kennenlernen</strong>
+                    <p>
+                      Preis und Leistungen prüfen und Ihren persönlichen Zugang
+                      erstellen.
+                    </p>
+                  </div>
+                </article>
+                <article>
+                  <b>02</b>
+                  <div>
+                    <strong>Persönlich verbunden bleiben</strong>
+                    <p>
+                      Kontakte vertiefen, Nachrichten austauschen und gemeinsame
+                      Treffen planen.
+                    </p>
+                  </div>
+                </article>
+                <article>
+                  <b>03</b>
+                  <div>
+                    <strong>Gemeinsam Chancen nutzen</strong>
+                    <p>
+                      Kompetenzen entdecken, Angebote abstimmen und aus
+                      Begegnungen nachhaltige Geschäftsbeziehungen entwickeln.
+                    </p>
+                  </div>
+                </article>
               </div>
-            </article>
-            <article>
-              <b>02</b>
-              <div>
-                <strong>Persönlich verbunden bleiben</strong>
-                <p>
-                  Kontakte vertiefen, Nachrichten austauschen und gemeinsame
-                  Treffen planen.
-                </p>
-              </div>
-            </article>
-            <article>
-              <b>03</b>
-              <div>
-                <strong>Gemeinsam Chancen nutzen</strong>
-                <p>
-                  Kompetenzen entdecken, Angebote abstimmen und aus Begegnungen
-                  nachhaltige Geschäftsbeziehungen entwickeln.
-                </p>
-              </div>
-            </article>
-          </div>
-          <small>
-            ✓ Keine offene Registrierung &nbsp; ✓ Keine öffentliche Partnerseite
-            &nbsp; ✓ Strikt getrennter Netzwerkbereich
-          </small>
+              <small>
+                ✓ Keine offene Registrierung &nbsp; ✓ Keine öffentliche
+                Partnerseite &nbsp; ✓ Strikt getrennter Netzwerkbereich
+              </small>
+            </>
+          )}
         </aside>
         <section className="authCard authCardV2">
           <div
@@ -446,6 +458,7 @@ export default function RegistrationPage() {
                 <MemberAnnualRegistrationFields
                   invite={networkInviteToken}
                   loading={loading}
+                  hidePrice
                 />
               </form>
             </>

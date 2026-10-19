@@ -863,6 +863,13 @@ h1,h2,h3,h4,h5,h6,b,strong,button,label,summary{font-weight:500!important}
 .registrationWizard .registrationPriceStep{padding:0;background:none;border:0;margin-top:24px}
 .registrationWizard .authPage>.authStory,.registrationWizard .authPage>.authCardV2{margin:0;align-self:stretch;height:auto;box-sizing:border-box}
 .registrationWizard .registrationPriceStep{font-size:14px;line-height:1.5}
+.registrationWizard .registrationBillingStory{justify-content:flex-start}
+.registrationWizard .registrationBillingStory .pricingClarity{background:transparent;border:0;padding:0;margin:0;color:#fff}
+.registrationWizard .registrationBillingStory .pricingClarity h2{font:500 32px/1.2 Arial,Helvetica,sans-serif;color:#fff}
+.registrationWizard .registrationBillingStory .pricingClarity p{margin:20px 0;color:#ffffffe6}
+.registrationWizard .memberAnnualConsent{display:flex!important;flex-direction:row!important;align-items:flex-start!important;gap:12px!important;margin:0;line-height:1.5}
+.registrationWizard .memberAnnualConsent input[type=checkbox]{flex:0 0 18px;width:18px!important;height:18px!important;min-height:18px!important;margin:3px 0 0;padding:0;accent-color:var(--auth-primary,#5267d8)}
+.registrationWizard .memberAnnualConsent span{flex:1;min-width:0}
 .registrationWizard .registrationPriceStep>.registrationPortalPurpose{margin:0 0 20px;line-height:1.5}
 .registrationPriceList{margin:0 0 16px;display:grid;gap:10px}
 .registrationPriceList>div{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}

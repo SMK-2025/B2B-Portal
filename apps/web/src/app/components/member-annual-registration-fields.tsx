@@ -17,11 +17,15 @@ export function MemberAnnualRegistrationFields({
   loading,
   summaryOnly = false,
   onContinue,
+  priceOnly = false,
+  hidePrice = false,
 }: {
   invite: string;
   loading: boolean;
   summaryOnly?: boolean;
   onContinue?: () => void;
+  priceOnly?: boolean;
+  hidePrice?: boolean;
 }) {
   const [quote, setQuote] = useState<Quote | null>(null),
     [error, setError] = useState("");
@@ -116,28 +120,30 @@ export function MemberAnnualRegistrationFields({
         )}
       </div>
     );
+  const price = (
+    <div className="full pricingClarity">
+      <h2>Deine Portalnutzung für {quote.networkName}</h2>
+      <p>Alle Funktionen für deinen persönlichen Partnerzugang.</p>
+      <p>
+        <b>{money(quote.monthlyNetCents)} netto pro Monat × 12 Monate</b>
+      </p>
+      <p>
+        Jahresbeitrag netto: {money(quote.annualNetCents)}
+        <br />
+        19 % MwSt.: {money(quote.vatCents)}
+        <br />
+        <strong>Gesamtbetrag im Voraus: {money(quote.grossCents)}</strong>
+      </p>
+      <p>
+        Zwölf Monate ab Buchung, sofortiger Zugang. Die Jahresrechnung erhältst
+        du separat. Keine Online-Abbuchung, keine automatische Verlängerung.
+      </p>
+    </div>
+  );
+  if (priceOnly) return price;
   return (
     <>
-      <div className="full pricingClarity">
-        <h2>Deine Portalnutzung für {quote.networkName}</h2>
-        <p>Alle Portal-Funktionen für Ihren persönlichen Partnerzugang.</p>
-        <p>
-          <b>{money(quote.monthlyNetCents)} netto pro Monat × 12 Monate</b>
-        </p>
-        <p>
-          Jahresbeitrag netto: {money(quote.annualNetCents)}
-          <br />
-          19 % MwSt.: {money(quote.vatCents)}
-          <br />
-          <strong>Gesamtbetrag im Voraus: {money(quote.grossCents)}</strong>
-        </p>
-        <p>
-          Laufzeit: zwölf Monate ab dieser Buchung. Ihr Zugang wird sofort
-          freigeschaltet. Die Jahresrechnung wird anschließend manuell an Ihre
-          Rechnungsadresse versendet; keine Online-Abbuchung. Keine automatische
-          Verlängerung.
-        </p>
-      </div>
+      {!hidePrice && price}
       <input
         type="hidden"
         name="acceptedMonthlyNetCents"

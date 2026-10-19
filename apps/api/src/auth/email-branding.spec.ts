@@ -14,7 +14,8 @@ describe("email presentation", () => {
     );
     expect(html).toContain('bgcolor="#5158bf"');
     expect(html).toContain("mso-padding-alt:16px 28px");
-    expect(html).toContain("Zur Verwaltung</a>");
+    expect(html).toContain('font color="#ffffff"');
+    expect(html).toContain('color:#ffffff !important;text-decoration:none;">Zur Verwaltung</span>');
     expect(html).not.toMatch(/#087f79|#078d84|#eef3f2|#16a098/i);
     expect(html).toContain("b2b-matching-logo-brand.png");
   });

@@ -367,7 +367,7 @@ export class EmailService {
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td align="center" valign="middle" bgcolor="#5158bf" style="border-radius:9px;background-color:#5158bf;padding:16px 28px;mso-padding-alt:16px 28px;">
-                          <a href="${safeLink}" style="display:inline-block;color:#ffffff!important;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:22px;font-weight:700;text-align:center;mso-line-height-rule:exactly;">${this.escape(button)}</a>
+                          <a href="${safeLink}" style="display:inline-block;color:#ffffff !important;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:22px;font-weight:700;text-align:center;mso-line-height-rule:exactly;"><font color="#ffffff"><span style="color:#ffffff !important;text-decoration:none;">${this.escape(button)}</span></font></a>
                         </td>
                       </tr>
                     </table>

@@ -65,7 +65,7 @@ export function MemberAnnualRegistrationFields({
       <div className="full registrationPriceStep">
         <p className="registrationPortalPurpose">
           Dein Zugang zum unabhängigen Business- und Partnerportal im Umfeld von{" "}
-          {quote.networkName}. Keine Vereinsmitgliedschaft.
+          {quote.networkName}.
         </p>
         <dl className="registrationPriceList">
           <div>

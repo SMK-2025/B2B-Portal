@@ -268,6 +268,10 @@ export default function RegistrationPage() {
         <section className="authCard authCardV2">
           <div
             className="registrationProgress"
+            role="progressbar"
+            aria-valuemin={1}
+            aria-valuemax={4}
+            aria-valuenow={stepNumber}
             aria-label={`Schritt ${stepNumber} von 4`}
           >
             <span style={{ width: `${stepNumber * 25}%` }} />

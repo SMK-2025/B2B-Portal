@@ -279,9 +279,6 @@ export default function RegistrationPage() {
           {step === "pricing" && (
             <>
               <h1>Deine Einladung. Dein Netzwerk.</h1>
-              <p className="lead">
-                Dein Beitrag für Austausch und neue Kontakte.
-              </p>
               <MemberAnnualRegistrationFields
                 invite={networkInviteToken}
                 loading={loading}

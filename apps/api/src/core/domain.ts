@@ -168,6 +168,17 @@ export interface NetworkMembershipRecord {
   updatedAt: string;
 }
 
+export interface NetworkSystemMessageRecord {
+  id: string;
+  networkId: string;
+  title: string;
+  message: string;
+  severity: "info" | "warning";
+  createdAt: string;
+  createdByUserId: string;
+  archivedAt: string | null;
+}
+
 export type NetworkContentType =
   | "event"
   | "topic"

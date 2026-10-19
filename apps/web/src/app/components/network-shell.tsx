@@ -1,5 +1,6 @@
 "use client";
 import { NetworkNotifications } from "./network-notifications";
+import { NetworkSystemMessages } from "./network-system-messages";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -204,7 +205,9 @@ export function NetworkShell({
             role,
             canManage: isInitiator || role === "moderator",
             isInitiator,
-            readOnly: network.status === "trial",
+            readOnly:
+              network.status === "trial" &&
+              session.accountRole !== "platform_admin",
             status: network.status,
             enabledModules: network.enabledModules,
             offeredModules: network.offeredModules,
@@ -434,6 +437,11 @@ export function NetworkShell({
                 </p>
               </div>
             )}
+            <NetworkSystemMessages
+              key={access.networkId}
+              networkId={access.networkId}
+              operator={access.role === "platform_admin"}
+            />
             {children}
           </div>
         </section>

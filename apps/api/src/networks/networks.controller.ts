@@ -13,6 +13,32 @@ import { NetworksService } from "./networks.service";
 @Controller("networks")
 export class NetworksController {
   constructor(private readonly networks: NetworksService) {}
+  @Post(":networkId/operator-access") operatorAccess(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+  ) {
+    return this.networks.operatorAccess(auth, id);
+  }
+  @Get(":networkId/system-messages") systemMessages(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+  ) {
+    return this.networks.systemMessages(auth, id);
+  }
+  @Post(":networkId/system-messages") createSystemMessage(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.createSystemMessage(auth, id, body);
+  }
+  @Post(":networkId/system-messages/:messageId/archive") archiveSystemMessage(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Param("messageId") messageId: string,
+  ) {
+    return this.networks.archiveSystemMessage(auth, id, messageId);
+  }
   @Post("invitations/quote") quote(@Body() body: Record<string, unknown>) {
     return this.networks.invitationQuote(body);
   }

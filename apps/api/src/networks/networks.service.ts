@@ -97,6 +97,81 @@ const NETWORK_CONTENT_CATEGORIES: Partial<
 
 @Injectable()
 export class NetworksService {
+  private operatorAudit(
+    userId: string,
+    networkId: string,
+    type: string,
+    data: Record<string, unknown> = {},
+  ) {
+    this.store.activities.push({
+      id: randomUUID(),
+      matchId: null,
+      organizationId: null,
+      actorUserId: userId,
+      type,
+      visibility: "platform_internal",
+      data: { networkId, ...data },
+      createdAt: new Date().toISOString(),
+    });
+  }
+  operatorAccess(authorization: string | undefined, networkId: string) {
+    const user = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(user.id);
+    const network = this.raw(networkId);
+    this.operatorAudit(user.id, networkId, "operator.network.opened");
+    return { networkId: network.id, slug: network.slug };
+  }
+  systemMessages(authorization: string | undefined, networkId: string) {
+    const user = this.auth.authenticate(authorization);
+    this.raw(networkId);
+    this.requireNetworkAccess(user.id, networkId);
+    return [...this.store.networkSystemMessages.values()]
+      .filter((m) => m.networkId === networkId && !m.archivedAt)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map(({ createdByUserId, ...message }) => message);
+  }
+  createSystemMessage(
+    authorization: string | undefined,
+    networkId: string,
+    input: Record<string, unknown>,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(user.id);
+    this.raw(networkId);
+    const record = {
+      id: randomUUID(),
+      networkId,
+      title: requiredText(input.title, "Titel", 2, 160),
+      message: requiredText(input.message, "System-Meldung", 2, 5000),
+      severity:
+        input.severity === "warning" ? ("warning" as const) : ("info" as const),
+      createdAt: new Date().toISOString(),
+      createdByUserId: user.id,
+      archivedAt: null,
+    };
+    this.store.networkSystemMessages.set(record.id, record);
+    this.operatorAudit(user.id, networkId, "operator.system-message.created", {
+      messageId: record.id,
+    });
+    return { id: record.id };
+  }
+  archiveSystemMessage(
+    authorization: string | undefined,
+    networkId: string,
+    id: string,
+  ) {
+    const user = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(user.id);
+    this.raw(networkId);
+    const record = this.store.networkSystemMessages.get(id);
+    if (!record || record.networkId !== networkId)
+      throw new NotFoundException("System-Meldung nicht gefunden.");
+    record.archivedAt = new Date().toISOString();
+    this.operatorAudit(user.id, networkId, "operator.system-message.archived", {
+      messageId: id,
+    });
+    return { archived: true };
+  }
   invitationQuote(input: Record<string, unknown>) {
     const hash = tokenHash(requiredText(input.invite, "Einladung", 20, 200)),
       invite = [...this.store.networkContents.values()].find(
@@ -649,6 +724,9 @@ export class NetworksService {
       if (user) this.store.userByEmail.delete(user.email);
       this.store.users.delete(userId);
     }
+    for (const [id, message] of this.store.networkSystemMessages)
+      if (message.networkId === networkId)
+        this.store.networkSystemMessages.delete(id);
     this.store.networks.delete(networkId);
     this.store.networkBySlug.delete(network.slug);
     return {
@@ -662,7 +740,23 @@ export class NetworksService {
 
   publicBySlug(authorization: string | undefined, slug: string) {
     const user = this.auth.authenticate(authorization);
-    const network = this.bySlug(slug);
+    const id = this.store.networkBySlug.get(slug);
+    if (!id) throw new NotFoundException("Netzwerk nicht gefunden.");
+    const network =
+      user.accountRole === "platform_admin" ? this.raw(id) : this.bySlug(slug);
+    if (
+      user.accountRole === "platform_admin" &&
+      !this.store.activities
+        .slice(-100)
+        .some(
+          (a) =>
+            a.type === "operator.network.opened" &&
+            a.actorUserId === user.id &&
+            a.data.networkId === id &&
+            Date.parse(a.createdAt) > Date.now() - 60_000,
+        )
+    )
+      this.operatorAudit(user.id, id, "operator.network.opened");
     this.requireNetworkAccess(user.id, network.id);
     const annual = [...this.store.networkOrders.values()]
       .filter(
@@ -826,6 +920,7 @@ export class NetworksService {
         (item) =>
           item.networkId === networkId &&
           item.role !== "network_admin" &&
+          this.store.users.get(item.userId)?.accountRole !== "platform_admin" &&
           (manager || item.status === "active"),
       )
       .map((item) => {
@@ -1831,7 +1926,11 @@ export class NetworksService {
       members = this.store.networkMemberships.filter(
         (item) => item.networkId === networkId,
       ),
-      partners = members.filter((item) => item.role !== "network_admin"),
+      partners = members.filter(
+        (item) =>
+          item.role !== "network_admin" &&
+          this.store.users.get(item.userId)?.accountRole !== "platform_admin",
+      ),
       contents = [...this.store.networkContents.values()].filter(
         (item) =>
           item.networkId === networkId &&
@@ -2220,7 +2319,12 @@ export class NetworksService {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkAccess(actor.id, networkId);
     return this.store.networkMemberships
-      .filter((m) => m.networkId === networkId && m.status === "active")
+      .filter(
+        (m) =>
+          m.networkId === networkId &&
+          m.status === "active" &&
+          this.store.users.get(m.userId)?.accountRole !== "platform_admin",
+      )
       .map((m) => ({
         userId: m.userId,
         role: m.role,
@@ -2835,6 +2939,7 @@ export class NetworksService {
   }
   private requireWritableNetwork(userId: string, networkId: string) {
     this.requireNetworkAccess(userId, networkId);
+    if (this.store.users.get(userId)?.accountRole === "platform_admin") return;
     if (this.raw(networkId).status === "trial")
       throw new ForbiddenException("Die Testansicht ist schreibgeschützt.");
   }

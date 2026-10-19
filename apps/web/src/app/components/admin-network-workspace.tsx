@@ -427,15 +427,27 @@ export function AdminNetworkWorkspace() {
                 </section>
               )}
               <footer className="adminNetworkActions">
-                {network.status === "trial" && (
+                {
                   <Link
                     className="adminNetworkTestLogin"
                     href={`/portal/netzwerk/${network.slug}` as never}
+                    onClick={async (event) => {
+                      event.preventDefault();
+                      try {
+                        await portalRequest(
+                          `/networks/${network.id}/operator-access`,
+                          { token: getPortalSession() || "", body: {} },
+                        );
+                        window.location.href = `/portal/netzwerk/${network.slug}`;
+                      } catch (error) {
+                        showError(error);
+                      }
+                    }}
                   >
                     <span aria-hidden="true">→</span>
-                    Testansicht öffnen
+                    Betreiberzugang öffnen
                   </Link>
-                )}
+                }
                 <button
                   className="portalSecondary"
                   type="button"

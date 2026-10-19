@@ -16,6 +16,7 @@ import type {
   MessageRecord,
   NeedRecord,
   NetworkRecord,
+  NetworkSystemMessageRecord,
   NetworkMembershipRecord,
   NetworkContentRecord,
   NetworkOrderRecord,
@@ -43,10 +44,14 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   readonly userByEmail = new Map<string, string>();
   readonly organizations = new Map<string, OrganizationRecord>();
   readonly memberships: MembershipRecord[] = [];
-  readonly teamInvitations = new Map<string,TeamInvitationRecord>();
-  readonly favorites = new Map<string,FavoriteRecord>();
-  readonly userPreferences = new Map<string,UserPreferenceRecord>();
+  readonly teamInvitations = new Map<string, TeamInvitationRecord>();
+  readonly favorites = new Map<string, FavoriteRecord>();
+  readonly userPreferences = new Map<string, UserPreferenceRecord>();
   readonly networks = new Map<string, NetworkRecord>();
+  readonly networkSystemMessages = new Map<
+    string,
+    NetworkSystemMessageRecord
+  >();
   readonly networkBySlug = new Map<string, string>();
   readonly networkMemberships: NetworkMembershipRecord[] = [];
   readonly networkContents = new Map<string, NetworkContentRecord>();
@@ -104,10 +109,11 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       userByEmail: [...this.userByEmail],
       organizations: [...this.organizations],
       memberships: this.memberships,
-      teamInvitations:[...this.teamInvitations],
-      favorites:[...this.favorites],
-      userPreferences:[...this.userPreferences],
+      teamInvitations: [...this.teamInvitations],
+      favorites: [...this.favorites],
+      userPreferences: [...this.userPreferences],
       networks: [...this.networks],
+      networkSystemMessages: [...this.networkSystemMessages],
       networkBySlug: [...this.networkBySlug],
       networkMemberships: this.networkMemberships,
       networkContents: [...this.networkContents],
@@ -177,10 +183,11 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     map(this.userByEmail, state.userByEmail);
     map(this.organizations, state.organizations);
     array(this.memberships, state.memberships);
-    map(this.teamInvitations,state.teamInvitations);
-    map(this.favorites,state.favorites);
-    map(this.userPreferences,state.userPreferences);
+    map(this.teamInvitations, state.teamInvitations);
+    map(this.favorites, state.favorites);
+    map(this.userPreferences, state.userPreferences);
     map(this.networks, state.networks);
+    map(this.networkSystemMessages, state.networkSystemMessages);
     map(this.networkBySlug, state.networkBySlug);
     array(this.networkMemberships, state.networkMemberships);
     map(this.networkContents, state.networkContents);
@@ -245,6 +252,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     this.networkMemberships.splice(0);
     this.networkContents.clear();
     this.networkOrders.clear();
+    this.networkSystemMessages.clear();
     this.networkAttendances.clear();
     this.networkRevenues.clear();
     this.sessions.clear();
@@ -261,5 +269,4 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     this.activities.splice(0);
     this.notifications.splice(0);
   }
-
 }

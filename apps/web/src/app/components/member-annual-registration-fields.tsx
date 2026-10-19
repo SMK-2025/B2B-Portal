@@ -16,10 +16,12 @@ export function MemberAnnualRegistrationFields({
   invite,
   loading,
   summaryOnly = false,
+  onContinue,
 }: {
   invite: string;
   loading: boolean;
   summaryOnly?: boolean;
+  onContinue?: () => void;
 }) {
   const [quote, setQuote] = useState<Quote | null>(null),
     [error, setError] = useState("");
@@ -46,14 +48,21 @@ export function MemberAnnualRegistrationFields({
     );
   if (quote.initiator)
     return (
-      <p>
-        Initiatoren verwalten das Partnernetzwerk kostenlos. Bitte melden Sie
-        sich über Ihren Initiatorzugang an.
-      </p>
+      <div>
+        <p>
+          Initiatoren verwalten das Partnernetzwerk kostenlos. Bitte melden Sie
+          sich mit Ihrem persönlichen Zugang an oder erstellen Sie ihn jetzt.
+        </p>
+        {onContinue && (
+          <button type="button" className="primary wide" onClick={onContinue}>
+            Weiter zum Zugang
+          </button>
+        )}
+      </div>
     );
   if (summaryOnly)
     return (
-      <div className="full pricingClarity">
+      <div className="full registrationPriceStep">
         <strong>Ihre Mitgliedschaft bei {quote.networkName}</strong>
         <p>
           {money(quote.monthlyNetCents)} netto pro Monat × 12 Monate.
@@ -62,10 +71,35 @@ export function MemberAnnualRegistrationFields({
           Voraus.
         </p>
         <p>
-          Im nächsten Schritt nach der E-Mail-Bestätigung ergänzen Sie Ihre
-          Rechnungsdaten und bestätigen die Buchung verbindlich. Jetzt wird nur
-          Ihr persönlicher Zugang angelegt. Die Rechnung erhalten Sie separat.
+          Alle Funktionen sind enthalten. Laufzeit: zwölf Monate, keine
+          automatische Verlängerung. Die Jahresrechnung erhalten Sie separat;
+          keine Online-Abbuchung.
         </p>
+        {onContinue && (
+          <form
+            className="formGrid"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onContinue();
+            }}
+          >
+            <label className="full legalConsent">
+              <input type="checkbox" required name="priceUnderstood" />
+              <span>
+                Ich bestätige die Preisangaben verbindlich und möchte am
+                Online-Netzwerken teilnehmen.
+              </span>
+            </label>
+            <small className="full">
+              Dieses Partnerportal wird von der Media Online Innovations Group
+              bereitgestellt. Die verbindliche Jahresbuchung erfolgt nach der
+              E-Mail-Bestätigung mit Ihren vollständigen Rechnungsdaten.
+            </small>
+            <button className="primary full" type="submit">
+              Weiter · Zugang erstellen
+            </button>
+          </form>
+        )}
       </div>
     );
   return (

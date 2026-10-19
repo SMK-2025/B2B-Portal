@@ -7,7 +7,7 @@ import { useNetworkBrand } from "../components/network-auth-brand";
 import { MemberAnnualRegistrationFields } from "../components/member-annual-registration-fields";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 
-type Step = "account" | "verify" | "organization" | "submitted";
+type Step = "pricing" | "account" | "verify" | "organization" | "submitted";
 type RegisterResult = {
   verificationToken?: string;
   verificationRequired: boolean;
@@ -15,7 +15,7 @@ type RegisterResult = {
 
 export default function RegistrationPage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("account"),
+  const [step, setStep] = useState<Step>("pricing"),
     [message, setMessage] = useState(""),
     [verificationToken, setVerificationToken] = useState(""),
     [sessionToken, setSessionToken] = useState(""),
@@ -167,16 +167,14 @@ export default function RegistrationPage() {
       </main>
     );
   const stepNumber =
-    step === "account"
-      ? 1
-      : step === "verify"
-        ? 2
-        : step === "organization"
-          ? 3
-          : 4;
+    step === "pricing" ? 1 : step === "account" ? 2 : step === "verify" ? 3 : 4;
   return (
     <main
-      className={networkBrand ? "v2 networkRegistrationBranded" : "v2"}
+      className={
+        networkBrand
+          ? "v2 registrationWizard networkRegistrationBranded"
+          : "v2 registrationWizard"
+      }
       style={
         networkBrand
           ? ({
@@ -219,41 +217,45 @@ export default function RegistrationPage() {
               : "IHR PARTNERPORTAL-ZUGANG"}
           </span>
           <h2>
-            Persönlich eingeladen.
+            Gemeinsam mehr erreichen.
             <br />
-            Sicher verbunden.
+            Persönlich verbunden.
           </h2>
           <p>
-            Erstellen Sie Ihren persönlichen Zugang. Als Initiator verwalten Sie
-            das Netzwerk; als Netzwerkpartner ergänzen Sie anschließend die
-            interne Unternehmensseite.
+            Stärken Sie unsere Partnergemeinschaft mit einem persönlichen Ort
+            für Austausch und Zusammenarbeit. Lernen Sie die Menschen und
+            Unternehmen hinter den Kontakten kennen, bleiben Sie zwischen
+            gemeinsamen Treffen im Gespräch und entwickeln Sie neue
+            Geschäftsmöglichkeiten – geschützt innerhalb unseres Netzwerks.
           </p>
           <div className="authBenefits">
             <article>
               <b>01</b>
               <div>
-                <strong>Zugang erstellen</strong>
+                <strong>Mitgliedschaft kennenlernen</strong>
                 <p>
-                  Name, fest vorgegebene E-Mail-Adresse und sicheres Passwort.
+                  Preis und Leistungen prüfen und Ihren persönlichen Zugang
+                  erstellen.
                 </p>
               </div>
             </article>
             <article>
               <b>02</b>
               <div>
-                <strong>E-Mail bestätigen</strong>
-                <p>Der persönliche Bestätigungslink schützt den Zugang.</p>
+                <strong>Persönlich verbunden bleiben</strong>
+                <p>
+                  Kontakte vertiefen, Nachrichten austauschen und gemeinsame
+                  Treffen planen.
+                </p>
               </div>
             </article>
             <article>
               <b>03</b>
               <div>
-                <strong>Unternehmen & Rechnungsdaten</strong>
+                <strong>Gemeinsam Chancen nutzen</strong>
                 <p>
-                  Als Partner prüfen Sie Ihren Jahrespreis, ergänzen Ihre
-                  Rechnungsanschrift und buchen verbindlich. Erst danach ist die
-                  Mitgliedschaft vollständig eingerichtet. Initiatoren verwalten
-                  das Netzwerk kostenlos.
+                  Kompetenzen entdecken, Angebote abstimmen und aus Begegnungen
+                  nachhaltige Geschäftsbeziehungen entwickeln.
                 </p>
               </div>
             </article>
@@ -271,6 +273,20 @@ export default function RegistrationPage() {
             <span style={{ width: `${stepNumber * 25}%` }} />
             <small>SCHRITT {stepNumber} VON 4</small>
           </div>
+          {step === "pricing" && (
+            <>
+              <h1>Ihre Einladung. Ihr Netzwerk.</h1>
+              <p className="lead">
+                Prüfen Sie zuerst den Beitrag für Ihre Teilnahme.
+              </p>
+              <MemberAnnualRegistrationFields
+                invite={networkInviteToken}
+                loading={loading}
+                summaryOnly
+                onContinue={() => setStep("account")}
+              />
+            </>
+          )}
           {step === "account" && (
             <>
               <h1>Partnerportal-Zugang erstellen</h1>
@@ -278,11 +294,6 @@ export default function RegistrationPage() {
                 Die eingeladene E-Mail-Adresse ist verbindlich vorgegeben.
               </p>
               <form onSubmit={register} className="formGrid">
-                <MemberAnnualRegistrationFields
-                  invite={networkInviteToken}
-                  loading={loading}
-                  summaryOnly
-                />
                 <label>
                   Vorname
                   <input
@@ -372,7 +383,7 @@ export default function RegistrationPage() {
                   Ihren Spam-Ordner.
                 </p>
                 <p>
-                  Danach geht es mit der Anmeldung und Schritt 3 weiter:
+                  Danach geht es mit der Anmeldung und Schritt 4 weiter:
                   Unternehmen, Rechnungsdaten und verbindliche Jahresbuchung.
                   Die E-Mail-Bestätigung allein schließt keine Buchung ab.
                 </p>

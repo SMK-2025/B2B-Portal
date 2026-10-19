@@ -12,7 +12,14 @@ type Network = {
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
-  settings: { admissionRules: string | null; setupCompletedAt?: string | null };
+  settings: {
+    admissionRules: string | null;
+    setupCompletedAt?: string | null;
+    welcomeTitle?: string | null;
+    welcomeIntro?: string | null;
+    bannerTitle?: string | null;
+    bannerDescription?: string | null;
+  };
 };
 type Dashboard = {
   members: { active: number; pending: number };
@@ -94,6 +101,10 @@ export function NetworkAdministrationWorkspace({
             primaryColor: f.get("primaryColor"),
             secondaryColor: f.get("secondaryColor"),
             admissionRules: f.get("admissionRules"),
+            welcomeTitle: f.get("welcomeTitle"),
+            welcomeIntro: f.get("welcomeIntro"),
+            bannerTitle: f.get("bannerTitle"),
+            bannerDescription: f.get("bannerDescription"),
             completeSetup: true,
           },
         },
@@ -259,6 +270,57 @@ export function NetworkAdministrationWorkspace({
           Es gibt keine einzelne Modulauswahl und keine Zahlungspflicht für den
           Initiator.
         </p>
+      </section>
+      <section className="networkCard">
+        <header>
+          <div>
+            <h2>Texte Ihrer Partnerportal-Startseite</h2>
+          </div>
+        </header>
+        <div className="networkSettingsFields">
+          <p className="full">
+            Diese Texte sehen alle Partner dieses Netzwerks. Leere Felder
+            verwenden wieder den Standardtext.
+          </p>
+          <label className="full">
+            Willkommensüberschrift
+            <input
+              name="welcomeTitle"
+              maxLength={160}
+              defaultValue={network.settings.welcomeTitle || ""}
+              placeholder={`Willkommen im ${network.name} Partnerportal.`}
+            />
+          </label>
+          <label className="full">
+            Einleitung unter der Überschrift
+            <textarea
+              name="welcomeIntro"
+              maxLength={600}
+              rows={3}
+              defaultValue={network.settings.welcomeIntro || ""}
+              placeholder="Ihr zentraler Ort für Kontakte, Neuigkeiten, Veranstaltungen und die Zusammenarbeit im Partnerportal."
+            />
+          </label>
+          <label className="full">
+            Titel im farbigen Banner
+            <input
+              name="bannerTitle"
+              maxLength={160}
+              defaultValue={network.settings.bannerTitle || ""}
+              placeholder={network.name}
+            />
+          </label>
+          <label className="full">
+            Beschreibung im farbigen Banner
+            <textarea
+              name="bannerDescription"
+              maxLength={600}
+              rows={3}
+              defaultValue={network.settings.bannerDescription || ""}
+              placeholder="Informationen, Kontakte und Aktivitäten Ihres geschlossenen Partnerportals an einem Ort."
+            />
+          </label>
+        </div>
       </section>
       <section className="networkCard">
         <header>

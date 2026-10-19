@@ -17,6 +17,7 @@ import {
   portalRequest,
 } from "../lib/portal-api";
 type Access = {
+  homeTexts?: { welcomeTitle?: string | null; welcomeIntro?: string | null };
   membershipYear?: {
     startsAt: string;
     endsAt: string;
@@ -180,6 +181,10 @@ export function NetworkShell({
             logoUrl: string | null;
             primaryColor: string;
             secondaryColor: string;
+            settings?: {
+              welcomeTitle?: string | null;
+              welcomeIntro?: string | null;
+            };
           }>(`/networks/public/${slug}`, { token }),
           portalRequest<Mine[]>("/networks/mine", { token }),
         ]);
@@ -198,6 +203,7 @@ export function NetworkShell({
         if (active)
           setAccess({
             currentUserId: session.userId,
+            homeTexts: network.settings,
             membershipYear: network.membershipYear,
             networkId: network.id,
             slug: network.slug,
@@ -419,8 +425,17 @@ export function NetworkShell({
             <header className="networkWelcome">
               <div>
                 <span>{shownName.toUpperCase()}</span>
-                <h1>{title}</h1>
-                <p>{intro}</p>
+                <h1>
+                  {pathname.replace(/\/$/, "") === `/portal/netzwerk/${slug}`
+                    ? access.homeTexts?.welcomeTitle ||
+                      `Willkommen im ${shownName} Partnerportal.`
+                    : title}
+                </h1>
+                <p>
+                  {pathname.replace(/\/$/, "") === `/portal/netzwerk/${slug}`
+                    ? access.homeTexts?.welcomeIntro || intro
+                    : intro}
+                </p>
               </div>
               {action}
             </header>

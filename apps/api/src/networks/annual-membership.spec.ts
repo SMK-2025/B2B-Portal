@@ -6,6 +6,36 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("stores home texts per network and forbids changes by ordinary members", async () => {
+    const f = await fixture();
+    const texts = {
+      welcomeTitle: "Gemeinsam erfolgreich",
+      welcomeIntro: "Unser Partnerkreis",
+      bannerTitle: "Willkommen",
+      bannerDescription: "Kontakte und Chancen",
+    };
+    f.networks.updateSettings(f.owner, f.network.id, texts);
+    expect(
+      f.networks.publicBySlug(f.owner, f.network.slug).settings,
+    ).toMatchObject(texts);
+    expect(() =>
+      f.networks.updateSettings(f.member, f.network.id, {
+        welcomeTitle: "Fremder Text",
+      }),
+    ).toThrow();
+    const other = f.networks.create(f.owner, {
+      name: "Anderes Netzwerk",
+      slug: "anderes-textnetzwerk",
+    });
+    expect(other.settings.welcomeTitle).toBeUndefined();
+    f.networks.updateSettings(f.owner, f.network.id, { welcomeTitle: "  " });
+    expect(f.network.settings.welcomeTitle).toBeNull();
+    expect(() =>
+      f.networks.updateSettings(f.owner, f.network.id, {
+        bannerTitle: "x".repeat(161),
+      }),
+    ).toThrow();
+  });
   async function fixture() {
     const store = new PortalStore(),
       email = new EmailService();

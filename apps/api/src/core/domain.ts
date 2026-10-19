@@ -146,6 +146,10 @@ export interface NetworkRecord {
     selfRegistration: boolean;
     crossNetworkMatching: boolean;
     admissionRules: string | null;
+    welcomeTitle?: string | null;
+    welcomeIntro?: string | null;
+    bannerTitle?: string | null;
+    bannerDescription?: string | null;
     setupCompletedAt?: string | null;
     billingMode?: "standard" | "cooperation_free";
     memberMonthlyNetCents?: number;

@@ -2335,6 +2335,19 @@ export class NetworksService {
     network.settings.crossNetworkMatching = false;
     if (typeof input.admissionRules === "string")
       network.settings.admissionRules = input.admissionRules.trim() || null;
+    for (const key of [
+      "welcomeTitle",
+      "welcomeIntro",
+      "bannerTitle",
+      "bannerDescription",
+    ] as const) {
+      if (typeof input[key] === "string") {
+        const value = (input[key] as string).trim();
+        if (value.length > (key.endsWith("Title") ? 160 : 600))
+          throw new BadRequestException("Der Startseitentext ist zu lang.");
+        network.settings[key] = value || null;
+      }
+    }
     network.updatedAt = new Date().toISOString();
     if (input.completeSetup === true)
       network.settings.setupCompletedAt = network.updatedAt;

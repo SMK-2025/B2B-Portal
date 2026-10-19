@@ -21,7 +21,11 @@ type Dashboard = {
     logoUrl: string | null;
     primaryColor: string;
     secondaryColor: string;
-    settings?: { setupCompletedAt?: string | null };
+    settings?: {
+      setupCompletedAt?: string | null;
+      bannerTitle?: string | null;
+      bannerDescription?: string | null;
+    };
   };
   members: { total: number; active: number; pending: number };
   content: {
@@ -113,10 +117,10 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
       >
         <div>
           <span>GEMEINSAME PARTNERSTARTSEITE</span>
-          <h2>{data.network.name}</h2>
+          <h2>{data.network.settings?.bannerTitle || data.network.name}</h2>
           <p>
-            Informationen, Kontakte und Aktivitäten Ihres geschlossenen
-            Partnerportals an einem Ort.
+            {data.network.settings?.bannerDescription ||
+              "Informationen, Kontakte und Aktivitäten Ihres geschlossenen Partnerportals an einem Ort."}
           </p>
         </div>
         {data.network.logoUrl && (

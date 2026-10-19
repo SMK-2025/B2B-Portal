@@ -1,177 +1,24 @@
 "use client";
-import { FormEvent, useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { SiteFooter, SiteHeader } from "../components/site-chrome";
-import {
-  NetworkAuthFrame,
-  useNetworkBrand,
-} from "../components/network-auth-brand";
-import { portalRequest, savePortalSession } from "../lib/portal-api";
-type LoginResult = { token: string; user: { accountRole: string } };
-type NetworkAccess = {
-  membership: { role: string };
-  network: { slug: string; settings?: { setupCompletedAt?: string | null } };
-};
-export default function Anmelden() {
-  const router = useRouter(),
-    [message, setMessage] = useState(""),
-    [loading, setLoading] = useState(false),
-    [networkSlug, setNetworkSlug] = useState(""),
-    [inviteToken, setInviteToken] = useState("");
-  const brand = useNetworkBrand(networkSlug);
+export default function LoginRedirect() {
+  const router = useRouter();
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setNetworkSlug(params.get("network") || "");
-    setInviteToken(params.get("invite") || "");
-  }, []);
-  async function login(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
-    setLoading(true);
-    const form = new FormData(event.currentTarget);
-    try {
-      const result = await portalRequest<LoginResult>("/auth/login", {
-        body: { email: form.get("email"), password: form.get("password") },
-      });
-      savePortalSession(result.token, form.get("remember") === "on");
-      if (
-        result.user.accountRole === "platform_admin" ||
-        result.user.accountRole === "reviewer"
-      ) {
-        router.push("/portal/admin/netzwerke");
-        return;
-      }
-      await portalRequest("/networks/invitations/claim", {
-        token: result.token,
-        body: {},
-      });
-      const networks = await portalRequest<NetworkAccess[]>("/networks/mine", {
-          token: result.token,
-        }),
-        initiated = networks.find(
-          (item) =>
-            item.membership.role === "network_admin" &&
-            (networkSlug ? item.network.slug === networkSlug : true),
-        );
-      if (initiated) {
-        router.push(
-          (initiated.network.settings?.setupCompletedAt
-            ? `/portal/netzwerk/${initiated.network.slug}`
-            : `/portal/netzwerk/${initiated.network.slug}/einstellungen?setup=1`) as never,
-        );
-        return;
-      }
-      const requested = networkSlug
-        ? networks.find((item) => item.network.slug === networkSlug)
-        : networks[0];
-      if (requested) {
-        router.push(`/portal/netzwerk/${requested.network.slug}` as never);
-        return;
-      }
-      if (networkSlug && inviteToken) {
-        router.push(
-          `/registrieren?onboarding=1&network=${encodeURIComponent(networkSlug)}&invite=${encodeURIComponent(inviteToken)}` as never,
-        );
-        return;
-      }
-      throw new Error(
-        "Für dieses Konto besteht kein aktiver Partnerportal-Zugang.",
-      );
-    } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "Die Anmeldung ist fehlgeschlagen.",
-      );
-    } finally {
-      setLoading(false);
+    params.set("mode", "login");
+    if (!params.get("network")) {
+      const slug = params
+        .get("redirect")
+        ?.match(/^\/portal\/netzwerk\/([^/?#]+)/)?.[1];
+      if (slug) params.set("network", slug);
     }
-  }
-  const card = (
-    <section className="authCard authCardV2">
-      <p className="sectionKicker">SICHERER PARTNERPORTAL-ZUGANG</p>
-      <h2>{brand ? `Bei ${brand.name} anmelden` : "Partnerportal anmelden"}</h2>
-      <p className="lead">
-        Geben Sie die Zugangsdaten aus Ihrer persönlichen Netzwerkeinladung ein.
-      </p>
-      <form className="formGrid" onSubmit={login}>
-        <label className="full">
-          Geschäftliche E-Mail-Adresse
-          <input
-            type="email"
-            name="email"
-            required
-            autoComplete="email"
-            placeholder="name@unternehmen.de"
-          />
-        </label>
-        <label className="full">
-          Passwort
-          <input
-            type="password"
-            name="password"
-            required
-            autoComplete="current-password"
-            placeholder="••••••••••••"
-          />
-        </label>
-        <div className="loginOptions">
-          <label>
-            <input type="checkbox" name="remember" /> Angemeldet bleiben
-          </label>
-          <Link href="/passwort-vergessen">Passwort vergessen?</Link>
-        </div>
-        <button className="primary full" disabled={loading}>
-          {loading ? "Anmeldung wird geprüft …" : "Sicher anmelden"}
-        </button>
-      </form>
-      {message && (
-        <p className="error" role="alert">
-          {message}
-        </p>
-      )}
-      <p className="authSecurity">
-        Persönliche Einladung · Geschützter Netzwerkbereich · Verschlüsselte
-        Übertragung
-      </p>
-    </section>
-  );
-  if (brand)
-    return (
-      <NetworkAuthFrame brand={brand} kind="login">
-        {card}
-      </NetworkAuthFrame>
-    );
+    router.replace(`/registrieren?${params.toString()}` as never);
+  }, [router]);
   return (
-    <main className="v2">
-      <SiteHeader />
-      <section className="authPage loginPage">
-        <aside className="authStory">
-          <span>WILLKOMMEN ZURÜCK</span>
-          <h1>Ihr Netzwerk an einem Ort.</h1>
-          <p>
-            Öffnen Sie Ihr geschlossenes Partnerportal und bleiben Sie mit den
-            Menschen, Themen und Aktivitäten Ihres Netzwerks verbunden.
-          </p>
-          <div className="loginPreview">
-            <div>
-              <b>Partner kennenlernen</b>
-              <span>Unternehmen, Ansprechpartner und Kompetenzen finden</span>
-            </div>
-            <div>
-              <b>Im Austausch bleiben</b>
-              <span>Nachrichten, Community und Veranstaltungen nutzen</span>
-            </div>
-            <div>
-              <b>Gemeinsam weiterkommen</b>
-              <span>Angebote, Wissen und Vorhaben im Netzwerk teilen</span>
-            </div>
-          </div>
-        </aside>
-        {card}
+    <main className="networkAccessState">
+      <section>
+        <h1>Dein Partnerportal wird geöffnet …</h1>
       </section>
-      <SiteFooter />
     </main>
   );
 }

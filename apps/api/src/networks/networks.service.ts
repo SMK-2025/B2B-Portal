@@ -391,6 +391,126 @@ export class NetworksService {
     });
   }
 
+  adminUsers(authorization: string | undefined, networkId: string) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    const network = this.raw(networkId);
+    const rows = new Map<
+      string,
+      {
+        name: string;
+        email: string;
+        role: string;
+        status: string;
+        startsAt: string | null;
+        endsAt: string | null;
+        profile: string;
+      }
+    >();
+    const addUser = (
+      userId: string,
+      role: string,
+      status: string,
+      organizationId?: string,
+    ) => {
+      const user = this.store.users.get(userId);
+      if (!user || user.accountRole === "platform_admin") return;
+      const order = [...this.store.networkOrders.values()]
+        .filter(
+          (o) =>
+            o.networkId === networkId &&
+            o.orderedByUserId === userId &&
+            o.kind === "member_annual" &&
+            o.status === "accepted",
+        )
+        .sort((a, b) =>
+          (b.serviceEndsAt || "").localeCompare(a.serviceEndsAt || ""),
+        )[0];
+      const profile = organizationId
+        ? this.store.organizations.get(organizationId)?.networkProfile
+        : null;
+      const complete =
+        profile &&
+        profile.status === "published" &&
+        [
+          profile.companyName,
+          profile.tagline,
+          profile.description,
+          profile.services,
+          profile.street,
+          profile.postalCode,
+          profile.city,
+          profile.country,
+          profile.contactName,
+          profile.contactPosition,
+          profile.contactEmail,
+          profile.contactPhone,
+        ].every((v) => Boolean(v?.trim()));
+      rows.set(user.email.toLowerCase(), {
+        name: `${user.firstName} ${user.lastName}`.trim(),
+        email: user.email,
+        role,
+        status: !user.emailVerifiedAt
+          ? "E-Mail unbestätigt"
+          : order?.serviceEndsAt && Date.parse(order.serviceEndsAt) < Date.now()
+            ? "Vertragslaufzeit abgelaufen"
+            : status,
+        startsAt: order?.serviceStartsAt || null,
+        endsAt: order?.serviceEndsAt || null,
+        profile:
+          role === "network_admin"
+            ? "Nicht erforderlich"
+            : complete
+              ? "Vollständig & veröffentlicht"
+              : profile
+                ? "Unvollständig / Entwurf"
+                : "Nicht angelegt",
+      });
+    };
+    for (const member of this.store.networkMemberships.filter(
+      (m) => m.networkId === networkId,
+    ))
+      addUser(member.userId, member.role, member.status, member.organizationId);
+    const invitations = [...this.store.networkContents.values()]
+      .filter(
+        (i) =>
+          i.networkId === networkId &&
+          i.data.kind === "network_invitation" &&
+          !i.data.usedAt,
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    for (const invitation of invitations) {
+      const email = String(invitation.data.email || "").toLowerCase();
+      if (!email || rows.has(email)) continue;
+      const userId = this.store.userByEmail.get(email);
+      if (userId)
+        addUser(
+          userId,
+          String(invitation.data.role || "member"),
+          "Registriert – Buchung offen",
+        );
+      else
+        rows.set(email, {
+          name: "Noch nicht registriert",
+          email,
+          role: String(invitation.data.role || "member"),
+          status:
+            invitation.endsAt && Date.parse(invitation.endsAt) < Date.now()
+              ? "Einladung abgelaufen"
+              : "Eingeladen",
+          startsAt: null,
+          endsAt: null,
+          profile: "Nicht angelegt",
+        });
+    }
+    return {
+      networkName: network.name,
+      users: [...rows.values()].sort((a, b) =>
+        a.name.localeCompare(b.name, "de"),
+      ),
+    };
+  }
+
   moduleCatalog() {
     return {
       modules: NETWORK_MODULE_CATALOG,

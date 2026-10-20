@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { Status } from "./portal-shell";
+import { AdminNetworkUsers } from "./admin-network-users";
 
 type NetworkStatus = "draft" | "trial" | "active" | "suspended";
 type Network = {
@@ -427,6 +428,7 @@ export function AdminNetworkWorkspace() {
                 </section>
               )}
               <footer className="adminNetworkActions">
+                <AdminNetworkUsers id={network.id} name={network.name} />
                 {
                   <Link
                     className="adminNetworkTestLogin"

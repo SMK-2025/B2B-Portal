@@ -6,6 +6,28 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("lists unfinished invited registrations and billed members only for the owner and selected network", async () => {
+    const f = await fixture();
+    const before = f.networks.adminUsers(f.owner, f.network.id).users;
+    expect(before).toHaveLength(1);
+    expect(before[0]).toMatchObject({
+      email: "partner@example.de",
+      status: "Registriert – Buchung offen",
+      profile: "Nicht angelegt",
+      startsAt: null,
+    });
+    expect(() => f.networks.adminUsers(f.member, f.network.id)).toThrow();
+    f.orgs.create(f.member, f.input, true);
+    const after = f.networks.adminUsers(f.owner, f.network.id).users;
+    expect(after).toHaveLength(1);
+    expect(after[0].startsAt).toBeTruthy();
+    expect(after[0].status).toBe("active");
+    const other = f.networks.create(f.owner, {
+      name: "Anderes Netzwerk",
+      slug: "nutzer-anders",
+    });
+    expect(f.networks.adminUsers(f.owner, other.id).users).toEqual([]);
+  });
   it("stores home texts per network and forbids changes by ordinary members", async () => {
     const f = await fixture();
     const texts = {

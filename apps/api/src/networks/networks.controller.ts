@@ -127,6 +127,12 @@ export class NetworksController {
   ) {
     return this.networks.adminList(authorization);
   }
+  @Get("admin/:networkId/users") adminUsers(
+    @Headers("authorization") authorization: string | undefined,
+    @Param("networkId") networkId: string,
+  ) {
+    return this.networks.adminUsers(authorization, networkId);
+  }
   @Post(":networkId/access") access(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,

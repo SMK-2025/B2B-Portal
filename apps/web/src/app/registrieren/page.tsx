@@ -24,6 +24,7 @@ export default function RegistrationPage() {
     [loading, setLoading] = useState(false),
     [networkSlug, setNetworkSlug] = useState(""),
     [invitedEmail, setInvitedEmail] = useState(""),
+    [emailLocked, setEmailLocked] = useState(false),
     [networkInviteToken, setNetworkInviteToken] = useState(""),
     [ready, setReady] = useState(false);
   const networkRegistration = Boolean(networkSlug && networkInviteToken),
@@ -33,6 +34,7 @@ export default function RegistrationPage() {
     setLoginMode(params.get("mode") === "login");
     setNetworkSlug(params.get("network") || "");
     setInvitedEmail(params.get("email") || "");
+    setEmailLocked(Boolean(params.get("email")));
     setNetworkInviteToken(params.get("invite") || "");
     if (params.get("onboarding") === "1") {
       const token = getPortalSession();
@@ -49,13 +51,27 @@ export default function RegistrationPage() {
     setLoading(true);
     const form = new FormData(event.currentTarget);
     try {
+      let invite = networkInviteToken;
+      if (!emailLocked) {
+        const result = await portalRequest<{ invite: string }>(
+          "/networks/invitations/shared-resolve",
+          { body: { invite, email: form.get("email") } },
+        );
+        invite = result.invite;
+        setNetworkInviteToken(invite);
+        setEmailLocked(true);
+        const url = new URL(window.location.href);
+        url.searchParams.set("invite", invite);
+        url.searchParams.set("email", String(form.get("email")));
+        window.history.replaceState(null, "", url);
+      }
       const result = await portalRequest<RegisterResult>("/auth/register", {
         body: {
           firstName: form.get("firstName"),
           lastName: form.get("lastName"),
           email: form.get("email"),
           password: form.get("password"),
-          networkInviteToken,
+          networkInviteToken: invite,
         },
       });
       setVerificationToken(result.verificationToken || "");
@@ -276,13 +292,15 @@ export default function RegistrationPage() {
               networkSlug={networkSlug}
               invite={networkInviteToken}
               email={invitedEmail}
-              onOnboarding={(token) => {
+              onOnboarding={(token, invite) => {
+                setNetworkInviteToken(invite);
                 setSessionToken(token);
                 setStep("organization");
                 setLoginMode(false);
                 const url = new URL(window.location.href);
                 url.searchParams.delete("mode");
                 url.searchParams.set("onboarding", "1");
+                url.searchParams.set("invite", invite);
                 window.history.replaceState(null, "", url);
               }}
             />
@@ -330,7 +348,9 @@ export default function RegistrationPage() {
                     ← Preisübersicht erneut ansehen
                   </button>
                   <p className="lead">
-                    Die eingeladene E-Mail-Adresse ist verbindlich vorgegeben.
+                    {emailLocked
+                      ? "Die eingeladene E-Mail-Adresse ist verbindlich vorgegeben."
+                      : "Gib deine geschäftliche E-Mail-Adresse für deinen persönlichen Zugang an."}
                   </p>
                   <form onSubmit={register} className="formGrid">
                     <label>
@@ -358,7 +378,10 @@ export default function RegistrationPage() {
                         type="email"
                         required
                         value={invitedEmail}
-                        readOnly
+                        readOnly={emailLocked}
+                        onChange={(event) =>
+                          setInvitedEmail(event.target.value)
+                        }
                         autoComplete="email"
                       />
                     </label>

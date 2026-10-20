@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { Status } from "./portal-shell";
 import { AdminNetworkUsers } from "./admin-network-users";
+import { AdminNetworkShare } from "./admin-network-share";
 
 type NetworkStatus = "draft" | "trial" | "active" | "suspended";
 type Network = {
@@ -22,6 +23,9 @@ type Network = {
     userId: string;
     user?: { firstName: string; lastName: string; email: string };
   } | null;
+  administrators?: Array<{
+    user?: { firstName: string; lastName: string; email: string };
+  }>;
   latestOrder?: {
     id: string;
     status: "submitted" | "accepted" | "rejected" | "cancelled";
@@ -69,6 +73,12 @@ export function AdminNetworkWorkspace() {
     );
   }
   function adminName(network: Network) {
+    if (network.administrators?.length)
+      return network.administrators
+        .map((m) =>
+          m.user ? `${m.user.firstName} ${m.user.lastName}` : "Unbekannt",
+        )
+        .join(", ");
     const user = network.administrator?.user;
     return user ? `${user.firstName} ${user.lastName}` : "Noch nicht vergeben";
   }
@@ -428,6 +438,7 @@ export function AdminNetworkWorkspace() {
                 </section>
               )}
               <footer className="adminNetworkActions">
+                <AdminNetworkShare id={network.id} name={network.name} />
                 <AdminNetworkUsers id={network.id} name={network.name} />
                 {
                   <Link

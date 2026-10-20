@@ -12,7 +12,7 @@ export function PartnerLoginForm({
   networkSlug: string;
   invite: string;
   email: string;
-  onOnboarding: (token: string) => void;
+  onOnboarding: (token: string, invite: string) => void;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false),
@@ -72,7 +72,11 @@ export function PartnerLoginForm({
         return;
       }
       if (networkSlug && invite) {
-        onOnboarding(result.token);
+        const personal = await portalRequest<{ invite: string }>(
+          "/networks/invitations/shared-resolve",
+          { body: { invite, email: form.get("email") } },
+        );
+        onOnboarding(result.token, personal.invite);
         return;
       }
       throw new Error(

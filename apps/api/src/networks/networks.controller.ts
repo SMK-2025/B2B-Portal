@@ -133,6 +133,25 @@ export class NetworksController {
   ) {
     return this.networks.adminUsers(authorization, networkId);
   }
+  @Post("admin/:networkId/shared-invitation") sharedInvitation(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.sharedInvitation(auth, id, body);
+  }
+  @Post("invitations/shared-resolve") resolveShared(
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.resolveSharedInvitation(body);
+  }
+  @Post("admin/:networkId/users/action") userAction(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.adminUserAction(auth, id, body);
+  }
   @Post(":networkId/access") access(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,

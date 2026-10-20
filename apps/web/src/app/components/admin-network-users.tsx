@@ -9,6 +9,8 @@ type Row = {
   startsAt: string | null;
   endsAt: string | null;
   profile: string;
+  orderId?: string;
+  paymentStatus?: string;
 };
 const roles: Record<string, string> = {
   network_admin: "Initiator",
@@ -54,6 +56,32 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
         e instanceof Error ? e.message : "Nutzer konnten nicht geladen werden.",
       );
     } finally {
+      setLoading(false);
+    }
+  }
+  async function action(row: Row, action: string, role?: string) {
+    const label =
+      action === "role"
+        ? `Rolle auf ${roles[role || ""] || role} ändern${role === "network_admin" ? " (kostenlos, ohne eigene Unternehmensseite; bestehende Buchung bleibt erhalten)" : ""}`
+        : action === "suspend"
+          ? "Zugang sperren (Vertrag bleibt bestehen)"
+          : action === "activate"
+            ? "Sperre aufheben"
+            : action === "paid"
+              ? "Zahlung als eingegangen markieren"
+              : "Zahlung wieder als offen markieren";
+    if (!window.confirm(`${name}\n${row.name} · ${row.email}\n\n${label}?`))
+      return;
+    setError("");
+    setLoading(true);
+    try {
+      await portalRequest(`/networks/admin/${id}/users/action`, {
+        token: getPortalSession() || "",
+        body: { email: row.email, action, role, orderId: row.orderId },
+      });
+      await open();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Aktion fehlgeschlagen.");
       setLoading(false);
     }
   }
@@ -105,6 +133,7 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                       "Status",
                       "Rolle",
                       "Unternehmensprofil",
+                      "Aktionen",
                     ].map((label) => (
                       <th key={label}>{label}</th>
                     ))}
@@ -125,6 +154,74 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                       <td>{states[row.status] || row.status}</td>
                       <td>{roles[row.role] || row.role}</td>
                       <td>{row.profile}</td>
+                      <td>
+                        {row.name !== "Noch nicht registriert" && (
+                          <details className="adminUserMenu">
+                            <summary aria-label={`Aktionen für ${row.email}`}>
+                              ⋮
+                            </summary>
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  action(row, "role", "network_admin")
+                                }
+                              >
+                                Kostenloser Netzwerkadmin
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => action(row, "role", "moderator")}
+                              >
+                                Moderator
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => action(row, "role", "member")}
+                              >
+                                Partner (regulärer Preis)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => action(row, "suspend")}
+                              >
+                                Zugang sperren
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => action(row, "activate")}
+                              >
+                                Sperre aufheben
+                              </button>
+                              {row.orderId && (
+                                <>
+                                  <small>
+                                    Zahlung:{" "}
+                                    {row.paymentStatus === "paid"
+                                      ? "bezahlt"
+                                      : "offen"}
+                                  </small>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      action(
+                                        row,
+                                        row.paymentStatus === "paid"
+                                          ? "unpaid"
+                                          : "paid",
+                                      )
+                                    }
+                                  >
+                                    {row.paymentStatus === "paid"
+                                      ? "Zahlung wieder offen"
+                                      : "Zahlung eingegangen"}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </details>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

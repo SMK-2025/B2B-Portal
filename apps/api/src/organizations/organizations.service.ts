@@ -86,6 +86,15 @@ export class OrganizationsService {
       throw new BadRequestException(
         "Initiatoren nutzen die kostenlose Netzwerkverwaltung ohne Unternehmensbuchung.",
       );
+    if (
+      requestedNetwork &&
+      this.store.networkMemberships.some(
+        (m) => m.networkId === requestedNetwork.id && m.userId === user.id,
+      )
+    )
+      throw new ForbiddenException(
+        "Du bist diesem Netzwerk bereits zugeordnet. Eine Sperre kann nur die Verwaltung aufheben.",
+      );
     const memberOrder = requestedNetwork
       ? annualOrder(requestedNetwork, user.id, input)
       : null;

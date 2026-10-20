@@ -383,6 +383,14 @@ export class NetworksService {
       return {
         ...network,
         memberPrice: pricing(network),
+        administrators: this.store.networkMemberships
+          .filter(
+            (m) =>
+              m.networkId === network.id &&
+              m.role === "network_admin" &&
+              m.status === "active",
+          )
+          .map((m) => ({ user: this.publicUser(m.userId) })),
         administrator: membership
           ? { ...membership, user: this.publicUser(membership.userId) }
           : null,
@@ -405,6 +413,8 @@ export class NetworksService {
         startsAt: string | null;
         endsAt: string | null;
         profile: string;
+        orderId?: string;
+        paymentStatus?: string;
       }
     >();
     const addUser = (
@@ -447,6 +457,8 @@ export class NetworksService {
           profile.contactPhone,
         ].every((v) => Boolean(v?.trim()));
       rows.set(user.email.toLowerCase(), {
+        orderId: order?.id,
+        paymentStatus: order?.paymentStatus,
         name: `${user.firstName} ${user.lastName}`.trim(),
         email: user.email,
         role,
@@ -459,7 +471,7 @@ export class NetworksService {
         endsAt: order?.serviceEndsAt || null,
         profile:
           role === "network_admin"
-            ? "Nicht erforderlich"
+            ? "Keine eigene Partnerseite"
             : complete
               ? "Vollständig & veröffentlicht"
               : profile
@@ -509,6 +521,166 @@ export class NetworksService {
         a.name.localeCompare(b.name, "de"),
       ),
     };
+  }
+
+  sharedInvitation(
+    authorization: string | undefined,
+    networkId: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    const network = this.raw(networkId);
+    if (
+      input.confirmName !== network.name ||
+      input.confirmAgain !== network.name
+    )
+      throw new BadRequestException("Bitte das Netzwerk zweimal bestätigen.");
+    if (network.status !== "active")
+      throw new BadRequestException("Das Netzwerk muss aktiv sein.");
+    let record = [...this.store.networkContents.values()].find(
+      (i) =>
+        i.networkId === networkId &&
+        i.data.shared === true &&
+        i.endsAt &&
+        Date.parse(i.endsAt) > Date.now(),
+    );
+    if (!record) {
+      const token = opaqueToken(),
+        now = new Date().toISOString();
+      record = {
+        id: randomUUID(),
+        networkId,
+        type: "announcement",
+        title: "Teilbarer Registrierungslink",
+        description: "Registrierung als zahlungspflichtiger Partner",
+        status: "active",
+        createdByUserId: actor.id,
+        assignedToUserId: null,
+        startsAt: null,
+        endsAt: new Date(Date.now() + 90 * 86400000).toISOString(),
+        visibility: "administrators",
+        data: {
+          kind: "network_invitation",
+          shared: true,
+          sharedToken: token,
+          inviteTokenHash: tokenHash(token),
+          role: "member",
+          usedAt: null,
+        },
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.store.networkContents.set(record.id, record);
+    }
+    return {
+      path: `/registrieren?network=${encodeURIComponent(network.slug)}&invite=${encodeURIComponent(String(record.data.sharedToken))}`,
+      expiresAt: record.endsAt,
+    };
+  }
+  resolveSharedInvitation(input: Record<string, unknown>) {
+    const hash = tokenHash(requiredText(input.invite, "Einladung", 20, 200)),
+      email = emailAddress(input.email);
+    const shared = [...this.store.networkContents.values()].find(
+      (i) =>
+        i.data.kind === "network_invitation" &&
+        i.data.inviteTokenHash === hash &&
+        !i.data.usedAt &&
+        i.endsAt &&
+        Date.parse(i.endsAt) > Date.now(),
+    );
+    if (!shared)
+      throw new BadRequestException(
+        "Der Netzwerklink ist ungültig oder abgelaufen.",
+      );
+    if (shared.data.shared !== true) {
+      if (shared.data.email !== email)
+        throw new ForbiddenException(
+          "Die Einladung gehört zu einer anderen E-Mail-Adresse.",
+        );
+      return { invite: String(input.invite) };
+    }
+    if (this.raw(shared.networkId).status !== "active")
+      throw new ForbiddenException("Das Netzwerk ist nicht aktiv.");
+    const token = opaqueToken(),
+      now = new Date().toISOString();
+    const personal = {
+      ...shared,
+      id: randomUUID(),
+      title: `Netzwerkeinladung ${email}`,
+      data: {
+        kind: "network_invitation",
+        email,
+        role: "member",
+        inviteTokenHash: tokenHash(token),
+        usedAt: null,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.store.networkContents.set(personal.id, personal);
+    return { invite: token };
+  }
+  async adminUserAction(
+    authorization: string | undefined,
+    networkId: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    this.raw(networkId);
+    const email = emailAddress(input.email),
+      userId = this.store.userByEmail.get(email);
+    if (!userId || this.store.users.get(userId)?.accountRole !== "user")
+      throw new BadRequestException("Kein verwaltbarer Nutzer.");
+    const member = this.store.networkMemberships.find(
+      (m) => m.networkId === networkId && m.userId === userId,
+    );
+    const invited = [...this.store.networkContents.values()].some(
+      (i) =>
+        i.networkId === networkId &&
+        i.data.kind === "network_invitation" &&
+        i.data.email === email,
+    );
+    if (!member && !invited)
+      throw new ForbiddenException("Nutzer gehört nicht zu diesem Netzwerk.");
+    if (input.action === "role") {
+      if (
+        !["network_admin", "moderator", "member"].includes(String(input.role))
+      )
+        throw new BadRequestException("Ungültige Rolle.");
+      if (!member) {
+        if (input.role !== "network_admin")
+          throw new BadRequestException(
+            "Die Registrierung ist noch nicht abgeschlossen.",
+          );
+        return this.appointAdministrator(authorization, networkId, { email });
+      }
+      member.role = input.role as NetworkRole;
+      member.updatedAt = new Date().toISOString();
+    } else if (input.action === "suspend" || input.action === "activate") {
+      if (!member)
+        throw new BadRequestException("Noch kein Mitgliedszugang vorhanden.");
+      member.status = input.action === "suspend" ? "suspended" : "active";
+      member.updatedAt = new Date().toISOString();
+    } else if (input.action === "paid" || input.action === "unpaid") {
+      const order = this.store.networkOrders.get(String(input.orderId));
+      if (
+        !order ||
+        order.networkId !== networkId ||
+        order.orderedByUserId !== userId ||
+        order.kind !== "member_annual"
+      )
+        throw new BadRequestException("Buchung nicht gefunden.");
+      order.paymentStatus = input.action === "paid" ? "paid" : "open";
+      order.paidAt = input.action === "paid" ? new Date().toISOString() : null;
+    } else throw new BadRequestException("Ungültige Aktion.");
+    this.operatorAudit(
+      actor.id,
+      networkId,
+      `operator.user.${String(input.action)}`,
+    );
+    return { ok: true };
   }
 
   moduleCatalog() {

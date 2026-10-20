@@ -6,6 +6,111 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("provides a network-bound reusable partner link and exchanges it for an email-bound invitation", async () => {
+    const f = await fixture();
+    expect(() =>
+      f.networks.sharedInvitation(f.member, f.network.id, {
+        confirmName: f.network.name,
+        confirmAgain: f.network.name,
+      }),
+    ).toThrow();
+    expect(() =>
+      f.networks.sharedInvitation(f.owner, f.network.id, {
+        confirmName: f.network.name,
+        confirmAgain: "wrong",
+      }),
+    ).toThrow();
+    const link = f.networks.sharedInvitation(f.owner, f.network.id, {
+      confirmName: f.network.name,
+      confirmAgain: f.network.name,
+    });
+    const token = new URL(link.path, "https://example.de").searchParams.get(
+      "invite",
+    )!;
+    const personal = f.networks.resolveSharedInvitation({
+      invite: token,
+      email: "newpartner@example.de",
+    });
+    expect(personal.invite).not.toBe(token);
+    await expect(
+      f.auth.register(
+        {
+          email: "other@example.de",
+          password: "Sicher-Portal-2026!",
+          firstName: "Test",
+          lastName: "Partner",
+          networkInviteToken: personal.invite,
+        },
+        true,
+      ),
+    ).rejects.toThrow();
+    const registered = await f.auth.register(
+      {
+        email: "newpartner@example.de",
+        password: "Sicher-Portal-2026!",
+        firstName: "Neuer",
+        lastName: "Partner",
+        networkInviteToken: personal.invite,
+      },
+      true,
+    );
+    expect(registered.user.email).toBe("newpartner@example.de");
+    expect(
+      f.networks.invitationQuote({ invite: personal.invite }).networkSlug,
+    ).toBe(f.network.slug);
+    expect(
+      f.networks.resolveSharedInvitation({
+        invite: token,
+        email: "second@example.de",
+      }).invite,
+    ).not.toBe(personal.invite);
+  });
+  it("supports multiple free admins without partner pages and scopes suspension and payment actions", async () => {
+    const f = await fixture();
+    f.orgs.create(f.member, f.input, true);
+    const order = [...f.store.networkOrders.values()][0];
+    await expect(
+      f.networks.adminUserAction(f.member, f.network.id, {
+        email: "partner@example.de",
+        action: "suspend",
+      }),
+    ).rejects.toThrow();
+    await f.networks.adminUserAction(f.owner, f.network.id, {
+      email: "partner@example.de",
+      action: "role",
+      role: "network_admin",
+    });
+    expect(() => f.networks.ownProfile(f.member, f.network.id)).toThrow(
+      /keine eigene Partnerseite/,
+    );
+    expect(f.networks.listMembers(f.owner, f.network.id)).toHaveLength(0);
+    await f.auth.register({
+      email: "admin2@example.de",
+      password: "Sicher-Portal-2026!",
+      firstName: "Zweiter",
+      lastName: "Admin",
+    });
+    await f.networks.appointAdministrator(f.owner, f.network.id, {
+      email: "admin2@example.de",
+    });
+    expect(
+      f.store.networkMemberships.filter(
+        (m) => m.networkId === f.network.id && m.role === "network_admin",
+      ),
+    ).toHaveLength(2);
+    await f.networks.adminUserAction(f.owner, f.network.id, {
+      email: "partner@example.de",
+      action: "paid",
+      orderId: order.id,
+    });
+    expect(order.paymentStatus).toBe("paid");
+    await f.networks.adminUserAction(f.owner, f.network.id, {
+      email: "partner@example.de",
+      action: "suspend",
+    });
+    expect(() => f.networks.publicBySlug(f.member, f.network.slug)).toThrow();
+    expect(f.store.networkOrders.get(order.id)).toBe(order);
+  });
   it("lists unfinished invited registrations and billed members only for the owner and selected network", async () => {
     const f = await fixture();
     const before = f.networks.adminUsers(f.owner, f.network.id).users;

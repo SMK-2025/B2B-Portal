@@ -1,10 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 export function AdminNetworkShare({ id, name }: { id: string; name: string }) {
-  const [link, setLink] = useState(""),
-    [error, setError] = useState(""),
+  const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => setError(""), 5000);
+    return () => clearTimeout(timer);
+  }, [error]);
   async function create() {
     if (
       !window.confirm(
@@ -28,7 +32,17 @@ export function AdminNetworkShare({ id, name }: { id: string; name: string }) {
           body: { confirmName: name, confirmAgain: name },
         },
       );
-      setLink(new URL(result.path, window.location.origin).href);
+      const link = new URL(result.path, window.location.origin).href;
+      try {
+        await navigator.clipboard.writeText(link);
+        setError("Link kopiert.");
+      } catch {
+        window.prompt(
+          "Dein Browser blockiert das automatische Kopieren. Bitte kopiere diesen Link:",
+          link,
+        );
+        setError("Automatisches Kopieren wurde vom Browser blockiert.");
+      }
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Link konnte nicht erstellt werden.",
@@ -47,35 +61,6 @@ export function AdminNetworkShare({ id, name }: { id: string; name: string }) {
       >
         {busy ? "Link wird erstellt …" : "Einladungslink"}
       </button>
-      {link && (
-        <div>
-          <label>
-            Registrierungslink · {name}
-            <input
-              value={link}
-              readOnly
-              onFocus={(event) => event.currentTarget.select()}
-            />
-          </label>
-          <button
-            type="button"
-            className="portalSecondary"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(link);
-                setError("Link kopiert.");
-              } catch {
-                setError("Bitte den Link im Feld markieren und kopieren.");
-              }
-            }}
-          >
-            Link kopieren
-          </button>
-          <small>
-            90 Tage gültig · nur Partnerregistrierung, keine Administratorrechte
-          </small>
-        </div>
-      )}
       {error && <p role="status">{error}</p>}
     </div>
   );

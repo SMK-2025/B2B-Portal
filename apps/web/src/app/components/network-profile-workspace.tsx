@@ -10,6 +10,7 @@ import {
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
+import { verifyPartnerMediaSave } from "../lib/partner-save-verification";
 import { PartnerEditablePreview } from "./partner-editable-preview";
 import type { PartnerPageProfile } from "./network-members-workspace";
 
@@ -156,6 +157,7 @@ export function NetworkProfileWorkspace() {
           },
         },
       );
+      verifyPartnerMediaSave({ heroImageUrl: hero, logoUrl: logo }, profile);
       setData((current) => (current ? { ...current, profile } : current));
       setNotice(
         publish
@@ -277,6 +279,7 @@ export function NetworkProfileWorkspace() {
       `/networks/${networkId}/profile`,
       { token, body: { ...value, publish: value.status === "published" } },
     );
+    verifyPartnerMediaSave(value, saved);
     setData((current) => (current ? { ...current, profile: saved } : current));
     setPreview(saved);
     setHero(saved.heroImageUrl || null);

@@ -1,3 +1,138 @@
+.networkPartnerProfileModal > .partnerOnepagerHero > img.partnerHeroPhoto {
+  z-index: 0;
+  display: block;
+}
+.networkPartnerProfileModal > .partnerOnepagerHero.hasHeroImage::after {
+  z-index: 1;
+  pointer-events: none;
+}
+.networkPartnerProfileModal > .partnerOnepagerHero > img:not(.partnerHeroPhoto),
+.networkPartnerProfileModal > .partnerOnepagerHero > span,
+.networkPartnerProfileModal > .partnerOnepagerHero > div {
+  position: relative;
+  z-index: 2;
+}
+.partnerHeroEditForm {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 880px;
+  margin: 0 auto;
+  box-shadow: 0 8px 28px #13243b0a;
+}
+.partnerHeroEditForm > h3,
+.partnerHeroEditForm > .partnerEditWide,
+.partnerHeroEditForm > label:first-of-type,
+.partnerHeroEditForm > .partnerEditImages,
+.partnerHeroEditForm > .partnerInlineFormActions,
+.partnerHeroEditForm > p {
+  grid-column: 1/-1;
+}
+.partnerHeroEditForm > .partnerColorField {
+  grid-template-columns: 1fr 60px;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #dce3ee;
+  border-radius: 10px;
+}
+.partnerHeroEditForm .partnerColorField input {
+  width: 60px;
+  height: 36px;
+  border: 0;
+  cursor: pointer;
+}
+.partnerEditImages {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.partnerEditImages .partnerInlineImage {
+  min-width: 0;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #dce3ee;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.partnerInlineImage h4 {
+  margin: 0;
+  color: #123047;
+  font-size: 14px;
+  font-weight: 600;
+}
+.partnerInlineImage .partnerPreviewImagePicker {
+  position: relative;
+  width: 100%;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px dashed #c4cfe0;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #f4f7fb;
+  cursor: pointer;
+  padding: 12px;
+  box-sizing: border-box;
+}
+.partnerInlineImage .partnerPreviewImagePicker img {
+  height: 105px;
+  max-height: 105px;
+  width: 100%;
+  object-fit: contain;
+  background: transparent;
+}
+.partnerPreviewImagePicker > span {
+  font-size: 13px;
+  color: #123047;
+  font-weight: 600;
+}
+.partnerPreviewImagePicker .partnerPreviewImageEmpty {
+  font-size: 36px;
+  font-weight: 400;
+  color: #7e8ba0;
+}
+.partnerInlineImage .partnerPreviewImagePicker input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.partnerPreviewImagePicker:focus-within {
+  outline: 3px solid var(--partner-primary, #5267d8);
+  outline-offset: 3px;
+}
+.partnerInlineImage > small {
+  font-size: 11px;
+  color: #66758b;
+  line-height: 1.5;
+}
+.partnerHeroEditForm > .partnerInlineFormActions {
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #dce3ee;
+}
+@media (max-width: 620px) {
+  .partnerHeroEditForm,
+  .partnerEditImages {
+    grid-template-columns: 1fr;
+  }
+  .partnerHeroEditForm > .partnerColorField {
+    grid-column: 1/-1;
+  }
+  .networkPartnerProfileModal > .partnerInlineControls {
+    padding: 20px;
+  }
+  .partnerHeroEditForm > .partnerInlineFormActions {
+    flex-direction: column;
+  }
+}
 .partnerPreviewEntry {
   display: flex;
   align-items: center;

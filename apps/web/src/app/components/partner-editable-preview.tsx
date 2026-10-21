@@ -16,7 +16,7 @@ const groups: Record<string, { title: string; fields: Field[] }> = {
     title: "Titelbereich und Branding",
     fields: [
       { key: "companyName", label: "Unternehmensname", max: 160 },
-      { key: "tagline", label: "Kurzbeschreibung", max: 180 },
+      { key: "tagline", label: "Kurzbeschreibung", max: 180, multiline: true },
       { key: "primaryColor", label: "Hauptfarbe", type: "color" },
       { key: "secondaryColor", label: "Zweite Farbe", type: "color" },
     ],
@@ -97,6 +97,7 @@ export function PartnerEditablePreview({
   const [draft, setDraft] = useState(initial),
     [editing, setEditing] = useState<string | null>(null),
     [busy, setBusy] = useState(false),
+    [readingImage, setReadingImage] = useState(false),
     [message, setMessage] = useState("");
   const [hero, setHero] = useState(initial.heroImageUrl || null),
     [logo, setLogo] = useState(initial.logoUrl);
@@ -119,10 +120,16 @@ export function PartnerEditablePreview({
       setMessage("Bitte PNG, JPG oder WebP mit maximal 1,5 MB auswählen.");
       return;
     }
+    setReadingImage(true);
     const reader = new FileReader();
-    reader.onload = () =>
+    reader.onload = () => {
       set(typeof reader.result === "string" ? reader.result : null);
-    reader.onerror = () => setMessage("Das Bild konnte nicht gelesen werden.");
+      setReadingImage(false);
+    };
+    reader.onerror = () => {
+      setMessage("Das Bild konnte nicht gelesen werden.");
+      setReadingImage(false);
+    };
     reader.readAsDataURL(file);
   }
   async function save(
@@ -131,7 +138,7 @@ export function PartnerEditablePreview({
     fields: Field[],
   ) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || readingImage) return;
     setBusy(true);
     setMessage("");
     const form = new FormData(event.currentTarget);
@@ -213,18 +220,27 @@ export function PartnerEditablePreview({
         </button>
         {editing === area && (
           <form
-            className="partnerInlineForm"
+            className={`partnerInlineForm${area === "hero" ? " partnerHeroEditForm" : ""}`}
             onSubmit={(event) => void save(event, area, group.fields)}
           >
             <h3>{group.title}</h3>
             {group.fields.map((field) => (
-              <label key={field.key}>
+              <label
+                key={field.key}
+                className={
+                  field.multiline
+                    ? "partnerEditWide"
+                    : field.type === "color"
+                      ? "partnerColorField"
+                      : ""
+                }
+              >
                 {field.label}
                 {field.multiline ? (
                   <textarea
                     name={field.key}
                     defaultValue={String(values[field.key] || "")}
-                    rows={5}
+                    rows={field.key === "tagline" ? 2 : 5}
                     maxLength={field.max}
                     disabled={busy}
                     autoFocus={field === group.fields[0]}
@@ -245,29 +261,41 @@ export function PartnerEditablePreview({
               </label>
             ))}
             {area === "hero" && (
-              <>
+              <div className="partnerEditImages">
                 {[
                   ["Titelbild", hero, setHero],
                   ["Firmenlogo", logo, setLogo],
                 ].map(([label, url, set]) => (
                   <div className="partnerInlineImage" key={String(label)}>
-                    <label>
-                      {String(label)}
-                      {url && (
+                    <h4>{String(label)}</h4>
+                    <label className="partnerPreviewImagePicker">
+                      {url ? (
                         <img src={String(url)} alt={`${label} Vorschau`} />
+                      ) : (
+                        <span
+                          className="partnerPreviewImageEmpty"
+                          aria-hidden="true"
+                        >
+                          ＋
+                        </span>
                       )}
+                      <span>{url ? "Bild wechseln" : "Bild auswählen"}</span>
                       <input
+                        aria-label={`${label} hochladen`}
                         type="file"
                         accept="image/png,image/jpeg,image/webp"
-                        disabled={busy}
-                        onChange={(event) =>
+                        disabled={busy || readingImage}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          event.currentTarget.value = "";
                           void image(
-                            event.target.files?.[0],
+                            file,
                             set as (value: string | null) => void,
-                          )
-                        }
+                          );
+                        }}
                       />
                     </label>
+                    <small>PNG, JPG oder WebP · max. 1,5 MB</small>
                     {url && (
                       <button
                         type="button"
@@ -281,7 +309,7 @@ export function PartnerEditablePreview({
                     )}
                   </div>
                 ))}
-              </>
+              </div>
             )}
             <div className="partnerInlineFormActions">
               <button
@@ -294,8 +322,15 @@ export function PartnerEditablePreview({
               >
                 Abbrechen
               </button>
-              <button className="networkPrimary" disabled={busy}>
-                {busy ? "Wird gespeichert …" : "Änderungen speichern"}
+              <button
+                className="networkPrimary"
+                disabled={busy || readingImage}
+              >
+                {readingImage
+                  ? "Bild wird vorbereitet …"
+                  : busy
+                    ? "Wird gespeichert …"
+                    : "Änderungen speichern"}
               </button>
             </div>
             {message && <p role="status">{message}</p>}

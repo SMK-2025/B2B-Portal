@@ -190,7 +190,7 @@ export class CompanyImport {
       };
     } catch {
       throw new ServiceUnavailableException(
-        "Die Homepage konnte nicht zuverlässig ausgewertet werden. Es wurde nichts gespeichert. Bitte erneut versuchen oder Angaben manuell ergänzen.",
+        "PagePilot AI konnte die Homepage nicht zuverlässig auswerten. Es wurde nichts gespeichert. Bitte erneut versuchen oder Angaben manuell ergänzen.",
       );
     }
   }

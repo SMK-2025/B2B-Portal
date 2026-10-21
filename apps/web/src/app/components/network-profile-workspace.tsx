@@ -299,7 +299,7 @@ export function NetworkProfileWorkspace() {
             </label>
             <button className="networkPrimary" disabled={busy}>
               {busy
-                ? "Homepage wird analysiert …"
+                ? "PagePilot AI analysiert deine Homepage …"
                 : "Partnerseite mit PagePilot AI vorbereiten"}
             </button>
             {sources.length > 0 && (

@@ -99,6 +99,7 @@ export function NetworkProfileWorkspace() {
   }
   function chooseHero(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+    event.currentTarget.value = "";
     if (!file) return;
     if (
       !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
@@ -340,47 +341,96 @@ export function NetworkProfileWorkspace() {
             <section className="networkCard">
               <header>
                 <div>
-                  <h2>Dein Onepager · Titelbild & Inhaltsbereiche</h2>
+                  <h2>Gestalte deine Partnerseite</h2>
                   <p>
-                    Ein fester, hochwertiger Rahmen mit so vielen Bereichen, wie
-                    dein Unternehmen braucht. Texte bleiben jederzeit
-                    bearbeitbar.
+                    Zeig, was dein Unternehmen ausmacht – mit einem starken
+                    Titelbild und persönlichen Inhalten.
                   </p>
                 </div>
               </header>
-              <div className="networkProfileFields">
-                <label className="full">
-                  Herobild hochladen
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={chooseHero}
-                    disabled={!data.canEdit || busy}
-                  />
-                  <small>
-                    Breites Bild empfohlen (z. B. 1.920 × 800 Pixel) · maximal
-                    1,5 MB
-                  </small>
-                </label>
-                {hero && (
-                  <div className="full partnerHeroUploadPreview">
-                    <img src={hero} alt="Vorschau des Titelbildes" />
-                    <button
-                      type="button"
-                      className="networkSecondary"
-                      disabled={!data.canEdit || busy}
-                      onClick={() => setHero(null)}
-                    >
-                      Herobild entfernen
-                    </button>
+              <div className="partnerPageEditor">
+                <div className="partnerHeroEditor">
+                  <div>
+                    <h3>Dein Titelbild</h3>
+                    <p>
+                      Dieses Bild begrüßt andere Partner ganz oben auf deiner
+                      Partnerseite.
+                    </p>
                   </div>
-                )}
+                  <label
+                    className={`partnerHeroPicker${hero ? " hasImage" : ""}`}
+                  >
+                    {hero ? (
+                      <img
+                        src={hero}
+                        alt="Dein Titelbild – Vorschau für die Partnerseite"
+                      />
+                    ) : (
+                      <span
+                        className="partnerHeroPlaceholder"
+                        aria-hidden="true"
+                      >
+                        <svg viewBox="0 0 64 48" fill="none">
+                          <rect x="2" y="2" width="60" height="44" rx="7" />
+                          <circle cx="20" cy="16" r="5" />
+                          <path d="m5 40 17-17 12 12 10-12 17 17" />
+                        </svg>
+                      </span>
+                    )}
+                    <span className="partnerHeroPickerCaption">
+                      <strong>
+                        {hero
+                          ? "Titelbild ändern"
+                          : "Titelbild auswählen und hochladen"}
+                      </strong>
+                      <span>
+                        {hero
+                          ? "Klicke hier, um ein anderes Bild auszuwählen"
+                          : "Klicke hier und wähle ein Bild deines Unternehmens"}
+                      </span>
+                    </span>
+                    <input
+                      className="partnerHeroFileInput"
+                      aria-label={
+                        hero ? "Titelbild ändern" : "Titelbild hochladen"
+                      }
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={chooseHero}
+                      disabled={!data.canEdit || busy}
+                    />
+                  </label>
+                  <div className="partnerHeroHelp">
+                    <small>
+                      Querformat empfohlen · z. B. 1.920 × 800 Pixel · PNG, JPG
+                      oder WebP · maximal 1,5 MB
+                    </small>
+                    {hero && (
+                      <button
+                        type="button"
+                        className="networkSecondary"
+                        disabled={!data.canEdit || busy}
+                        onClick={() => setHero(null)}
+                      >
+                        Titelbild entfernen
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="partnerContentHeading">
+                  <h3>Mehr über dein Unternehmen</h3>
+                  <p>
+                    Ergänze zum Beispiel deine Arbeitsweise, Projekte oder das,
+                    was du im Netzwerk suchst.
+                  </p>
+                </div>
                 {sections.map((section, index) => (
                   <fieldset className="full partnerSectionEditor" key={index}>
                     <legend>Inhaltsbereich {index + 1}</legend>
                     <label>
                       Überschrift
                       <input
+                        placeholder="Zum Beispiel: Was uns besonders macht"
                         value={section.title}
                         maxLength={160}
                         disabled={!data.canEdit}
@@ -398,6 +448,7 @@ export function NetworkProfileWorkspace() {
                     <label>
                       Inhalt
                       <textarea
+                        placeholder="Stell dein Unternehmen persönlich vor. Was sollten andere Partner über euch wissen?"
                         value={section.body}
                         maxLength={3000}
                         rows={5}
@@ -464,7 +515,7 @@ export function NetworkProfileWorkspace() {
                 ))}
                 <button
                   type="button"
-                  className="networkSecondary full"
+                  className="partnerAddSection"
                   disabled={!data.canEdit || sections.length >= 30}
                   onClick={() =>
                     setSections((current) => [
@@ -473,7 +524,7 @@ export function NetworkProfileWorkspace() {
                     ])
                   }
                 >
-                  + Inhaltsbereich ergänzen
+                  + Weiteren Bereich hinzufügen
                 </button>
               </div>
             </section>

@@ -1,10 +1,17 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
-type Profile = {
+export type PartnerPageProfile = {
   heroImageUrl?: string | null;
   sections?: Array<{ title: string; body: string }>;
   personalMessage?: string;
@@ -31,6 +38,7 @@ type Profile = {
   contactPhone: string;
   updatedAt: string;
 };
+type Profile = PartnerPageProfile;
 type Member = {
   id: string;
   userId: string;
@@ -431,26 +439,30 @@ export function NetworkMembersWorkspace() {
     </div>
   );
 }
-function ProfileDialog({
+export function ProfileDialog({
   member,
   onClose,
+  editControls,
 }: {
   member: Member;
   onClose: () => void;
+  editControls?: (area: string) => ReactNode;
 }) {
   const access = useNetworkAccess();
   const p = member.organization!.networkProfile!;
   const dialog = useRef<HTMLElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null,
       overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     dialog.current?.querySelector<HTMLButtonElement>("button")?.focus();
     const key = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") closeRef.current();
       if (event.key === "Tab") {
         const elements = dialog.current?.querySelectorAll<HTMLElement>(
-          'a[href], button:not(:disabled), [tabindex="0"]',
+          'a[href], button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]',
         );
         if (!elements?.length) return;
         const first = elements[0],
@@ -470,7 +482,7 @@ function ProfileDialog({
       document.removeEventListener("keydown", key);
       previous?.focus();
     };
-  }, [onClose]);
+  }, []);
   return (
     <div
       className="networkModalBackdrop"
@@ -491,6 +503,7 @@ function ProfileDialog({
         >
           ×
         </button>
+        {editControls?.("hero")}
         <header
           className={`partnerOnepagerHero${p.heroImageUrl ? " hasHeroImage" : ""}`}
         >
@@ -578,11 +591,13 @@ function ProfileDialog({
         <div className="networkPartnerProfileBody">
           <main>
             <section id="partner-about">
+              {editControls?.("about")}
               <small>ÜBER UNS</small>
               <h3>Persönlich vorgestellt</h3>
               <p>{p.description}</p>
             </section>
             <section id="partner-services">
+              {editControls?.("services")}
               <small>LEISTUNGEN</small>
               <h3>Damit unterstützen wir Netzwerkpartner</h3>
               <div className="networkCompanyServices">
@@ -604,8 +619,9 @@ function ProfileDialog({
                 </p>
               )}
             </section>
-            {p.personalMessage && (
+            {(p.personalMessage || editControls) && (
               <section>
+                {editControls?.("personalMessage")}
                 <small>PERSÖNLICH IM NETZWERK</small>
                 <h3>Meine Mitteilung an die Partner</h3>
                 <p>{p.personalMessage}</p>
@@ -617,6 +633,7 @@ function ProfileDialog({
                 id={`partner-section-${index}`}
                 key={index}
               >
+                {editControls?.(`section-${index}`)}
                 <small>
                   UNSER UNTERNEHMEN · {String(index + 1).padStart(2, "0")}
                 </small>
@@ -629,15 +646,17 @@ function ProfileDialog({
                   ))}
               </section>
             ))}
-            {p.offers && (
+            {(p.offers || editControls) && (
               <section>
+                {editControls?.("offers")}
                 <small>ANGEBOTE & UNTERSTÜTZUNG</small>
                 <h3>Das biete ich an</h3>
                 <p>{p.offers}</p>
               </section>
             )}
-            {p.lookingFor && (
+            {(p.lookingFor || editControls) && (
               <section>
+                {editControls?.("lookingFor")}
                 <small>GESUCHE & KOOPERATIONEN</small>
                 <h3>Das suche ich</h3>
                 <p>{p.lookingFor}</p>
@@ -645,6 +664,7 @@ function ProfileDialog({
             )}
           </main>
           <aside id="partner-contact">
+            {editControls?.("contact")}
             <h3>Direkter Kontakt</h3>
             {p.meetingUrl && (
               <a

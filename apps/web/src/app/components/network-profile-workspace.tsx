@@ -10,6 +10,8 @@ import {
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
+import { PartnerEditablePreview } from "./partner-editable-preview";
+import type { PartnerPageProfile } from "./network-members-workspace";
 
 type Profile = {
   heroImageUrl?: string | null;
@@ -52,7 +54,10 @@ type Response = {
 export function NetworkProfileWorkspace() {
   const profileForm = useRef<HTMLFormElement>(null),
     [sources, setSources] = useState<string[]>([]),
-    [preview, setPreview] = useState<Partial<Profile>>({});
+    [preview, setPreview] = useState<Partial<Profile>>({}),
+    [editablePreview, setEditablePreview] = useState<PartnerPageProfile | null>(
+      null,
+    );
   const access = useNetworkAccess(),
     networkId = access?.networkId || "",
     [data, setData] = useState<Response | null>(null),
@@ -226,8 +231,88 @@ export function NetworkProfileWorkspace() {
   }
   if (!data) return <p role="status">Partnerseite wird geladen …</p>;
   const p = { ...data.profile, ...preview };
+  function openEditablePreview() {
+    const fields = profileForm.current
+      ? Object.fromEntries(new FormData(profileForm.current).entries())
+      : {};
+    const empty = Object.fromEntries(
+      [
+        "tagline",
+        "description",
+        "services",
+        "industries",
+        "street",
+        "postalCode",
+        "city",
+        "country",
+        "contactName",
+        "contactPosition",
+        "contactEmail",
+        "contactPhone",
+        "personalMessage",
+        "offers",
+        "lookingFor",
+      ].map((key) => [key, ""]),
+    );
+    setEditablePreview({
+      ...empty,
+      ...p,
+      ...fields,
+      companyName: String(
+        fields.companyName || p.companyName || data!.organization.displayName,
+      ),
+      status: p.status || "draft",
+      updatedAt: p.updatedAt || "",
+      websiteUrl: String(fields.websiteUrl || ""),
+      logoUrl: logo,
+      heroImageUrl: hero,
+      sections,
+    } as PartnerPageProfile);
+  }
+  async function saveEditablePreview(value: PartnerPageProfile) {
+    const token = getPortalSession();
+    if (!token || !data?.canEdit)
+      throw new Error("Bitte melde dich erneut an.");
+    const saved = await portalRequest<Profile>(
+      `/networks/${networkId}/profile`,
+      { token, body: { ...value, publish: value.status === "published" } },
+    );
+    setData((current) => (current ? { ...current, profile: saved } : current));
+    setPreview(saved);
+    setHero(saved.heroImageUrl || null);
+    setLogo(saved.logoUrl);
+    setSections(saved.sections || []);
+    for (const [key, value] of Object.entries(saved)) {
+      const element = profileForm.current?.elements.namedItem(key);
+      if (
+        element instanceof HTMLInputElement ||
+        element instanceof HTMLTextAreaElement
+      )
+        element.value = typeof value === "string" ? value : "";
+    }
+    return saved;
+  }
   return (
     <div className="networkProfileWorkspace">
+      {data.canEdit && (
+        <section className="partnerPreviewEntry">
+          <div>
+            <h2>Deine Seite aus Sicht der Partner</h2>
+            <p>
+              Öffne die Vorschau und bearbeite Texte, Bilder und Kontaktdaten
+              direkt am Stiftsymbol.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="networkPrimary"
+            disabled={busy}
+            onClick={openEditablePreview}
+          >
+            Vorschau öffnen & bearbeiten
+          </button>
+        </section>
+      )}
       <section className="networkProfileGuide">
         <div>
           <span>IHRE PARTNERSEITE</span>
@@ -869,6 +954,14 @@ export function NetworkProfileWorkspace() {
           </div>
         )}
       </form>
+      {editablePreview && (
+        <PartnerEditablePreview
+          initial={editablePreview}
+          userId={access?.currentUserId || ""}
+          onSave={saveEditablePreview}
+          onClose={() => setEditablePreview(null)}
+        />
+      )}
       {notice && (
         <div className="networkNotice" role="status">
           {notice}

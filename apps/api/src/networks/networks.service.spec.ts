@@ -130,6 +130,51 @@ describe("network tenancy", () => {
         data: { category: "Freitext", file: null },
       }),
     ).toThrow(/vorgegebenen Kategorien/i);
+    const chatInput = {
+      type: "conversation",
+      title: "PartnerChat",
+      description: "Vertraulicher Austausch",
+      participantUserIds: [partnerRegistration.user.id],
+      data: { category: "Sonstiger Austausch", directChat: true },
+    };
+    const chat = networks.createContent(initiatorBearer, network.id, chatInput);
+    expect(
+      networks.createContent(initiatorBearer, network.id, chatInput).id,
+    ).toBe(chat.id);
+    expect(
+      networks.createContent(partnerBearer, network.id, {
+        ...chatInput,
+        participantUserIds: [initiatorRegistration.user.id],
+      }).id,
+    ).toBe(chat.id);
+    expect(() => networks.thread(ownerBearer, network.id, chat.id)).toThrow();
+    expect(
+      networks.reply(partnerBearer, network.id, chat.id, {
+        body: "Hallo 👋, schön dich hier zu treffen!",
+        kind: "message",
+      }).data.messages,
+    ).toHaveLength(1);
+    expect(() =>
+      networks.createContent(initiatorBearer, network.id, {
+        ...chatInput,
+        participantUserIds: [partnerRegistration.user.id, "owner"],
+      }),
+    ).toThrow();
+    const withImage = networks.reply(partnerBearer, network.id, chat.id, {
+      kind: "message",
+      body: "",
+      file: {
+        name: "bild.png",
+        mimeType: "image/png",
+        size: 68,
+        dataUrl:
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZuoAAAAASUVORK5CYII=",
+      },
+    });
+    expect(
+      (withImage.data.messages as Array<{ attachments: unknown[] }>)[1]
+        .attachments,
+    ).toHaveLength(1);
     const football = networks.create(ownerBearer, {
       name: "Bayer 04 Leverkusen",
       slug: "bayer04leverkusen",

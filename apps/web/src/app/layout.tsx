@@ -6,6 +6,7 @@ import "./network-exchange.css";
 import "./bundesliga.css";
 import "./partner-page-editor.css";
 import "./partner-mini-site.css";
+import "./partner-chat.css";
 import "./public-brand.css";
 import "./public-card-system.css";
 import { PwaRegister } from "./pwa-register";

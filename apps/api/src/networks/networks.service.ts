@@ -1795,6 +1795,24 @@ export class NetworksService {
         input.participantUserIds,
       );
       data.messages = [];
+      if (data.directChat === true) {
+        const ids = data.participantUserIds as string[];
+        if (ids.length !== 2)
+          throw new BadRequestException(
+            "Ein PartnerChat verbindet genau zwei Personen.",
+          );
+        const existing = [...this.store.networkContents.values()]
+          .filter(
+            (item) =>
+              item.networkId === networkId &&
+              item.type === "conversation" &&
+              !["archived", "draft"].includes(item.status) &&
+              this.threadParticipants(item).length === 2 &&
+              ids.every((id) => this.threadParticipants(item).includes(id)),
+          )
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+        if (existing) return existing;
+      }
     }
     if (
       type === "topic" &&
@@ -2702,6 +2720,11 @@ export class NetworksService {
       )
       .map((m) => ({
         userId: m.userId,
+        logoUrl:
+          m.role === "network_admin"
+            ? null
+            : this.store.organizations.get(m.organizationId)?.networkProfile
+                ?.logoUrl || null,
         role: m.role,
         name: [
           this.store.users.get(m.userId)?.firstName,

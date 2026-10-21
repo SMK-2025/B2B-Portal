@@ -450,6 +450,39 @@ export function ProfileDialog({
 }) {
   const access = useNetworkAccess();
   const p = member.organization!.networkProfile!;
+  const [activeArea, setActiveArea] = useState("about"),
+    [menuOpen, setMenuOpen] = useState(false);
+  const areas = [
+    { id: "about", label: "Vorstellung" },
+    { id: "services", label: "Leistungen" },
+    ...(p.personalMessage || editControls
+      ? [{ id: "personal", label: "Persönlich" }]
+      : []),
+    ...(p.sections || []).map((section, index) => ({
+      id: `section-${index}`,
+      label: section.title,
+    })),
+    ...(p.offers || editControls ? [{ id: "offers", label: "Angebote" }] : []),
+    ...(p.lookingFor || editControls
+      ? [{ id: "looking", label: "Gesuche" }]
+      : []),
+    { id: "contact", label: "Kontakt" },
+  ];
+  function showArea(id: string) {
+    setActiveArea(id);
+    setMenuOpen(false);
+    window.setTimeout(() => {
+      const content =
+        dialog.current?.querySelector<HTMLElement>("#partner-content");
+      content?.focus({ preventScroll: true });
+      content?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      });
+    }, 0);
+  }
   const dialog = useRef<HTMLElement>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -461,9 +494,11 @@ export function ProfileDialog({
     const key = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeRef.current();
       if (event.key === "Tab") {
-        const elements = dialog.current?.querySelectorAll<HTMLElement>(
-          'a[href], button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]',
-        );
+        const elements = Array.from(
+          dialog.current?.querySelectorAll<HTMLElement>(
+            'a[href], button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]',
+          ) || [],
+        ).filter((element) => element.getClientRects().length > 0);
         if (!elements?.length) return;
         const first = elements[0],
           last = elements[elements.length - 1];
@@ -490,19 +525,65 @@ export function ProfileDialog({
     >
       <section
         ref={dialog}
-        className="networkPartnerProfileModal"
+        className="networkPartnerProfileModal partnerMiniSite"
         style={partnerBranding(p)}
         role="dialog"
         aria-modal="true"
         aria-labelledby="partner-profile-title"
       >
-        <button
-          className="networkProfileClose"
-          onClick={onClose}
-          aria-label="Schließen"
-        >
-          ×
-        </button>
+        <div className="partnerSiteTopbar">
+          <button
+            type="button"
+            className="partnerSiteBrand"
+            onClick={() => {
+              setMenuOpen(false);
+              dialog.current?.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            aria-label={`${p.companyName} – Seitenanfang`}
+          >
+            {p.logoUrl ? (
+              <img src={p.logoUrl} alt={p.companyName} />
+            ) : (
+              <strong>{p.companyName}</strong>
+            )}
+          </button>
+          <nav
+            id="partner-site-navigation"
+            className={`partnerSiteNavigation${menuOpen ? " isOpen" : ""}`}
+            aria-label="Navigation der Partnerseite"
+          >
+            {areas.map((area) => (
+              <button
+                type="button"
+                key={area.id}
+                aria-current={activeArea === area.id ? "page" : undefined}
+                onClick={() => showArea(area.id)}
+              >
+                {area.label}
+              </button>
+            ))}
+          </nav>
+          <button
+            type="button"
+            className="partnerSiteMenuToggle"
+            aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
+            aria-expanded={menuOpen}
+            aria-controls="partner-site-navigation"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+          <button
+            type="button"
+            className="partnerSiteClose"
+            onClick={onClose}
+            aria-label="Partnerseite schließen"
+          >
+            ×
+          </button>
+        </div>
         {editControls?.("hero")}
         <header
           className={`partnerOnepagerHero${p.heroImageUrl ? " hasHeroImage" : ""}`}
@@ -510,16 +591,18 @@ export function ProfileDialog({
           {p.heroImageUrl && (
             <img className="partnerHeroPhoto" src={p.heroImageUrl} alt="" />
           )}
-          {p.logoUrl ? (
-            <img src={p.logoUrl} alt="" />
-          ) : (
-            <span>{p.companyName.slice(0, 2).toUpperCase()}</span>
-          )}
           <div>
             <small>NETZWERKPARTNER</small>
             <h2 id="partner-profile-title">{p.companyName}</h2>
             <p>{p.tagline}</p>
             <div className="partnerHeroActions">
+              <button
+                type="button"
+                className="partnerSiteHeroButton"
+                onClick={() => showArea("services")}
+              >
+                Unsere Leistungen entdecken →
+              </button>
               {access?.enabledModules.includes("communication") &&
                 member.userId !== access.currentUserId && (
                   <Link
@@ -544,59 +627,21 @@ export function ProfileDialog({
             </div>
           </div>
         </header>
-        <nav
-          className="partnerOnepagerNav"
-          aria-label="Bereiche der Partnerseite"
+        <div
+          className="networkPartnerProfileBody"
+          id="partner-content"
+          tabIndex={-1}
+          role="region"
+          aria-label={areas.find((area) => area.id === activeArea)?.label}
         >
-          <button
-            onClick={() =>
-              dialog.current
-                ?.querySelector("#partner-about")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
-          >
-            Vorstellung
-          </button>
-          <button
-            onClick={() =>
-              dialog.current
-                ?.querySelector("#partner-services")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
-          >
-            Leistungen
-          </button>
-          {p.sections?.map((section, index) => (
-            <button
-              key={index}
-              onClick={() =>
-                dialog.current
-                  ?.querySelector(`#partner-section-${index}`)
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
-              }
-            >
-              {section.title}
-            </button>
-          ))}
-          <button
-            onClick={() =>
-              dialog.current
-                ?.querySelector("#partner-contact")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
-          >
-            Kontakt
-          </button>
-        </nav>
-        <div className="networkPartnerProfileBody">
-          <main>
-            <section id="partner-about">
+          <main hidden={activeArea === "contact"}>
+            <section id="partner-about" hidden={activeArea !== "about"}>
               {editControls?.("about")}
               <small>ÜBER UNS</small>
               <h3>Persönlich vorgestellt</h3>
               <p>{p.description}</p>
             </section>
-            <section id="partner-services">
+            <section id="partner-services" hidden={activeArea !== "services"}>
               {editControls?.("services")}
               <small>LEISTUNGEN</small>
               <h3>Damit unterstützen wir Netzwerkpartner</h3>
@@ -620,7 +665,7 @@ export function ProfileDialog({
               )}
             </section>
             {(p.personalMessage || editControls) && (
-              <section>
+              <section hidden={activeArea !== "personal"}>
                 {editControls?.("personalMessage")}
                 <small>PERSÖNLICH IM NETZWERK</small>
                 <h3>Meine Mitteilung an die Partner</h3>
@@ -632,6 +677,7 @@ export function ProfileDialog({
                 className="partnerOnepagerSection"
                 id={`partner-section-${index}`}
                 key={index}
+                hidden={activeArea !== `section-${index}`}
               >
                 {editControls?.(`section-${index}`)}
                 <small>
@@ -647,7 +693,7 @@ export function ProfileDialog({
               </section>
             ))}
             {(p.offers || editControls) && (
-              <section>
+              <section hidden={activeArea !== "offers"}>
                 {editControls?.("offers")}
                 <small>ANGEBOTE & UNTERSTÜTZUNG</small>
                 <h3>Das biete ich an</h3>
@@ -655,7 +701,7 @@ export function ProfileDialog({
               </section>
             )}
             {(p.lookingFor || editControls) && (
-              <section>
+              <section hidden={activeArea !== "looking"}>
                 {editControls?.("lookingFor")}
                 <small>GESUCHE & KOOPERATIONEN</small>
                 <h3>Das suche ich</h3>
@@ -663,7 +709,7 @@ export function ProfileDialog({
               </section>
             )}
           </main>
-          <aside id="partner-contact">
+          <aside id="partner-contact" hidden={activeArea !== "contact"}>
             {editControls?.("contact")}
             <h3>Direkter Kontakt</h3>
             {p.meetingUrl && (
@@ -709,6 +755,13 @@ export function ProfileDialog({
             )}
           </aside>
         </div>
+        <footer className="partnerSiteFooter">
+          <strong>{p.companyName}</strong>
+          <span>Persönlich verbunden · Im geschlossenen Partnernetzwerk</span>
+          <button type="button" onClick={() => showArea("contact")}>
+            Kontakt aufnehmen →
+          </button>
+        </footer>
       </section>
     </div>
   );

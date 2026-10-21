@@ -130,6 +130,103 @@ describe("network tenancy", () => {
         data: { category: "Freitext", file: null },
       }),
     ).toThrow(/vorgegebenen Kategorien/i);
+    const football = networks.create(ownerBearer, {
+      name: "Bayer 04 Leverkusen",
+      slug: "bayer04leverkusen",
+    });
+    networks.setAccess(ownerBearer, football.id, {
+      status: "active",
+      billingMode: "cooperation_free",
+    });
+    networks.updateSettings(ownerBearer, football.id, {
+      enabledModules: ["profiles", "events"],
+    });
+    // Membership in the Giants network must never grant access to Bayer 04.
+    expect(() => networks.proBSchedule(partnerBearer, football.id)).toThrow();
+    networks.addMember(ownerBearer, football.id, {
+      organizationId: partnerOrganization.id,
+      userId: partnerRegistration.user.id,
+      role: "organization_admin",
+    });
+    const schedule = networks.proBSchedule(partnerBearer, football.id);
+    expect(schedule.games).toHaveLength(34);
+    expect(schedule.table).toHaveLength(18);
+    expect(
+      schedule.games.filter((game) => game.homeScore !== null),
+    ).toHaveLength(6);
+    expect(schedule.games[5]).toMatchObject({
+      homeTeam: "Bayer 04 Leverkusen",
+      awayTeam: "Sport-Club Freiburg",
+      homeScore: 2,
+      awayScore: 1,
+      discussionOpen: true,
+    });
+    expect(schedule.logos["Bayer 04 Leverkusen"]).toContain(
+      "DFL-CLU-00000B.svg",
+    );
+    expect(() =>
+      networks.updateProBResult(
+        partnerBearer,
+        football.id,
+        schedule.games[5].id,
+        { giantsScore: 3, opponentScore: 1 },
+      ),
+    ).toThrow();
+    expect(
+      networks.addProBComment(
+        partnerBearer,
+        football.id,
+        schedule.games[5].id,
+        { body: "Schön, euch auch nach dem Spiel hier zu treffen!" },
+      ).comments,
+    ).toHaveLength(1);
+    expect(
+      networks.updateProBResult(
+        ownerBearer,
+        football.id,
+        schedule.games[5].id,
+        { giantsScore: null, opponentScore: null },
+      ),
+    ).toMatchObject({ homeScore: null, awayScore: null });
+    expect(
+      networks.updateProBResult(
+        ownerBearer,
+        football.id,
+        schedule.games[5].id,
+        { giantsScore: 2, opponentScore: 1 },
+      ),
+    ).toMatchObject({ homeScore: 2, awayScore: 1 });
+    expect(() =>
+      networks.updateProBResult(
+        ownerBearer,
+        football.id,
+        schedule.games[5].id,
+        { giantsScore: null, opponentScore: 1 },
+      ),
+    ).toThrow(/beide/);
+    networks.updateProBDiscussion(
+      ownerBearer,
+      football.id,
+      schedule.games[5].id,
+      { open: false },
+    );
+    expect(() =>
+      networks.addProBComment(
+        partnerBearer,
+        football.id,
+        schedule.games[5].id,
+        { body: "Nicht mehr offen" },
+      ),
+    ).toThrow(/keine Diskussionsrunde/);
+    expect(() =>
+      networks.updateProBResult(ownerBearer, network.id, schedule.games[5].id, {
+        giantsScore: 2,
+        opponentScore: 1,
+      }),
+    ).toThrow(/nicht gefunden/);
+    expect(
+      networks.proBSchedule(partnerBearer, network.id).games[0].homeTeam,
+    ).not.toBe("Bayer 04 Leverkusen");
     const document = networks.createContent(initiatorBearer, network.id, {
       type: "document",
       title: "Protokoll",

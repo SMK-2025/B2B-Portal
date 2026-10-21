@@ -25,6 +25,13 @@ import type {
 import { PortalStore } from "../core/portal.store";
 import { emailAddress, requiredText, safeUrl } from "../core/validation";
 import { CompanyImport } from "./company-import";
+import { bundesligaSnapshot, refreshBundesliga } from "./bundesliga-data";
+import {
+  BUNDESLIGA_LOGOS,
+  BUNDESLIGA_SEASON,
+  BUNDESLIGA_SOURCE,
+  BUNDESLIGA_TABLE_SOURCE,
+} from "./bundesliga-schedule";
 import { partnerHero, partnerSections } from "./partner-onepager";
 import { enqueueOperatorMail } from "../core/operator-mail";
 import {
@@ -2050,17 +2057,34 @@ export class NetworksService {
     );
   }
 
+  async sportsSchedule(authorization: string | undefined, networkId: string) {
+    // Authenticate and enforce tenancy before any external data request.
+    this.proBSchedule(authorization, networkId);
+    if (this.raw(networkId).slug === "bayer04leverkusen")
+      await refreshBundesliga();
+    return this.proBSchedule(authorization, networkId);
+  }
   proBSchedule(authorization: string | undefined, networkId: string) {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkAccess(actor.id, networkId);
     this.requireGiantsNetwork(networkId);
     this.requireEnabledModule(networkId, "events", actor.id);
     const canManage = this.isNetworkInitiator(actor.id, networkId);
+    const football = this.raw(networkId).slug === "bayer04leverkusen";
     return {
-      season: PROB_SEASON,
-      sourceUrl: PROB_SOURCE_URL,
+      season: football ? BUNDESLIGA_SEASON : PROB_SEASON,
+      sourceUrl: football ? BUNDESLIGA_SOURCE : PROB_SOURCE_URL,
+      teamName: football ? "Bayer 04 Leverkusen" : "Bayer Giants",
+      competition: football ? "Bundesliga" : "ProB Süd",
+      logos: football ? BUNDESLIGA_LOGOS : {},
+      asOf: football ? bundesligaSnapshot().asOf : null,
+      fetchedAt: football ? bundesligaSnapshot().fetchedAt : null,
+      table: football ? bundesligaSnapshot().table : [],
+      tableSourceUrl: football ? BUNDESLIGA_TABLE_SOURCE : null,
       canManage,
-      games: PROB_GAMES.map((game) => this.proBGameView(networkId, game)),
+      games: (football ? bundesligaSnapshot().games : PROB_GAMES).map((game) =>
+        this.proBGameView(networkId, game),
+      ),
     };
   }
 
@@ -2074,8 +2098,7 @@ export class NetworksService {
     this.requireNetworkManagement(actor.id, networkId);
     this.requireGiantsNetwork(networkId);
     this.requireEnabledModule(networkId, "events", actor.id);
-    const game = this.proBGame(gameId),
-      record = this.proBRecord(networkId, game, true, actor.id)!;
+    const game = this.proBGame(gameId, networkId);
     const score = (value: unknown) => {
       if (value === null || value === "") return null;
       const parsed = Number(value);
@@ -2085,8 +2108,15 @@ export class NetworksService {
         );
       return parsed;
     };
-    record.data.giantsScore = score(input.giantsScore);
-    record.data.opponentScore = score(input.opponentScore);
+    const teamScore = score(input.giantsScore),
+      opponentScore = score(input.opponentScore);
+    if ((teamScore === null) !== (opponentScore === null))
+      throw new BadRequestException(
+        "Bitte beide Ergebnisse eintragen oder beide leeren.",
+      );
+    const record = this.proBRecord(networkId, game, true, actor.id)!;
+    record.data.giantsScore = teamScore;
+    record.data.opponentScore = opponentScore;
     record.updatedAt = new Date().toISOString();
     return this.proBGameView(networkId, game);
   }
@@ -2101,7 +2131,7 @@ export class NetworksService {
     this.requireNetworkManagement(actor.id, networkId);
     this.requireGiantsNetwork(networkId);
     this.requireEnabledModule(networkId, "events", actor.id);
-    const game = this.proBGame(gameId),
+    const game = this.proBGame(gameId, networkId),
       record = this.proBRecord(networkId, game, true, actor.id)!;
     record.data.discussionOpen = input.open === true;
     record.data.discussionPrompt =
@@ -2122,8 +2152,13 @@ export class NetworksService {
     this.requireWritableNetwork(actor.id, networkId);
     this.requireGiantsNetwork(networkId);
     this.requireEnabledModule(networkId, "events", actor.id);
-    const game = this.proBGame(gameId),
-      record = this.proBRecord(networkId, game, false);
+    const game = this.proBGame(gameId, networkId),
+      record = this.proBRecord(
+        networkId,
+        game,
+        this.raw(networkId).slug === "bayer04leverkusen",
+        actor.id,
+      );
     if (!record || record.data.discussionOpen !== true)
       throw new BadRequestException(
         "Für dieses Spiel ist aktuell keine Diskussionsrunde geöffnet.",
@@ -2135,10 +2170,10 @@ export class NetworksService {
           item.userId === actor.id &&
           item.status === "active",
       );
-    if (!membership)
+    if (!membership && !this.isNetworkInitiator(actor.id, networkId))
       throw new ForbiddenException("Kein aktiver Netzwerkzugang.");
     const organization = this.store.organizations.get(
-        membership.organizationId,
+        membership?.organizationId || "",
       ),
       comments = Array.isArray(record.data.comments)
         ? (record.data.comments as Array<Record<string, unknown>>)
@@ -2149,7 +2184,7 @@ export class NetworksService {
       userId: actor.id,
       author: `${actor.firstName} ${actor.lastName}`.trim(),
       organization:
-        membership.role === "network_admin"
+        !membership || membership.role === "network_admin"
           ? "Initiator"
           : organization?.displayName || "Netzwerkpartner",
       body,
@@ -3562,15 +3597,21 @@ export class NetworksService {
       ),
     };
   }
-  private proBGame(gameId: string) {
-    const game = PROB_GAMES.find((item) => item.id === gameId);
+  private proBGame(gameId: string, networkId: string) {
+    const games =
+      this.raw(networkId).slug === "bayer04leverkusen"
+        ? bundesligaSnapshot().games
+        : PROB_GAMES;
+    const game = games.find((item) => item.id === gameId);
     if (!game) throw new NotFoundException("Spiel nicht gefunden.");
     return game;
   }
   private requireGiantsNetwork(networkId: string) {
-    if (this.raw(networkId).slug !== "bayer-giants")
+    if (
+      !["bayer-giants", "bayer04leverkusen"].includes(this.raw(networkId).slug)
+    )
       throw new NotFoundException(
-        "Der ProB-Spielplan ist für dieses Netzwerk nicht verfügbar.",
+        "Der Spielplan ist für dieses Netzwerk nicht verfügbar.",
       );
   }
   private proBRecord(
@@ -3579,11 +3620,13 @@ export class NetworksService {
     create: boolean,
     creatorId?: string,
   ) {
+    const football = this.raw(networkId).slug === "bayer04leverkusen";
+    const teamName = football ? "Bayer 04 Leverkusen" : "Bayer Giants";
     let record = [...this.store.networkContents.values()].find(
       (item) =>
         item.networkId === networkId &&
         item.type === "event" &&
-        item.data.kind === "prob_game" &&
+        item.data.kind === (football ? "bundesliga_game" : "prob_game") &&
         item.data.gameId === game.id,
     );
     if (!record && create) {
@@ -3593,19 +3636,22 @@ export class NetworksService {
         networkId,
         type: "event",
         title: game.home
-          ? `Bayer Giants vs. ${game.opponent}`
-          : `${game.opponent} vs. Bayer Giants`,
-        description: `BARMER 2. Basketball Bundesliga ProB · ${game.matchday}. Spieltag`,
+          ? `${teamName} vs. ${game.opponent}`
+          : `${game.opponent} vs. ${teamName}`,
+        description: `${football ? "Fußball-Bundesliga" : "BARMER 2. Basketball Bundesliga ProB"} · ${game.matchday}. Spieltag`,
         status: "published",
         createdByUserId: creatorId || "system",
         assignedToUserId: null,
-        startsAt: new Date(game.startsAt).toISOString(),
+        startsAt:
+          "kickoffConfirmed" in game && game.kickoffConfirmed === false
+            ? null
+            : new Date(game.startsAt).toISOString(),
         endsAt: null,
         visibility: "members",
         data: {
-          kind: "prob_game",
+          kind: football ? "bundesliga_game" : "prob_game",
           gameId: game.id,
-          discussionOpen: false,
+          discussionOpen: football,
           discussionPrompt: "",
           comments: [],
         },
@@ -3617,9 +3663,11 @@ export class NetworksService {
     return record;
   }
   private proBGameView(networkId: string, game: ProBGame) {
+    const football = this.raw(networkId).slug === "bayer04leverkusen";
+    const teamName = football ? "Bayer 04 Leverkusen" : "Bayer Giants";
     const record = this.proBRecord(networkId, game, false),
       number = (value: unknown, fallback: number | null) =>
-        typeof value === "number" ? value : fallback,
+        value === null ? null : typeof value === "number" ? value : fallback,
       giantsScore = number(record?.data.giantsScore, game.officialGiantsScore),
       opponentScore = number(
         record?.data.opponentScore,
@@ -3630,14 +3678,14 @@ export class NetworksService {
         : [];
     return {
       ...game,
-      season: PROB_SEASON,
-      homeTeam: game.home ? "Bayer Giants" : game.opponent,
-      awayTeam: game.home ? game.opponent : "Bayer Giants",
+      season: football ? BUNDESLIGA_SEASON : PROB_SEASON,
+      homeTeam: game.home ? teamName : game.opponent,
+      awayTeam: game.home ? game.opponent : teamName,
       giantsScore,
       opponentScore,
       homeScore: game.home ? giantsScore : opponentScore,
       awayScore: game.home ? opponentScore : giantsScore,
-      discussionOpen: record?.data.discussionOpen === true,
+      discussionOpen: record ? record.data.discussionOpen === true : football,
       discussionPrompt:
         typeof record?.data.discussionPrompt === "string"
           ? record.data.discussionPrompt

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./styles.css";
 import "./network-brand-overrides.css";
 import "./network-exchange.css";
+import "./bundesliga.css";
 import "./public-brand.css";
 import "./public-card-system.css";
 import { PwaRegister } from "./pwa-register";

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
+import { NetworkBundesligaCard } from "./network-bundesliga-card";
 type Item = {
   id: string;
   type: string;
@@ -129,6 +130,10 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
       </section>
       <div className="networkDashboardGrid">
         <div>
+          {slug === "bayer04leverkusen" &&
+            access?.enabledModules.includes("events") && (
+              <NetworkBundesligaCard />
+            )}
           {access?.enabledModules.includes("community") && (
             <section className="networkCard">
               <header>

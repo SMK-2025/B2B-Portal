@@ -332,13 +332,18 @@ export class NetworksController {
       body,
     );
   }
-  @Get(":networkId/prob-schedule") proBSchedule(
+  @Get([":networkId/prob-schedule", ":networkId/bundesliga-schedule"])
+  proBSchedule(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,
   ) {
-    return this.networks.proBSchedule(authorization, networkId);
+    return this.networks.sportsSchedule(authorization, networkId);
   }
-  @Post(":networkId/prob-schedule/:gameId/result") proBResult(
+  @Post([
+    ":networkId/prob-schedule/:gameId/result",
+    ":networkId/bundesliga-schedule/:gameId/result",
+  ])
+  proBResult(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,
     @Param("gameId") gameId: string,
@@ -351,7 +356,11 @@ export class NetworksController {
       body,
     );
   }
-  @Post(":networkId/prob-schedule/:gameId/discussion") proBDiscussion(
+  @Post([
+    ":networkId/prob-schedule/:gameId/discussion",
+    ":networkId/bundesliga-schedule/:gameId/discussion",
+  ])
+  proBDiscussion(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,
     @Param("gameId") gameId: string,
@@ -364,7 +373,11 @@ export class NetworksController {
       body,
     );
   }
-  @Post(":networkId/prob-schedule/:gameId/comments") proBComment(
+  @Post([
+    ":networkId/prob-schedule/:gameId/comments",
+    ":networkId/bundesliga-schedule/:gameId/comments",
+  ])
+  proBComment(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,
     @Param("gameId") gameId: string,

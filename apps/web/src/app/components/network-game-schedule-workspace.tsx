@@ -10,7 +10,7 @@ type Comment = {
   body: string;
   createdAt: string;
 };
-type Game = {
+export type Game = {
   id: string;
   matchday: number;
   startsAt: string;
@@ -25,12 +25,31 @@ type Game = {
   discussionOpen: boolean;
   discussionPrompt: string;
   comments: Comment[];
+  dateWindowEnd?: string | null;
+  kickoffConfirmed?: boolean;
 };
-type Schedule = {
+export type Schedule = {
   season: string;
   sourceUrl: string;
   canManage: boolean;
   games: Game[];
+  teamName: string;
+  competition: string;
+  logos: Record<string, string>;
+  asOf: string | null;
+  tableSourceUrl: string | null;
+  table: {
+    rank: number;
+    team: string;
+    logoUrl: string;
+    played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goalsFor: number;
+    goalsAgainst: number;
+    points: number;
+  }[];
 };
 
 const defaultPrompt =
@@ -41,26 +60,40 @@ const teamLogos: Record<string, string> = {
   "Bayer Giants": "/network/bayer-giants/teams/bayer-giants.png",
   "Bayer Giants Leverkusen": "/network/bayer-giants/teams/bayer-giants.png",
   "BBC Coburg": "/network/bayer-giants/teams/bbc-coburg.png",
-  "BG Hessing Leitershofen": "/network/bayer-giants/teams/bg-hessing-leitershofen.png",
+  "BG Hessing Leitershofen":
+    "/network/bayer-giants/teams/bg-hessing-leitershofen.png",
   "Basketball Löwen": "/network/bayer-giants/teams/basketball-loewen.png",
   "CATL Basketball Löwen": "/network/bayer-giants/teams/basketball-loewen.png",
-  "CATL Basketball Löwen Erfurt": "/network/bayer-giants/teams/basketball-loewen.png",
+  "CATL Basketball Löwen Erfurt":
+    "/network/bayer-giants/teams/basketball-loewen.png",
   "Culture City Weimar": "/network/bayer-giants/teams/culture-city-weimar.png",
   "Dragons Rhöndorf": "/network/bayer-giants/teams/dragons-rhoendorf.png",
   "Dresden Titans": "/network/bayer-giants/teams/dresden-titans.png",
-  "FC Bayern Basketball II": "/network/bayer-giants/teams/fc-bayern-basketball-ii.png",
-  "Porsche BBA Ludwigsburg": "/network/bayer-giants/teams/porsche-bba-ludwigsburg.png",
+  "FC Bayern Basketball II":
+    "/network/bayer-giants/teams/fc-bayern-basketball-ii.png",
+  "Porsche BBA Ludwigsburg":
+    "/network/bayer-giants/teams/porsche-bba-ludwigsburg.png",
   "SKYLINERS Juniors": "/network/bayer-giants/teams/skyliners-juniors.png",
-  "SV Fellbach Flashers": "/network/bayer-giants/teams/sv-fellbach-flashers.png",
+  "SV Fellbach Flashers":
+    "/network/bayer-giants/teams/sv-fellbach-flashers.png",
   "Fellbach Flashers": "/network/bayer-giants/teams/sv-fellbach-flashers.png",
-  "TSG Reutlingen Ravens": "/network/bayer-giants/teams/tsg-reutlingen-ravens.png",
-  "TSG Schöller SI Ravens Reutlingen": "/network/bayer-giants/teams/tsg-reutlingen-ravens.png",
-  "TSV Oberhaching Tropics": "/network/bayer-giants/teams/tsv-oberhaching-tropics.png",
+  "TSG Reutlingen Ravens":
+    "/network/bayer-giants/teams/tsg-reutlingen-ravens.png",
+  "TSG Schöller SI Ravens Reutlingen":
+    "/network/bayer-giants/teams/tsg-reutlingen-ravens.png",
+  "TSV Oberhaching Tropics":
+    "/network/bayer-giants/teams/tsv-oberhaching-tropics.png",
   "TV Langen": "/network/bayer-giants/teams/tv-langen.png",
 };
 
-function Team({ name }: { name: string }) {
-  const logo = teamLogos[name];
+export function Team({
+  name,
+  logos = {},
+}: {
+  name: string;
+  logos?: Record<string, string>;
+}) {
+  const logo = logos[name] || teamLogos[name];
   const initials = name
     .split(" ")
     .filter(Boolean)
@@ -87,9 +120,82 @@ function Team({ name }: { name: string }) {
   );
 }
 
+function BundesligaTable({ data }: { data: Schedule }) {
+  return (
+    <section className="networkCard bundesligaTable" id="tabelle">
+      <header>
+        <div>
+          <span>BUNDESLIGA {data.season}</span>
+          <h2>Die Tabelle im Überblick</h2>
+        </div>
+        <a
+          href={data.tableSourceUrl || data.sourceUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Offizielle Tabelle ↗
+        </a>
+      </header>
+      <p className="bundesligaSource">
+        Stand{" "}
+        {data.asOf &&
+          new Date(`${data.asOf}T12:00:00Z`).toLocaleDateString("de-DE")}
+        . Offizieller Tabellenstand; manuell gepflegte Spielergebnisse verändern
+        diese Tabelle nicht.
+      </p>
+      <div className="bundesligaTableScroll">
+        <table>
+          <caption className="sr-only">
+            Bundesliga-Tabelle Saison {data.season}
+          </caption>
+          <thead>
+            <tr>
+              <th>Platz</th>
+              <th>Verein</th>
+              <th>Sp.</th>
+              <th>S</th>
+              <th>U</th>
+              <th>N</th>
+              <th>Tore</th>
+              <th>Diff.</th>
+              <th>Punkte</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.table.map((row) => (
+              <tr
+                key={row.team}
+                className={row.team === data.teamName ? "highlight" : ""}
+              >
+                <td>{row.rank}</td>
+                <th scope="row">
+                  <Team name={row.team} logos={data.logos} />
+                </th>
+                <td>{row.played}</td>
+                <td>{row.wins}</td>
+                <td>{row.draws}</td>
+                <td>{row.losses}</td>
+                <td>
+                  {row.goalsFor}:{row.goalsAgainst}
+                </td>
+                <td>{row.goalsFor - row.goalsAgainst}</td>
+                <td>
+                  <b>{row.points}</b>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export function NetworkGameScheduleWorkspace() {
   const access = useNetworkAccess(),
     networkId = access?.networkId || "",
+    football = access?.slug === "bayer04leverkusen",
+    endpoint = football ? "bundesliga-schedule" : "prob-schedule",
     [data, setData] = useState<Schedule | null>(null),
     [filter, setFilter] = useState<"upcoming" | "results" | "all">("upcoming"),
     [selected, setSelected] = useState<string | null>(null),
@@ -102,7 +208,7 @@ export function NetworkGameScheduleWorkspace() {
     if (!token || !networkId) return;
     try {
       setData(
-        await portalRequest<Schedule>(`/networks/${networkId}/prob-schedule`, {
+        await portalRequest<Schedule>(`/networks/${networkId}/${endpoint}`, {
           token,
         }),
       );
@@ -117,7 +223,21 @@ export function NetworkGameScheduleWorkspace() {
   }
   useEffect(() => {
     void load();
-  }, [networkId]);
+  }, [networkId, endpoint]);
+  useEffect(() => {
+    if (!data) return;
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    if (!hash) return;
+    if (hash.startsWith("diskussion-")) {
+      setFilter("all");
+      setSelected(hash.slice("diskussion-".length));
+    } else if (hash.startsWith("spiel-")) setFilter("all");
+    const timer = window.setTimeout(
+      () => document.getElementById(hash)?.scrollIntoView({ block: "start" }),
+      100,
+    );
+    return () => window.clearTimeout(timer);
+  }, [data]);
   const games = useMemo(() => {
     if (!data) return [];
     const now = Date.now();
@@ -127,7 +247,11 @@ export function NetworkGameScheduleWorkspace() {
           filter === "all" ||
           (filter === "results"
             ? game.homeScore !== null && game.awayScore !== null
-            : Date.parse(game.startsAt) >= now && game.homeScore === null),
+            : Date.parse(
+                game.dateWindowEnd
+                  ? `${game.dateWindowEnd}T23:59:59Z`
+                  : game.startsAt,
+              ) >= now && game.homeScore === null),
       )
       .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
   }, [data, filter]);
@@ -139,7 +263,7 @@ export function NetworkGameScheduleWorkspace() {
     setBusy(true);
     try {
       await portalRequest(
-        `/networks/${networkId}/prob-schedule/${game.id}/result`,
+        `/networks/${networkId}/${endpoint}/${game.id}/result`,
         {
           token,
           body: {
@@ -162,13 +286,14 @@ export function NetworkGameScheduleWorkspace() {
     }
   }
   async function clearResult(game: Game) {
-    if (!window.confirm("Möchten Sie dieses Ergebnis wirklich löschen?")) return;
+    if (!window.confirm("Möchten Sie dieses Ergebnis wirklich löschen?"))
+      return;
     const token = getPortalSession();
     if (!token) return;
     setBusy(true);
     try {
       await portalRequest(
-        `/networks/${networkId}/prob-schedule/${game.id}/result`,
+        `/networks/${networkId}/${endpoint}/${game.id}/result`,
         { token, body: { giantsScore: null, opponentScore: null } },
       );
       await load();
@@ -196,7 +321,7 @@ export function NetworkGameScheduleWorkspace() {
     setBusy(true);
     try {
       await portalRequest(
-        `/networks/${networkId}/prob-schedule/${game.id}/discussion`,
+        `/networks/${networkId}/${endpoint}/${game.id}/discussion`,
         { token, body: { open, prompt: form.get("prompt") } },
       );
       await load();
@@ -223,7 +348,7 @@ export function NetworkGameScheduleWorkspace() {
     setBusy(true);
     try {
       await portalRequest(
-        `/networks/${networkId}/prob-schedule/${game.id}/discussion`,
+        `/networks/${networkId}/${endpoint}/${game.id}/discussion`,
         {
           token,
           body: { open: false, prompt: game.discussionPrompt || defaultPrompt },
@@ -251,7 +376,7 @@ export function NetworkGameScheduleWorkspace() {
     setBusy(true);
     try {
       await portalRequest(
-        `/networks/${networkId}/prob-schedule/${game.id}/comments`,
+        `/networks/${networkId}/${endpoint}/${game.id}/comments`,
         { token, body: { body: data.get("body") } },
       );
       form.reset();
@@ -270,25 +395,32 @@ export function NetworkGameScheduleWorkspace() {
   if (!data)
     return (
       <section className="networkCard networkLoading">
-        <p>{notice || "Der ProB-Spielplan wird geladen …"}</p>
+        <p>{notice || "Der Spielplan wird geladen …"}</p>
       </section>
     );
   return (
     <div className="gameScheduleWorkspace">
       <section className="gameScheduleIntro">
         <div>
-          <span>PROB SÜD · SAISON {data.season}</span>
-          <h2>Gemeinsam mit den Giants durch die Saison</h2>
+          <span>
+            {data.competition} · SAISON {data.season}
+          </span>
+          <h2>
+            {football
+              ? "Mit der Werkself im Gespräch bleiben"
+              : "Gemeinsam mit den Giants durch die Saison"}
+          </h2>
           <p>
-            Alle Spiele, Ergebnisse und öffentlichen Partnergespräche an einem
-            Ort. Diskutieren Sie sportliche Eindrücke, das gemeinsame
-            Beisammensein und Ideen für ein noch stärkeres Netzwerk.
+            Spiele, Ergebnisse und Austausch im geschlossenen Partnernetzwerk.
+            Teile deine Eindrücke und bleibe auch zwischen den Spieltagen in
+            Kontakt.
           </p>
         </div>
         <a href={data.sourceUrl} target="_blank" rel="noreferrer">
           Offizieller Spielplan ↗
         </a>
       </section>
+      {football && <BundesligaTable data={data} />}
       <nav className="gameScheduleFilters" aria-label="Spielplan filtern">
         <button
           className={filter === "upcoming" ? "active" : ""}
@@ -314,7 +446,11 @@ export function NetworkGameScheduleWorkspace() {
           const hasResult = game.homeScore !== null && game.awayScore !== null,
             isOpen = selected === game.id;
           return (
-            <article key={game.id} className={isOpen ? "open" : ""}>
+            <article
+              key={game.id}
+              id={`spiel-${game.id}`}
+              className={isOpen ? "open" : ""}
+            >
               <div className="gameDate">
                 <strong>
                   {new Date(game.startsAt).toLocaleDateString("de-DE", {
@@ -327,22 +463,28 @@ export function NetworkGameScheduleWorkspace() {
                   })}
                 </span>
                 <small>
-                  {new Date(game.startsAt).toLocaleTimeString("de-DE", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {game.dateWindowEnd
+                    ? `bis ${new Date(`${game.dateWindowEnd}T12:00:00Z`).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}`
+                    : game.kickoffConfirmed === false
+                      ? ""
+                      : new Date(game.startsAt).toLocaleTimeString("de-DE", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          timeZone: "Europe/Berlin",
+                        })}
                 </small>
               </div>
               <div className="gameMatch">
                 <small>
                   {game.matchday}. SPIELTAG ·{" "}
                   {game.home ? "HEIMSPIEL" : "AUSWÄRTSSPIEL"}
+                  {game.dateWindowEnd && " · NOCH NICHT EXAKT TERMINIERT"}
                 </small>
-              <p>
-                <Team name={game.homeTeam} />
-                <span className="gameVersus">vs.</span>
-                <Team name={game.awayTeam} />
-              </p>
+                <p>
+                  <Team name={game.homeTeam} logos={data.logos} />
+                  <span className="gameVersus">vs.</span>
+                  <Team name={game.awayTeam} logos={data.logos} />
+                </p>
               </div>
               <div className="gameScore">
                 {hasResult ? (
@@ -402,7 +544,7 @@ export function NetworkGameScheduleWorkspace() {
                   onSubmit={(event) => void saveResult(event, game)}
                 >
                   <label>
-                    Giants
+                    {data.teamName}
                     <input
                       name="giantsScore"
                       type="number"
@@ -428,10 +570,13 @@ export function NetworkGameScheduleWorkspace() {
                 </form>
               )}
               {game.discussionOpen && isOpen && (
-                <section className="gameDiscussion">
+                <section
+                  className="gameDiscussion"
+                  id={`diskussion-${game.id}`}
+                >
                   <header>
                     <div>
-                      <span>ÖFFENTLICHE PARTNERRUNDE</span>
+                      <span>OFFENE RUNDE IM GESCHLOSSENEN NETZWERK</span>
                       <h3>
                         Gemeinsam über das Spiel und das Netzwerk sprechen
                       </h3>

@@ -98,7 +98,11 @@ export default async function Page({
     <NetworkShell
       slug={slug}
       networkName={name}
-      title={page[0]}
+      title={
+        bereich === "spielplan" && slug === "bayer04leverkusen"
+          ? "Bundesliga · Spielplan und Tabelle"
+          : page[0]
+      }
       intro={page[1]}
     >
       {body}

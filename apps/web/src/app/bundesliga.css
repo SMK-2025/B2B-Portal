@@ -1,0 +1,112 @@
+.bundesligaHomeCard {
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.bundesligaHomeBody {
+  padding: 28px;
+  display: grid;
+  gap: 20px;
+}
+.bundesligaHomeBody p {
+  margin: 0;
+}
+.bundesligaLastLabel,
+.bundesligaHomeBody > small,
+.bundesligaSource {
+  color: var(--text-muted, #63748b);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.bundesligaLastResult {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 24px;
+}
+.bundesligaLastResult > .gameTeam {
+  flex-direction: column;
+  text-align: center;
+  min-width: 0;
+}
+.bundesligaLastResult > .gameTeam b {
+  overflow-wrap: anywhere;
+}
+.bundesligaLastResult > strong {
+  font-size: clamp(28px, 4vw, 44px);
+  white-space: nowrap;
+}
+.bundesligaHomeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.bundesligaHomeActions a {
+  padding: 12px 18px;
+  border: 1px solid #d8deea;
+  border-radius: 10px;
+  text-decoration: none;
+  text-align: center;
+}
+.bundesligaHomeActions a.networkPrimary {
+  color: #fff !important;
+}
+.bundesligaTable {
+  margin-bottom: 24px;
+  scroll-margin-top: 100px;
+}
+.bundesligaSource {
+  padding: 0 24px;
+}
+.bundesligaTableScroll {
+  overflow-x: auto;
+  padding: 0 24px 24px;
+}
+.bundesligaTable table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 650px;
+  font-size: 14px;
+}
+.bundesligaTable th,
+.bundesligaTable td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #e5e9f0;
+  text-align: center;
+}
+.bundesligaTable th:nth-child(2) {
+  text-align: left;
+}
+.bundesligaTable tbody th {
+  font-weight: 500;
+  text-align: left;
+}
+.bundesligaTable .gameTeamLogo {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+}
+.bundesligaTable tr.highlight {
+  background: color-mix(in srgb, var(--network-primary, #e00000) 9%, white);
+}
+.gameScheduleList > article,
+.gameDiscussion {
+  scroll-margin-top: 100px;
+}
+@media (max-width: 600px) {
+  .bundesligaHomeBody {
+    padding: 20px;
+  }
+  .bundesligaLastResult {
+    gap: 20px;
+  }
+  .bundesligaLastResult .gameTeam b {
+    font-size: 13px;
+  }
+  .bundesligaHomeActions {
+    flex-direction: column;
+  }
+  .bundesligaHomeActions a {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

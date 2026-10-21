@@ -272,7 +272,8 @@ export function NetworkShell({
         access.enabledModules.includes(item.module) ||
         (item.path === "spielplan" &&
           access.offeredModules.includes("events"))) &&
-      (item.path !== "spielplan" || slug === "bayer-giants"),
+      (item.path !== "spielplan" ||
+        ["bayer-giants", "bayer04leverkusen"].includes(slug)),
     visiblePrimary = primaryPartnerItems.filter(
       (item) =>
         moduleVisible(item) && !(access.isInitiator && item.path === "profil"),
@@ -299,7 +300,9 @@ export function NetworkShell({
       href={href(item.path) as never}
     >
       <span>{item.icon}</span>
-      {item.label}
+      {item.path === "spielplan" && slug === "bayer04leverkusen"
+        ? "Bundesliga"
+        : item.label}
     </Link>
   );
   const navigation = (

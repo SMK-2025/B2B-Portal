@@ -59,7 +59,14 @@ type Result = {
 };
 export class CompanyImport {
   private attempts = new Map<string, number>();
-  async generate(userId: string, value: unknown) {
+  async generate(
+    userId: string,
+    value: unknown,
+  ): Promise<{
+    draft: Record<string, unknown>;
+    sources: string[];
+    reviewRequired: boolean;
+  }> {
     const url = companyWebsite(value),
       key = process.env.OPENAI_API_KEY;
     if (!key)

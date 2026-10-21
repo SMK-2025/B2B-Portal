@@ -12,6 +12,8 @@ import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
 
 type Profile = {
+  heroImageUrl?: string | null;
+  sections?: Array<{ title: string; body: string }>;
   personalMessage?: string;
   offers?: string;
   lookingFor?: string;
@@ -55,6 +57,10 @@ export function NetworkProfileWorkspace() {
     networkId = access?.networkId || "",
     [data, setData] = useState<Response | null>(null),
     [logo, setLogo] = useState<string | null>(null),
+    [hero, setHero] = useState<string | null>(null),
+    [sections, setSections] = useState<Array<{ title: string; body: string }>>(
+      [],
+    ),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -64,6 +70,8 @@ export function NetworkProfileWorkspace() {
       .then((value) => {
         setData(value);
         setLogo(value.profile?.logoUrl || null);
+        setHero(value.profile?.heroImageUrl || null);
+        setSections(value.profile?.sections || []);
       })
       .catch((error) =>
         setNotice(
@@ -87,6 +95,21 @@ export function NetworkProfileWorkspace() {
     const reader = new FileReader();
     reader.onload = () =>
       setLogo(typeof reader.result === "string" ? reader.result : null);
+    reader.readAsDataURL(file);
+  }
+  function chooseHero(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (
+      !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
+      file.size > 1_500_000
+    ) {
+      setNotice("Bitte PNG, JPG oder WebP mit maximal 1,5 MB wählen.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () =>
+      setHero(typeof reader.result === "string" ? reader.result : null);
     reader.readAsDataURL(file);
   }
   async function save(formElement: HTMLFormElement, publish: boolean) {
@@ -115,6 +138,8 @@ export function NetworkProfileWorkspace() {
             contactEmail: form.get("contactEmail"),
             contactPhone: form.get("contactPhone"),
             logoUrl: logo,
+            heroImageUrl: hero,
+            sections,
             personalMessage: form.get("personalMessage"),
             offers: form.get("offers"),
             lookingFor: form.get("lookingFor"),
@@ -152,19 +177,28 @@ export function NetworkProfileWorkspace() {
     );
     try {
       const result = await portalRequest<{
-        draft: Record<string, string>;
+        draft: Record<string, unknown>;
         sources: string[];
       }>(`/networks/${networkId}/profile/import`, {
         token,
+        timeoutMs: 120_000,
         body: {
           websiteUrl: input.get("sourceWebsite"),
           consent: input.get("consent") === "on",
         },
       });
       const changes: Record<string, string> = {};
+      if (
+        Array.isArray(result.draft.sections) &&
+        (!sections.length || input.get("replace") === "on")
+      )
+        setSections(
+          result.draft.sections as Array<{ title: string; body: string }>,
+        );
       for (const [name, value] of Object.entries(result.draft)) {
         const field = profileForm.current?.elements.namedItem(name);
         if (
+          typeof value === "string" &&
           value &&
           (field instanceof HTMLInputElement ||
             field instanceof HTMLTextAreaElement) &&
@@ -177,7 +211,7 @@ export function NetworkProfileWorkspace() {
       setPreview((current) => ({ ...current, ...changes }));
       setSources(result.sources);
       setNotice(
-        "KI-Entwurf übernommen, noch nicht gespeichert oder veröffentlicht. Bitte alle Angaben prüfen und fehlende Informationen sowie Ihr Logo ergänzen.",
+        "PagePilot-AI-Entwurf übernommen, noch nicht gespeichert oder veröffentlicht. Bitte Texte und Inhaltsbereiche prüfen, persönliche Angaben und Bilder ergänzen.",
       );
     } catch (error) {
       setNotice(
@@ -232,14 +266,16 @@ export function NetworkProfileWorkspace() {
       {data.canEdit && (
         <section className="networkCard networkCompanyImport">
           <header>
-            <h2>Ihre Homepage als Ausgangspunkt – optional mit KI</h2>
+            <h2>PagePilot AI · Aus deiner Homepage wird deine Partnerseite</h2>
           </header>
           <form onSubmit={importWebsite}>
             <p>
-              Der Assistent recherchiert öffentliche Unternehmensinformationen
-              über OpenAI und bereitet Ihre vollständige Partnerseite vor. Sie
-              prüfen und veröffentlichen selbst. Nicht belegte Angaben bleiben
-              leer; Logo und persönliche Kontaktdaten können Sie ergänzen.
+              PagePilot AI recherchiert deine öffentliche Homepage und relevante
+              Unterseiten über OpenAI. Daraus entsteht ein bearbeitbarer
+              Onepager-Entwurf mit Vorstellung, Leistungen und weiteren
+              passenden Inhaltsbereichen. Du prüfst und veröffentlichst selbst.
+              Unbekannte Angaben bleiben leer; Herobild und persönliche
+              Netzwerkangebote ergänzt du selbst.
             </p>
             <label>
               Firmenhomepage
@@ -264,7 +300,7 @@ export function NetworkProfileWorkspace() {
             <button className="networkPrimary" disabled={busy}>
               {busy
                 ? "Homepage wird analysiert …"
-                : "Unternehmensseite mit KI vorbereiten"}
+                : "Partnerseite mit PagePilot AI vorbereiten"}
             </button>
             {sources.length > 0 && (
               <details>
@@ -301,6 +337,146 @@ export function NetworkProfileWorkspace() {
       >
         <div className="networkProfileLayout">
           <div className="networkProfileForm">
+            <section className="networkCard">
+              <header>
+                <div>
+                  <h2>Dein Onepager · Titelbild & Inhaltsbereiche</h2>
+                  <p>
+                    Ein fester, hochwertiger Rahmen mit so vielen Bereichen, wie
+                    dein Unternehmen braucht. Texte bleiben jederzeit
+                    bearbeitbar.
+                  </p>
+                </div>
+              </header>
+              <div className="networkProfileFields">
+                <label className="full">
+                  Herobild hochladen
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={chooseHero}
+                    disabled={!data.canEdit || busy}
+                  />
+                  <small>
+                    Breites Bild empfohlen (z. B. 1.920 × 800 Pixel) · maximal
+                    1,5 MB
+                  </small>
+                </label>
+                {hero && (
+                  <div className="full partnerHeroUploadPreview">
+                    <img src={hero} alt="Vorschau des Titelbildes" />
+                    <button
+                      type="button"
+                      className="networkSecondary"
+                      disabled={!data.canEdit || busy}
+                      onClick={() => setHero(null)}
+                    >
+                      Herobild entfernen
+                    </button>
+                  </div>
+                )}
+                {sections.map((section, index) => (
+                  <fieldset className="full partnerSectionEditor" key={index}>
+                    <legend>Inhaltsbereich {index + 1}</legend>
+                    <label>
+                      Überschrift
+                      <input
+                        value={section.title}
+                        maxLength={160}
+                        disabled={!data.canEdit}
+                        onChange={(event) =>
+                          setSections((current) =>
+                            current.map((s, i) =>
+                              i === index
+                                ? { ...s, title: event.target.value }
+                                : s,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      Inhalt
+                      <textarea
+                        value={section.body}
+                        maxLength={3000}
+                        rows={5}
+                        disabled={!data.canEdit}
+                        onChange={(event) =>
+                          setSections((current) =>
+                            current.map((s, i) =>
+                              i === index
+                                ? { ...s, body: event.target.value }
+                                : s,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    <div>
+                      <button
+                        type="button"
+                        disabled={!data.canEdit || index === 0}
+                        onClick={() =>
+                          setSections((current) => {
+                            const next = [...current];
+                            [next[index - 1], next[index]] = [
+                              next[index],
+                              next[index - 1],
+                            ];
+                            return next;
+                          })
+                        }
+                      >
+                        Nach oben
+                      </button>
+                      <button
+                        type="button"
+                        disabled={
+                          !data.canEdit || index === sections.length - 1
+                        }
+                        onClick={() =>
+                          setSections((current) => {
+                            const next = [...current];
+                            [next[index], next[index + 1]] = [
+                              next[index + 1],
+                              next[index],
+                            ];
+                            return next;
+                          })
+                        }
+                      >
+                        Nach unten
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!data.canEdit}
+                        onClick={() =>
+                          setSections((current) =>
+                            current.filter((_, i) => i !== index),
+                          )
+                        }
+                      >
+                        Bereich entfernen
+                      </button>
+                    </div>
+                  </fieldset>
+                ))}
+                <button
+                  type="button"
+                  className="networkSecondary full"
+                  disabled={!data.canEdit || sections.length >= 30}
+                  onClick={() =>
+                    setSections((current) => [
+                      ...current,
+                      { title: "", body: "" },
+                    ])
+                  }
+                >
+                  + Inhaltsbereich ergänzen
+                </button>
+              </div>
+            </section>
             <section className="networkCard">
               <header>
                 <div>

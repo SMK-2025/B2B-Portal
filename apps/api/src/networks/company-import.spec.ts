@@ -58,7 +58,22 @@ describe("optional company homepage import", () => {
         json: async () => ({
           status: "completed",
           output: [
-            { content: [{ type: "output_text", text: JSON.stringify(draft) }] },
+            {
+              content: [
+                {
+                  type: "output_text",
+                  text: JSON.stringify({
+                    ...draft,
+                    sections: [
+                      {
+                        title: "So arbeiten wir",
+                        body: "Ein belegter Ablauf der Zusammenarbeit.",
+                      },
+                    ],
+                  }),
+                },
+              ],
+            },
           ],
         }),
       });
@@ -67,6 +82,12 @@ describe("optional company homepage import", () => {
       result = await importer.generate("member", "https://example.de");
     expect(result.reviewRequired).toBe(true);
     expect(result.draft.companyName).toBe("Beispiel GmbH");
+    expect(result.draft.sections).toEqual([
+      {
+        title: "So arbeiten wir",
+        body: "Ein belegter Ablauf der Zusammenarbeit.",
+      },
+    ]);
     expect(result.sources).toEqual(["https://example.de/ueber-uns"]);
     expect(JSON.parse(fetcher.mock.calls[0][1].body).store).toBe(false);
     await expect(
@@ -77,12 +98,10 @@ describe("optional company homepage import", () => {
     vi.stubEnv("OPENAI_API_KEY", "test-only");
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: true,
-          json: async () => ({ status: "completed", output: [] }),
-        }),
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ status: "completed", output: [] }),
+      }),
     );
     await expect(
       new CompanyImport().generate("member", "https://example.de"),

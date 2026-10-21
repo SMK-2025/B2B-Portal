@@ -5,7 +5,12 @@ export const portalApiUrl =
 
 export async function portalRequest<T>(
   path: string,
-  options: { method?: "GET" | "POST"; body?: unknown; token?: string } = {},
+  options: {
+    method?: "GET" | "POST";
+    body?: unknown;
+    token?: string;
+    timeoutMs?: number;
+  } = {},
 ): Promise<T> {
   if (!portalApiUrl) {
     throw new Error(
@@ -15,7 +20,7 @@ export async function portalRequest<T>(
   let response: Response;
   try {
     response = await fetch(`${portalApiUrl}/api${path}`, {
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(options.timeoutMs || 20_000),
       method: options.method ?? (options.body === undefined ? "GET" : "POST"),
       headers: {
         accept: "application/json",

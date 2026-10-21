@@ -6,6 +6,37 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("saves editable onepager sections and hero as a draft without publishing or changing other networks", async () => {
+    const f = await fixture();
+    f.orgs.create(f.member, f.input, true);
+    const sections = [
+      { title: "Zusammenarbeit", body: "So unterstützen wir unsere Partner." },
+      { title: "Unser Vorgehen", body: "Persönlich und transparent." },
+    ];
+    const result = f.networks.updateOwnProfile(f.member, f.network.id, {
+      sections,
+      heroImageUrl: "data:image/png;base64,YWJj",
+      publish: false,
+    });
+    expect(result.sections).toEqual(sections);
+    expect(result.status).toBe("draft");
+    expect(result.heroImageUrl).toContain("data:image/png");
+    expect(() =>
+      f.networks.updateOwnProfile(f.member, f.network.id, {
+        sections: [{ title: "", body: "Text" }],
+        publish: false,
+      }),
+    ).toThrow();
+    expect(() =>
+      f.networks.updateOwnProfile(f.member, f.network.id, {
+        heroImageUrl: "javascript:alert(1)",
+        publish: false,
+      }),
+    ).toThrow();
+    expect(
+      f.networks.ownProfile(f.member, f.network.id).profile?.sections,
+    ).toEqual(sections);
+  });
   it("provides a network-bound reusable partner link and exchanges it for an email-bound invitation", async () => {
     const f = await fixture();
     expect(() =>

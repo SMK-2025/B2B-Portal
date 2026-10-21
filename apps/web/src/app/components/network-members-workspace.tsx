@@ -5,6 +5,8 @@ import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
 type Profile = {
+  heroImageUrl?: string | null;
+  sections?: Array<{ title: string; body: string }>;
   personalMessage?: string;
   offers?: string;
   lookingFor?: string;
@@ -489,7 +491,12 @@ function ProfileDialog({
         >
           ×
         </button>
-        <header>
+        <header
+          className={`partnerOnepagerHero${p.heroImageUrl ? " hasHeroImage" : ""}`}
+        >
+          {p.heroImageUrl && (
+            <img className="partnerHeroPhoto" src={p.heroImageUrl} alt="" />
+          )}
           {p.logoUrl ? (
             <img src={p.logoUrl} alt="" />
           ) : (
@@ -499,16 +506,83 @@ function ProfileDialog({
             <small>NETZWERKPARTNER</small>
             <h2 id="partner-profile-title">{p.companyName}</h2>
             <p>{p.tagline}</p>
+            <div className="partnerHeroActions">
+              {access?.enabledModules.includes("communication") &&
+                member.userId !== access.currentUserId && (
+                  <Link
+                    className="networkPrimary"
+                    href={
+                      `/portal/netzwerk/${access.slug}/kommunikation?partner=${member.userId}` as never
+                    }
+                  >
+                    Nachricht senden
+                  </Link>
+                )}
+              {p.meetingUrl && (
+                <a
+                  className="networkSecondary"
+                  href={p.meetingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Kennenlernen vereinbaren ↗
+                </a>
+              )}
+            </div>
           </div>
         </header>
+        <nav
+          className="partnerOnepagerNav"
+          aria-label="Bereiche der Partnerseite"
+        >
+          <button
+            onClick={() =>
+              dialog.current
+                ?.querySelector("#partner-about")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          >
+            Vorstellung
+          </button>
+          <button
+            onClick={() =>
+              dialog.current
+                ?.querySelector("#partner-services")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          >
+            Leistungen
+          </button>
+          {p.sections?.map((section, index) => (
+            <button
+              key={index}
+              onClick={() =>
+                dialog.current
+                  ?.querySelector(`#partner-section-${index}`)
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+            >
+              {section.title}
+            </button>
+          ))}
+          <button
+            onClick={() =>
+              dialog.current
+                ?.querySelector("#partner-contact")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          >
+            Kontakt
+          </button>
+        </nav>
         <div className="networkPartnerProfileBody">
           <main>
-            <section>
+            <section id="partner-about">
               <small>ÜBER UNS</small>
               <h3>Persönlich vorgestellt</h3>
               <p>{p.description}</p>
             </section>
-            <section>
+            <section id="partner-services">
               <small>LEISTUNGEN</small>
               <h3>Damit unterstützen wir Netzwerkpartner</h3>
               <div className="networkCompanyServices">
@@ -537,6 +611,24 @@ function ProfileDialog({
                 <p>{p.personalMessage}</p>
               </section>
             )}
+            {p.sections?.map((section, index) => (
+              <section
+                className="partnerOnepagerSection"
+                id={`partner-section-${index}`}
+                key={index}
+              >
+                <small>
+                  UNSER UNTERNEHMEN · {String(index + 1).padStart(2, "0")}
+                </small>
+                <h3>{section.title}</h3>
+                {section.body
+                  .split(/\n\s*\n/)
+                  .filter(Boolean)
+                  .map((paragraph, i) => (
+                    <p key={i}>{paragraph}</p>
+                  ))}
+              </section>
+            ))}
             {p.offers && (
               <section>
                 <small>ANGEBOTE & UNTERSTÜTZUNG</small>
@@ -552,7 +644,7 @@ function ProfileDialog({
               </section>
             )}
           </main>
-          <aside>
+          <aside id="partner-contact">
             <h3>Direkter Kontakt</h3>
             {p.meetingUrl && (
               <a

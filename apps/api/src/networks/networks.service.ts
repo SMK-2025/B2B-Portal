@@ -25,6 +25,7 @@ import type {
 import { PortalStore } from "../core/portal.store";
 import { emailAddress, requiredText, safeUrl } from "../core/validation";
 import { CompanyImport } from "./company-import";
+import { partnerHero, partnerSections } from "./partner-onepager";
 import { enqueueOperatorMail } from "../core/operator-mail";
 import {
   fullPortalModules,
@@ -1395,6 +1396,14 @@ export class NetworksService {
           ? value.trim().slice(0, max)
           : "";
     const profile: NetworkPartnerProfile = {
+      heroImageUrl:
+        input.heroImageUrl === undefined
+          ? previous?.heroImageUrl || null
+          : partnerHero(input.heroImageUrl),
+      sections:
+        input.sections === undefined
+          ? previous?.sections || []
+          : partnerSections(input.sections),
       personalMessage:
         input.personalMessage === undefined
           ? previous?.personalMessage

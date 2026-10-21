@@ -88,7 +88,47 @@ export function PartnerChatWorkspace() {
     autoScroll = useRef(true);
   busyRef.current = busy;
   const base = `/networks/${networkId}`;
-  const person = people.find((p) => p.userId === partner);
+  const [logoByUser, setLogoByUser] = useState<Record<string, string>>({});
+  const rawPerson = people.find((p) => p.userId === partner);
+  const person = rawPerson
+    ? {
+        ...rawPerson,
+        logoUrl: rawPerson.logoUrl || logoByUser[rawPerson.userId],
+      }
+    : undefined;
+  useEffect(() => {
+    const token = getPortalSession();
+    if (!token || !networkId) return;
+    let active = true;
+    setLogoByUser({});
+    portalRequest<
+      Array<{
+        userId: string;
+        organization: {
+          networkProfile?: { logoUrl?: string | null } | null;
+        } | null;
+      }>
+    >(`${base}/memberships`, { token })
+      .then((members) => {
+        if (active)
+          setLogoByUser(
+            Object.fromEntries(
+              members
+                .filter(
+                  (member) => member.organization?.networkProfile?.logoUrl,
+                )
+                .map((member) => [
+                  member.userId,
+                  member.organization!.networkProfile!.logoUrl!,
+                ]),
+            ),
+          );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [networkId]);
   async function loadList() {
     const token = getPortalSession();
     if (!token || !networkId) return;
@@ -314,7 +354,16 @@ export function PartnerChatWorkspace() {
                   autoScroll.current = true;
                 }}
               >
-                <Avatar person={other} />
+                <Avatar
+                  person={
+                    other
+                      ? {
+                          ...other,
+                          logoUrl: other.logoUrl || logoByUser[other.userId],
+                        }
+                      : undefined
+                  }
+                />
                 <span>
                   <b>{group ? item.title : other?.name || item.title}</b>
                   <small>
@@ -341,10 +390,13 @@ export function PartnerChatWorkspace() {
               <button
                 type="button"
                 key={p.userId}
+                className={partner === p.userId ? "active" : ""}
                 disabled={busy || uploading}
                 onClick={() => choosePerson(p.userId)}
               >
-                <Avatar person={p} />
+                <Avatar
+                  person={{ ...p, logoUrl: p.logoUrl || logoByUser[p.userId] }}
+                />
                 <span>
                   <b>{p.name}</b>
                   <small>
@@ -395,6 +447,13 @@ export function PartnerChatWorkspace() {
                   Termine & Aufgaben
                 </button>
               )}
+              {person?.logoUrl && (
+                <img
+                  className="partnerChatCompanyLogo"
+                  src={person.logoUrl}
+                  alt={`Logo ${person.company || person.name}`}
+                />
+              )}
             </header>
             <div
               className="partnerChatHistory"
@@ -419,12 +478,67 @@ export function PartnerChatWorkspace() {
                 <p>Chat wird geladen …</p>
               ) : !thread?.data.messages?.length ? (
                 <div className="partnerChatWelcome">
+                  <div className="partnerChatWelcomePortrait">
+                    <Avatar person={person} />
+                    <span aria-hidden="true">↗</span>
+                  </div>
+                  <span className="partnerChatWelcomeKicker">
+                    DEIN DIREKTER DRAHT
+                  </span>
                   <h3>
                     {person
                       ? `Sag ${person.name.split(" ")[0]} Hallo.`
                       : "Beginne den Austausch."}
                   </h3>
-                  <p>Eine persönliche Nachricht ist der beste Anfang.</p>
+                  <p>
+                    {person?.company && (
+                      <strong>
+                        {person.company}
+                        <br />
+                      </strong>
+                    )}
+                    Lernt euch kennen, teilt Ideen und macht aus einem Kontakt
+                    ein gutes Gespräch.
+                  </p>
+                  <div className="partnerChatStarters">
+                    {[
+                      {
+                        label: "🤝 Kurz kennenlernen",
+                        text: `Hallo ${person?.name.split(" ")[0] || ""}, schön, dass wir im selben Netzwerk sind! Ich würde dich und dein Unternehmen gerne näher kennenlernen.`,
+                      },
+                      {
+                        label: "☕ Gespräch vereinbaren",
+                        text: `Hallo ${person?.name.split(" ")[0] || ""}, hast du Zeit für einen kurzen persönlichen Austausch?`,
+                      },
+                      {
+                        label: "💡 Gemeinsam etwas bewegen",
+                        text: `Hallo ${person?.name.split(" ")[0] || ""}, ich habe eine Idee für eine mögliche Zusammenarbeit und würde mich gerne mit dir dazu austauschen.`,
+                      },
+                    ].map((starter) => (
+                      <button
+                        type="button"
+                        key={starter.label}
+                        disabled={busy || access?.readOnly}
+                        onClick={() => {
+                          if (
+                            text.trim() &&
+                            !window.confirm(
+                              "Deinen bisherigen Nachrichtentext ersetzen?",
+                            )
+                          )
+                            return;
+                          setText(starter.text);
+                          input.current?.focus();
+                        }}
+                      >
+                        {starter.label}
+                      </button>
+                    ))}
+                  </div>
+                  <small>
+                    Wähle einen Einstieg und passe ihn an. Gesendet wird erst
+                    mit dem Senden-Button.
+                  </small>
                 </div>
               ) : null}
               {thread?.data.messages?.map((message, index, all) => {

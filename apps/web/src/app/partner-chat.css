@@ -1,3 +1,173 @@
+.partnerChat .partnerChatCompanyLogo {
+  flex: 0 1 145px;
+  width: 145px;
+  height: 48px;
+  max-width: 22%;
+  object-fit: contain;
+  object-position: right center;
+  margin-left: 12px;
+}
+.partnerChat .partnerChatHistory {
+  background-color: #f5f3f0;
+  background-image:
+    radial-gradient(circle at 1px 1px, #9da8b51f 1px, transparent 0),
+    radial-gradient(
+      ellipse at top right,
+      color-mix(in srgb, var(--network-accent, #5267d8) 7%, transparent),
+      transparent 65%
+    );
+  background-size:
+    22px 22px,
+    100% 100%;
+}
+.partnerChat .partnerChatSidebar > header {
+  background: linear-gradient(145deg, #152b40, #243e54);
+  border-bottom: 3px solid var(--network-accent, #5267d8);
+  margin-bottom: 20px;
+}
+.partnerChat .partnerChatSidebar > header h2 {
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+.partnerChat .partnerChatSidebar > header p {
+  color: #d0dbe6;
+}
+.partnerChat .partnerChatContacts > button.active {
+  background: color-mix(in srgb, var(--network-accent, #5267d8) 7%, white);
+  box-shadow: inset 3px 0 var(--network-accent, #5267d8);
+}
+.partnerChat .partnerChatWelcome {
+  max-width: 560px;
+  margin: 24px auto;
+  padding: 32px 28px;
+  border: 1px solid #ffffffed;
+  border-radius: 24px;
+  background: #ffffffd9;
+  box-shadow: 0 16px 48px #28384e0a;
+  backdrop-filter: blur(8px);
+}
+.partnerChatWelcomePortrait {
+  position: relative;
+  width: max-content;
+  margin: 0 auto 24px;
+}
+.partnerChatWelcomePortrait .partnerChatAvatar {
+  width: 76px;
+  height: 76px;
+  border: 5px solid #fff;
+  box-shadow: 0 8px 22px #213b5212;
+  font-size: 22px;
+  background: #e9edf3;
+}
+.partnerChatWelcomePortrait > span {
+  position: absolute;
+  right: -7px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1c354c;
+  color: #fff;
+  font-size: 16px;
+  border: 3px solid #fff;
+}
+.partnerChatWelcomeKicker {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #7b899c;
+  font-weight: 600;
+}
+.partnerChat .partnerChatWelcome h3 {
+  font-size: 28px;
+  letter-spacing: -0.7px;
+  color: #20384f;
+  margin: 14px 0;
+}
+.partnerChat .partnerChatWelcome p {
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 12px auto 24px;
+  color: #687a8e;
+}
+.partnerChatWelcome strong {
+  font-weight: 500;
+  color: #314b62;
+}
+.partnerChatStarters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 20px;
+}
+.partnerChatStarters button {
+  padding: 11px 14px;
+  border: 1px solid #dce3ec;
+  border-radius: 20px;
+  background: #fff;
+  color: #395269;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px #263c5104;
+}
+.partnerChatStarters button:hover {
+  border-color: var(--network-accent, #5267d8);
+  background: var(--network-soft, #f5f7fa);
+}
+.partnerChatWelcome > small {
+  display: block;
+  max-width: 370px;
+  margin: auto;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #8a97a7;
+}
+.partnerChat .partnerChatBubble.own {
+  background: color-mix(in srgb, var(--network-accent, #5267d8) 9%, white);
+  border: 1px solid
+    color-mix(in srgb, var(--network-accent, #5267d8) 10%, #e0e6ed);
+}
+.partnerChat .partnerChatComposer {
+  box-shadow: 0 -5px 24px #1b334508;
+}
+.partnerChat .partnerChatInputRow textarea {
+  background: #f8fafc;
+  border-color: #d2dce9;
+}
+.partnerChat .partnerChatInputRow .partnerChatSend:not(:disabled) {
+  box-shadow: 0 5px 14px #16304724;
+}
+@media (max-width: 620px) {
+  .partnerChat .partnerChatWelcome {
+    padding: 24px 20px;
+    margin: 16px auto;
+    border-radius: 18px;
+  }
+  .partnerChat .partnerChatWelcome h3 {
+    font-size: 23px;
+  }
+  .partnerChat .partnerChatCompanyLogo {
+    width: 75px;
+    flex-basis: 75px;
+    height: 34px;
+    max-width: 22%;
+    margin-left: 0;
+  }
+  .partnerChatStarters {
+    flex-direction: column;
+  }
+  .partnerChatStarters button {
+    font-size: 12px;
+  }
+  .partnerChatWelcomePortrait .partnerChatAvatar {
+    width: 60px;
+    height: 60px;
+  }
+}
 .partnerChat {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);

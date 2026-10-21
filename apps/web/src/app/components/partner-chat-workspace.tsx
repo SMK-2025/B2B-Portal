@@ -478,10 +478,6 @@ export function PartnerChatWorkspace() {
                 <p>Chat wird geladen …</p>
               ) : !thread?.data.messages?.length ? (
                 <div className="partnerChatWelcome">
-                  <div className="partnerChatWelcomePortrait">
-                    <Avatar person={person} />
-                    <span aria-hidden="true">↗</span>
-                  </div>
                   <span className="partnerChatWelcomeKicker">
                     DEIN DIREKTER DRAHT
                   </span>

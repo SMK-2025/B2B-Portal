@@ -231,6 +231,51 @@ describe("personal annual membership billing", () => {
     const snapshot = JSON.parse(f.store.snapshot());
     expect(JSON.stringify(snapshot)).toContain('"loginCount":2');
   });
+  it("creates a network-scoped read-only visitor without an organization or charge", async () => {
+    const f = await fixture();
+    const account = await f.networks.createVisitor(f.owner, f.network.id, {
+      email: "b04-besucher@b2b-matching.de",
+    });
+    const login = await f.auth.login({
+      email: account.email,
+      password: account.password,
+    });
+    const authorization = `Bearer ${login.token}`;
+    expect(
+      f.networks.publicBySlug(authorization, f.network.slug).enabledModules,
+    ).toContain("profiles");
+    expect(
+      f.networks
+        .adminUsers(f.owner, f.network.id)
+        .users.find((u) => u.email === account.email),
+    ).toMatchObject({ role: "visitor", loginCount: 1, startsAt: null });
+    expect(f.store.memberships.some((m) => m.userId === login.user.id)).toBe(
+      false,
+    );
+    expect(
+      f.networks
+        .listMembers(authorization, f.network.id)
+        .some((m) => m.userId === login.user.id),
+    ).toBe(false);
+    expect(() =>
+      f.networks.updateSettings(authorization, f.network.id, {
+        name: "Changed",
+      }),
+    ).toThrow();
+    const other = f.networks.create(f.owner, {
+      name: "Other",
+      slug: "visitor-other",
+    });
+    expect(() => f.networks.publicBySlug(authorization, other.slug)).toThrow();
+    await expect(
+      f.networks.createVisitor(f.owner, f.network.id, { email: account.email }),
+    ).rejects.toThrow();
+    await expect(
+      f.networks.createVisitor(f.member, f.network.id, {
+        email: "forbidden@example.de",
+      }),
+    ).rejects.toThrow();
+  });
   async function fixture() {
     const store = new PortalStore(),
       email = new EmailService();

@@ -16,6 +16,7 @@ type Row = {
   loginTrackingStartedAt?: string | null;
 };
 const roles: Record<string, string> = {
+  visitor: "Besucher · nur lesen",
   network_admin: "Initiator",
   member: "Partner",
   moderator: "Moderator",
@@ -35,6 +36,46 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
   const [rows, setRows] = useState<Row[]>([]),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false);
+  const [visitorAccess, setVisitorAccess] = useState<{
+    email: string;
+    password: string;
+    loginUrl: string;
+  } | null>(null);
+  async function createVisitor() {
+    const email = window.prompt(
+      `Besucherzugang für ${name}: E-Mail-Adresse`,
+      "b04-besucher@b2b-matching.de",
+    );
+    if (
+      !email ||
+      !window.confirm(
+        `Nur lesenden Besucherzugang für ${email} im Netzwerk ${name} anlegen? Keine eigene Unternehmensseite, keine Schreibrechte, keine Buchung.`,
+      )
+    )
+      return;
+    setLoading(true);
+    setError("");
+    try {
+      const result = await portalRequest<{
+        email: string;
+        password: string;
+        loginUrl: string;
+      }>(`/networks/admin/${id}/visitors`, {
+        token: getPortalSession() || "",
+        body: { email },
+      });
+      setVisitorAccess(result);
+      await open();
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Besucherzugang konnte nicht angelegt werden.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
   useEffect(() => {
     const modal = dialog.current;
     const close = (event: KeyboardEvent) => {
@@ -114,6 +155,30 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
             Schließen
           </button>
         </header>
+        <button
+          type="button"
+          className="portalSecondary"
+          disabled={loading}
+          onClick={createVisitor}
+        >
+          Besucherzugang anlegen
+        </button>
+        {visitorAccess && (
+          <section className="panelNote">
+            <strong>
+              Besucherzugang erstellt – Passwort jetzt sicher übernehmen
+            </strong>
+            <p>{visitorAccess.email}</p>
+            <p>
+              Passwort (nur in dieser Ansicht verfügbar):{" "}
+              <code>{visitorAccess.password}</code>
+            </p>
+            <a href={visitorAccess.loginUrl}>Login öffnen</a>
+            <button type="button" onClick={() => setVisitorAccess(null)}>
+              Zugangsdaten ausblenden
+            </button>
+          </section>
+        )}
         {loading ? (
           <p role="status">Nutzer werden geladen …</p>
         ) : error ? (
@@ -177,7 +242,7 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                         {row.loginCount ?? "–"}
                       </td>
                       <td>
-                        {row.role === "network_admin"
+                        {row.role === "network_admin" || row.role === "visitor"
                           ? "Kostenlos · keine Vertragslaufzeit"
                           : row.startsAt
                             ? `${date(row.startsAt)} – ${date(row.endsAt)}`
@@ -193,26 +258,34 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                               ⋮
                             </summary>
                             <div>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  action(row, "role", "network_admin")
-                                }
-                              >
-                                Kostenloser Netzwerkadmin
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => action(row, "role", "moderator")}
-                              >
-                                Moderator
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => action(row, "role", "member")}
-                              >
-                                Partner (regulärer Preis)
-                              </button>
+                              {row.role !== "visitor" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      action(row, "role", "network_admin")
+                                    }
+                                  >
+                                    Kostenloser Netzwerkadmin
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      action(row, "role", "moderator")
+                                    }
+                                  >
+                                    Moderator
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      action(row, "role", "member")
+                                    }
+                                  >
+                                    Partner (regulärer Preis)
+                                  </button>
+                                </>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => action(row, "suspend")}

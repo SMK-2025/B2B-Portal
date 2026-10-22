@@ -133,6 +133,13 @@ export class NetworksController {
   ) {
     return this.networks.adminUsers(authorization, networkId);
   }
+  @Post("admin/:networkId/visitors") createVisitor(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.createVisitor(auth, id, body);
+  }
   @Post("admin/:networkId/shared-invitation") sharedInvitation(
     @Headers("authorization") auth: string | undefined,
     @Param("networkId") id: string,

@@ -9,7 +9,7 @@ import {
 import { randomUUID } from "node:crypto";
 import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
-import { opaqueToken, tokenHash } from "../auth/password";
+import { opaqueToken, tokenHash, hashPassword } from "../auth/password";
 import type {
   NetworkAttendanceRecord,
   NetworkContentRecord,
@@ -407,6 +407,56 @@ export class NetworksService {
     });
   }
 
+  async createVisitor(
+    authorization: string | undefined,
+    networkId: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    const network = this.raw(networkId);
+    const email = emailAddress(input.email);
+    if (this.store.userByEmail.has(email))
+      throw new ConflictException(
+        "Diese E-Mail-Adresse ist bereits registriert. Bestehende Konten werden nicht überschrieben.",
+      );
+    const password = `B2b!${opaqueToken()}a9`;
+    const now = new Date().toISOString();
+    const userId = randomUUID();
+    const passwordHash = await hashPassword(password);
+    this.store.users.set(userId, {
+      id: userId,
+      email,
+      passwordHash,
+      firstName: "Besucher",
+      lastName: network.name,
+      accountRole: "user",
+      emailVerifiedAt: now,
+      createdAt: now,
+      visitorNetworkId: networkId,
+    });
+    this.store.userByEmail.set(email, userId);
+    this.store.networkMemberships.push({
+      id: randomUUID(),
+      networkId,
+      userId,
+      organizationId: "",
+      role: "visitor",
+      status: "active",
+      invitedByUserId: actor.id,
+      reviewedByUserId: actor.id,
+      reviewedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+    this.operatorAudit(actor.id, networkId, "operator.visitor.created");
+    return {
+      created: true,
+      email,
+      password,
+      loginUrl: `/anmelden?network=${encodeURIComponent(network.slug)}`,
+    };
+  }
   adminUsers(authorization: string | undefined, networkId: string) {
     const actor = this.auth.authenticate(authorization);
     this.requirePlatformAdmin(actor.id);
@@ -484,7 +534,7 @@ export class NetworksService {
         startsAt: order?.serviceStartsAt || null,
         endsAt: order?.serviceEndsAt || null,
         profile:
-          role === "network_admin"
+          role === "network_admin" || role === "visitor"
             ? "Keine eigene Partnerseite"
             : complete
               ? "Vollständig & veröffentlicht"
@@ -1246,6 +1296,7 @@ export class NetworksService {
         (item) =>
           item.networkId === networkId &&
           item.role !== "network_admin" &&
+          item.role !== "visitor" &&
           this.store.users.get(item.userId)?.accountRole !== "platform_admin" &&
           (manager || item.status === "active"),
       )
@@ -2723,6 +2774,7 @@ export class NetworksService {
       .filter(
         (m) =>
           m.networkId === networkId &&
+          m.role !== "visitor" &&
           m.status === "active" &&
           this.store.users.get(m.userId)?.accountRole !== "platform_admin",
       )
@@ -3315,6 +3367,10 @@ export class NetworksService {
   }
   private requireNetworkAccess(userId: string, networkId: string) {
     const user = this.store.users.get(userId);
+    if (user?.visitorNetworkId && user.visitorNetworkId !== networkId)
+      throw new ForbiddenException(
+        "Dieser Besucherzugang gilt nur für das zugewiesene Netzwerk.",
+      );
     if (user?.accountRole === "platform_admin") return;
     this.get(networkId);
     if (
@@ -3345,6 +3401,10 @@ export class NetworksService {
   }
   private requireWritableNetwork(userId: string, networkId: string) {
     this.requireNetworkAccess(userId, networkId);
+    if (this.store.users.get(userId)?.visitorNetworkId)
+      throw new ForbiddenException(
+        "Besucherzugang: Dieses Netzwerk ist nur lesbar.",
+      );
     if (this.store.users.get(userId)?.accountRole === "platform_admin") return;
     if (this.raw(networkId).status === "trial")
       throw new ForbiddenException("Die Testansicht ist schreibgeschützt.");
@@ -3427,6 +3487,8 @@ export class NetworksService {
   }
   private userModules(userId: string, networkId: string) {
     const network = this.raw(networkId);
+    if (this.store.users.get(userId)?.visitorNetworkId === networkId)
+      return network.enabledModules;
     const annual = [...this.store.networkOrders.values()]
       .filter(
         (o) =>

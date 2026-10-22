@@ -268,8 +268,9 @@ export function NetworkShell({
             canManage: isInitiator || role === "moderator",
             isInitiator,
             readOnly:
-              network.status === "trial" &&
-              session.accountRole !== "platform_admin",
+              role === "visitor" ||
+              (network.status === "trial" &&
+                session.accountRole !== "platform_admin"),
             status: network.status,
             enabledModules: network.enabledModules,
             offeredModules: network.offeredModules,
@@ -332,7 +333,11 @@ export function NetworkShell({
         ["bayer-giants", "bayer04leverkusen"].includes(slug)),
     visiblePrimary = primaryPartnerItems.filter(
       (item) =>
-        moduleVisible(item) && !(access.isInitiator && item.path === "profil"),
+        moduleVisible(item) &&
+        !(
+          (access.isInitiator || access.role === "visitor") &&
+          item.path === "profil"
+        ),
     ),
     visibleMore = morePartnerItems.filter(moduleVisible),
     visibleAdmin = adminItems.filter(
@@ -459,7 +464,7 @@ export function NetworkShell({
                 <p>
                   <b>
                     {access.firstName ||
-                      (access.isInitiator ? "Initiator" : "Netzwerkpartner")}
+                      (access.role === "visitor" ? "Besucher" : access.isInitiator ? "Initiator" : "Netzwerkpartner")}
                   </b>
                   <small>Mein Zugang</small>
                 </p>
@@ -485,11 +490,20 @@ export function NetworkShell({
               )}
             </div>
           </header>
-          <div className="networkContent">
+          <div
+            className="networkContent"
+            onSubmitCapture={(event) => {
+              if (access.role === "visitor") {
+                event.preventDefault();
+                event.stopPropagation();
+              }
+            }}
+          >
             {access.readOnly && (
               <div className="networkReadOnlyNotice">
-                Testansicht: Änderungen und Einladungen sind bis zur Aktivierung
-                eingeschränkt.
+                {access.role === "visitor"
+                  ? "Besucheransicht · Nur lesen. Keine Änderungen, Buchungen, Nachrichten oder Kommentare möglich. Private Gespräche bleiben geschützt."
+                  : "Testansicht: Änderungen und Einladungen sind bis zur Aktivierung eingeschränkt."}
               </div>
             )}
             <header className="networkWelcome">
@@ -515,6 +529,7 @@ export function NetworkShell({
               {action ||
                 (pathname.replace(/\/$/, "") === base &&
                 !access.isInitiator &&
+                access.role !== "visitor" &&
                 access.enabledModules.includes("profiles") ? (
                   <Link
                     className="loungeProfileLink"
@@ -546,7 +561,7 @@ export function NetworkShell({
           </div>
         </section>
       </main>
-      {access.readOnly && !trialAcknowledged && (
+      {access.readOnly && access.role !== "visitor" && !trialAcknowledged && (
         <div className="networkTrialGate">
           <section role="dialog" aria-modal="true">
             <span>TESTANSICHT</span>

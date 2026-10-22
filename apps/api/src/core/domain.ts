@@ -3,7 +3,7 @@ export type OrganizationRole = "buyer" | "provider" | "both" | "network";
 export type MembershipRole =
   "admin" | "needs_manager" | "communication" | "viewer";
 export type NetworkRole =
-  "network_admin" | "moderator" | "organization_admin" | "member";
+  "network_admin" | "moderator" | "organization_admin" | "member" | "visitor";
 export type NetworkMembershipStatus =
   "pending" | "active" | "rejected" | "suspended" | "left";
 export type NetworkModule =
@@ -30,6 +30,7 @@ export type ReviewStatus =
 
 export interface UserRecord {
   id: string;
+  visitorNetworkId?: string;
   loginCount?: number;
   lastLoginAt?: string | null;
   loginTrackingStartedAt?: string;

@@ -464,7 +464,11 @@ export function NetworkShell({
                 <p>
                   <b>
                     {access.firstName ||
-                      (access.role === "visitor" ? "Besucher" : access.isInitiator ? "Initiator" : "Netzwerkpartner")}
+                      (access.role === "visitor"
+                        ? "Besucher"
+                        : access.isInitiator
+                          ? "Initiator"
+                          : "Netzwerkpartner")}
                   </b>
                   <small>Mein Zugang</small>
                 </p>
@@ -506,39 +510,41 @@ export function NetworkShell({
                   : "Testansicht: Änderungen und Einladungen sind bis zur Aktivierung eingeschränkt."}
               </div>
             )}
-            <header className="networkWelcome">
-              <div>
-                <span>
-                  {pathname.replace(/\/$/, "") === base
-                    ? "SCHÖN, DASS DU DA BIST"
-                    : shownName.toUpperCase()}
-                </span>
-                <h1>
-                  {pathname.replace(/\/$/, "") === `/portal/netzwerk/${slug}`
-                    ? access.homeTexts?.welcomeTitle ||
-                      `${new Date().getHours() < 11 ? "Guten Morgen" : new Date().getHours() < 18 ? "Hallo" : "Guten Abend"}${access.firstName ? `, ${access.firstName}` : ""}.`
-                    : title}
-                </h1>
-                <p>
-                  {pathname.replace(/\/$/, "") === `/portal/netzwerk/${slug}`
-                    ? access.homeTexts?.welcomeIntro ||
-                      "Bleib im Gespräch. Entdecke Menschen, Ideen und gemeinsame Chancen."
-                    : intro}
-                </p>
-              </div>
-              {action ||
-                (pathname.replace(/\/$/, "") === base &&
-                !access.isInitiator &&
-                access.role !== "visitor" &&
-                access.enabledModules.includes("profiles") ? (
-                  <Link
-                    className="loungeProfileLink"
-                    href={`${base}/profil` as never}
-                  >
-                    Meine Partnerseite →
-                  </Link>
-                ) : null)}
-            </header>
+            {pathname.replace(/\/$/, "") !== base && (
+              <header className="networkWelcome">
+                <div>
+                  <span>
+                    {pathname.replace(/\/$/, "") === base
+                      ? "SCHÖN, DASS DU DA BIST"
+                      : shownName.toUpperCase()}
+                  </span>
+                  <h1>
+                    {pathname.replace(/\/$/, "") === `/portal/netzwerk/${slug}`
+                      ? access.homeTexts?.welcomeTitle ||
+                        `${new Date().getHours() < 11 ? "Guten Morgen" : new Date().getHours() < 18 ? "Hallo" : "Guten Abend"}${access.firstName ? `, ${access.firstName}` : ""}.`
+                      : title}
+                  </h1>
+                  <p>
+                    {pathname.replace(/\/$/, "") === `/portal/netzwerk/${slug}`
+                      ? access.homeTexts?.welcomeIntro ||
+                        "Bleib im Gespräch. Entdecke Menschen, Ideen und gemeinsame Chancen."
+                      : intro}
+                  </p>
+                </div>
+                {action ||
+                  (pathname.replace(/\/$/, "") === base &&
+                  !access.isInitiator &&
+                  access.role !== "visitor" &&
+                  access.enabledModules.includes("profiles") ? (
+                    <Link
+                      className="loungeProfileLink"
+                      href={`${base}/profil` as never}
+                    >
+                      Meine Partnerseite →
+                    </Link>
+                  ) : null)}
+              </header>
+            )}
             {access.membershipYear?.endingSoon && (
               <div className="memberBillingEnding" role="status">
                 <strong>Mitgliedschaft endet</strong>
@@ -552,11 +558,13 @@ export function NetworkShell({
                 </p>
               </div>
             )}
-            <NetworkSystemMessages
-              key={access.networkId}
-              networkId={access.networkId}
-              operator={access.role === "platform_admin"}
-            />
+            {pathname.replace(/\/$/, "") !== base && (
+              <NetworkSystemMessages
+                key={access.networkId}
+                networkId={access.networkId}
+                operator={access.role === "platform_admin"}
+              />
+            )}
             {children}
           </div>
         </section>

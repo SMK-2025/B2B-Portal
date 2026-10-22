@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { NetworkBundesligaCard } from "./network-bundesliga-card";
+import { NetworkSystemMessages } from "./network-system-messages";
 type Item = {
   id: string;
   title: string;
@@ -153,14 +154,16 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           alt=""
         />
         <div>
-          <span>UNSER NETZWERK</span>
-          <h2>
-            {data.network.settings?.bannerTitle ||
-              "Gute Verbindungen entstehen persönlich."}
-          </h2>
+          <span>SCHÖN, DASS DU DA BIST</span>
+          <h1>
+            {access?.homeTexts?.welcomeTitle ||
+              data.network.settings?.bannerTitle ||
+              `Willkommen${access?.firstName ? `, ${access.firstName}` : ""} in deinem Business-Netzwerk.`}
+          </h1>
           <p>
-            {data.network.settings?.bannerDescription ||
-              "Auch zwischen unseren Treffen bleiben wir in Kontakt."}
+            {access?.homeTexts?.welcomeIntro ||
+              data.network.settings?.bannerDescription ||
+              "Bleib im Gespräch. Entdecke Menschen, Ideen und gemeinsame Chancen – auch zwischen unseren Treffen."}
           </p>
           {enabled("profiles") && (
             <Link href={`${base}/mitglieder` as never}>
@@ -170,6 +173,13 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
         </div>
         {!data.network.settings?.bannerImageUrl && <small>Symbolbild</small>}
       </section>
+      {access && (
+        <NetworkSystemMessages
+          key={access.networkId}
+          networkId={access.networkId}
+          operator={access.role === "platform_admin"}
+        />
+      )}
       <section
         className="loungeWelcomeText"
         aria-label="Willkommen im Business-Netzwerk"

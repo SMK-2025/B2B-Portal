@@ -422,7 +422,11 @@
   font-weight: 500;
 }
 .networkPortal .networkPrimary:hover {
-  background: color-mix(in srgb, var(--network-accent, #25313b) 85%, black) !important;
+  background: color-mix(
+    in srgb,
+    var(--network-accent, #25313b) 85%,
+    black
+  ) !important;
 }
 .networkPortal .networkMemberToolbar input,
 .networkPortal .networkMemberToolbar select,
@@ -544,6 +548,7 @@
   letter-spacing: 1.4px;
   font-weight: 600;
 }
+.loungeHero h1,
 .loungeHero h2 {
   font:
     600 clamp(26px, 2.6vw, 37px)/1.13 Arial,
@@ -552,6 +557,34 @@
   margin: 16px 0;
   color: #fff;
   max-width: 480px;
+}
+.networkPortal .loungeHero {
+  min-height: 340px;
+}
+.networkPortal .loungeHero > div {
+  max-width: 920px;
+  padding: 44px 40px;
+}
+.networkPortal .loungeHero h1 {
+  max-width: 820px;
+}
+.networkPortal .loungeHero p {
+  font-size: 16px;
+  max-width: 800px;
+}
+.networkPortal .loungeHero::after {
+  background: linear-gradient(90deg, #080c12e8, #080c12a6 65%, #080c1240);
+}
+.networkPortal .networkLoungeHome > .networkSystemMessages {
+  margin-top: 20px;
+}
+@media (max-width: 620px) {
+  .networkPortal .loungeHero > div {
+    padding: 28px 24px;
+  }
+  .networkPortal .loungeHero h1 {
+    font-size: 28px;
+  }
 }
 .loungeHero p {
   font-size: 14px;

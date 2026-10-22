@@ -183,10 +183,12 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           gemeinsame Ideen und Zusammenarbeit, auch zwischen unseren Treffen.
         </p>
       </section>
-      {slug === "bayer04leverkusen" && enabled("events") && (
-        <NetworkBundesligaCard />
-      )}
-      <div className="loungeGrid">
+      <div
+        className={`loungeGrid${slug === "bayer04leverkusen" && enabled("events") ? " loungeGridWithMatchday" : ""}`}
+      >
+        {slug === "bayer04leverkusen" && enabled("events") && (
+          <NetworkBundesligaCard />
+        )}
         {enabled("events") && (
           <section className="networkCard loungeCard">
             <header>
@@ -261,7 +263,7 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           </section>
         )}
         {enabled("profiles") && (
-          <section className="networkCard loungeCard">
+          <section className="networkCard loungeCard loungeMemberHighlight">
             <header>
               <div>
                 <h2>Menschen hinter den Unternehmen</h2>

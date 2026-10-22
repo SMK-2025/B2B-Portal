@@ -1008,25 +1008,26 @@
 .networkPortal .bundesligaHomeCard {
   max-width: 920px;
   margin: 0 auto 24px;
-  background: #eef5f7;
-  border: 1px solid #cadde3;
+  background: #191919;
+  color: #fff;
+  border: 1px solid #303030;
   box-shadow: 0 6px 22px #2046570a;
   text-align: center;
 }
 .networkPortal .bundesligaHomeCard > header {
   justify-content: center;
   padding: 16px 22px 10px;
-  background: #e0edf1 !important;
+  background: #101010 !important;
   border-left: 0;
-  border-top: 4px solid #277186;
+  border-top: 4px solid var(--network-accent, #e60000);
 }
 .networkPortal .bundesligaHomeCard > header h2 {
-  color: #20586a !important;
+  color: #fff !important;
   font-size: 20px;
   margin: 4px 0 0;
 }
 .networkPortal .bundesligaHomeCard > header span {
-  color: #426773;
+  color: #c7c7c7;
 }
 .networkPortal .bundesligaHomeBody {
   padding: 16px 24px 18px;
@@ -1039,7 +1040,7 @@
   gap: 20px;
 }
 .networkPortal .bundesligaLastResult > strong {
-  color: #20586a;
+  color: #fff;
   font-size: 36px;
 }
 .networkPortal .bundesligaHomeActions {
@@ -1053,10 +1054,53 @@
   font-size: 14px;
 }
 .networkPortal .bundesligaHomeActions a.networkPrimary {
-  background: #20586a !important;
+  background: #000 !important;
 }
 .networkPortal .bundesligaHomeBody > small {
   font-size: 12px;
+  color: #bcbcbc;
+}
+.networkPortal .bundesligaHomeCard .bundesligaLastLabel {
+  color: #c7c7c7;
+}
+.networkPortal .bundesligaHomeCard .gameTeam b {
+  color: #fff;
+}
+.networkPortal .loungeGridWithMatchday {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.networkPortal .loungeGridWithMatchday > .loungeCard {
+  grid-column: span 2;
+  order: 2;
+}
+.networkPortal .loungeGridWithMatchday > .bundesligaHomeCard {
+  grid-column: span 3;
+  order: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.networkPortal .loungeGridWithMatchday > .loungeMemberHighlight {
+  grid-column: span 3;
+  order: 1;
+}
+@media (min-width: 621px) and (max-width: 1250px) {
+  .networkPortal .loungeGridWithMatchday {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .networkPortal .loungeGridWithMatchday > .loungeCard,
+  .networkPortal .loungeGridWithMatchday > .bundesligaHomeCard {
+    grid-column: span 1;
+  }
+}
+@media (max-width: 620px) {
+  .networkPortal .loungeGridWithMatchday {
+    grid-template-columns: 1fr;
+  }
+  .networkPortal .loungeGridWithMatchday > .loungeCard,
+  .networkPortal .loungeGridWithMatchday > .bundesligaHomeCard {
+    grid-column: span 1;
+  }
 }
 @media (max-width: 620px) {
   .networkPortal .bundesligaHomeBody {

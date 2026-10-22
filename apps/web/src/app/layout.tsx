@@ -8,6 +8,7 @@ import "./partner-page-editor.css";
 import "./partner-mini-site.css";
 import "./partner-chat.css";
 import "./partner-business-card.css";
+import "./network-lounge.css";
 import "./public-brand.css";
 import "./public-card-system.css";
 import { PwaRegister } from "./pwa-register";

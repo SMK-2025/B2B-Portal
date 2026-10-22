@@ -6,7 +6,6 @@ import { useNetworkAccess } from "./network-shell";
 import { NetworkBundesligaCard } from "./network-bundesliga-card";
 type Item = {
   id: string;
-  type: string;
   title: string;
   description: string;
   startsAt: string | null;
@@ -18,262 +17,407 @@ type Dashboard = {
     id: string;
     name: string;
     status: string;
-    trialEndsAt: string | null;
-    logoUrl: string | null;
-    primaryColor: string;
-    secondaryColor: string;
     settings?: {
-      setupCompletedAt?: string | null;
       bannerTitle?: string | null;
       bannerDescription?: string | null;
     };
   };
-  members: { total: number; active: number; pending: number };
-  content: {
-    total: number;
-    events: number;
-    topics: number;
-    tasks: number;
-    documents: number;
-  };
-  recent: Item[];
-  recentMembers: Array<{
-    id: string;
-    name: string;
-    joinedAt: string;
-    logoUrl: string | null;
-  }>;
+  recentMembers: { id: string; name: string; logoUrl: string | null }[];
   upcomingEvents: Item[];
   eventRecaps: Item[];
   announcements: Item[];
 };
+type Partner = {
+  id: string;
+  userId: string;
+  status: string;
+  user: { firstName: string; lastName: string } | null;
+  organization: {
+    displayName: string;
+    networkProfile: { contactName: string; logoUrl: string | null } | null;
+  } | null;
+};
+function itemImage(item?: Item) {
+  if (!item) return undefined;
+  return [
+    item.data.coverImageUrl,
+    item.data.imageUrl,
+    ...(Array.isArray(item.data.recapImages) ? item.data.recapImages : []),
+  ].find(
+    (value) =>
+      typeof value === "string" &&
+      /^(https?:\/\/|data:image\/(?:png|jpeg|webp);base64,)/i.test(value),
+  ) as string | undefined;
+}
 export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
   const access = useNetworkAccess(),
     [data, setData] = useState<Dashboard | null>(null),
-    [message, setMessage] = useState(""),
-    base = `/portal/netzwerk/${slug}`;
+    [partners, setPartners] = useState<Partner[]>([]),
+    [message, setMessage] = useState("");
+  const base = `/portal/netzwerk/${slug}`;
   useEffect(() => {
+    let active = true;
     const token = getPortalSession();
     if (!token) {
-      setMessage("Bitte melden Sie sich erneut an.");
+      setMessage("Bitte melde dich erneut an.");
       return;
     }
     portalRequest<{ id: string }>(`/networks/public/${slug}`, { token })
-      .then((network) =>
-        portalRequest<Dashboard>(`/networks/${network.id}/dashboard`, {
-          token,
-        }),
-      )
-      .then(setData)
-      .catch((error) =>
-        setMessage(
-          error instanceof Error
-            ? error.message
-            : "Die Netzwerkübersicht konnte nicht geladen werden.",
-        ),
-      );
-  }, [slug]);
+      .then(async (network) => {
+        const [dashboard, members] = await Promise.all([
+          portalRequest<Dashboard>(`/networks/${network.id}/dashboard`, {
+            token,
+          }),
+          portalRequest<Partner[]>(`/networks/${network.id}/memberships`, {
+            token,
+          }).catch(() => []),
+        ]);
+        if (active) {
+          setData(dashboard);
+          setPartners(
+            members.filter(
+              (member) =>
+                member.status === "active" &&
+                member.userId !== access?.currentUserId &&
+                member.organization?.networkProfile,
+            ),
+          );
+        }
+      })
+      .catch((error) => {
+        if (active)
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "Die Übersicht konnte nicht geladen werden.",
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [slug, access?.currentUserId]);
   if (!data)
     return (
       <section className="networkCard networkLoading">
-        <p>{message || "Netzwerkübersicht wird geladen …"}</p>
+        <p role="status">{message || "Dein Netzwerk wird geladen …"}</p>
       </section>
     );
+  const enabled = (module: string) => access?.enabledModules.includes(module),
+    event = data.upcomingEvents[0],
+    recap = data.eventRecaps[0],
+    eventImage = itemImage(event),
+    recapImage = itemImage(recap);
+  const cards = partners.length
+    ? partners
+        .slice(0, 3)
+        .map((member) => ({
+          id: member.id,
+          name:
+            member.organization!.networkProfile!.contactName ||
+            [member.user?.firstName, member.user?.lastName]
+              .filter(Boolean)
+              .join(" ") ||
+            member.organization!.displayName,
+          company: member.organization!.displayName,
+          logo: member.organization!.networkProfile!.logoUrl,
+        }))
+    : data.recentMembers
+        .slice(0, 3)
+        .map((member) => ({
+          id: member.id,
+          name: member.name,
+          company: "Netzwerkpartner",
+          logo: member.logoUrl,
+        }));
   return (
-    <>
+    <div className="networkLoungeHome">
       {data.network.status !== "trial" &&
         !access?.isInitiator &&
-        !access?.enabledModules.includes("profiles") && (
-          <section className="networkTrialBanner">
-            <div className="networkTrialCopy">
-              <span>IHR PERSÖNLICHER ZUGANG</span>
-              <h2>Jahresmitgliedschaft prüfen</h2>
-              <p>
-                Ihre Mitgliedschaft ist abgelaufen oder noch nicht vollständig
-                eingerichtet. Bitte wenden Sie sich zur Verlängerung an den
-                Plattformbetreiber.
-              </p>
+        !enabled("profiles") && (
+          <section className="networkReadOnlyNotice">
+            <strong>Deinen Zugang vervollständigen</strong>
+            <p>
+              Für die vollständige Nutzung prüfe bitte deine
+              Jahresmitgliedschaft.
+            </p>
+            <Link href={`${base}/buchen` as never}>
+              Informationen zur Mitgliedschaft →
+            </Link>
+          </section>
+        )}
+      <section className="loungeHero">
+        <img
+          src={
+            slug === "bayer-giants"
+              ? "/images/network-meeting-sport.webp"
+              : "/images/network-meeting-club.webp"
+          }
+          alt=""
+        />
+        <div>
+          <span>UNSER NETZWERK</span>
+          <h2>
+            {data.network.settings?.bannerTitle ||
+              "Gute Verbindungen entstehen persönlich."}
+          </h2>
+          <p>
+            {data.network.settings?.bannerDescription ||
+              "Auch zwischen unseren Treffen bleiben wir in Kontakt."}
+          </p>
+          {enabled("profiles") && (
+            <Link href={`${base}/mitglieder` as never}>
+              Partner kennenlernen →
+            </Link>
+          )}
+        </div>
+        <small>Symbolbild</small>
+      </section>
+      <div className="loungeGrid">
+        {enabled("events") && (
+          <section className="networkCard loungeCard">
+            <header>
+              <h2>Unser nächstes Treffen</h2>
+              <Link
+                href={`${base}/veranstaltungen` as never}
+                aria-label="Alle Veranstaltungen"
+              >
+                ↗
+              </Link>
+            </header>
+            <div className="loungeCardBody">
+              {event ? (
+                <>
+                  <div className="loungeEventVisual">
+                    <time dateTime={event.startsAt!}>
+                      <strong>{new Date(event.startsAt!).getDate()}</strong>
+                      <span>
+                        {new Date(event.startsAt!).toLocaleDateString("de-DE", {
+                          month: "short",
+                        })}
+                      </span>
+                    </time>
+                    {eventImage ? (
+                      <img src={eventImage} alt="" />
+                    ) : (
+                      <div className="loungeEventPlaceholder">
+                        <span>RAUM FÜR BEGEGNUNGEN</span>
+                        <strong>Persönlich verbunden.</strong>
+                      </div>
+                    )}
+                  </div>
+                  <h3>{event.title}</h3>
+                  <p className="loungeDate">
+                    {new Date(event.startsAt!).toLocaleDateString("de-DE", {
+                      weekday: "long",
+                      day: "2-digit",
+                      month: "long",
+                    })}{" "}
+                    ·{" "}
+                    {new Date(event.startsAt!).toLocaleTimeString("de-DE", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Europe/Berlin",
+                    })}{" "}
+                    Uhr
+                  </p>
+                  <p className="loungeExcerpt">{event.description}</p>
+                  <Link
+                    className="loungeDarkButton"
+                    href={`${base}/veranstaltungen` as never}
+                  >
+                    Treffen ansehen →
+                  </Link>
+                </>
+              ) : (
+                <div className="loungeEmpty">
+                  <span className="loungeEditorialNumber" aria-hidden="true">
+                    01
+                  </span>
+                  <h3>Der nächste Austausch kommt.</h3>
+                  <p>
+                    Neue Termine findest du hier. Bis dahin kannst du deine
+                    Partner schon persönlich kennenlernen.
+                  </p>
+                  <Link href={`${base}/veranstaltungen` as never}>
+                    Kalender öffnen →
+                  </Link>
+                </div>
+              )}
             </div>
-            <div className="networkTrialBooking">
-              <p>
-                <strong>Alle Funktionen</strong>
-                <span>
-                  in Ihrer Jahresmitgliedschaft
-                  <br />
-                  für Ihren Nutzerzugang
-                </span>
-              </p>
-              <small>Immer zwölf Monate im Voraus</small>
-              <Link href={`${base}/buchen` as never}>
-                Informationen zur Mitgliedschaft →
+          </section>
+        )}
+        {enabled("profiles") && (
+          <section className="networkCard loungeCard">
+            <header>
+              <div>
+                <h2>Menschen hinter den Unternehmen</h2>
+                <p>Entdecke, wer zu deinem Netzwerk gehört.</p>
+              </div>
+              <Link
+                href={`${base}/mitglieder` as never}
+                aria-label="Zum Partnerverzeichnis"
+              >
+                ↗
+              </Link>
+            </header>
+            <div className="loungeCardBody">
+              <div className="loungePartners">
+                {cards.length ? (
+                  cards.map((member) => (
+                    <Link href={`${base}/mitglieder` as never} key={member.id}>
+                      <span className="loungePartnerLogo">
+                        {member.logo ? (
+                          <img src={member.logo} alt="" />
+                        ) : (
+                          <b>{member.company.slice(0, 2)}</b>
+                        )}
+                      </span>
+                      <span>
+                        <strong>{member.name}</strong>
+                        <small>{member.company}</small>
+                      </span>
+                      <b aria-hidden="true">↗</b>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="loungeEmpty">
+                    <span className="loungeEditorialNumber" aria-hidden="true">
+                      02
+                    </span>
+                    <h3>Hier beginnt dein Netzwerk.</h3>
+                    <p>
+                      Sobald Partner ihre Unternehmensseite eingerichtet haben,
+                      kannst du sie hier entdecken.
+                    </p>
+                  </div>
+                )}
+              </div>
+              <Link
+                className="loungeOutlineButton"
+                href={`${base}/mitglieder` as never}
+              >
+                Alle Partner entdecken →
               </Link>
             </div>
           </section>
         )}
-      <section
-        className="networkBrandedHero"
-        style={{
-          background: `radial-gradient(circle at 85% 15%, ${data.network.primaryColor}88, transparent 38%),linear-gradient(120deg,${data.network.secondaryColor},${data.network.primaryColor})`,
-        }}
-      >
-        <div>
-          <span>GEMEINSAME PARTNERSTARTSEITE</span>
-          <h2>{data.network.settings?.bannerTitle || data.network.name}</h2>
-          <p>
-            {data.network.settings?.bannerDescription ||
-              "Informationen, Kontakte und Aktivitäten Ihres geschlossenen Partnerportals an einem Ort."}
-          </p>
-        </div>
-        {data.network.logoUrl && (
-          <img src={data.network.logoUrl} alt={`${data.network.name} Logo`} />
-        )}
-      </section>
-      <div className="networkDashboardGrid">
-        <div>
-          {slug === "bayer04leverkusen" &&
-            access?.enabledModules.includes("events") && (
-              <NetworkBundesligaCard />
-            )}
-          {access?.enabledModules.includes("community") && (
-            <section className="networkCard">
-              <header>
-                <div>
-                  <span>MITTEILUNGEN</span>
-                  <h2>Neuigkeiten des Initiators</h2>
-                </div>
-                <Link href={`${base}/themen` as never}>Alle ansehen →</Link>
-              </header>
-              <div className="networkNewsList">
-                {data.announcements.map((item) => (
-                  <article key={item.id}>
-                    <time>
-                      {new Date(item.updatedAt).toLocaleDateString("de-DE")}
-                    </time>
-                    <div>
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                    </div>
-                  </article>
-                ))}
-                {!data.announcements.length && (
-                  <div className="networkEmpty">
-                    <b>Noch keine Mitteilungen</b>
-                    <p>Neuigkeiten des Initiators erscheinen hier.</p>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-          {access?.enabledModules.includes("events") && (
-            <section className="networkCard">
-              <header>
-                <div>
-                  <span>KALENDER</span>
-                  <h2>Kommende Veranstaltungen</h2>
-                </div>
-                <Link href={`${base}/veranstaltungen` as never}>
-                  Kalender öffnen →
-                </Link>
-              </header>
-              <div className="networkEventRows">
-                {data.upcomingEvents.map((item) => (
-                  <article key={item.id}>
-                    <time>
-                      <small>
-                        {new Date(item.startsAt!).toLocaleString("de-DE", {
-                          month: "short",
-                        })}
-                      </small>
-                      <strong>{new Date(item.startsAt!).getDate()}</strong>
-                    </time>
-                    <div>
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                    </div>
-                    <Link href={`${base}/veranstaltungen` as never}>
-                      Details
-                    </Link>
-                  </article>
-                ))}
-                {!data.upcomingEvents.length && (
-                  <div className="networkEmpty">
-                    <b>Keine bevorstehenden Termine</b>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-          {access?.enabledModules.includes("events") &&
-            data.eventRecaps.length > 0 && (
-              <section className="networkCard">
-                <header>
-                  <div>
-                    <span>RÜCKBLICKE</span>
-                    <h2>Das waren unsere letzten Treffen</h2>
-                  </div>
-                  <Link href={`${base}/rueckblicke` as never}>
-                    Alle Rückblicke →
-                  </Link>
-                </header>
-                <div className="networkRecapPreview">
-                  {data.eventRecaps.map((item) => (
-                    <Link key={item.id} href={`${base}/rueckblicke` as never}>
-                      {Array.isArray(item.data.recapImages) &&
-                        typeof item.data.recapImages[0] === "string" && (
-                          <img src={item.data.recapImages[0]} alt="" />
-                        )}
-                      <span>
-                        <small>
-                          {new Date(
-                            item.startsAt || item.updatedAt,
-                          ).toLocaleDateString("de-DE")}
-                        </small>
-                        <b>{item.title}</b>
-                        <p>{String(item.data.recapSummary || "")}</p>
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-        </div>
-        <aside>
-          <section className="networkCard">
+        {enabled("community") && (
+          <section className="networkCard loungeCard">
             <header>
-              <div>
-                <span>SCHNELLZUGRIFF</span>
-                <h2>Ihre Partnerbereiche</h2>
-              </div>
+              <h2>Aus unserem Netzwerk</h2>
+              <Link
+                href={`${base}/themen` as never}
+                aria-label="Alle Neuigkeiten"
+              >
+                ↗
+              </Link>
             </header>
-            <nav className="networkQuickLinks">
-              {[
-                ["profil", "Meine Partnerseite", "profiles"],
-                ["mitglieder", "Partnerverzeichnis", "profiles"],
-                ["veranstaltungen", "Veranstaltungen", "events"],
-                ["rueckblicke", "Rückblicke", "events"],
-                ["kommunikation", "Nachrichten", "communication"],
-                ["auswertungen", "Auswertungen", "analytics"],
-                ["einstellungen", "Netzwerk-Verwaltung", ""],
-              ]
-                .filter(
-                  ([path, , module]) =>
-                    (!module || access?.enabledModules.includes(module)) &&
-                    (path !== "einstellungen" || access?.isInitiator) &&
-                    !(access?.isInitiator && path === "profil") &&
-                    (!access?.isInitiator ||
-                      path !== "auswertungen" ||
-                      access.enabledModules.includes("analytics")),
-                )
-                .map(([path, label]) => (
-                  <Link key={path} href={`${base}/${path}` as never}>
-                    {label}
-                    <b>→</b>
-                  </Link>
-                ))}
-            </nav>
+            <div className="loungeCardBody">
+              <div className="loungeNews">
+                {data.announcements.length ? (
+                  data.announcements.slice(0, 2).map((item) => (
+                    <Link href={`${base}/themen` as never} key={item.id}>
+                      {itemImage(item) && <img src={itemImage(item)} alt="" />}
+                      <div>
+                        <h3>{item.title}</h3>
+                        <p className="loungeExcerpt">{item.description}</p>
+                        <time>
+                          {new Date(item.updatedAt).toLocaleDateString("de-DE")}
+                        </time>
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="loungeEmpty">
+                    <span className="loungeEditorialNumber" aria-hidden="true">
+                      03
+                    </span>
+                    <h3>Neue Impulse. Gemeinsame Ideen.</h3>
+                    <p>
+                      Hier teilt die Netzwerkleitung Neuigkeiten und
+                      Gesprächsanlässe mit dir.
+                    </p>
+                  </div>
+                )}
+              </div>
+              <Link
+                className="loungeOutlineButton"
+                href={`${base}/themen` as never}
+              >
+                Alle Neuigkeiten →
+              </Link>
+            </div>
           </section>
-        </aside>
+        )}
+        {enabled("events") && (
+          <section className="networkCard loungeCard">
+            <header>
+              <h2>Gemeinsam erlebt</h2>
+              <Link
+                href={`${base}/rueckblicke` as never}
+                aria-label="Alle Rückblicke"
+              >
+                ↗
+              </Link>
+            </header>
+            <div className="loungeCardBody">
+              {recap ? (
+                <>
+                  {recapImage && (
+                    <img className="loungeRecapPhoto" src={recapImage} alt="" />
+                  )}
+                  <h3>{recap.title}</h3>
+                  <p className="loungeExcerpt">
+                    {String(recap.data.recapSummary || recap.description)}
+                  </p>
+                  <time className="loungeDate">
+                    {new Date(
+                      recap.startsAt || recap.updatedAt,
+                    ).toLocaleDateString("de-DE")}
+                  </time>
+                </>
+              ) : (
+                <div className="loungeEmpty">
+                  <span className="loungeEditorialNumber" aria-hidden="true">
+                    04
+                  </span>
+                  <h3>Begegnungen, die bleiben.</h3>
+                  <p>
+                    Nach gemeinsamen Treffen findest du hier Bilder, Eindrücke
+                    und Rückblicke aus deinem Netzwerk.
+                  </p>
+                </div>
+              )}
+              <Link
+                className="loungeOutlineButton"
+                href={`${base}/rueckblicke` as never}
+              >
+                Rückblicke entdecken →
+              </Link>
+            </div>
+          </section>
+        )}
       </div>
-    </>
+      {slug === "bayer04leverkusen" && enabled("events") && (
+        <NetworkBundesligaCard />
+      )}
+      <nav className="loungeQuickAccess" aria-label="Weitere Partnerbereiche">
+        {[
+          ["kommunikation", "PartnerChat", "communication"],
+          ["dokumente", "Dokumente", "documents"],
+        ]
+          .filter(([, , module]) => enabled(module))
+          .map(([path, label]) => (
+            <Link key={path} href={`${base}/${path}` as never}>
+              {label} <span>→</span>
+            </Link>
+          ))}
+        {access?.isInitiator && (
+          <Link href={`${base}/einstellungen` as never}>
+            Netzwerk verwalten <span>→</span>
+          </Link>
+        )}
+      </nav>
+    </div>
   );
 }

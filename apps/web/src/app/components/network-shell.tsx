@@ -16,6 +16,56 @@ import {
   getPortalSession,
   portalRequest,
 } from "../lib/portal-api";
+function NetworkNavigationIcon({ path }: { path: string }) {
+  const icons: Record<string, string[]> = {
+    "": ["m3 10 9-7 9 7", "M5 9v12h14V9", "M9 21v-7h6v7"],
+    mitglieder: [
+      "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",
+      "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8",
+      "M18 8a3 3 0 0 1 0 6",
+      "M22 21v-2a4 4 0 0 0-3-4",
+    ],
+    spielplan: [
+      "M7 3h10v6a5 5 0 0 1-10 0Z",
+      "M7 5H3v3a4 4 0 0 0 4 4m10-7h4v3a4 4 0 0 1-4 4",
+      "M12 14v7m-5 0h10",
+    ],
+    veranstaltungen: ["M4 5h16v16H4Z", "M8 2v6m8-6v6M4 11h16"],
+    kommunikation: ["M3 3h18v14H9l-6 4Z", "M7 8h10M7 12h7"],
+    profil: ["M3 4h18v16H3Z", "M3 9h18M8 9v11"],
+    rueckblicke: ["M3 5h18v15H3Z", "m3 17 6-6 4 4 3-3 5 5", "M15 8h2"],
+    konto: ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8", "M4 21a8 8 0 0 1 16 0"],
+    einstellungen: [
+      "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8",
+      "M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2",
+    ],
+    dokumente: ["M5 2h9l5 5v15H5Z", "M14 2v6h5M8 12h8M8 16h8"],
+    themen: ["M4 3h16v13H9l-5 5Z", "M8 7h8M8 11h5"],
+    angebote: ["M3 7h18v14H3ZM8 7V3h8v4M3 12h18M10 12v3h4v-3"],
+    aufgaben: ["M4 4h16v17H4Z", "m8 12 3 3 5-6"],
+    auswertungen: ["M4 3v18h17", "M8 16v-4m5 4V8m5 8V5"],
+    umsaetze: ["M19 5a7 7 0 1 0 0 14", "M3 10h12M3 14h10"],
+  };
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {(
+        icons[path] || ["M4 4h6v6H4ZM14 4h6v6h-6ZM4 14h6v6H4ZM14 14h6v6h-6Z"]
+      ).map((d, index) => (
+        <path d={d} key={index} />
+      ))}
+    </svg>
+  );
+}
 type Access = {
   homeTexts?: { welcomeTitle?: string | null; welcomeIntro?: string | null };
   membershipYear?: {
@@ -24,6 +74,8 @@ type Access = {
     endingSoon: boolean;
   } | null;
   currentUserId: string;
+  firstName?: string;
+  lastName?: string;
   networkId: string;
   slug: string;
   networkName: string;
@@ -51,10 +103,10 @@ type Mine = {
 const NetworkAccessContext = createContext<Access | null>(null);
 export const useNetworkAccess = () => useContext(NetworkAccessContext);
 const primaryPartnerItems = [
-  { path: "", label: "Partnerportal-Startseite", icon: "⌂" },
+  { path: "", label: "Startseite", icon: "⌂" },
   {
     path: "mitglieder",
-    label: "Partnerverzeichnis",
+    label: "Partner entdecken",
     icon: "♙",
     module: "profiles",
   },
@@ -67,7 +119,7 @@ const primaryPartnerItems = [
   },
   {
     path: "kommunikation",
-    label: "Nachrichten",
+    label: "PartnerChat",
     icon: "✉",
     module: "communication",
   },
@@ -162,10 +214,12 @@ export function NetworkShell({
       }
       try {
         const [session, network, mine] = await Promise.all([
-          portalRequest<{ accountRole: string; userId: string }>(
-            "/auth/session/check",
-            { token, body: {} },
-          ),
+          portalRequest<{
+            accountRole: string;
+            userId: string;
+            firstName?: string;
+            lastName?: string;
+          }>("/auth/session/check", { token, body: {} }),
           portalRequest<{
             membershipYear?: {
               startsAt: string;
@@ -203,6 +257,8 @@ export function NetworkShell({
         if (active)
           setAccess({
             currentUserId: session.userId,
+            firstName: session.firstName,
+            lastName: session.lastName,
             homeTexts: network.settings,
             membershipYear: network.membershipYear,
             networkId: network.id,
@@ -299,7 +355,9 @@ export function NetworkShell({
       className={isActive(item.path) ? "active" : ""}
       href={href(item.path) as never}
     >
-      <span>{item.icon}</span>
+      <span>
+        <NetworkNavigationIcon path={item.path} />
+      </span>
       {item.path === "spielplan" && slug === "bayer04leverkusen"
         ? "Bundesliga"
         : item.label}
@@ -358,6 +416,9 @@ export function NetworkShell({
             <p>Fragen zum Netzwerkzugang?</p>
             <a href="mailto:service@b2b-matching.de">Support kontaktieren</a>
           </div>
+          <small className="networkOperatorSignature">
+            Media Online Innovations Group
+          </small>
         </aside>
         <section className="networkMain">
           <header className="networkTop">
@@ -369,7 +430,10 @@ export function NetworkShell({
               {access.logoUrl ? (
                 <img src={access.logoUrl} alt="" />
               ) : (
-                <span>{initials}</span>
+                <span>
+                  {access.firstName?.[0] || initials[0]}
+                  {access.lastName?.[0] || initials[1]}
+                </span>
               )}
               <p>
                 <b>{shownName}</b>
@@ -393,7 +457,10 @@ export function NetworkShell({
               >
                 <span>{initials}</span>
                 <p>
-                  <b>{access.isInitiator ? "Initiator" : "Netzwerkpartner"}</b>
+                  <b>
+                    {access.firstName ||
+                      (access.isInitiator ? "Initiator" : "Netzwerkpartner")}
+                  </b>
                   <small>Mein Zugang</small>
                 </p>
               </button>
@@ -427,20 +494,35 @@ export function NetworkShell({
             )}
             <header className="networkWelcome">
               <div>
-                <span>{shownName.toUpperCase()}</span>
+                <span>
+                  {pathname.replace(/\/$/, "") === base
+                    ? "SCHÖN, DASS DU DA BIST"
+                    : shownName.toUpperCase()}
+                </span>
                 <h1>
                   {pathname.replace(/\/$/, "") === `/portal/netzwerk/${slug}`
                     ? access.homeTexts?.welcomeTitle ||
-                      `Willkommen im ${shownName} Partnerportal.`
+                      `${new Date().getHours() < 11 ? "Guten Morgen" : new Date().getHours() < 18 ? "Hallo" : "Guten Abend"}${access.firstName ? `, ${access.firstName}` : ""}.`
                     : title}
                 </h1>
                 <p>
                   {pathname.replace(/\/$/, "") === `/portal/netzwerk/${slug}`
-                    ? access.homeTexts?.welcomeIntro || intro
+                    ? access.homeTexts?.welcomeIntro ||
+                      "Bleib im Gespräch. Entdecke Menschen, Ideen und gemeinsame Chancen."
                     : intro}
                 </p>
               </div>
-              {action}
+              {action ||
+                (pathname.replace(/\/$/, "") === base &&
+                !access.isInitiator &&
+                access.enabledModules.includes("profiles") ? (
+                  <Link
+                    className="loungeProfileLink"
+                    href={`${base}/profil` as never}
+                  >
+                    Meine Partnerseite →
+                  </Link>
+                ) : null)}
             </header>
             {access.membershipYear?.endingSoon && (
               <div className="memberBillingEnding" role="status">

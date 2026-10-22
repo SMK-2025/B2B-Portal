@@ -1,0 +1,832 @@
+/* Shared visual system for all authenticated network workspaces. */
+.networkPortal .networkModal {
+  border-radius: 18px;
+  border: 1px solid #e4e9f0;
+  box-shadow: 0 25px 90px #172a4030;
+}
+.networkPortal .networkModal > header {
+  background: #fff !important;
+  color: #2c3a48 !important;
+  border-bottom: 1px solid #e8edf2;
+  padding: 24px;
+  gap: 20px;
+}
+.networkPortal .networkModal > header h2,
+.networkPortal .networkModal > header p,
+.networkPortal .networkModal > header span {
+  color: #405467 !important;
+}
+.networkPortal .networkModal > header > button {
+  background: #f4f6f9;
+  color: #627385;
+  border: 0;
+  border-radius: 50%;
+}
+.networkPortal .networkModal input,
+.networkPortal .networkModal textarea,
+.networkPortal .networkModal select {
+  border-color: #dce3ec;
+  border-radius: 9px;
+  font-size: 14px;
+  background: #fff;
+}
+.networkPortal .networkModal label {
+  font-size: 13px;
+  color: #586b7d;
+}
+.networkPortal {
+  --lounge-ink: #202b36;
+  --lounge-muted: #74808d;
+  --lounge-line: #e8ebef;
+  --lounge-radius: 16px;
+  background: #f6f7f9 !important;
+  color: var(--lounge-ink);
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.networkPortal .networkSidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 236px;
+  height: 100dvh;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  background: linear-gradient(145deg, #20272c, #161b1f) !important;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 40;
+}
+.networkPortal .networkBrand {
+  padding: 0 8px 24px;
+  gap: 12px;
+  border-bottom: 1px solid #ffffff14;
+  margin-bottom: 20px;
+}
+.networkPortal .networkBrand > span {
+  background: #fff;
+  border-radius: 12px;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  padding: 5px;
+}
+.networkPortal .networkBrand strong {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #fff;
+}
+.networkPortal .networkBrand small {
+  font-size: 10px;
+  color: #b7c0c8;
+  letter-spacing: 0.7px;
+  margin-top: 3px;
+}
+.networkPortal .networkSidebar nav a {
+  border: 0 !important;
+  border-left: 3px solid transparent !important;
+  border-radius: 0 10px 10px 0;
+  padding: 12px 14px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #c4ccd4;
+  min-height: 46px;
+  box-sizing: border-box;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.networkPortal .networkSidebar nav a > span {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  flex: 0 0 21px;
+  color: #a9b7c4;
+}
+.networkPortal .networkSidebar nav a.active {
+  background: color-mix(
+    in srgb,
+    var(--network-accent) 14%,
+    transparent
+  ) !important;
+  border-left-color: var(--network-accent) !important;
+  color: #fff;
+}
+.networkPortal .networkSidebar nav a.active > span {
+  color: color-mix(in srgb, var(--network-accent) 65%, white);
+}
+.networkPortal .networkSimpleNav > small {
+  font-size: 9px;
+  letter-spacing: 1.6px;
+  color: #82909d;
+  padding: 0 16px 12px;
+}
+.networkPortal .networkMoreNav,
+.networkPortal .networkAdminNav {
+  border-color: #ffffff12;
+}
+.networkPortal .networkSupport {
+  margin-top: auto;
+  padding: 24px 12px 12px;
+  border: 0;
+  background: transparent;
+}
+.networkPortal .networkSupport b {
+  font-size: 12px;
+  color: #c9d2da;
+}
+.networkPortal .networkSupport p,
+.networkPortal .networkSupport a {
+  font-size: 11px;
+  color: #8e9ba8;
+}
+.networkOperatorSignature {
+  font-size: 9px;
+  line-height: 1.6;
+  color: #7e8a96;
+  padding: 20px 12px 0;
+}
+.networkPortal .networkMain {
+  grid-column: 2;
+  margin: 0;
+  min-width: 0;
+  width: 100%;
+  background: transparent;
+}
+.networkPortal .networkTop {
+  position: sticky;
+  top: 0;
+  left: auto;
+  right: auto;
+  z-index: 30;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 70px;
+  padding: 14px 36px;
+  background: #fff;
+  border-bottom: 1px solid #e6e9ee;
+  box-shadow: none;
+}
+.networkPortal .networkContext > img,
+.networkPortal .networkContext > span {
+  height: 32px;
+  width: 32px;
+  border: 0;
+  background: transparent;
+}
+.networkPortal .networkContext b {
+  font-size: 13px;
+  color: #344352;
+}
+.networkPortal .networkContext small {
+  font-size: 10px;
+  color: #95a0ab;
+}
+.networkPortal .networkTopActions > button {
+  background: transparent;
+  border: 0;
+}
+.networkPortal .networkTopActions > button > span {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #ecf0f4;
+  color: #536575;
+  font-size: 11px;
+}
+.networkPortal .networkTopActions p b {
+  font-size: 12px;
+}
+.networkPortal .networkTopActions p small {
+  font-size: 10px;
+}
+.networkPortal .networkContent {
+  width: 100%;
+  max-width: 1500px;
+  box-sizing: border-box;
+  margin: auto;
+  padding: 36px 40px 48px;
+}
+.networkPortal .networkWelcome {
+  margin: 0 0 28px;
+  align-items: center;
+  gap: 24px;
+}
+.networkPortal .networkWelcome > div > span {
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  font-weight: 600;
+  color: var(--network-accent);
+}
+.networkPortal .networkWelcome h1 {
+  font:
+    600 clamp(27px, 2.7vw, 36px)/1.15 Arial,
+    Helvetica,
+    sans-serif;
+  letter-spacing: -1px;
+  color: #202a34;
+  margin: 10px 0 12px;
+  max-width: 1000px;
+}
+.networkPortal .networkWelcome p {
+  font-size: 14px;
+  color: #7b8591;
+  line-height: 1.7;
+  max-width: 850px;
+}
+.loungeProfileLink {
+  border: 1px solid #dce1e7;
+  padding: 11px 16px;
+  border-radius: 9px;
+  background: #fff;
+  color: #4b5866;
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.networkPortal .networkCard {
+  border: 1px solid var(--lounge-line);
+  border-radius: var(--lounge-radius);
+  background: #fff;
+  box-shadow: 0 6px 20px #1b2f4305;
+  overflow: hidden;
+}
+.networkPortal .networkCard > header {
+  background: #fff !important;
+  border-bottom: 1px solid #f0f2f5;
+  padding: 22px 24px;
+  color: #2c3742 !important;
+  gap: 20px;
+}
+.networkPortal .networkCard > header h2 {
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: #2c3742 !important;
+}
+.networkPortal .networkCard > header p {
+  color: #87929e !important;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 5px 0 0;
+}
+.networkPortal .networkCard > header span {
+  font-size: 9px;
+  color: #93a0ad !important;
+  letter-spacing: 1.3px;
+}
+.networkPortal .networkCard > header > a {
+  font-size: 12px;
+  color: #7a8999;
+  background: transparent;
+  border: 0;
+}
+.networkPortal .networkCard > header > button {
+  background: #f7f9fc;
+  color: #526374;
+  border: 1px solid #e5eaf0;
+  border-radius: 7px;
+  padding: 7px 10px;
+}
+.networkPortal .networkPrimary {
+  background: #25313b !important;
+  color: #fff !important;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  box-shadow: 0 5px 12px #2030400b;
+  font-weight: 500;
+}
+.networkPortal .networkPrimary:hover {
+  background: #3c4b58 !important;
+}
+.networkPortal .networkMemberToolbar input,
+.networkPortal .networkMemberToolbar select,
+.networkPortal .networkProfileFields input,
+.networkPortal .networkProfileFields textarea,
+.networkPortal .networkProfileFields select {
+  border: 1px solid #dfe5ec;
+  border-radius: 9px;
+  background: #fff;
+  color: #3c4d5d;
+  font-size: 14px;
+}
+.networkPortal .networkMemberToolbar {
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.networkPortal .networkMemberStats > button,
+.networkPortal .networkMemberStats > div,
+.networkPortal .networkStats > div {
+  border: 1px solid #e6ebf0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: none;
+}
+.networkPortal .networkMemberStats strong,
+.networkPortal .networkStats strong {
+  color: #314353;
+}
+.networkPortal .networkModulePurpose {
+  border: 1px solid #e4e9ef;
+  border-left: 3px solid var(--network-accent);
+  border-radius: 12px;
+  background: #fff;
+  padding: 20px 24px;
+  box-shadow: none;
+}
+.networkPortal .networkModulePurpose strong {
+  font-size: 14px;
+  color: #405263;
+}
+.networkPortal .networkModulePurpose p {
+  font-size: 13px;
+  color: #84909e;
+  line-height: 1.7;
+}
+.networkPortal .networkContentRows > article {
+  padding: 22px 24px;
+  border-color: #edf0f4;
+}
+.networkPortal .networkContentRows h3 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #3b4a59;
+}
+.networkPortal .networkContentRows p {
+  font-size: 13px;
+  color: #84919e;
+}
+.networkPortal .networkEmpty {
+  padding: 32px;
+  color: #83909d;
+}
+.networkPortal .networkEmpty b {
+  font-size: 14px;
+  font-weight: 500;
+}
+.networkPortal .networkEmpty p {
+  font-size: 13px;
+}
+.networkPortal .networkProfileGuide {
+  border: 1px solid #e5eaf0;
+  border-radius: 16px;
+  background: #fff;
+  color: #506172;
+  padding: 24px;
+}
+.networkPortal .networkProfileGuide h2 {
+  color: #354757;
+}
+.networkPortal .networkProfileGuide p {
+  color: #83909f;
+}
+.networkLoungeHome {
+  display: grid;
+  gap: 24px;
+}
+.loungeHero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 16px;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  background: #202c36;
+}
+.loungeHero > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+.loungeHero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, #07121bda, #0a14246b 60%, #08131b08);
+}
+.loungeHero > div {
+  padding: 36px;
+  max-width: 580px;
+  color: #fff;
+}
+.loungeHero > div > span {
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  font-weight: 600;
+}
+.loungeHero h2 {
+  font:
+    600 clamp(26px, 2.6vw, 37px)/1.13 Arial,
+    sans-serif;
+  letter-spacing: -0.8px;
+  margin: 16px 0;
+  color: #fff;
+  max-width: 480px;
+}
+.loungeHero p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #edf0f3;
+  margin: 0 0 24px;
+}
+.loungeHero a {
+  display: inline-flex;
+  background: #fff;
+  color: #2a3541;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.loungeHero > small {
+  position: absolute;
+  bottom: 10px;
+  right: 14px;
+  font-size: 8px;
+  color: #ffffff8c;
+}
+.loungeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.loungeGrid > .loungeCard {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.loungeGrid > .loungeCard:last-child:nth-child(odd) {
+  grid-column: 1/-1;
+}
+.networkPortal .networkWelcome p,
+.networkPortal .loungeCard > header p {
+  color: #657587 !important;
+}
+.networkPortal .loungeExcerpt,
+.networkPortal .loungeEmpty p {
+  color: #6c7b8b;
+}
+.networkPortal .loungeCard > header {
+  border-bottom: 0;
+  padding: 20px 24px 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.networkPortal .loungeCard > header h2 {
+  font-size: 17px;
+}
+.loungeCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 24px 24px;
+  flex: 1;
+  min-width: 0;
+}
+.loungeCardBody > h3 {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+  color: #303e4b;
+  overflow-wrap: anywhere;
+}
+.loungeDate {
+  font-size: 12px;
+  color: #8a96a3;
+  margin: 0;
+}
+.loungeExcerpt {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #7d8a97;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.loungeEventVisual {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.loungeEventVisual > time {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 12px 9px;
+  border-radius: 10px;
+  background: var(--network-accent);
+  color: #fff;
+  min-width: 48px;
+}
+.loungeEventVisual > time strong {
+  font-size: 24px;
+  font-weight: 600;
+}
+.loungeEventVisual > time span {
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.loungeEventVisual > img {
+  width: calc(100% - 85px);
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.loungeEventPlaceholder {
+  min-height: 120px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: linear-gradient(120deg, #f3f5f8, #e8edf2);
+  color: #738495;
+}
+.loungeEventPlaceholder span {
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.loungeEventPlaceholder strong {
+  font-size: 19px;
+  font-weight: 500;
+}
+.loungeDarkButton,
+.loungeOutlineButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-decoration: none;
+  line-height: 1.5;
+}
+.loungeDarkButton {
+  background: #26323c;
+  color: #fff !important;
+  align-self: flex-end;
+  margin-top: auto;
+}
+.loungeOutlineButton {
+  background: #fff;
+  border: 1px solid #dfe4eb;
+  color: #536372;
+  margin-top: auto;
+}
+.loungePartners {
+  display: grid;
+  gap: 0;
+}
+.loungePartners > a {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  min-width: 0;
+  padding: 18px 0;
+  border-bottom: 1px solid #edf0f4;
+  text-decoration: none;
+  color: #445564;
+}
+.loungePartners > a > span:nth-child(2) {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+.loungePartners strong {
+  font-size: 14px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.loungePartners small {
+  font-size: 11px;
+  color: #8c97a3;
+}
+.loungePartners > a > b {
+  color: #9ba8b4;
+  font-size: 16px;
+}
+.loungePartnerLogo {
+  display: grid;
+  place-items: center;
+  flex: 0 0 78px;
+  width: 78px;
+  height: 42px;
+}
+.loungePartnerLogo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.loungePartnerLogo > b {
+  font-size: 18px;
+  color: #9caab7;
+}
+.loungeNews {
+  display: grid;
+  gap: 20px;
+}
+.loungeNews > a {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  text-decoration: none;
+  color: #415261;
+}
+.loungeNews img {
+  width: 100px;
+  height: 75px;
+  border-radius: 9px;
+  object-fit: cover;
+}
+.loungeNews h3 {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+.loungeNews time {
+  font-size: 10px;
+  color: #a1abb7;
+}
+.loungeRecapPhoto {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.loungeEmpty {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 180px;
+  flex: 1;
+  padding: 8px 0;
+}
+.loungeEmpty h3 {
+  font-size: 20px;
+  font-weight: 500;
+  color: #506373;
+  line-height: 1.4;
+  margin: 0;
+}
+.loungeEmpty p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #8d9aa7;
+  margin: 0;
+  max-width: 370px;
+}
+.loungeEmpty > a {
+  font-size: 12px;
+  color: #526878;
+  margin-top: 8px;
+}
+.loungeEditorialNumber {
+  font-size: 34px;
+  letter-spacing: -2px;
+  color: #e2e8ef;
+  line-height: 1;
+  font-weight: 600;
+}
+.loungeQuickAccess {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.loungeQuickAccess > a {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  font-size: 12px;
+  padding: 12px 0;
+  color: #7d8b98;
+  text-decoration: none;
+}
+.loungeQuickAccess span {
+  color: #9ca9b5;
+}
+@media (max-width: 1100px) {
+  .networkPortal {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+  .networkPortal .networkSidebar {
+    width: 210px;
+  }
+  .networkPortal .networkContent {
+    padding: 28px 24px;
+  }
+  .networkPortal .networkTop {
+    padding: 14px 24px;
+  }
+  .loungePartnerLogo {
+    width: 56px;
+    flex-basis: 56px;
+  }
+  .loungeCardBody {
+    padding: 12px 20px 20px;
+  }
+  .networkPortal .loungeCard > header {
+    padding: 20px 20px 8px;
+  }
+}
+@media (max-width: 850px) {
+  .networkPortal {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .networkPortal .networkSidebar {
+    display: none;
+  }
+  .networkPortal .networkMain {
+    grid-column: 1;
+  }
+  .networkPortal .networkMobileNav {
+    display: block;
+  }
+  .networkPortal .networkContent {
+    padding: 24px 20px;
+  }
+  .loungeHero > div {
+    padding: 28px;
+  }
+  .loungeHero {
+    min-height: 260px;
+  }
+}
+@media (max-width: 620px) {
+  .loungeGrid {
+    grid-template-columns: 1fr;
+  }
+  .networkPortal .networkTop {
+    padding: 12px 16px;
+  }
+  .networkPortal .networkContent {
+    padding: 24px 16px;
+  }
+  .networkPortal .networkWelcome {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .networkPortal .networkWelcome h1 {
+    font-size: 28px;
+  }
+  .networkPortal .networkWelcome p {
+    font-size: 13px;
+  }
+  .networkPortal .networkContext small {
+    display: none;
+  }
+  .loungeHero h2 {
+    font-size: 28px;
+  }
+  .loungeHero > div {
+    padding: 28px 24px;
+  }
+  .loungeHero p {
+    font-size: 13px;
+  }
+  .loungeHero {
+    min-height: 290px;
+  }
+  .loungeEventVisual > img {
+    height: 120px;
+  }
+  .loungeQuickAccess {
+    gap: 20px;
+  }
+  .networkPortal .networkMemberToolbar {
+    flex-wrap: wrap;
+  }
+  .networkPortal .networkCard > header {
+    padding: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .networkPortal * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

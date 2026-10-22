@@ -5,8 +5,9 @@ import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { Team, type Schedule } from "./network-game-schedule-workspace";
 
-export function NetworkBundesligaCard() {
+export function NetworkMatchdayCard() {
   const access = useNetworkAccess();
+  const football = access?.slug === "bayer04leverkusen";
   const [data, setData] = useState<Schedule | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -14,7 +15,7 @@ export function NetworkBundesligaCard() {
     if (!token || !access?.networkId) return;
     let active = true;
     portalRequest<Schedule>(
-      `/networks/${access.networkId}/bundesliga-schedule`,
+      `/networks/${access.networkId}/${football ? "bundesliga-schedule" : "prob-schedule"}`,
       { token },
     )
       .then((value) => {
@@ -27,7 +28,7 @@ export function NetworkBundesligaCard() {
     return () => {
       active = false;
     };
-  }, [access?.networkId]);
+  }, [access?.networkId, football]);
   const base = `/portal/netzwerk/${access?.slug}/spielplan`;
   const latest = data?.games
     .filter(
@@ -52,7 +53,10 @@ export function NetworkBundesligaCard() {
     <section className="networkCard bundesligaHomeCard">
       <header>
         <div>
-          <span>BUNDESLIGA · {data?.season || "2026/27"}</span>
+          <span>
+            {data?.competition || (football ? "Bundesliga" : "ProB Süd")} ·{" "}
+            {data?.season || "2026/27"}
+          </span>
           <h2>Nach dem Spiel ist vor dem Austausch</h2>
         </div>
       </header>
@@ -96,7 +100,9 @@ export function NetworkBundesligaCard() {
                 : "Zum Spiel und Austausch"}
             </Link>
           )}
-          <Link href={`${base}#tabelle` as never}>Zur Tabelle</Link>
+          {(football || Boolean(data?.table.length)) && (
+            <Link href={`${base}#tabelle` as never}>Zur Tabelle</Link>
+          )}
           <Link href={`${base}${next ? `#spiel-${next.id}` : ""}` as never}>
             Zum Spieltag{next ? ` · ${next.matchday}` : ""}
           </Link>

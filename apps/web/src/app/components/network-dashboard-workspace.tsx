@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
-import { NetworkBundesligaCard } from "./network-bundesliga-card";
+import { NetworkMatchdayCard } from "./network-bundesliga-card";
 import { NetworkSystemMessages } from "./network-system-messages";
 type Item = {
   id: string;
@@ -197,11 +197,10 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
         </p>
       </section>
       <div
-        className={`loungeGrid${slug === "bayer04leverkusen" && enabled("events") ? " loungeGridWithMatchday" : ""}`}
+        className={`loungeGrid${["bayer04leverkusen", "bayer-giants"].includes(slug) && enabled("events") ? " loungeGridWithMatchday" : ""}`}
       >
-        {slug === "bayer04leverkusen" && enabled("events") && (
-          <NetworkBundesligaCard />
-        )}
+        {["bayer04leverkusen", "bayer-giants"].includes(slug) &&
+          enabled("events") && <NetworkMatchdayCard />}
         {enabled("events") && (
           <section className="networkCard loungeCard">
             <header>

@@ -414,7 +414,7 @@
   padding: 7px 10px;
 }
 .networkPortal .networkPrimary {
-  background: #25313b !important;
+  background: var(--network-accent, #25313b) !important;
   color: #fff !important;
   border: 1px solid transparent;
   border-radius: 9px;
@@ -422,7 +422,7 @@
   font-weight: 500;
 }
 .networkPortal .networkPrimary:hover {
-  background: #3c4b58 !important;
+  background: color-mix(in srgb, var(--network-accent, #25313b) 85%, black) !important;
 }
 .networkPortal .networkMemberToolbar input,
 .networkPortal .networkMemberToolbar select,
@@ -1049,12 +1049,13 @@
 }
 .networkPortal .bundesligaHomeActions a {
   padding: 10px 16px;
-  background: #fff;
-  border-color: #bdd3dc;
+  background: var(--network-accent, #e60000) !important;
+  color: #fff !important;
+  border-color: var(--network-accent, #e60000);
   font-size: 14px;
 }
 .networkPortal .bundesligaHomeActions a.networkPrimary {
-  background: #000 !important;
+  background: var(--network-accent, #e60000) !important;
 }
 .networkPortal .bundesligaHomeBody > small {
   font-size: 12px;

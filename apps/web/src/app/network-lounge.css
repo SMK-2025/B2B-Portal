@@ -1057,6 +1057,30 @@
 .networkPortal .bundesligaHomeActions a.networkPrimary {
   background: var(--network-accent, #e60000) !important;
 }
+.networkPortal .networkLoungeHome .loungeCard p,
+.networkPortal .networkLoungeHome .loungeCard small,
+.networkPortal .networkLoungeHome .loungeCard time,
+.networkPortal .networkLoungeHome .loungeCard a,
+.networkPortal .networkLoungeHome .loungeCard button,
+.networkPortal .networkLoungeHome .loungePartners strong,
+.networkPortal .networkLoungeHome .bundesligaHomeBody p,
+.networkPortal .networkLoungeHome .bundesligaHomeBody small,
+.networkPortal .networkLoungeHome .bundesligaHomeActions a,
+.networkPortal .networkLoungeHome .gameTeam b {
+  font-size: 16px !important;
+  line-height: 1.6;
+}
+.networkPortal .networkLoungeHome .loungeCard h2,
+.networkPortal .networkLoungeHome .bundesligaHomeCard h2 {
+  font-size: 21px !important;
+  line-height: 1.35;
+  font-weight: 700;
+}
+.networkPortal .networkLoungeHome .loungeCard h3 {
+  font-size: 19px !important;
+  line-height: 1.4;
+  font-weight: 600;
+}
 .networkPortal .bundesligaHomeBody > small {
   font-size: 12px;
   color: #bcbcbc;

@@ -246,9 +246,6 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                 </>
               ) : (
                 <div className="loungeEmpty">
-                  <span className="loungeEditorialNumber" aria-hidden="true">
-                    01
-                  </span>
                   <h3>Der nächste Austausch kommt.</h3>
                   <p>
                     Neue Termine findest du hier. Bis dahin kannst du deine
@@ -297,9 +294,6 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                   ))
                 ) : (
                   <div className="loungeEmpty">
-                    <span className="loungeEditorialNumber" aria-hidden="true">
-                      02
-                    </span>
                     <h3>Hier beginnt dein Netzwerk.</h3>
                     <p>
                       Sobald Partner ihre Unternehmensseite eingerichtet haben,
@@ -345,9 +339,6 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                   ))
                 ) : (
                   <div className="loungeEmpty">
-                    <span className="loungeEditorialNumber" aria-hidden="true">
-                      03
-                    </span>
                     <h3>Neue Impulse. Gemeinsame Ideen.</h3>
                     <p>
                       Hier teilt die Netzwerkleitung Neuigkeiten und
@@ -394,9 +385,6 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                 </>
               ) : (
                 <div className="loungeEmpty">
-                  <span className="loungeEditorialNumber" aria-hidden="true">
-                    04
-                  </span>
                   <h3>Begegnungen, die bleiben.</h3>
                   <p>
                     Nach gemeinsamen Treffen findest du hier Bilder, Eindrücke

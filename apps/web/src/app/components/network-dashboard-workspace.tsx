@@ -183,6 +183,9 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           gemeinsame Ideen und Zusammenarbeit, auch zwischen unseren Treffen.
         </p>
       </section>
+      {slug === "bayer04leverkusen" && enabled("events") && (
+        <NetworkBundesligaCard />
+      )}
       <div className="loungeGrid">
         {enabled("events") && (
           <section className="networkCard loungeCard">
@@ -447,9 +450,6 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           </section>
         )}
       </div>
-      {slug === "bayer04leverkusen" && enabled("events") && (
-        <NetworkBundesligaCard />
-      )}
       <nav className="loungeQuickAccess" aria-label="Weitere Partnerbereiche">
         {[
           ["kommunikation", "PartnerChat", "communication"],

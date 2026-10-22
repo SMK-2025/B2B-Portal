@@ -1005,3 +1005,67 @@
     grid-template-columns: 1fr;
   }
 }
+.networkPortal .bundesligaHomeCard {
+  max-width: 920px;
+  margin: 0 auto 24px;
+  background: #eef5f7;
+  border: 1px solid #cadde3;
+  box-shadow: 0 6px 22px #2046570a;
+  text-align: center;
+}
+.networkPortal .bundesligaHomeCard > header {
+  justify-content: center;
+  padding: 16px 22px 10px;
+  background: #e0edf1 !important;
+  border-left: 0;
+  border-top: 4px solid #277186;
+}
+.networkPortal .bundesligaHomeCard > header h2 {
+  color: #20586a !important;
+  font-size: 20px;
+  margin: 4px 0 0;
+}
+.networkPortal .bundesligaHomeCard > header span {
+  color: #426773;
+}
+.networkPortal .bundesligaHomeBody {
+  padding: 16px 24px 18px;
+  gap: 12px;
+  justify-items: center;
+}
+.networkPortal .bundesligaLastResult {
+  width: 100%;
+  max-width: 620px;
+  gap: 20px;
+}
+.networkPortal .bundesligaLastResult > strong {
+  color: #20586a;
+  font-size: 36px;
+}
+.networkPortal .bundesligaHomeActions {
+  justify-content: center;
+  gap: 12px;
+}
+.networkPortal .bundesligaHomeActions a {
+  padding: 10px 16px;
+  background: #fff;
+  border-color: #bdd3dc;
+  font-size: 14px;
+}
+.networkPortal .bundesligaHomeActions a.networkPrimary {
+  background: #20586a !important;
+}
+.networkPortal .bundesligaHomeBody > small {
+  font-size: 12px;
+}
+@media (max-width: 620px) {
+  .networkPortal .bundesligaHomeBody {
+    padding: 16px;
+  }
+  .networkPortal .bundesligaLastResult {
+    gap: 10px;
+  }
+  .networkPortal .bundesligaHomeActions {
+    width: 100%;
+  }
+}

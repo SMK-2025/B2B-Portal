@@ -457,6 +457,93 @@ export class NetworksService {
       loginUrl: `/anmelden?network=${encodeURIComponent(network.slug)}`,
     };
   }
+  copyPartner(
+    authorization: string | undefined,
+    networkId: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    const target = this.raw(networkId);
+    const email = emailAddress(input.email);
+    const userId = this.store.userByEmail.get(email);
+    const user = userId ? this.store.users.get(userId) : undefined;
+    const sourceId = this.store.networkBySlug.get(String(input.sourceSlug));
+    if (
+      !user ||
+      user.accountRole === "platform_admin" ||
+      user.visitorNetworkId ||
+      !sourceId ||
+      sourceId === networkId
+    )
+      throw new BadRequestException(
+        "Bitte ein bestehendes Partnerkonto und ein anderes Quellnetzwerk wählen.",
+      );
+    if (target.status !== "active")
+      throw new BadRequestException("Das Zielnetzwerk muss aktiv sein.");
+    if (
+      this.store.networkMemberships.some(
+        (m) => m.networkId === networkId && m.userId === user.id,
+      )
+    )
+      throw new ConflictException(
+        "Der Nutzer ist bereits im Zielnetzwerk vorhanden. Es wird nichts überschrieben.",
+      );
+    const source = this.store.networkMemberships.find(
+      (m) =>
+        m.networkId === sourceId &&
+        m.userId === user.id &&
+        m.status === "active" &&
+        !["visitor", "network_admin"].includes(m.role),
+    );
+    const original = source
+      ? this.store.organizations.get(source.organizationId)
+      : undefined;
+    if (
+      !original?.networkProfile ||
+      original.networkProfile.status !== "published"
+    )
+      throw new BadRequestException(
+        "Keine veröffentlichte Partnerseite im Quellnetzwerk gefunden.",
+      );
+    const now = new Date().toISOString();
+    const organization = structuredClone(original);
+    organization.id = randomUUID();
+    organization.createdAt = now;
+    organization.networkProfile!.status = "published";
+    this.store.organizations.set(organization.id, organization);
+    this.store.memberships.push({
+      organizationId: organization.id,
+      userId: user.id,
+      role: "admin",
+    });
+    this.store.networkMemberships.push({
+      id: randomUUID(),
+      networkId,
+      organizationId: organization.id,
+      userId: user.id,
+      role: "member",
+      status: "active",
+      complimentaryAccess: true,
+      invitedByUserId: actor.id,
+      reviewedByUserId: actor.id,
+      reviewedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+    this.operatorAudit(actor.id, networkId, "operator.partner.copied", {
+      sourceNetworkId: sourceId,
+      userId: user.id,
+      complimentaryAccess: true,
+    });
+    return {
+      copied: true,
+      published: true,
+      email,
+      network: target.name,
+      complimentaryAccess: true,
+    };
+  }
   adminUsers(authorization: string | undefined, networkId: string) {
     const actor = this.auth.authenticate(authorization);
     this.requirePlatformAdmin(actor.id);
@@ -3626,6 +3713,16 @@ export class NetworksService {
   }
   private userModules(userId: string, networkId: string) {
     const network = this.raw(networkId);
+    if (
+      this.store.networkMemberships.some(
+        (m) =>
+          m.userId === userId &&
+          m.networkId === networkId &&
+          m.status === "active" &&
+          m.complimentaryAccess,
+      )
+    )
+      return network.enabledModules;
     if (this.store.users.get(userId)?.visitorNetworkId === networkId)
       return network.enabledModules;
     const annual = [...this.store.networkOrders.values()]

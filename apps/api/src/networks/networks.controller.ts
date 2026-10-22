@@ -154,6 +154,13 @@ export class NetworksController {
   ) {
     return this.networks.adminUsers(authorization, networkId);
   }
+  @Post("admin/:networkId/copy-partner") copyPartner(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.copyPartner(auth, id, body);
+  }
   @Post("admin/:networkId/visitors") createVisitor(
     @Headers("authorization") auth: string | undefined,
     @Param("networkId") id: string,

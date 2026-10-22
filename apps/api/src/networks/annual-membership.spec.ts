@@ -347,6 +347,66 @@ describe("personal annual membership billing", () => {
     ).toThrow();
     expect(f.store.snapshot()).toContain('"networkConnections"');
   });
+  it("copies a published partner to another network with free independent access", async () => {
+    const f = await fixture();
+    f.orgs.create(f.member, f.input, true);
+    const user = [...f.store.users.values()].find(
+      (u) => u.email === "partner@example.de",
+    )!;
+    const source = f.store.networkMemberships.find(
+      (m) => m.userId === user.id,
+    )!;
+    const organization = f.store.organizations.get(source.organizationId)!;
+    organization.networkProfile = {
+      companyName: "Original",
+      status: "published",
+      heroImageUrl: "data:image/png;base64,aA==",
+    } as any;
+    const target = f.networks.create(f.owner, {
+      name: "Giants test",
+      slug: "giants-copy-test",
+    });
+    f.networks.setAccess(f.owner, target.id, { status: "active" });
+    expect(() =>
+      f.networks.copyPartner(f.member, target.id, {
+        email: user.email,
+        sourceSlug: f.network.slug,
+      }),
+    ).toThrow();
+    f.networks.copyPartner(f.owner, target.id, {
+      email: user.email,
+      sourceSlug: f.network.slug,
+    });
+    const copied = f.store.networkMemberships.find(
+      (m) => m.userId === user.id && m.networkId === target.id,
+    )!;
+    expect(copied).toMatchObject({
+      role: "member",
+      status: "active",
+      complimentaryAccess: true,
+    });
+    expect(copied.organizationId).not.toBe(source.organizationId);
+    expect(
+      f.networks.publicBySlug(f.member, target.slug).enabledModules,
+    ).toContain("profiles");
+    const profile = f.store.organizations.get(
+      copied.organizationId,
+    )!.networkProfile!;
+    expect(profile).toEqual(organization.networkProfile);
+    profile.companyName = "Independent";
+    expect(organization.networkProfile.companyName).toBe("Original");
+    expect(() =>
+      f.networks.copyPartner(f.owner, target.id, {
+        email: user.email,
+        sourceSlug: f.network.slug,
+      }),
+    ).toThrow();
+    expect(
+      [...f.store.networkOrders.values()].filter(
+        (o) => o.networkId === target.id,
+      ),
+    ).toHaveLength(0);
+  });
   async function fixture() {
     const store = new PortalStore(),
       email = new EmailService();

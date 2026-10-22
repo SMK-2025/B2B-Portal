@@ -76,6 +76,40 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
       setLoading(false);
     }
   }
+  async function copyPartner() {
+    const email = window.prompt(
+      "Bestehender Partnerzugang (E-Mail)",
+      "mk@hey-five.de",
+    );
+    if (!email) return;
+    const sourceSlug = window.prompt(
+      "Quellnetzwerk (Kennung)",
+      "bayer04leverkusen",
+    );
+    if (
+      !sourceSlug ||
+      !window.confirm(
+        `${email}: Partnerseite aus ${sourceSlug} nach ${name} kopieren und veröffentlichen? Kostenloser Partnerzugang, keine Administratorrolle. Bestehende Daten werden nicht überschrieben.`,
+      )
+    )
+      return;
+    setLoading(true);
+    setError("");
+    try {
+      await portalRequest(`/networks/admin/${id}/copy-partner`, {
+        token: getPortalSession() || "",
+        body: { email, sourceSlug },
+      });
+      await open();
+      window.alert(
+        "Partnerseite veröffentlicht. Der bestehende Zugang funktioniert jetzt auch in diesem Netzwerk – kostenlos und ohne neue Buchung.",
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Kopieren fehlgeschlagen.");
+    } finally {
+      setLoading(false);
+    }
+  }
   useEffect(() => {
     const modal = dialog.current;
     const close = (event: KeyboardEvent) => {
@@ -162,6 +196,14 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
           onClick={createVisitor}
         >
           Besucherzugang anlegen
+        </button>
+        <button
+          type="button"
+          className="portalSecondary"
+          disabled={loading}
+          onClick={copyPartner}
+        >
+          Partnerseite aus anderem Netzwerk übernehmen
         </button>
         {visitorAccess && (
           <section className="panelNote">

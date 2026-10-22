@@ -176,6 +176,7 @@ export interface NetworkRecord {
 
 export interface NetworkMembershipRecord {
   id: string;
+  complimentaryAccess?: boolean;
   networkId: string;
   organizationId: string;
   userId: string;

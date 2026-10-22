@@ -70,9 +70,6 @@ export function PartnerBusinessCard({ profile }: { profile: ContactCardData }) {
               <strong>{profile.companyName}</strong>
             )}
           </div>
-          <span className="partnerBusinessEyebrow">
-            DEIN KONTAKT IM NETZWERK
-          </span>
           <h4>{profile.contactName || profile.companyName}</h4>
           {profile.contactPosition && (
             <p className="partnerBusinessPosition">{profile.contactPosition}</p>
@@ -127,10 +124,7 @@ export function PartnerBusinessCard({ profile }: { profile: ContactCardData }) {
             </div>
           )}
           <strong>Scannen & Kontakt speichern</strong>
-          <small>
-            Mit der Handykamera scannen und den Kontakt im Adressbuch
-            übernehmen.
-          </small>
+          <small>Mit der Handykamera scannen.</small>
         </div>
       </div>
       <button
@@ -141,8 +135,7 @@ export function PartnerBusinessCard({ profile }: { profile: ContactCardData }) {
         ↓ Kontakt speichern (.vcf)
       </button>
       <small className="partnerCardPrivacy">
-        Der QR-Code enthält nur die hier angezeigten Kontaktdaten – keinen
-        Zugang zum Portal.
+        Nur Kontaktdaten · Kein Portalzugang im QR-Code.
       </small>
     </div>
   );

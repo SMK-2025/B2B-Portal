@@ -41,16 +41,24 @@ export function PartnerLoginForm({
         router.push((safeRedirect || "/portal/admin/netzwerke") as never);
         return;
       }
-      await portalRequest("/networks/invitations/claim", {
+      type LoginNetwork = {
+        membership: { role: string };
+        network: { slug: string; settings?: { setupCompletedAt?: string } };
+      };
+      let networks = await portalRequest<LoginNetwork[]>("/networks/mine", {
         token: result.token,
-        body: {},
       });
-      const networks = await portalRequest<
-        Array<{
-          membership: { role: string };
-          network: { slug: string; settings?: { setupCompletedAt?: string } };
-        }>
-      >("/networks/mine", { token: result.token });
+      // Existing visitors already have access; claiming invitations is a write
+      // operation and must never be attempted with a read-only visitor session.
+      if (!networks.some((entry) => entry.membership.role === "visitor")) {
+        await portalRequest("/networks/invitations/claim", {
+          token: result.token,
+          body: {},
+        });
+        networks = await portalRequest<LoginNetwork[]>("/networks/mine", {
+          token: result.token,
+        });
+      }
       const requested = networks.find((n) =>
         networkSlug ? n.network.slug === networkSlug : true,
       );
@@ -129,7 +137,15 @@ export function PartnerLoginForm({
           {busy ? "Anmeldung wird geprüft …" : "Sicher anmelden"}
         </button>
       </form>
-      <p className="fieldHint">Für die Zugangsverwaltung werden die Anzahl erfolgreicher Portal-Anmeldungen und der Zeitpunkt der letzten Anmeldung gespeichert und dem Plattformbetreiber angezeigt. Seitenaufrufe und Gesprächsinhalte werden dafür nicht ausgewertet.</p>
+      <details className="fieldHint">
+        <summary>Hinweis zur Login-Erfassung</summary>
+        <p>
+          Für die Zugangsverwaltung werden die Anzahl erfolgreicher
+          Portal-Anmeldungen und der Zeitpunkt der letzten Anmeldung gespeichert
+          und dem Plattformbetreiber angezeigt. Seitenaufrufe und
+          Gesprächsinhalte werden dafür nicht ausgewertet.
+        </p>
+      </details>
       {error && (
         <p className="error" role="alert">
           {error}

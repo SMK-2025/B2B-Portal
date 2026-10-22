@@ -1100,6 +1100,9 @@ export class NetworksService {
       if (user) this.store.userByEmail.delete(user.email);
       this.store.users.delete(userId);
     }
+    for (const [id, connection] of this.store.networkConnections)
+      if (connection.networkId === networkId)
+        this.store.networkConnections.delete(id);
     for (const [id, message] of this.store.networkSystemMessages)
       if (message.networkId === networkId)
         this.store.networkSystemMessages.delete(id);
@@ -2959,6 +2962,142 @@ export class NetworksService {
     record.updatedAt = new Date().toISOString();
     this.notifyContent(record, actor.id, "network.response");
     return this.thread(authorization, networkId, contentId);
+  }
+  connections(authorization: string | undefined, networkId: string) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireNetworkAccess(actor.id, networkId);
+    return [...this.store.networkConnections.values()]
+      .filter(
+        (c) =>
+          c.networkId === networkId &&
+          [c.senderId, c.recipientId].includes(actor.id),
+      )
+      .map((c) => {
+        const peer = this.store.users.get(
+          c.senderId === actor.id ? c.recipientId : c.senderId,
+        );
+        return {
+          ...c,
+          peerName: peer
+            ? `${peer.firstName} ${peer.lastName}`.trim()
+            : "Netzwerkpartner",
+        };
+      });
+  }
+  private connectionMember(userId: string, networkId: string) {
+    const user = this.store.users.get(userId);
+    if (
+      !user ||
+      user.visitorNetworkId ||
+      user.accountRole === "platform_admin" ||
+      !this.store.networkMemberships.some(
+        (m) =>
+          m.userId === userId &&
+          m.networkId === networkId &&
+          m.status === "active" &&
+          m.role !== "visitor",
+      )
+    )
+      throw new ForbiddenException(
+        "Vernetzung ist nur zwischen aktiven Teilnehmern dieses Netzwerks möglich.",
+      );
+    return user;
+  }
+  requestConnection(
+    authorization: string | undefined,
+    networkId: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireWritableNetwork(actor.id, networkId);
+    this.connectionMember(actor.id, networkId);
+    const recipientId = requiredText(
+      input.recipientId,
+      "Netzwerkpartner",
+      1,
+      100,
+    );
+    if (recipientId === actor.id)
+      throw new BadRequestException(
+        "Eine Vernetzung mit sich selbst ist nicht möglich.",
+      );
+    this.connectionMember(recipientId, networkId);
+    const existing = [...this.store.networkConnections.values()].find(
+      (c) =>
+        c.networkId === networkId &&
+        [c.senderId, c.recipientId].includes(actor.id) &&
+        [c.senderId, c.recipientId].includes(recipientId),
+    );
+    if (existing) return existing;
+    const now = new Date().toISOString();
+    const record = {
+      id: randomUUID(),
+      networkId,
+      senderId: actor.id,
+      recipientId,
+      status: "pending" as const,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.store.networkConnections.set(record.id, record);
+    this.store.notifications.push({
+      id: randomUUID(),
+      userId: recipientId,
+      type: "network.connection.request",
+      data: {
+        networkId,
+        connectionId: record.id,
+        title: `${actor.firstName} ${actor.lastName} möchte sich mit dir vernetzen und interessiert sich für deine Leistungen.`,
+      },
+      readAt: null,
+      createdAt: now,
+    });
+    return record;
+  }
+  decideConnection(
+    authorization: string | undefined,
+    networkId: string,
+    id: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireWritableNetwork(actor.id, networkId);
+    this.connectionMember(actor.id, networkId);
+    const record = this.store.networkConnections.get(id);
+    if (
+      !record ||
+      record.networkId !== networkId ||
+      record.recipientId !== actor.id
+    )
+      throw new ForbiddenException(
+        "Nur der Empfänger darf diese Anfrage beantworten.",
+      );
+    this.connectionMember(record.senderId, networkId);
+    if (!["accepted", "declined"].includes(String(input.status)))
+      throw new BadRequestException("Ungültige Entscheidung.");
+    if (record.status !== "pending") return record;
+    record.status = input.status as "accepted" | "declined";
+    record.updatedAt = new Date().toISOString();
+    for (const notification of this.store.notifications)
+      if (
+        notification.userId === actor.id &&
+        notification.data.connectionId === id
+      )
+        notification.readAt = record.updatedAt;
+    if (record.status === "accepted")
+      this.store.notifications.push({
+        id: randomUUID(),
+        userId: record.senderId,
+        type: "network.connection.accepted",
+        data: {
+          networkId,
+          connectionId: id,
+          title: `${actor.firstName} ${actor.lastName} hat deine Vernetzungsanfrage angenommen.`,
+        },
+        readAt: null,
+        createdAt: record.updatedAt,
+      });
+    return record;
   }
   networkNotifications(authorization: string | undefined, networkId: string) {
     const actor = this.auth.authenticate(authorization);

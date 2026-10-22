@@ -16,6 +16,7 @@ import type {
   MessageRecord,
   NeedRecord,
   NetworkRecord,
+  NetworkConnectionRecord,
   OperatorMailRecord,
   MaintenanceReceipt,
   NetworkSystemMessageRecord,
@@ -54,6 +55,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   readonly favorites = new Map<string, FavoriteRecord>();
   readonly userPreferences = new Map<string, UserPreferenceRecord>();
   readonly networks = new Map<string, NetworkRecord>();
+  readonly networkConnections = new Map<string, NetworkConnectionRecord>();
   readonly operatorMails = new Map<string, OperatorMailRecord>();
   readonly maintenanceReceipts = new Map<string, MaintenanceReceipt>();
   readonly networkSystemMessages = new Map<
@@ -126,6 +128,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       favorites: [...this.favorites],
       userPreferences: [...this.userPreferences],
       networks: [...this.networks],
+      networkConnections: [...this.networkConnections],
       operatorMails: [...this.operatorMails],
       maintenanceReceipts: [...this.maintenanceReceipts],
       networkSystemMessages: [...this.networkSystemMessages],
@@ -202,6 +205,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     map(this.favorites, state.favorites);
     map(this.userPreferences, state.userPreferences);
     map(this.networks, state.networks);
+    map(this.networkConnections, state.networkConnections);
     map(this.operatorMails, state.operatorMails);
     map(this.maintenanceReceipts, state.maintenanceReceipts);
     map(this.networkSystemMessages, state.networkSystemMessages);
@@ -270,6 +274,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     this.networkBySlug.clear();
     this.networkMemberships.splice(0);
     this.networkContents.clear();
+    this.networkConnections.clear();
     this.networkOrders.clear();
     this.networkSystemMessages.clear();
     this.networkAttendances.clear();

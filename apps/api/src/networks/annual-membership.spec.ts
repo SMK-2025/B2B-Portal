@@ -276,6 +276,77 @@ describe("personal annual membership billing", () => {
       }),
     ).rejects.toThrow();
   });
+  it("keeps connection requests private, deduplicated and separate from chat", async () => {
+    const f = await fixture();
+    const first = [...f.store.users.values()].find(
+      (u) => u.email === "partner@example.de",
+    )!;
+    const second = {
+      ...first,
+      id: "second-partner",
+      email: "second@example.de",
+      firstName: "Robin",
+    };
+    f.store.users.set(second.id, second);
+    f.store.userByEmail.set(second.email, second.id);
+    const membership = f.store.networkMemberships.find(
+      (m) => m.userId === first.id,
+    );
+    // Fixture's member starts at the billing step; grant active test access only.
+    if (membership) membership.status = "active";
+    else
+      f.store.networkMemberships.push({
+        id: "first-test",
+        userId: first.id,
+        organizationId: "",
+        networkId: f.network.id,
+        role: "member",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        invitedByUserId: null,
+        reviewedByUserId: null,
+        reviewedAt: null,
+      });
+    f.store.networkMemberships.push({
+      ...f.store.networkMemberships.find((m) => m.userId === first.id)!,
+      id: "second-test",
+      userId: second.id,
+    });
+    const peer = `Bearer ${(await f.auth.login({ email: second.email, password: "Sicher-Portal-2026!" })).token}`;
+    const request = f.networks.requestConnection(f.member, f.network.id, {
+      recipientId: second.id,
+    });
+    expect(
+      f.networks.requestConnection(peer, f.network.id, {
+        recipientId: first.id,
+      }).id,
+    ).toBe(request.id);
+    expect(f.networks.connections(f.owner, f.network.id)).toEqual([]);
+    expect(
+      f.networks
+        .networkNotifications(peer, f.network.id)
+        .some((n) => n.data.connectionId === request.id),
+    ).toBe(true);
+    expect(() =>
+      f.networks.decideConnection(f.member, f.network.id, request.id, {
+        status: "accepted",
+      }),
+    ).toThrow();
+    expect(
+      f.networks.decideConnection(peer, f.network.id, request.id, {
+        status: "accepted",
+      }).status,
+    ).toBe("accepted");
+    expect(f.store.networkConnections.size).toBe(1);
+    expect(f.store.conversations.size).toBe(0);
+    expect(() =>
+      f.networks.requestConnection(f.member, f.network.id, {
+        recipientId: first.id,
+      }),
+    ).toThrow();
+    expect(f.store.snapshot()).toContain('"networkConnections"');
+  });
   async function fixture() {
     const store = new PortalStore(),
       email = new EmailService();

@@ -50,6 +50,15 @@ export interface UserRecord {
   };
   createdAt: string;
 }
+export interface NetworkConnectionRecord {
+  id: string;
+  networkId: string;
+  senderId: string;
+  recipientId: string;
+  status: "pending" | "accepted" | "declined";
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface OrganizationRecord {
   id: string;

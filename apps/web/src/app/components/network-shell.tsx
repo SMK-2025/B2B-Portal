@@ -411,7 +411,7 @@ export function NetworkShell({
               {access.logoUrl ? <img src={access.logoUrl} alt="" /> : initials}
             </span>
             <div>
-              <strong>{shownName}</strong>
+              <strong>Das Netzwerkpartner-Portal!</strong>
               <small>Partnerportal</small>
             </div>
           </Link>
@@ -441,7 +441,7 @@ export function NetworkShell({
                 </span>
               )}
               <p>
-                <b>{shownName}</b>
+                <b>Das Netzwerkpartner-Portal!</b>
                 <small>Geschlossenes Partnernetzwerk</small>
               </p>
             </div>

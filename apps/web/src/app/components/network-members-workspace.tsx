@@ -1,4 +1,5 @@
 "use client";
+import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
 import {
   useEffect,
@@ -667,6 +668,7 @@ export function ProfileDialog({
             {editControls?.("contact")}
             <h3>Digitale Visitenkarte</h3>
             <PartnerBusinessCard profile={p} />
+            <NetworkConnectionButton userId={member.userId} />
             {access?.enabledModules.includes("communication") &&
               member.userId !== access.currentUserId && (
                 <Link

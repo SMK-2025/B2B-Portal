@@ -86,6 +86,27 @@ export class NetworksController {
   ) {
     return this.networks.networkNotifications(auth, id);
   }
+  @Get(":networkId/connections") connections(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+  ) {
+    return this.networks.connections(auth, id);
+  }
+  @Post(":networkId/connections") requestConnection(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.requestConnection(auth, id, body);
+  }
+  @Post(":networkId/connections/:connectionId/decision") decideConnection(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Param("connectionId") connectionId: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.decideConnection(auth, id, connectionId, body);
+  }
   @Get(":networkId/content/:contentId/thread") thread(
     @Headers("authorization") auth: string | undefined,
     @Param("networkId") id: string,

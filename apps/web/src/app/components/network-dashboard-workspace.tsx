@@ -1,4 +1,5 @@
 "use client";
+import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
@@ -112,6 +113,7 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
   const cards = partners.length
     ? partners.slice(0, 3).map((member) => ({
         id: member.id,
+        userId: member.userId,
         name:
           member.organization!.networkProfile!.contactName ||
           [member.user?.firstName, member.user?.lastName]
@@ -123,6 +125,7 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
       }))
     : data.recentMembers.slice(0, 3).map((member) => ({
         id: member.id,
+        userId: "",
         name: member.name,
         company: "Netzwerkpartner",
         logo: member.logoUrl,
@@ -287,20 +290,25 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
               <div className="loungePartners">
                 {cards.length ? (
                   cards.map((member) => (
-                    <Link href={`${base}/mitglieder` as never} key={member.id}>
-                      <span className="loungePartnerLogo">
-                        {member.logo ? (
-                          <img src={member.logo} alt="" />
-                        ) : (
-                          <b>{member.company.slice(0, 2)}</b>
-                        )}
-                      </span>
-                      <span>
-                        <strong>{member.name}</strong>
-                        <small>{member.company}</small>
-                      </span>
-                      <b aria-hidden="true">↗</b>
-                    </Link>
+                    <div key={member.id} className="loungePartnerConnection">
+                      <Link href={`${base}/mitglieder` as never}>
+                        <span className="loungePartnerLogo">
+                          {member.logo ? (
+                            <img src={member.logo} alt="" />
+                          ) : (
+                            <b>{member.company.slice(0, 2)}</b>
+                          )}
+                        </span>
+                        <span>
+                          <strong>{member.name}</strong>
+                          <small>{member.company}</small>
+                        </span>
+                        <b aria-hidden="true">↗</b>
+                      </Link>
+                      {member.userId && (
+                        <NetworkConnectionButton userId={member.userId} />
+                      )}
+                    </div>
                   ))
                 ) : (
                   <div className="loungeEmpty">

@@ -1,4 +1,5 @@
 "use client";
+import { NetworkConnectionInbox } from "./network-connections";
 import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
@@ -10,7 +11,7 @@ export function NetworkNotifications() {
         id: string;
         readAt: string | null;
         createdAt: string;
-        data: { contentId: string; title: string };
+        data: { contentId?: string; connectionId?: string; title: string };
       }>
     >([]),
     [open, setOpen] = useState(false),
@@ -65,8 +66,10 @@ export function NetworkNotifications() {
               key={i.id}
               className={!i.readAt ? "unread" : ""}
               onClick={() => {
-                setSelected(i.data.contentId);
-                setOpen(false);
+                if (i.data.contentId) {
+                  setSelected(i.data.contentId);
+                  setOpen(false);
+                }
               }}
             >
               <strong>{i.data.title}</strong>
@@ -74,6 +77,7 @@ export function NetworkNotifications() {
             </button>
           ))}
           {!items.length && <p>Noch keine neuen Hinweise.</p>}
+          <NetworkConnectionInbox />
         </section>
       )}
       {selected && (

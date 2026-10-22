@@ -16,6 +16,9 @@ export class HealthController {
         this.store.maintenanceReceipts.get(RESET_TEST_MEMBER_JOB)?.state ||
         "not_run",
       service: "portal-api",
+      apiRelease: "2026-10-22-partner-media-chat",
+      revision: process.env.RAILWAY_GIT_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || null,
+      capabilities: ["partner-hero-image", "partner-onepager-sections", "bundesliga-schedule", "direct-partner-chat"],
       timestamp: new Date().toISOString(),
       maintenance:
         this.store.maintenanceReceipts.get(RETIRE_INITIATOR_JOB)?.state ||

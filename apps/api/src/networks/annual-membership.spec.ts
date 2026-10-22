@@ -208,6 +208,29 @@ describe("personal annual membership billing", () => {
       }),
     ).toThrow();
   });
+  it("shows successful portal logins only to the platform owner", async () => {
+    const f = await fixture();
+    const first = f.networks.adminUsers(f.owner, f.network.id).users[0];
+    expect(first.loginCount).toBe(1);
+    expect(first.lastLoginAt).toBeTruthy();
+    await expect(
+      f.auth.login({ email: "partner@example.de", password: "incorrect" }),
+    ).rejects.toThrow();
+    expect(
+      f.networks.adminUsers(f.owner, f.network.id).users[0].loginCount,
+    ).toBe(1);
+    await f.auth.login({
+      email: "partner@example.de",
+      password: "Sicher-Portal-2026!",
+    });
+    const next = f.networks.adminUsers(f.owner, f.network.id).users[0];
+    expect(next.loginCount).toBe(2);
+    expect(next.loginTrackingStartedAt).toBe(first.loginTrackingStartedAt);
+    expect(next.lastLoginAt! >= first.lastLoginAt!).toBe(true);
+    expect(() => f.networks.adminUsers(f.member, f.network.id)).toThrow();
+    const snapshot = JSON.parse(f.store.snapshot());
+    expect(JSON.stringify(snapshot)).toContain('"loginCount":2');
+  });
   async function fixture() {
     const store = new PortalStore(),
       email = new EmailService();

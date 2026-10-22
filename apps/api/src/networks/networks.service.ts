@@ -423,6 +423,9 @@ export class NetworksService {
         profile: string;
         orderId?: string;
         paymentStatus?: string;
+        loginCount?: number;
+        lastLoginAt?: string | null;
+        loginTrackingStartedAt?: string | null;
       }
     >();
     const addUser = (
@@ -470,6 +473,9 @@ export class NetworksService {
         name: `${user.firstName} ${user.lastName}`.trim(),
         email: user.email,
         role,
+        loginCount: user.loginCount || 0,
+        lastLoginAt: user.lastLoginAt || null,
+        loginTrackingStartedAt: user.loginTrackingStartedAt || null,
         status: !user.emailVerifiedAt
           ? "E-Mail unbestätigt"
           : order?.serviceEndsAt && Date.parse(order.serviceEndsAt) < Date.now()

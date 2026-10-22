@@ -220,6 +220,11 @@ export class AuthService implements OnModuleInit {
       userId: user.id,
       expiresAt: new Date(Date.now() + 8 * 3600_000).toISOString(),
     });
+    const now = new Date().toISOString();
+    user.loginTrackingStartedAt ||= now;
+    user.loginCount = (user.loginCount || 0) + 1;
+    user.lastLoginAt = now;
+    this.store.users.set(user.id, user);
     return { token, expiresInSeconds: 28_800, user: this.publicUser(user) };
   }
 

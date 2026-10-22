@@ -30,6 +30,9 @@ export type ReviewStatus =
 
 export interface UserRecord {
   id: string;
+  loginCount?: number;
+  lastLoginAt?: string | null;
+  loginTrackingStartedAt?: string;
   email: string;
   passwordHash: string;
   firstName: string;

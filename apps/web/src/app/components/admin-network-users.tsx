@@ -11,6 +11,9 @@ type Row = {
   profile: string;
   orderId?: string;
   paymentStatus?: string;
+  loginCount?: number;
+  lastLoginAt?: string | null;
+  loginTrackingStartedAt?: string | null;
 };
 const roles: Record<string, string> = {
   network_admin: "Initiator",
@@ -122,6 +125,13 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
               ausgefüllt und veröffentlicht. Initiatoren benötigen kein
               Unternehmensprofil.
             </p>
+            <p>
+              Login-Daten beziehen sich auf erfolgreiche Anmeldungen am gesamten
+              Portal, nicht auf Seitenaufrufe oder Aufenthaltsdauer. Erfassung
+              ab Einführung der Funktion; frühere Anmeldungen sind nicht
+              rückwirkend verfügbar. Bei gemeinsam genutzten Zugängen ist keine
+              Zuordnung zu einzelnen Personen möglich.
+            </p>
             <div className="adminUsersTable">
               <table>
                 <thead>
@@ -129,6 +139,8 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                     {[
                       "Name",
                       "E-Mail-Adresse",
+                      "Letzter Login",
+                      "Anmeldungen",
                       "Vertragslaufzeit",
                       "Status",
                       "Rolle",
@@ -144,6 +156,26 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                     <tr key={row.email}>
                       <td>{row.name}</td>
                       <td>{row.email}</td>
+                      <td>
+                        {row.lastLoginAt
+                          ? new Date(row.lastLoginAt).toLocaleString("de-DE", {
+                              timeZone: "Europe/Berlin",
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })
+                          : row.loginCount === undefined
+                            ? "–"
+                            : "Noch kein Login erfasst"}
+                      </td>
+                      <td
+                        title={
+                          row.loginTrackingStartedAt
+                            ? `Erfasst seit ${new Date(row.loginTrackingStartedAt).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`
+                            : undefined
+                        }
+                      >
+                        {row.loginCount ?? "–"}
+                      </td>
                       <td>
                         {row.role === "network_admin"
                           ? "Kostenlos · keine Vertragslaufzeit"

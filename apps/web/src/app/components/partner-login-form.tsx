@@ -137,15 +137,6 @@ export function PartnerLoginForm({
           {busy ? "Anmeldung wird geprüft …" : "Sicher anmelden"}
         </button>
       </form>
-      <details className="fieldHint">
-        <summary>Hinweis zur Login-Erfassung</summary>
-        <p>
-          Für die Zugangsverwaltung werden die Anzahl erfolgreicher
-          Portal-Anmeldungen und der Zeitpunkt der letzten Anmeldung gespeichert
-          und dem Plattformbetreiber angezeigt. Seitenaufrufe und
-          Gesprächsinhalte werden dafür nicht ausgewertet.
-        </p>
-      </details>
       {error && (
         <p className="error" role="alert">
           {error}

@@ -183,33 +183,6 @@ export function NetworkMembersWorkspace() {
       );
     }
   }
-  function exportCsv() {
-    const rows = [
-        ["Unternehmen", "Kontakt", "E-Mail", "Rolle", "Status", "Profil"],
-        ...visible.map((member) => [
-          member.organization?.displayName || "",
-          `${member.user?.firstName || ""} ${member.user?.lastName || ""}`.trim(),
-          member.user?.email || "",
-          member.role,
-          labels[member.status],
-          member.organization?.networkProfile?.status === "published"
-            ? "Veröffentlicht"
-            : "Entwurf fehlt",
-        ]),
-      ],
-      csv = rows
-        .map((row) =>
-          row.map((value) => `"${value.replaceAll('"', '""')}"`).join(";"),
-        )
-        .join("\n"),
-      link = document.createElement("a");
-    link.href = URL.createObjectURL(
-      new Blob(["\ufeff", csv], { type: "text/csv" }),
-    );
-    link.download = "netzwerkpartner.csv";
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }
   return (
     <div className="adminNetworkWorkspace">
       <div className="networkMemberToolbar">
@@ -237,23 +210,6 @@ export function NetworkMembersWorkspace() {
           </button>
         )}
       </div>
-      <div className="networkMemberStats">
-        {["Alle", "Aktiv", "Antrag", "Deaktiviert"].map((value) => (
-          <button
-            key={value}
-            className={filter === value ? "active" : ""}
-            onClick={() => setFilter(value)}
-          >
-            <strong>
-              {value === "Alle"
-                ? members.length
-                : members.filter((member) => labels[member.status] === value)
-                    .length}
-            </strong>
-            <span>{value}</span>
-          </button>
-        ))}
-      </div>
       <section className="networkCard">
         <header>
           <div>
@@ -264,9 +220,6 @@ export function NetworkMembersWorkspace() {
               Ansprechpartner kennenzulernen.
             </p>
           </div>
-          <button onClick={exportCsv} disabled={!visible.length}>
-            CSV exportieren
-          </button>
         </header>
         <div className="networkPartnerGrid">
           {visible.map((member) => {

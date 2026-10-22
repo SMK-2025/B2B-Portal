@@ -947,16 +947,13 @@
   }
 }
 .networkPortal .networkCard > header {
-  background: color-mix(
-    in srgb,
-    var(--network-accent, #213b4f) 6%,
-    white
-  ) !important;
+  background: #fff !important;
   border-left: 4px solid var(--network-accent, #213b4f);
 }
 .networkPortal .networkCard > header h2 {
   font-size: 21px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--network-accent, #d90000) !important;
 }
 .networkPortal .networkSidebar nav a {
   font-size: 15px;

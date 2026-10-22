@@ -19,6 +19,7 @@ type Network = {
     welcomeIntro?: string | null;
     bannerTitle?: string | null;
     bannerDescription?: string | null;
+    bannerImageUrl?: string | null;
   };
 };
 type Dashboard = {
@@ -39,6 +40,7 @@ export function NetworkAdministrationWorkspace({
   const [network, setNetwork] = useState<Network | null>(null),
     [dashboard, setDashboard] = useState<Dashboard | null>(null),
     [logo, setLogo] = useState<string | null>(null),
+    [bannerImage, setBannerImage] = useState<string | null>(null),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
   async function load() {
@@ -53,6 +55,7 @@ export function NetworkAdministrationWorkspace({
       });
       setNetwork(n);
       setLogo(n.logoUrl);
+      setBannerImage(n.settings.bannerImageUrl || null);
       setDashboard(
         await portalRequest<Dashboard>(`/networks/${n.id}/dashboard`, {
           token,
@@ -81,6 +84,21 @@ export function NetworkAdministrationWorkspace({
       setLogo(typeof reader.result === "string" ? reader.result : null);
     reader.readAsDataURL(file);
   }
+  function uploadBanner(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (
+      !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
+      file.size > 1_500_000
+    ) {
+      setNotice("Bitte PNG, JPG oder WebP mit maximal 1,5 MB auswählen.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () =>
+      setBannerImage(typeof reader.result === "string" ? reader.result : null);
+    reader.readAsDataURL(file);
+  }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!network) return;
@@ -105,10 +123,15 @@ export function NetworkAdministrationWorkspace({
             welcomeIntro: f.get("welcomeIntro"),
             bannerTitle: f.get("bannerTitle"),
             bannerDescription: f.get("bannerDescription"),
+            bannerImageUrl: bannerImage,
             completeSetup: true,
           },
         },
       );
+      if ((updated.settings.bannerImageUrl || null) !== bannerImage)
+        throw new Error(
+          "Das Titelbild wurde vom Server noch nicht übernommen. Die Bildauswahl bleibt erhalten. Bitte prüfen Sie den Backend-Bereitstellungsstatus.",
+        );
       setNetwork(updated);
       setNotice("Netzwerkauftritt und Einstellungen wurden gespeichert.");
       if (!network.settings.setupCompletedAt)
@@ -302,7 +325,7 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <label className="full">
-            Titel im farbigen Banner
+            Titel im Bildbanner
             <input
               name="bannerTitle"
               maxLength={160}
@@ -311,7 +334,7 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <label className="full">
-            Beschreibung im farbigen Banner
+            Beschreibung im Bildbanner
             <textarea
               name="bannerDescription"
               maxLength={600}
@@ -320,6 +343,39 @@ export function NetworkAdministrationWorkspace({
               placeholder="Informationen, Kontakte und Aktivitäten Ihres geschlossenen Partnerportals an einem Ort."
             />
           </label>
+          <div className="full networkBannerUpload">
+            <strong>Titelbild der Netzwerk-Startseite</strong>
+            <label className="networkBannerUploadTarget">
+              <img
+                src={
+                  bannerImage ||
+                  (slug === "bayer-giants"
+                    ? "/images/network-meeting-sport.webp"
+                    : "/images/network-meeting-club.webp")
+                }
+                alt="Vorschau des Netzwerk-Titelbilds"
+              />
+              <span>Bild auswählen oder wechseln</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={uploadBanner}
+              />
+            </label>
+            <p>
+              Breites Querformat empfohlen · PNG, JPG oder WebP · maximal 1,5
+              MB. Das Bild wird beim Speichern für dieses Netzwerk übernommen.
+            </p>
+            {bannerImage && (
+              <button
+                type="button"
+                className="networkSecondary"
+                onClick={() => setBannerImage(null)}
+              >
+                Standardbild verwenden
+              </button>
+            )}
+          </div>
         </div>
       </section>
       <section className="networkCard">

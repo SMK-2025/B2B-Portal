@@ -20,6 +20,7 @@ type Dashboard = {
     settings?: {
       bannerTitle?: string | null;
       bannerDescription?: string | null;
+      bannerImageUrl?: string | null;
     };
   };
   recentMembers: { id: string; name: string; logoUrl: string | null }[];
@@ -108,27 +109,23 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
     eventImage = itemImage(event),
     recapImage = itemImage(recap);
   const cards = partners.length
-    ? partners
-        .slice(0, 3)
-        .map((member) => ({
-          id: member.id,
-          name:
-            member.organization!.networkProfile!.contactName ||
-            [member.user?.firstName, member.user?.lastName]
-              .filter(Boolean)
-              .join(" ") ||
-            member.organization!.displayName,
-          company: member.organization!.displayName,
-          logo: member.organization!.networkProfile!.logoUrl,
-        }))
-    : data.recentMembers
-        .slice(0, 3)
-        .map((member) => ({
-          id: member.id,
-          name: member.name,
-          company: "Netzwerkpartner",
-          logo: member.logoUrl,
-        }));
+    ? partners.slice(0, 3).map((member) => ({
+        id: member.id,
+        name:
+          member.organization!.networkProfile!.contactName ||
+          [member.user?.firstName, member.user?.lastName]
+            .filter(Boolean)
+            .join(" ") ||
+          member.organization!.displayName,
+        company: member.organization!.displayName,
+        logo: member.organization!.networkProfile!.logoUrl,
+      }))
+    : data.recentMembers.slice(0, 3).map((member) => ({
+        id: member.id,
+        name: member.name,
+        company: "Netzwerkpartner",
+        logo: member.logoUrl,
+      }));
   return (
     <div className="networkLoungeHome">
       {data.network.status !== "trial" &&
@@ -148,9 +145,10 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
       <section className="loungeHero">
         <img
           src={
-            slug === "bayer-giants"
+            data.network.settings?.bannerImageUrl ||
+            (slug === "bayer-giants"
               ? "/images/network-meeting-sport.webp"
-              : "/images/network-meeting-club.webp"
+              : "/images/network-meeting-club.webp")
           }
           alt=""
         />
@@ -170,7 +168,20 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
             </Link>
           )}
         </div>
-        <small>Symbolbild</small>
+        {!data.network.settings?.bannerImageUrl && <small>Symbolbild</small>}
+      </section>
+      <section
+        className="loungeWelcomeText"
+        aria-label="Willkommen im Business-Netzwerk"
+      >
+        <h2>Dein Business-Netzwerk. Persönlich verbunden.</h2>
+        <p>
+          Hier vernetzt du dich einfacher mit den Menschen und Unternehmen aus
+          unserem Business-Bereich. Lerne andere Partner kennen, entdecke ihre
+          Angebote und Leistungen und besuche ihre Unternehmensseiten. Im
+          PartnerChat kommst du direkt ins Gespräch – für neue Kontakte,
+          gemeinsame Ideen und Zusammenarbeit, auch zwischen unseren Treffen.
+        </p>
       </section>
       <div className="loungeGrid">
         {enabled("events") && (
@@ -393,6 +404,44 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                 href={`${base}/rueckblicke` as never}
               >
                 Rückblicke entdecken →
+              </Link>
+            </div>
+          </section>
+        )}
+        {enabled("communication") && (
+          <section className="networkCard loungeCard">
+            <header>
+              <h2>Direkt ins Gespräch</h2>
+            </header>
+            <div className="loungeCardBody">
+              <p className="loungeExcerpt">
+                Eine Frage, eine Idee oder einfach ein persönliches Hallo?
+                Schreibe deinen Netzwerkpartnern direkt im PartnerChat.
+              </p>
+              <Link
+                className="loungeOutlineButton"
+                href={`${base}/kommunikation` as never}
+              >
+                PartnerChat öffnen →
+              </Link>
+            </div>
+          </section>
+        )}
+        {enabled("profiles") && (
+          <section className="networkCard loungeCard">
+            <header>
+              <h2>Leistungen entdecken</h2>
+            </header>
+            <div className="loungeCardBody">
+              <p className="loungeExcerpt">
+                Wer kann dich unterstützen? Entdecke Kompetenzen, Angebote und
+                Unternehmensseiten aus deinem Business-Netzwerk.
+              </p>
+              <Link
+                className="loungeOutlineButton"
+                href={`${base}/mitglieder` as never}
+              >
+                Unternehmen kennenlernen →
               </Link>
             </div>
           </section>

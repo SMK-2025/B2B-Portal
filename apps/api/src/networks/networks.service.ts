@@ -2702,6 +2702,8 @@ export class NetworksService {
         network.settings[key] = value || null;
       }
     }
+    if (input.bannerImageUrl !== undefined)
+      network.settings.bannerImageUrl = partnerHero(input.bannerImageUrl);
     network.updatedAt = new Date().toISOString();
     if (input.completeSetup === true)
       network.settings.setupCompletedAt = network.updatedAt;

@@ -171,6 +171,7 @@ describe("personal annual membership billing", () => {
       welcomeIntro: "Unser Partnerkreis",
       bannerTitle: "Willkommen",
       bannerDescription: "Kontakte und Chancen",
+      bannerImageUrl: "data:image/png;base64,aGVsbG8=",
     };
     f.networks.updateSettings(f.owner, f.network.id, texts);
     expect(
@@ -186,6 +187,19 @@ describe("personal annual membership billing", () => {
       slug: "anderes-textnetzwerk",
     });
     expect(other.settings.welcomeTitle).toBeUndefined();
+    expect(other.settings.bannerImageUrl).toBeUndefined();
+    expect(() =>
+      f.networks.updateSettings(f.member, f.network.id, {
+        bannerImageUrl: null,
+      }),
+    ).toThrow();
+    expect(() =>
+      f.networks.updateSettings(f.owner, f.network.id, {
+        bannerImageUrl: "javascript:alert(1)",
+      }),
+    ).toThrow();
+    f.networks.updateSettings(f.owner, f.network.id, { bannerImageUrl: null });
+    expect(f.network.settings.bannerImageUrl).toBeNull();
     f.networks.updateSettings(f.owner, f.network.id, { welcomeTitle: "  " });
     expect(f.network.settings.welcomeTitle).toBeNull();
     expect(() =>

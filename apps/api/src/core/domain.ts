@@ -152,6 +152,7 @@ export interface NetworkRecord {
     welcomeIntro?: string | null;
     bannerTitle?: string | null;
     bannerDescription?: string | null;
+    bannerImageUrl?: string | null;
     setupCompletedAt?: string | null;
     billingMode?: "standard" | "cooperation_free";
     memberMonthlyNetCents?: number;

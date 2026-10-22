@@ -11,6 +11,7 @@ import {
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
+import { PartnerBusinessCard } from "./partner-business-card";
 export type PartnerPageProfile = {
   heroImageUrl?: string | null;
   sections?: Array<{ title: string; body: string }>;
@@ -711,17 +712,8 @@ export function ProfileDialog({
           </main>
           <aside id="partner-contact" hidden={activeArea !== "contact"}>
             {editControls?.("contact")}
-            <h3>Direkter Kontakt</h3>
-            {p.meetingUrl && (
-              <a
-                className="networkPrimary"
-                href={p.meetingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Online-Termin vereinbaren ↗
-              </a>
-            )}
+            <h3>Digitale Visitenkarte</h3>
+            <PartnerBusinessCard profile={p} />
             {access?.enabledModules.includes("communication") &&
               member.userId !== access.currentUserId && (
                 <Link
@@ -733,24 +725,17 @@ export function ProfileDialog({
                       member.userId) as never
                   }
                 >
-                  Vertrauliches Gespräch beginnen →
+                  PartnerChat beginnen →
                 </Link>
               )}
-            <b>{p.contactName}</b>
-            <span>{p.contactPosition}</span>
-            <a href={`mailto:${p.contactEmail}`}>{p.contactEmail}</a>
-            <a href={`tel:${p.contactPhone}`}>{p.contactPhone}</a>
-            <hr />
-            <p>
-              {p.street}
-              <br />
-              {p.postalCode} {p.city}
-              <br />
-              {p.country}
-            </p>
-            {p.websiteUrl && (
-              <a href={p.websiteUrl} target="_blank" rel="noreferrer">
-                Firmenhomepage öffnen ↗
+            {p.meetingUrl && (
+              <a
+                className="partnerContactDownload"
+                href={p.meetingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Online-Termin vereinbaren ↗
               </a>
             )}
           </aside>

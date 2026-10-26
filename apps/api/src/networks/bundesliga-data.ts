@@ -159,6 +159,13 @@ export async function refreshBundesliga() {
       const games = parseOfficialGames(gamesHtml),
         table = parseOfficialTable(tableHtml),
         now = new Date().toISOString();
+      if (
+        games.filter((g) => g.officialGiantsScore !== null).length <
+          snapshot.games.filter((g) => g.officialGiantsScore !== null).length ||
+        table.reduce((sum, r) => sum + r.played, 0) <
+          snapshot.table.reduce((sum, r) => sum + r.played, 0)
+      )
+        throw new Error("Veralteter Bundesliga-Quellstand");
       snapshot = { games, table, asOf: now.slice(0, 10), fetchedAt: now };
       nextRefresh = Date.now() + 15 * 60_000;
     } catch {

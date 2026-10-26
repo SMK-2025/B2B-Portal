@@ -33,6 +33,12 @@ import {
   BUNDESLIGA_TABLE_SOURCE,
 } from "./bundesliga-schedule";
 import { partnerHero, partnerSections } from "./partner-onepager";
+import {
+  PROB_TABLE,
+  PROB_TABLE_SOURCE,
+  PROB_AS_OF,
+  PROB_LOGOS,
+} from "./prob-table";
 import { enqueueOperatorMail } from "../core/operator-mail";
 import {
   fullPortalModules,
@@ -2241,11 +2247,11 @@ export class NetworksService {
       sourceUrl: football ? BUNDESLIGA_SOURCE : PROB_SOURCE_URL,
       teamName: football ? "Bayer 04 Leverkusen" : "Bayer Giants",
       competition: football ? "Bundesliga" : "ProB Süd",
-      logos: football ? BUNDESLIGA_LOGOS : {},
-      asOf: football ? bundesligaSnapshot().asOf : null,
+      logos: football ? BUNDESLIGA_LOGOS : PROB_LOGOS,
+      asOf: football ? bundesligaSnapshot().asOf : PROB_AS_OF,
       fetchedAt: football ? bundesligaSnapshot().fetchedAt : null,
-      table: football ? bundesligaSnapshot().table : [],
-      tableSourceUrl: football ? BUNDESLIGA_TABLE_SOURCE : null,
+      table: football ? bundesligaSnapshot().table : PROB_TABLE,
+      tableSourceUrl: football ? BUNDESLIGA_TABLE_SOURCE : PROB_TABLE_SOURCE,
       canManage,
       games: (football ? bundesligaSnapshot().games : PROB_GAMES).map((game) =>
         this.proBGameView(networkId, game),

@@ -5,8 +5,8 @@ export const BUNDESLIGA_SOURCE =
   "https://www.bundesliga.com/de/bundesliga/spieltag/2026-2027/bayer-04-leverkusen";
 export const BUNDESLIGA_TABLE_SOURCE =
   "https://www.bundesliga.com/de/bundesliga/tabelle";
-export const BUNDESLIGA_AS_OF = "2026-10-21";
-// Official Bundesliga snapshot, checked 21 October 2026. Dates without a kickoff
+export const BUNDESLIGA_AS_OF = "2026-10-25";
+// Official Bundesliga snapshot, checked 26 October 2026 after matchday 7. Dates without a kickoff
 // remain matchday windows, never advertised as confirmed appointments.
 const clubs = [
   ["FCB", "FC Bayern München", "00000G"],
@@ -43,7 +43,7 @@ const fixtures: Fixture[] = [
   ["2026-09-20", "RBL", true, 2, 0],
   ["2026-10-10", "M05", false, 4, 3],
   ["2026-10-18", "SCF", true, 2, 1],
-  ["2026-10-25T14:30:00Z", "TSG", false],
+  ["2026-10-25T14:30:00Z", "TSG", false, 0, 3],
   ["2026-10-31T14:30:00Z", "VFB", true],
   ["2026-11-08T14:30:00Z", "KOE", false],
   ["2026-11-21T14:30:00Z", "SCP", true],
@@ -89,31 +89,51 @@ export const BUNDESLIGA_GAMES: BundesligaGame[] = fixtures.map(
     officialOpponentScore: opponentScore ?? null,
   }),
 );
+const standingsOrder = [
+  "FCB",
+  "BVB",
+  "SCF",
+  "B04",
+  "RBL",
+  "SVW",
+  "M05",
+  "ELV",
+  "FCA",
+  "TSG",
+  "HSV",
+  "KOE",
+  "SCP",
+  "SGE",
+  "VFB",
+  "S04",
+  "FCU",
+  "BMG",
+];
 const rows = [
-  [4, 2, 0, 22, 5, 14],
-  [4, 2, 0, 11, 4, 14],
-  [4, 1, 1, 15, 6, 13],
-  [4, 1, 1, 16, 9, 13],
-  [3, 1, 2, 14, 10, 10],
-  [3, 1, 2, 12, 11, 10],
-  [3, 0, 3, 16, 11, 9],
-  [2, 3, 1, 12, 12, 9],
-  [3, 0, 3, 6, 15, 9],
-  [2, 2, 2, 16, 12, 8],
-  [2, 2, 2, 10, 16, 8],
-  [2, 1, 3, 8, 11, 7],
-  [2, 0, 4, 8, 10, 6],
-  [2, 0, 4, 11, 14, 6],
-  [1, 2, 3, 4, 7, 5],
-  [1, 2, 3, 5, 9, 5],
-  [1, 2, 3, 5, 17, 5],
-  [0, 0, 6, 8, 20, 0],
+  [5, 2, 0, 25, 6, 17],
+  [5, 2, 0, 12, 4, 17],
+  [4, 1, 2, 16, 9, 13],
+  [4, 1, 2, 16, 12, 13],
+  [4, 0, 3, 20, 11, 12],
+  [3, 3, 1, 15, 14, 12],
+  [3, 1, 3, 16, 13, 10],
+  [3, 1, 3, 12, 15, 10],
+  [2, 3, 2, 17, 13, 9],
+  [3, 0, 4, 14, 14, 9],
+  [3, 0, 4, 6, 16, 9],
+  [2, 2, 3, 8, 11, 8],
+  [2, 2, 3, 6, 9, 8],
+  [2, 2, 3, 10, 17, 8],
+  [2, 0, 5, 10, 13, 6],
+  [1, 3, 3, 4, 7, 6],
+  [1, 3, 3, 6, 18, 6],
+  [1, 0, 6, 11, 22, 3],
 ];
 export const BUNDESLIGA_TABLE = rows.map(
   ([wins, draws, losses, goalsFor, goalsAgainst, points], index) => ({
     rank: index + 1,
-    team: clubs[index][1],
-    logoUrl: BUNDESLIGA_LOGOS[clubs[index][1]],
+    team: name(standingsOrder[index]),
+    logoUrl: BUNDESLIGA_LOGOS[name(standingsOrder[index])],
     played: wins + draws + losses,
     wins,
     draws,

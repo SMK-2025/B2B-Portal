@@ -198,7 +198,7 @@ describe("network tenancy", () => {
     expect(schedule.table).toHaveLength(18);
     expect(
       schedule.games.filter((game) => game.homeScore !== null),
-    ).toHaveLength(6);
+    ).toHaveLength(7);
     expect(schedule.games[5]).toMatchObject({
       homeTeam: "Bayer 04 Leverkusen",
       awayTeam: "Sport-Club Freiburg",

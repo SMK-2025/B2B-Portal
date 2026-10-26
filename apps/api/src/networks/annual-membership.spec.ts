@@ -394,7 +394,7 @@ describe("personal annual membership billing", () => {
     )!.networkProfile!;
     expect(profile).toEqual(organization.networkProfile);
     profile.companyName = "Independent";
-    expect(organization.networkProfile.companyName).toBe("Original");
+    expect(organization.networkProfile!.companyName).toBe("Original");
     expect(() =>
       f.networks.copyPartner(f.owner, target.id, {
         email: user.email,

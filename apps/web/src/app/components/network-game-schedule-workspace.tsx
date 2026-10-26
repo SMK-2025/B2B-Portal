@@ -125,7 +125,9 @@ function BundesligaTable({ data }: { data: Schedule }) {
     <section className="networkCard bundesligaTable" id="tabelle">
       <header>
         <div>
-          <span>BUNDESLIGA {data.season}</span>
+          <span>
+            {data.competition} {data.season}
+          </span>
           <h2>Die Tabelle im Überblick</h2>
         </div>
         <a
@@ -146,7 +148,7 @@ function BundesligaTable({ data }: { data: Schedule }) {
       <div className="bundesligaTableScroll">
         <table>
           <caption className="sr-only">
-            Bundesliga-Tabelle Saison {data.season}
+            {data.competition}-Tabelle Saison {data.season}
           </caption>
           <thead>
             <tr>
@@ -154,9 +156,9 @@ function BundesligaTable({ data }: { data: Schedule }) {
               <th>Verein</th>
               <th>Sp.</th>
               <th>S</th>
-              <th>U</th>
+              {data.competition === "Bundesliga" && <th>U</th>}
               <th>N</th>
-              <th>Tore</th>
+              <th>{data.competition === "Bundesliga" ? "Tore" : "Körbe"}</th>
               <th>Diff.</th>
               <th>Punkte</th>
             </tr>
@@ -173,7 +175,7 @@ function BundesligaTable({ data }: { data: Schedule }) {
                 </th>
                 <td>{row.played}</td>
                 <td>{row.wins}</td>
-                <td>{row.draws}</td>
+                {data.competition === "Bundesliga" && <td>{row.draws}</td>}
                 <td>{row.losses}</td>
                 <td>
                   {row.goalsFor}:{row.goalsAgainst}
@@ -420,7 +422,7 @@ export function NetworkGameScheduleWorkspace() {
           Offizieller Spielplan ↗
         </a>
       </section>
-      {football && <BundesligaTable data={data} />}
+      {data.table.length > 0 && <BundesligaTable data={data} />}
       <nav className="gameScheduleFilters" aria-label="Spielplan filtern">
         <button
           className={filter === "upcoming" ? "active" : ""}

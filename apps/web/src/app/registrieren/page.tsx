@@ -21,6 +21,10 @@ type RegisterResult = {
 
 export default function RegistrationPage() {
   const router = useRouter();
+  const [paymentModel, setPaymentModel] = useState<
+    "individual" | "network" | null
+  >(null);
+  const centralPayment = paymentModel !== "individual";
   const [step, setStep] = useState<Step>("pricing"),
     [loginMode, setLoginMode] = useState(false),
     [message, setMessage] = useState(""),
@@ -213,6 +217,7 @@ export default function RegistrationPage() {
               invite={networkInviteToken}
               loading={loading}
               priceOnly
+              onPaymentModel={setPaymentModel}
             />
           ) : (
             <>
@@ -236,10 +241,15 @@ export default function RegistrationPage() {
                 <article>
                   <b>01</b>
                   <div>
-                    <strong>Mitgliedschaft kennenlernen</strong>
+                    <strong>
+                      {centralPayment
+                        ? "Netzwerk kennenlernen"
+                        : "Mitgliedschaft kennenlernen"}
+                    </strong>
                     <p>
-                      Preis und Leistungen prüfen und Ihren persönlichen Zugang
-                      erstellen.
+                      {centralPayment
+                        ? "Deinen persönlichen Zugang erstellen und die Partner im Netzwerk entdecken."
+                        : "Preis und Leistungen prüfen und Ihren persönlichen Zugang erstellen."}
                     </p>
                   </div>
                 </article>
@@ -344,6 +354,7 @@ export default function RegistrationPage() {
                     invite={networkInviteToken}
                     loading={loading}
                     summaryOnly
+                    onPaymentModel={setPaymentModel}
                     onContinue={() => setStep("account")}
                   />
                 </>
@@ -356,7 +367,9 @@ export default function RegistrationPage() {
                     className="registrationBack"
                     onClick={() => setStep("pricing")}
                   >
-                    ← Preisübersicht erneut ansehen
+                    {centralPayment
+                      ? "← Einladung erneut ansehen"
+                      : "← Preisübersicht erneut ansehen"}
                   </button>
                   <p className="lead">
                     {emailLocked
@@ -461,10 +474,16 @@ export default function RegistrationPage() {
                       auch in Ihren Spam-Ordner.
                     </p>
                     <p>
-                      Danach geht es mit der Anmeldung und Schritt 4 weiter:
-                      Unternehmen, Rechnungsdaten und verbindliche
-                      Jahresbuchung. Die E-Mail-Bestätigung allein schließt
-                      keine Buchung ab.
+                      {centralPayment ? (
+                        "Danach meldest du dich an und ergänzt dein Unternehmen. Anschließend ist dein Partnerzugang bereit."
+                      ) : (
+                        <>
+                          Danach geht es mit der Anmeldung und Schritt 4 weiter:
+                          Unternehmen, Rechnungsdaten und verbindliche
+                          Jahresbuchung. Die E-Mail-Bestätigung allein schließt
+                          keine Buchung ab.
+                        </>
+                      )}
                     </p>
                   </div>
                   {verificationToken ? (
@@ -491,15 +510,27 @@ export default function RegistrationPage() {
               )}
               {step === "organization" && (
                 <>
-                  <h1>Unternehmen & Jahresmitgliedschaft</h1>
+                  <h1>
+                    {centralPayment
+                      ? "Dein Unternehmen"
+                      : "Unternehmen & Jahresmitgliedschaft"}
+                  </h1>
                   <p className="lead">
-                    Prüfen Sie den verbindlichen Preis und ergänzen Sie Ihre
-                    Rechnungsdaten. Danach nutzen Sie alle Funktionen Ihres
-                    geschlossenen Partnerportals sofort.
+                    {centralPayment ? (
+                      "Ergänze dein Unternehmen und starte in deinem geschlossenen Partnernetzwerk."
+                    ) : (
+                      <>
+                        Prüfen Sie den verbindlichen Preis und ergänzen Sie Ihre
+                        Rechnungsdaten. Danach nutzen Sie alle Funktionen Ihres
+                        geschlossenen Partnerportals sofort.
+                      </>
+                    )}
                   </p>
                   <form onSubmit={createOrganization} className="formGrid">
                     <label className="full">
-                      Vollständiger Firmenname / Rechnungsempfänger
+                      {centralPayment
+                        ? "Vollständiger Firmenname"
+                        : "Vollständiger Firmenname / Rechnungsempfänger"}
                       <input
                         name="legalName"
                         required
@@ -519,6 +550,7 @@ export default function RegistrationPage() {
                       invite={networkInviteToken}
                       loading={loading}
                       hidePrice
+                      onPaymentModel={setPaymentModel}
                     />
                   </form>
                 </>

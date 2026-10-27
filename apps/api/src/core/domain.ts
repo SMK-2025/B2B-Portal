@@ -168,6 +168,7 @@ export interface NetworkRecord {
     bannerImageUrl?: string | null;
     setupCompletedAt?: string | null;
     billingMode?: "standard" | "cooperation_free";
+    memberPaymentModel?: "individual" | "network";
     memberMonthlyNetCents?: number;
   };
   createdAt: string;
@@ -177,6 +178,7 @@ export interface NetworkRecord {
 export interface NetworkMembershipRecord {
   id: string;
   complimentaryAccess?: boolean;
+  centrallyFunded?: boolean;
   networkId: string;
   organizationId: string;
   userId: string;

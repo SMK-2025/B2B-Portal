@@ -6,6 +6,60 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("registers centrally funded members without personal billing and keeps individual networks unchanged", async () => {
+    const f = await fixture();
+    const central = f.networks.create(f.owner, {
+      name: "Zentrales Netzwerk",
+      slug: "zentrales-netzwerk",
+      memberPaymentModel: "network",
+    });
+    expect(central.status).toBe("draft");
+    f.networks.setAccess(f.owner, central.id, { status: "active" });
+    const link = f.networks.sharedInvitation(f.owner, central.id, {
+      confirmName: central.name,
+      confirmAgain: central.name,
+    });
+    const personal = f.networks.resolveSharedInvitation({
+      invite: new URL(link.path, "https://example.de").searchParams.get(
+        "invite",
+      )!,
+      email: "partner@example.de",
+    });
+    const quote = f.networks.invitationQuote({ invite: personal.invite });
+    expect(quote.memberPaymentModel).toBe("network");
+    expect(quote).not.toHaveProperty("grossCents");
+    const input = {
+      networkInviteToken: personal.invite,
+      legalName: "Zentral GmbH",
+      displayName: "Zentral GmbH",
+      termsAccepted: true,
+    };
+    expect(() =>
+      f.orgs.create(f.member, { ...input, termsAccepted: false }, true),
+    ).toThrow();
+    f.orgs.create(f.member, input, true);
+    expect(f.store.networkOrders.size).toBe(0);
+    expect(
+      f.store.networkMemberships.find((m) => m.networkId === central.id)
+        ?.centrallyFunded,
+    ).toBe(true);
+    expect(
+      f.networks.publicBySlug(f.member, central.slug).enabledModules,
+    ).toContain("documents");
+    expect(
+      f.networks.adminList(f.owner).find((n) => n.id === central.id)
+        ?.centrallyFundedMembers,
+    ).toBe(1);
+    expect(
+      f.networks.adminUsers(f.owner, central.id).users[0].centrallyFunded,
+    ).toBe(true);
+    expect(() =>
+      f.orgs.create(f.member, { ...input, networkInviteToken: f.invite }, true),
+    ).toThrow();
+    expect(
+      f.networks.invitationQuote({ invite: f.invite }).monthlyNetCents,
+    ).toBe(6900);
+  });
   it("reuses a verified account for another invitation only with its correct password", async () => {
     const f = await fixture();
     const count = f.store.users.size;

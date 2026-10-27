@@ -51,8 +51,7 @@ function Confirmation() {
         <h1>E-Mail bestätigt</h1>
         <p className="lead">
           Ihre E-Mail-Adresse ist bestätigt. Melden Sie sich jetzt an, um die
-          Registrierung fortzusetzen. Als Partner ergänzen Sie anschließend
-          Unternehmen und Rechnungsdaten und bestätigen Ihren Jahresbeitrag.
+          Registrierung fortzusetzen und Ihr Unternehmen im Netzwerk anzulegen.
         </p>
         <Link
           className="primary linkButton"

@@ -9,6 +9,7 @@ type Quote = {
   vatCents: number;
   grossCents: number;
   initiator: boolean;
+  memberPaymentModel?: "individual" | "network";
 };
 const money = (n: number) =>
   (n / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
@@ -19,6 +20,7 @@ export function MemberAnnualRegistrationFields({
   onContinue,
   priceOnly = false,
   hidePrice = false,
+  onPaymentModel,
 }: {
   invite: string;
   loading: boolean;
@@ -26,6 +28,7 @@ export function MemberAnnualRegistrationFields({
   onContinue?: () => void;
   priceOnly?: boolean;
   hidePrice?: boolean;
+  onPaymentModel?: (model: "individual" | "network") => void;
 }) {
   const [quote, setQuote] = useState<Quote | null>(null),
     [error, setError] = useState("");
@@ -33,19 +36,20 @@ export function MemberAnnualRegistrationFields({
     setError("");
     setQuote(null);
     portalRequest<Quote>("/networks/invitations/quote", { body: { invite } })
-      .then(setQuote)
+      .then((value) => {
+        setQuote(value);
+        onPaymentModel?.(value.memberPaymentModel || "individual");
+      })
       .catch((e) => setError(e.message));
   }
   useEffect(load, [invite]);
   if (!quote)
     return (
       <div className="full">
-        <p role="status">
-          {error || "Verbindlicher Mitgliedspreis wird geladen …"}
-        </p>
+        <p role="status">{error || "Einladung wird geprüft …"}</p>
         {error && (
           <button type="button" onClick={load}>
-            Preis erneut laden
+            Einladung erneut prüfen
           </button>
         )}
       </div>
@@ -64,6 +68,49 @@ export function MemberAnnualRegistrationFields({
         )}
       </div>
     );
+  if (quote.memberPaymentModel === "network") {
+    if (priceOnly)
+      return (
+        <div>
+          <h2>Dein Unternehmen im Netzwerk</h2>
+          <p>
+            Lerne andere Partner kennen, präsentiere dein Unternehmen und komme
+            direkt ins Gespräch.
+          </p>
+        </div>
+      );
+    if (summaryOnly)
+      return (
+        <div className="full">
+          <p>
+            Deine persönliche Einladung zu {quote.networkName}. Erstelle deinen
+            Zugang und werde Teil unseres Business-Netzwerks.
+          </p>
+          {onContinue && (
+            <button type="button" className="primary wide" onClick={onContinue}>
+              Weiter · Zugang erstellen
+            </button>
+          )}
+        </div>
+      );
+    return (
+      <>
+        <label className="full memberAnnualConsent">
+          <input type="checkbox" name="termsAccepted" required />
+          <span>
+            Ich akzeptiere die{" "}
+            <Link href="/agb" target="_blank">
+              Nutzungsbedingungen
+            </Link>
+            .
+          </span>
+        </label>
+        <button className="primary full" disabled={loading}>
+          {loading ? "Zugang wird eingerichtet …" : "Registrierung abschließen"}
+        </button>
+      </>
+    );
+  }
   if (summaryOnly)
     return (
       <div className="full registrationPriceStep">

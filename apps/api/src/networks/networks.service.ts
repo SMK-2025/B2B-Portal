@@ -223,7 +223,10 @@ export class NetworksService {
       networkName: network.name,
       networkSlug: network.slug,
       initiator: invite.data.role === "network_admin",
-      ...pricing(network),
+      memberPaymentModel: network.settings.memberPaymentModel || "individual",
+      ...(network.settings.memberPaymentModel === "network"
+        ? {}
+        : pricing(network)),
     };
   }
   memberPricing(
@@ -367,6 +370,8 @@ export class NetworksService {
         admissionRules: null,
         setupCompletedAt: null,
         billingMode: "standard",
+        memberPaymentModel:
+          input.memberPaymentModel === "network" ? "network" : "individual",
         memberMonthlyNetCents:
           input.memberMonthlyNetCents === undefined
             ? 6900
@@ -397,6 +402,12 @@ export class NetworksService {
       return {
         ...network,
         memberPrice: pricing(network),
+        centrallyFundedMembers: this.store.networkMemberships.filter(
+          (m) =>
+            m.networkId === network.id &&
+            m.centrallyFunded &&
+            m.status === "active",
+        ).length,
         administrators: this.store.networkMemberships
           .filter(
             (m) =>
@@ -566,6 +577,7 @@ export class NetworksService {
         profile: string;
         orderId?: string;
         paymentStatus?: string;
+        centrallyFunded?: boolean;
         loginCount?: number;
         lastLoginAt?: string | null;
         loginTrackingStartedAt?: string | null;
@@ -611,6 +623,12 @@ export class NetworksService {
           profile.contactPhone,
         ].every((v) => Boolean(v?.trim()));
       rows.set(user.email.toLowerCase(), {
+        centrallyFunded: this.store.networkMemberships.some(
+          (m) =>
+            m.networkId === networkId &&
+            m.userId === userId &&
+            m.centrallyFunded,
+        ),
         orderId: order?.id,
         paymentStatus: order?.paymentStatus,
         name: `${user.firstName} ${user.lastName}`.trim(),
@@ -3725,7 +3743,7 @@ export class NetworksService {
           m.userId === userId &&
           m.networkId === networkId &&
           m.status === "active" &&
-          m.complimentaryAccess,
+          (m.complimentaryAccess || m.centrallyFunded),
       )
     )
       return network.enabledModules;

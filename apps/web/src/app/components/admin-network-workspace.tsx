@@ -18,11 +18,13 @@ type Network = {
   settings: {
     selfRegistration: boolean;
     billingMode?: "standard" | "cooperation_free";
+    memberPaymentModel?: "individual" | "network";
   };
   administrator: {
     userId: string;
     user?: { firstName: string; lastName: string; email: string };
   } | null;
+  centrallyFundedMembers?: number;
   administrators?: Array<{
     user?: { firstName: string; lastName: string; email: string };
   }>;
@@ -104,6 +106,7 @@ export function AdminNetworkWorkspace() {
           slug: form.get("slug"),
           legalName: form.get("legalName"),
           websiteUrl: form.get("websiteUrl"),
+          memberPaymentModel: form.get("memberPaymentModel"),
           memberMonthlyNetCents: Math.round(
             Number(form.get("memberMonthlyPrice")) * 100,
           ),
@@ -382,6 +385,11 @@ export function AdminNetworkWorkspace() {
                   <small>Mitgliederregistrierung</small>
                   <b>Nur per Einladung</b>
                   <span>
+                    {network.settings.memberPaymentModel === "network"
+                      ? `Netzwerk zahlt zentral · ${network.centrallyFundedMembers || 0} aktive Mitglieder`
+                      : "Mitglieder zahlen selbst"}
+                  </span>
+                  <span>
                     Keine freie Anmeldung oder öffentliche Auffindbarkeit
                   </span>
                 </article>
@@ -594,9 +602,32 @@ export function AdminNetworkWorkspace() {
                     required
                   />
                   <small>
-                    Pro Partnermitglied, zwölf Monate im Voraus zzgl. 19 % MwSt.
-                    Initiator kostenlos. Später unter „Anmeldungen &
-                    Mitgliedsjahre“ änderbar.
+                    Bei Einzelzahlung: pro Partnermitglied, zwölf Monate im
+                    Voraus zzgl. 19 % MwSt. Bei zentraler Zahlung erfolgt die
+                    Netzwerkrechnung separat gemäß Vereinbarung; dieser Preis
+                    wird den Mitgliedern nicht angezeigt. Initiator kostenlos.
+                    Später unter „Anmeldungen & Mitgliedsjahre“ änderbar.
+                  </small>
+                </label>
+                <label>
+                  Wer bezahlt die Netzwerkmitgliedschaften?
+                  <select
+                    name="memberPaymentModel"
+                    required
+                    defaultValue="individual"
+                  >
+                    <option value="individual">
+                      Mitglieder zahlen selbst – persönliche Jahresrechnung
+                    </option>
+                    <option value="network">
+                      Netzwerk zahlt zentral – keine Zahlung durch Mitglieder
+                    </option>
+                  </select>
+                  <small>
+                    Bei zentraler Zahlung sehen Mitglieder keine Preise oder
+                    Rechnungsfelder. Die Abrechnung mit dem Netzwerk erfolgt
+                    separat gemäß eurer Vereinbarung; es werden keine
+                    persönlichen Mitgliedsrechnungen erstellt.
                   </small>
                 </label>
                 <div className="adminNetworkDialogActions">

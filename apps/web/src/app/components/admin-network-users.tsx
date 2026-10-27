@@ -11,6 +11,7 @@ type Row = {
   profile: string;
   orderId?: string;
   paymentStatus?: string;
+  centrallyFunded?: boolean;
   loginCount?: number;
   lastLoginAt?: string | null;
   loginTrackingStartedAt?: string | null;
@@ -286,9 +287,11 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                       <td>
                         {row.role === "network_admin" || row.role === "visitor"
                           ? "Kostenlos · keine Vertragslaufzeit"
-                          : row.startsAt
-                            ? `${date(row.startsAt)} – ${date(row.endsAt)}`
-                            : "Noch keine Buchung"}
+                          : row.centrallyFunded
+                            ? "Zentrale Abrechnung mit Netzwerk"
+                            : row.startsAt
+                              ? `${date(row.startsAt)} – ${date(row.endsAt)}`
+                              : "Noch keine Buchung"}
                       </td>
                       <td>{states[row.status] || row.status}</td>
                       <td>{roles[row.role] || row.role}</td>

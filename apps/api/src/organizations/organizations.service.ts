@@ -95,9 +95,20 @@ export class OrganizationsService {
       throw new ForbiddenException(
         "Du bist diesem Netzwerk bereits zugeordnet. Eine Sperre kann nur die Verwaltung aufheben.",
       );
-    const memberOrder = requestedNetwork
-      ? annualOrder(requestedNetwork, user.id, input)
-      : null;
+    const centrallyFunded =
+      requestedNetwork?.settings.memberPaymentModel === "network";
+    if (centrallyFunded && requestedNetwork.status !== "active")
+      throw new BadRequestException(
+        "Das Partnernetzwerk ist noch nicht aktiviert.",
+      );
+    if (centrallyFunded && input.termsAccepted !== true)
+      throw new BadRequestException(
+        "Bitte die Nutzungsbedingungen bestätigen.",
+      );
+    const memberOrder =
+      requestedNetwork && !centrallyFunded
+        ? annualOrder(requestedNetwork, user.id, input)
+        : null;
     const websiteUrl = safeUrl(input.websiteUrl);
     const organization: OrganizationRecord = {
       id: randomUUID(),
@@ -137,6 +148,7 @@ export class OrganizationsService {
         userId: user.id,
         role,
         status: "active",
+        ...(centrallyFunded ? { centrallyFunded: true } : {}),
         invitedByUserId: invitation?.createdByUserId || null,
         reviewedByUserId: invitation?.createdByUserId || null,
         reviewedAt: now,
@@ -144,6 +156,13 @@ export class OrganizationsService {
         updatedAt: now,
       });
       if (invitation) invitation.data.usedAt = now;
+      if (centrallyFunded)
+        enqueueOperatorMail(
+          this.store,
+          `central-registration:${requestedNetwork.id}:${user.id}`,
+          "Neue zentral finanzierte Netzwerkmitgliedschaft",
+          `Netzwerk: ${requestedNetwork.name}\nUnternehmen: ${organization.legalName}\nNutzer: ${user.email}\nAbrechnung ausschließlich mit dem Netzwerk gemäß Vereinbarung. Keine Rechnung und keine Zahlungspflicht für dieses Mitglied.`,
+        );
     }
     if (memberOrder && requestedNetwork) {
       memberOrder.organizationId = organization.id;

@@ -299,6 +299,9 @@ export function NetworkModuleWorkspace({
         options: form.get("options"),
       };
       if (!file) delete data.file;
+      if (module === 'veranstaltungen' && slug === 'unternehmerfreunde') {
+        for (const field of ['imageUrl','timezone','publicLocation','organizer','participationTerms','cost','registrationUrl','eventStatus']) data[field]=form.get(field);
+      }
       const created = await portalRequest<Item>(
         `/networks/${networkId}/content${editing ? "/" + editing.id : ""}`,
         {
@@ -826,6 +829,7 @@ export function NetworkModuleWorkspace({
               </div>
               {module === "veranstaltungen" && (
                 <>
+                  {slug === 'unternehmerfreunde' && <fieldset><legend>Angaben für eine spätere öffentliche Homepage-Freigabe</legend><p>Diese Angaben werden erst nach gesonderter Freigabe durch die Netzwerkleitung öffentlich.</p>{[['imageUrl','Bild-URL (HTTPS, mit geklärten Rechten)'],['timezone','Zeitzone (z. B. Europe/Berlin)'],['publicLocation','Öffentlicher Ort / gekennzeichnetes Online-Format (keine internen Einwahllinks)'],['organizer','Veranstalter'],['participationTerms','Teilnahmebedingungen'],['cost','Kosten (ausdrücklich angeben)'],['registrationUrl','Öffentlicher Anmeldelink (optional)']].map(([field,label])=><label key={field}>{label}<input name={field} defaultValue={String(editing?.data[field] || (field==='timezone'?'Europe/Berlin':''))}/></label>)}<label>Terminstatus<select name="eventStatus" defaultValue={String(editing?.data.eventStatus||'scheduled')}><option value="scheduled">Geplant</option><option value="rescheduled">Termin geändert</option><option value="cancelled">Abgesagt</option></select></label></fieldset>}
                   <div>
                     <label>
                       Beginn

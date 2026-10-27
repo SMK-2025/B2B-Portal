@@ -390,7 +390,7 @@ export function NetworkShell({
             <b>Netzwerk-Verwaltung</b>
             <small>Initiator</small>
           </summary>
-          <nav>{visibleAdmin.map(itemLink)}</nav>
+          <nav>{visibleAdmin.map(itemLink)}{slug==='unternehmerfreunde' && <a href={`/portal/netzwerk/${slug}/veroeffentlichungen`}>Öffentliche Homepage-Freigaben</a>}</nav>
         </details>
       )}
     </>

@@ -6,6 +6,80 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("reuses a verified account for another invitation only with its correct password", async () => {
+    const f = await fixture();
+    const count = f.store.users.size;
+    await expect(
+      f.auth.register(
+        {
+          email: "partner@example.de",
+          password: "wrong-password",
+          networkInviteToken: f.invite,
+        },
+        true,
+      ),
+    ).rejects.toThrow();
+    const result = await f.auth.register(
+      {
+        email: "partner@example.de",
+        password: "Sicher-Portal-2026!",
+        networkInviteToken: f.invite,
+      },
+      true,
+    );
+    expect(result.verificationRequired).toBe(false);
+    expect("token" in result && result.token).toBeTruthy();
+    expect(f.store.users.size).toBe(count);
+    f.orgs.create(f.member, f.input, true);
+    const second = f.networks.create(f.owner, {
+      name: "Zweites Netzwerk",
+      slug: "zweites-netzwerk",
+    });
+    f.networks.setAccess(f.owner, second.id, { status: "active" });
+    const link = f.networks.sharedInvitation(f.owner, second.id, {
+      confirmName: second.name,
+      confirmAgain: second.name,
+    });
+    const shared = new URL(link.path, "https://example.de").searchParams.get(
+      "invite",
+    )!;
+    const personal = f.networks.resolveSharedInvitation({
+      invite: shared,
+      email: "partner@example.de",
+    });
+    const secondLogin = await f.auth.register(
+      {
+        email: "partner@example.de",
+        password: "Sicher-Portal-2026!",
+        networkInviteToken: personal.invite,
+      },
+      true,
+    );
+    f.orgs.create(
+      `Bearer ${"token" in secondLogin ? secondLogin.token : ""}`,
+      { ...f.input, networkInviteToken: personal.invite },
+      true,
+    );
+    expect(f.networks.mine(f.member)).toHaveLength(2);
+    expect(
+      new Set(
+        f.store.networkMemberships
+          .filter((m) => m.userId === f.registered.user.id)
+          .map((m) => m.organizationId),
+      ).size,
+    ).toBe(2);
+    expect(f.store.users.size).toBe(count);
+    await expect(
+      f.auth.register(
+        {
+          email: "partner@example.de",
+          password: "Sicher-Portal-2026!",
+          networkInviteToken: f.invite,
+        },
+        true,
+      ),
+    ).rejects.toThrow();
+  });
   it("saves editable onepager sections and hero as a draft without publishing or changing other networks", async () => {
     const f = await fixture();
     f.orgs.create(f.member, f.input, true);

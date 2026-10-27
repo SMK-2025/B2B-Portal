@@ -6,10 +6,15 @@ import { SiteFooter, SiteHeader } from "../components/site-chrome";
 import { useNetworkBrand } from "../components/network-auth-brand";
 import { MemberAnnualRegistrationFields } from "../components/member-annual-registration-fields";
 import { PartnerLoginForm } from "../components/partner-login-form";
-import { getPortalSession, portalRequest } from "../lib/portal-api";
+import {
+  getPortalSession,
+  portalRequest,
+  savePortalSession,
+} from "../lib/portal-api";
 
 type Step = "pricing" | "account" | "verify" | "organization" | "submitted";
 type RegisterResult = {
+  token?: string;
   verificationToken?: string;
   verificationRequired: boolean;
 };
@@ -74,6 +79,12 @@ export default function RegistrationPage() {
           networkInviteToken: invite,
         },
       });
+      if (result.token && !result.verificationRequired) {
+        savePortalSession(result.token, false);
+        setSessionToken(result.token);
+        setStep("organization");
+        return;
+      }
       setVerificationToken(result.verificationToken || "");
       setStep("verify");
     } catch (error) {
@@ -387,6 +398,11 @@ export default function RegistrationPage() {
                     </label>
                     <label className="full">
                       Passwort
+                      <small>
+                        Schon ein Konto? Verwende dein bestehendes Passwort –
+                        dieselbe E-Mail-Adresse ist in mehreren Netzwerken
+                        möglich.
+                      </small>
                       <input
                         name="password"
                         type="password"

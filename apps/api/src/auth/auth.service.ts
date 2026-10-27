@@ -119,10 +119,36 @@ export class AuthService implements OnModuleInit {
       throw new BadRequestException(
         "Die Netzwerkeinladung ist ungültig, abgelaufen oder für eine andere E-Mail-Adresse ausgestellt.",
       );
-    if (this.store.userByEmail.has(email))
-      throw new ConflictException(
-        "Für diese E-Mail-Adresse besteht bereits ein Konto.",
-      );
+    const existingId = this.store.userByEmail.get(email);
+    if (existingId) {
+      const existing = this.store.users.get(existingId);
+      if (!networkInvitation || !existing)
+        throw new ConflictException(
+          "Für diese E-Mail-Adresse besteht bereits ein Konto. Bitte anmelden.",
+        );
+      // Joining another network reuses the authenticated identity, never its
+      // password or profile supplied by an unauthenticated registration form.
+      if (existing.visitorNetworkId || existing.accountRole !== "user")
+        throw new BadRequestException(
+          "Bitte einen persönlichen Nutzerzugang verwenden.",
+        );
+      if (
+        this.store.networkMemberships.some(
+          (m) =>
+            m.userId === existingId &&
+            m.networkId === networkInvitation.networkId,
+        )
+      )
+        throw new ConflictException(
+          "Du bist diesem Netzwerk bereits zugeordnet. Bitte anmelden; eine Sperre kann nur die Verwaltung aufheben.",
+        );
+      const session = await this.login({ email, password: input.password });
+      return {
+        ...session,
+        verificationRequired: false,
+        verificationToken: undefined,
+      };
+    }
     const password = requiredText(input.password, "Passwort", 12, 200);
     validatePasswordStrength(password);
     const user = {

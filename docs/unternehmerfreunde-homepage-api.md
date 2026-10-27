@@ -42,3 +42,11 @@ Neue Felder sind optional und privat. Vorhandene Persistenz speichert die Freiga
 ## Abnahme vor Bereitstellung
 
 Backend und Portaloberfläche gemeinsam in einer isolierten Vorschau bereitstellen. Tests mit fiktiven Datensätzen durchführen: leerer Standard, einzelne Freigabe, falscher Mandant, private Kontakte, interne Veranstaltung, Änderung, Absage, Widerruf und API-Ausfall. Der Änderungsvorschlag setzt selbst keine echte Freigabe. End-to-End-Prüfung der produktiven externen API steht bis zu deren Bereitstellung aus. Kein automatisches Merge oder produktives Deployment.
+
+## Ergänzung: strukturierte Veranstaltungsangaben
+
+Neue optionale, einzeln auswählbare Freigabefelder: `eventKind` (`breakfast` oder `other`), `attendanceMode` (`offline`, `online`, `hybrid`), `venue` (Objekt mit `name`, `streetAddress`, `postalCode`, `addressLocality`, `addressCountry` als ISO-Ländercode), `onlineUrl` (ausschließlich öffentliche HTTPS-Adresse), `previousStartDate` (ISO-Zeitstempel mit Zeitzone bei Verschiebung).
+
+Alle stammen aus gesonderten öffentlichen Eingabefeldern im Veranstaltungseditor. Interne Ortsangaben und Einwahldaten werden nicht übernommen. Bestehende Freigaben werden nicht erweitert: neue Felder benötigen eigene Auswahl. Ein Frühstück erscheint auf der Startseite nur mit freigegebener Terminart breakfast. Für Event-Markup benötigt die Homepage eine vollständige Anschrift bei offline, eine ausdrücklich öffentliche Online-Adresse bei online, beides bei hybrid. Fehlende Daten werden nicht erfunden; ohne sie bleibt die normale Veranstaltungsseite erhalten. Bei rescheduled ist für Markup zusätzlich previousStartDate erforderlich. Beginn benötigt einen ISO-Zeitstempel mit Z oder explizitem UTC-Offset, die benannte Zeitzone muss gültig sein.
+
+Serverseitige Homepage-Memoisierung gilt nur innerhalb einer einzelnen Anfrage, nicht dauerhaft. Bei API-Ausfall werden betroffene Inhaltsseiten und Sitemap als Fehler ausgeliefert; kein Ersatz durch vermeintlich gelöschte Datensätze. Suchmaschinenentfernung und bereits offene Browser benötigen separat Aktualisierung. Die öffentliche API bleibt nur lesend; alle Schreib- und Freigabeaktionen erfordern die bestehende geschützte Administration.

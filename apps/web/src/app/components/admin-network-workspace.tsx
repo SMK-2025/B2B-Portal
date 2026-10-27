@@ -372,7 +372,9 @@ export function AdminNetworkWorkspace() {
                     {trialEnd
                       ? `Testzugang bis ${trialEnd}`
                       : network.status === "active"
-                        ? "Initiator kostenlos · Mitglieder buchen ihren Zugang selbst"
+                        ? network.settings.memberPaymentModel === "network"
+                          ? "Initiator kostenlos · Netzwerk übernimmt die Mitgliedskosten"
+                          : "Initiator kostenlos · Mitglieder buchen ihren Zugang selbst"
                         : "Nicht öffentlich nutzbar"}
                   </span>
                 </article>

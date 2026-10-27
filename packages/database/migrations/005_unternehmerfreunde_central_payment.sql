@@ -8,8 +8,7 @@ BEGIN
   FROM portal_state s,
        jsonb_array_elements(s.payload->'networks') AS entry
   WHERE s.id = 'primary'
-    AND entry->1->>'slug' = 'unternehmerfreunde'
-    AND lower(entry->1->>'name') = 'unternehmerfreunde nrw e.v.';
+    AND entry->1->>'slug' = 'unternehmerfreunde';
 
   IF matches <> 1 THEN
     RAISE EXCEPTION 'Expected exactly one Unternehmerfreunde NRW e.V. network; found %', matches;
@@ -19,7 +18,6 @@ BEGIN
   SET payload = jsonb_set(s.payload, '{networks}', (
     SELECT jsonb_agg(
       CASE WHEN entry->1->>'slug' = 'unternehmerfreunde'
-        AND lower(entry->1->>'name') = 'unternehmerfreunde nrw e.v.'
       THEN jsonb_set(entry, '{1,settings}',
         coalesce(entry->1->'settings', '{}'::jsonb)
         || jsonb_build_object('memberPaymentModel', 'network'))

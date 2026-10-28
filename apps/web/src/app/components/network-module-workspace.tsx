@@ -19,6 +19,8 @@ type Item = {
   description: string;
   status: Status;
   startsAt: string | null;
+  endsAt?: string | null;
+  homepageGrants?: { events?: { enabled: boolean } };
   visibility: "members" | "administrators";
   updatedAt: string;
   data: Record<string, any>;
@@ -320,6 +322,13 @@ export function NetworkModuleWorkspace({
         ])
           data[field] = form.get(field);
         const publicImage = form.get("homepageImage");
+        data.publicAttendanceMode =
+          form.get("mode") === "Online"
+            ? "online"
+            : form.get("mode") === "Hybrid"
+              ? "hybrid"
+              : "offline";
+        data.location = form.get("publicLocation") || editing?.data.location || "";
         if (publicImage instanceof File && publicImage.size) {
           if (
             !["image/png", "image/jpeg", "image/webp"].includes(
@@ -356,6 +365,11 @@ export function NetworkModuleWorkspace({
               : null,
             visibility: form.get("visibility"),
             data,
+            ...(module === "veranstaltungen" &&
+            slug === "unternehmerfreunde" &&
+            access?.isInitiator
+              ? { homepagePublish: form.get("homepagePublish") === "on" }
+              : {}),
           },
         },
       );
@@ -638,6 +652,16 @@ export function NetworkModuleWorkspace({
                 <span className={`networkMemberStatus ${item.status}`}>
                   {labels[item.status]}
                 </span>
+                {module === "veranstaltungen" && (
+                  <span className="networkContentCategory">
+                    {item.data.eventStatus === "cancelled"
+                      ? "Abgesagt"
+                      : item.startsAt &&
+                          Date.parse(item.endsAt || item.startsAt) < Date.now()
+                        ? "Bereits stattgefunden"
+                        : "Bevorstehend"}
+                  </span>
+                )}
                 {typeof item.data.category === "string" &&
                   item.data.category && (
                     <span className="networkContentCategory">
@@ -866,99 +890,86 @@ export function NetworkModuleWorkspace({
               {module === "veranstaltungen" && (
                 <>
                   {slug === "unternehmerfreunde" && (
-                    <fieldset>
-                      <legend>
-                        Angaben für eine spätere öffentliche Homepage-Freigabe
-                      </legend>
-                      <p>
-                        Diese Angaben werden erst nach gesonderter Freigabe
-                        durch die Netzwerkleitung öffentlich.
-                      </p>
-                      {[
-                        ["timezone", "Zeitzone (z. B. Europe/Berlin)"],
-                        [
-                          "publicLocation",
-                          "Öffentlicher Ort / gekennzeichnetes Online-Format (keine internen Einwahllinks)",
-                        ],
-                        ["organizer", "Veranstalter"],
-                        ["participationTerms", "Teilnahmebedingungen"],
-                        ["cost", "Kosten (ausdrücklich angeben)"],
-                        [
-                          "registrationUrl",
-                          "Öffentlicher Anmeldelink (optional)",
-                        ],
-                        [
-                          "publicVenueName",
-                          "Öffentlicher Veranstaltungsort: Name",
-                        ],
-                        [
-                          "publicStreetAddress",
-                          "Öffentliche Straße / Hausnummer",
-                        ],
-                        ["publicPostalCode", "Öffentliche Postleitzahl"],
-                        ["publicAddressLocality", "Öffentliche Stadt"],
-                        ["publicAddressCountry", "Ländercode (z. B. DE)"],
-                        [
-                          "publicOnlineUrl",
-                          "Öffentliche Online-URL (keine privaten Zugangsdaten)",
-                        ],
-                        [
-                          "publicPreviousStartDate",
-                          "Ursprünglicher Beginn bei Verschiebung (ISO mit Zeitzone)",
-                        ],
-                      ].map(([field, label]) => (
-                        <label key={field}>
-                          {label}
+                    <>
+                      <label>
+                        Veranstalter
+                        <input
+                          name="organizer"
+                          defaultValue={String(
+                            editing?.data.organizer ||
+                              access?.networkName ||
+                              "",
+                          )}
+                        />
+                      </label>
+                      <div>
+                        <label>
+                          Kosten
                           <input
-                            name={field}
-                            defaultValue={String(
-                              editing?.data[field] ||
-                                (field === "timezone" ? "Europe/Berlin" : ""),
-                            )}
+                            name="cost"
+                            placeholder="z. B. Kostenfrei oder 15 € pro Person"
+                            defaultValue={String(editing?.data.cost || "")}
                           />
                         </label>
-                      ))}
+                        <label>
+                          Terminart
+                          <select
+                            name="publicEventKind"
+                            defaultValue={String(
+                              editing?.data.publicEventKind || "other",
+                            )}
+                          >
+                            <option value="other">Andere Veranstaltung</option>
+                            <option value="breakfast">
+                              Unternehmerfrühstück
+                            </option>
+                          </select>
+                        </label>
+                      </div>
                       <label>
-                        Bild für die öffentliche Homepage (PNG/JPEG/WebP,
-                        maximal 1,5 MB)
+                        Teilnahmebedingungen
+                        <input
+                          name="participationTerms"
+                          placeholder="z. B. Anmeldung bis zum Vortag erforderlich"
+                          defaultValue={String(
+                            editing?.data.participationTerms || "",
+                          )}
+                        />
+                      </label>
+                      <label>
+                        Veranstaltungsbild
                         <input
                           type="file"
                           name="homepageImage"
                           accept="image/png,image/jpeg,image/webp"
                         />
+                        <small>
+                          PNG, JPEG oder WebP, maximal 1,5 MB. Verwende nur
+                          Bilder, die du veröffentlichen darfst.
+                        </small>
                       </label>
-                      <p>
-                        Nur Bilder mit geklärten Veröffentlichungsrechten
-                        hochladen. Externe Bildadressen werden nicht öffentlich
-                        ausgeliefert.
-                      </p>
+                      {editing?.data.imageUrl && (
+                        <img
+                          src={String(editing.data.imageUrl)}
+                          alt="Aktuelles Veranstaltungsbild"
+                          style={{
+                            maxWidth: 240,
+                            maxHeight: 140,
+                            objectFit: "cover",
+                            borderRadius: 12,
+                          }}
+                        />
+                      )}
                       <label>
-                        Terminart
-                        <select
-                          name="publicEventKind"
+                        Öffentlicher Anmeldelink (optional)
+                        <input
+                          name="registrationUrl"
+                          type="url"
                           defaultValue={String(
-                            editing?.data.publicEventKind || "other",
+                            editing?.data.registrationUrl || "",
                           )}
-                        >
-                          <option value="other">Andere Veranstaltung</option>
-                          <option value="breakfast">
-                            Unternehmerfrühstück
-                          </option>
-                        </select>
-                      </label>
-                      <label>
-                        Öffentliches Format
-                        <select
-                          name="publicAttendanceMode"
-                          defaultValue={String(
-                            editing?.data.publicAttendanceMode || "",
-                          )}
-                        >
-                          <option value="">Noch nicht angegeben</option>
-                          <option value="offline">Vor Ort</option>
-                          <option value="online">Online</option>
-                          <option value="hybrid">Hybrid</option>
-                        </select>
+                          placeholder="https://…"
+                        />
                       </label>
                       <label>
                         Terminstatus
@@ -969,11 +980,51 @@ export function NetworkModuleWorkspace({
                           )}
                         >
                           <option value="scheduled">Geplant</option>
-                          <option value="rescheduled">Termin geändert</option>
+                          <option value="rescheduled">Termin verschoben</option>
                           <option value="cancelled">Abgesagt</option>
                         </select>
                       </label>
-                    </fieldset>
+                      <details>
+                        <summary>
+                          Weitere Orts- und Terminangaben (optional)
+                        </summary>
+                        {[
+                          ["publicVenueName", "Name des Veranstaltungsorts"],
+                          ["publicStreetAddress", "Straße / Hausnummer"],
+                          ["publicPostalCode", "Postleitzahl"],
+                          ["publicAddressLocality", "Stadt"],
+                          ["publicAddressCountry", "Ländercode"],
+                          [
+                            "publicOnlineUrl",
+                            "Öffentliche Online-Veranstaltungsseite (kein privater Einwahllink)",
+                          ],
+                          [
+                            "publicPreviousStartDate",
+                            "Ursprünglicher Beginn bei Verschiebung (mit Zeitzone)",
+                          ],
+                        ].map(([field, label]) => (
+                          <label key={field}>
+                            {label}
+                            <input
+                              name={field}
+                              defaultValue={String(
+                                editing?.data[field] ||
+                                  (field === "publicAddressCountry"
+                                    ? "DE"
+                                    : ""),
+                              )}
+                            />
+                          </label>
+                        ))}
+                      </details>
+                      <input
+                        type="hidden"
+                        name="timezone"
+                        value={String(
+                          editing?.data.timezone || "Europe/Berlin",
+                        )}
+                      />
+                    </>
                   )}
                   <div>
                     <label>
@@ -999,7 +1050,21 @@ export function NetworkModuleWorkspace({
                     </label>
                     <label>
                       Ende
-                      <input name="endsAt" type="datetime-local" />
+                      <input
+                        name="endsAt"
+                        type="datetime-local"
+                        defaultValue={
+                          editing?.endsAt
+                            ? new Date(
+                                Date.parse(editing.endsAt) -
+                                  new Date(editing.endsAt).getTimezoneOffset() *
+                                    60000,
+                              )
+                                .toISOString()
+                                .slice(0, 16)
+                            : ""
+                        }
+                      />
                     </label>
                   </div>
                   <div>
@@ -1015,10 +1080,20 @@ export function NetworkModuleWorkspace({
                       </select>
                     </label>
                     <label>
-                      Ort oder Einwahllink
+                      {slug === "unternehmerfreunde"
+                        ? "Veranstaltungsort / öffentliche Ortsangabe"
+                        : "Ort oder Einwahllink"}
                       <input
-                        name="location"
-                        defaultValue={String(editing?.data.location || "")}
+                        name={
+                          slug === "unternehmerfreunde"
+                            ? "publicLocation"
+                            : "location"
+                        }
+                        defaultValue={String(
+                          slug === "unternehmerfreunde"
+                            ? editing?.data.publicLocation || ""
+                            : editing?.data.location || "",
+                        )}
                       />
                     </label>
                   </div>
@@ -1136,6 +1211,31 @@ export function NetworkModuleWorkspace({
                   </select>
                 </label>
               </div>
+              {module === "veranstaltungen" &&
+                slug === "unternehmerfreunde" &&
+                access?.isInitiator && (
+                  <label className="memberAnnualConsent">
+                    <input
+                      type="checkbox"
+                      name="homepagePublish"
+                      defaultChecked={
+                        editing?.homepageGrants?.events?.enabled === true
+                      }
+                    />
+                    <span>
+                      Auf der Homepage als Veranstaltung veröffentlichen
+                      <small>
+                        Mit dem Häkchen gibst du diese Veranstaltungsangaben und
+                        das Bild öffentlich frei und bestätigst die
+                        Veröffentlichungsrechte. Ohne Häkchen bleibt die
+                        Veranstaltung nur im Portal. Zum Veröffentlichen bitte
+                        Bild, Ort, Veranstalter, Kosten und Teilnahmebedingungen
+                        ausfüllen sowie „Alle Partner“ und „Veröffentlicht“
+                        wählen.
+                      </small>
+                    </span>
+                  </label>
+                )}
               <div className="adminNetworkDialogActions">
                 <button type="button" onClick={() => setDialog(false)}>
                   Abbrechen

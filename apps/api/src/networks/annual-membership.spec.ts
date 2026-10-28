@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
 import { PortalStore } from "../core/portal.store";
@@ -6,6 +6,63 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("publishes or withdraws an event in the same save without partial writes or member escalation", async () => {
+    vi.stubEnv("PUBLIC_HOMEPAGE_MEDIA_ORIGIN", "https://api.example.test");
+    const f = await fixture();
+    f.orgs.create(f.member, f.input, true);
+    f.store.networkBySlug.delete(f.network.slug);
+    f.network.slug = "unternehmerfreunde";
+    f.store.networkBySlug.set(f.network.slug, f.network.id);
+    const input = {
+      type: "event",
+      title: "Gemeinsames Frühstück",
+      description: "Wir lernen uns kennen.",
+      status: "published",
+      visibility: "members",
+      startsAt: "2026-10-10T08:00:00Z",
+      endsAt: "2026-10-10T10:00:00Z",
+      homepagePublish: true,
+      data: {
+        category: "Netzwerkveranstaltung",
+        timezone: "Europe/Berlin",
+        publicLocation: "Wiehl",
+        organizer: "Unternehmerfreunde",
+        participationTerms: "Anmeldung erforderlich",
+        cost: "Kostenfrei",
+        eventStatus: "scheduled",
+        imageUrl:
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=",
+      },
+    };
+    const before = f.store.networkContents.size;
+    expect(() =>
+      f.networks.createContent(f.member, f.network.id, input),
+    ).toThrow();
+    expect(f.store.networkContents.size).toBe(before);
+    expect(() =>
+      f.networks.createContent(f.owner, f.network.id, {
+        ...input,
+        data: { ...input.data, cost: "" },
+      }),
+    ).toThrow();
+    expect(f.store.networkContents.size).toBe(before);
+    const event = f.networks.createContent(f.owner, f.network.id, input);
+    expect(event.homepageGrants?.events?.enabled).toBe(true);
+    expect(() =>
+      f.networks.updateContent(f.owner, f.network.id, event.id, {
+        title: "Nicht gespeichert",
+        homepagePublish: true,
+        data: { cost: "" },
+      }),
+    ).toThrow();
+    expect(f.store.networkContents.get(event.id)?.title).toBe(input.title);
+    const revoked = f.networks.updateContent(f.owner, f.network.id, event.id, {
+      homepagePublish: false,
+    });
+    expect(revoked.homepageGrants?.events?.enabled).toBe(false);
+    expect(revoked.homepageGrants?.recaps).toBeUndefined();
+  });
   it("registers centrally funded members without personal billing and keeps individual networks unchanged", async () => {
     const f = await fixture();
     const central = f.networks.create(f.owner, {

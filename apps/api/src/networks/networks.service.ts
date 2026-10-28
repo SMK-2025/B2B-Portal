@@ -33,6 +33,7 @@ import {
   BUNDESLIGA_TABLE_SOURCE,
 } from "./bundesliga-schedule";
 import { partnerHero, partnerSections } from "./partner-onepager";
+import { homepageFields, projectHomepage } from "./homepage-publication";
 import {
   PROB_TABLE,
   PROB_TABLE_SOURCE,
@@ -2028,6 +2029,7 @@ export class NetworksService {
     };
     if (type === "event" && !this.isNetworkManager(user.id, networkId))
       record.status = "draft";
+    this.applyEventHomepagePublication(user.id, network, record, input);
     this.store.networkContents.set(record.id, record);
     this.notifyContent(
       record,
@@ -2135,9 +2137,63 @@ export class NetworksService {
       record.data = { ...record.data, ...data };
     }
     record.updatedAt = new Date().toISOString();
+    this.applyEventHomepagePublication(
+      user.id,
+      this.raw(networkId),
+      record,
+      input,
+    );
     this.store.networkContents.set(record.id, record);
     this.notifyContent(record, user.id, "network.content.updated");
     return record;
+  }
+
+  private applyEventHomepagePublication(
+    userId: string,
+    network: NetworkRecord,
+    record: NetworkContentRecord,
+    input: Record<string, unknown>,
+  ) {
+    if (!Object.hasOwn(input, "homepagePublish")) return;
+    if (
+      typeof input.homepagePublish !== "boolean" ||
+      network.slug !== "unternehmerfreunde" ||
+      record.type !== "event"
+    )
+      throw new BadRequestException(
+        "Öffentliche Veranstaltungsfreigabe ist hier nicht verfügbar.",
+      );
+    if (!this.isNetworkInitiator(userId, network.id))
+      throw new ForbiddenException(
+        "Nur die Netzwerkleitung darf Veranstaltungen auf der Homepage veröffentlichen.",
+      );
+    const grant = {
+      enabled: input.homepagePublish,
+      fields: [...homepageFields.events],
+      rightsConfirmed: input.homepagePublish,
+      approvedBy: userId,
+      updatedAt: new Date().toISOString(),
+    };
+    const candidate = {
+      ...record,
+      homepageGrants: { ...record.homepageGrants, events: grant },
+    };
+    if (
+      grant.enabled &&
+      (network.status !== "active" || !projectHomepage("events", candidate))
+    )
+      throw new BadRequestException(
+        "Für die Homepage bitte Bild, Beginn, Ort, Veranstalter, Kosten und Teilnahmebedingungen ausfüllen sowie Alle Partner und Veröffentlicht wählen. Die Veranstaltung wurde nicht gespeichert.",
+      );
+    record.homepageGrants = candidate.homepageGrants;
+    this.operatorAudit(
+      userId,
+      network.id,
+      grant.enabled
+        ? "homepage.publication.approved"
+        : "homepage.publication.revoked",
+      { kind: "events", recordId: record.id, fields: grant.fields },
+    );
   }
 
   deleteContent(

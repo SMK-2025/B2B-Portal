@@ -176,6 +176,21 @@ export interface NetworkRecord {
 }
 
 export interface NetworkMembershipRecord {
+  homepageHidden?: boolean;
+  homepageGrants?: Partial<
+    Record<
+      "members" | "events" | "recaps",
+      {
+        enabled: boolean;
+        fields: string[];
+        rightsConfirmed: boolean;
+        updatedAt: string;
+        approvedBy: string;
+        consentUserId?: string;
+        consentMembershipId?: string;
+      }
+    >
+  >;
   id: string;
   complimentaryAccess?: boolean;
   centrallyFunded?: boolean;
@@ -227,6 +242,20 @@ export type NetworkContentType =
   | "need"
   | "service";
 export interface NetworkContentRecord {
+  homepageGrants?: Partial<
+    Record<
+      "members" | "events" | "recaps",
+      {
+        enabled: boolean;
+        fields: string[];
+        rightsConfirmed: boolean;
+        updatedAt: string;
+        approvedBy: string;
+        consentUserId?: string;
+        consentMembershipId?: string;
+      }
+    >
+  >;
   id: string;
   networkId: string;
   type: NetworkContentType;

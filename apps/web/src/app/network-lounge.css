@@ -1226,3 +1226,15 @@
     width: 100%;
   }
 }
+.homepageConsentPanel { background: #fff; border: 1px solid #e1e6ef; border-radius: 20px; padding: clamp(20px, 3vw, 32px); margin-top: 24px; color: #17324a; }
+.homepageConsentPanel h2 { color: var(--network-primary, #536bdb); font-size: 24px; }
+.homepageConsentCard { border-top: 1px solid #e1e6ef; margin-top: 24px; padding-top: 24px; }
+.homepageConsentCard fieldset { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; border: 1px solid #e1e6ef; border-radius: 14px; padding: 20px; margin: 20px 0; }
+.homepageConsentCard label { display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
+.homepageConsentCard input[type="checkbox"] { width: 18px; height: 18px; flex: 0 0 18px; margin-top: 4px; accent-color: var(--network-primary, #536bdb); }
+.homepageConsentActions { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0; }
+.homepageConsentActions button { border: 1px solid #d4ddeb; background: #fff; color: #17324a; border-radius: 10px; padding: 12px 18px; min-height: 44px; cursor: pointer; }
+.homepageConsentActions .portalPrimary { background: var(--network-primary, #536bdb); color: #fff; border-color: transparent; }
+.homepageConsentActions button:disabled { opacity: .5; cursor: not-allowed; }
+.homepageConsentCard [aria-label="Öffentliche Profilvorschau"] { background: #f5f7fb; border-radius: 14px; padding: 24px; overflow-wrap: anywhere; }
+@media (max-width: 620px) { .homepageConsentCard fieldset { grid-template-columns: 1fr; } .homepageConsentActions button { width: 100%; } }

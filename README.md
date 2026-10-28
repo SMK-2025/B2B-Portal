@@ -1,3 +1,5 @@
+> Öffentliche Unternehmerfreunde-Anbindung: [Prüfstand und offene Staging-Abnahme](docs/unternehmerfreunde-abnahme.md). Profilzustimmung nur durch Mitglieder; frühere Administratorfreigaben gelten nicht als Zustimmung.
+
 # B2B-Dienstleistungsportal
 
 Technische Grundlage für ein geschlossenes, KI-gestütztes B2B-Netzwerk. Unternehmen veröffentlichen vertrauliche Bedarfe, prüfen passende Dienstleister zuerst und geben einzelne Matches gezielt frei.

@@ -299,6 +299,45 @@ export function NetworkModuleWorkspace({
         options: form.get("options"),
       };
       if (!file) delete data.file;
+      if (module === "veranstaltungen" && slug === "unternehmerfreunde") {
+        for (const field of [
+          "timezone",
+          "publicLocation",
+          "organizer",
+          "participationTerms",
+          "cost",
+          "registrationUrl",
+          "eventStatus",
+          "publicEventKind",
+          "publicAttendanceMode",
+          "publicOnlineUrl",
+          "publicPreviousStartDate",
+          "publicVenueName",
+          "publicStreetAddress",
+          "publicPostalCode",
+          "publicAddressLocality",
+          "publicAddressCountry",
+        ])
+          data[field] = form.get(field);
+        const publicImage = form.get("homepageImage");
+        if (publicImage instanceof File && publicImage.size) {
+          if (
+            !["image/png", "image/jpeg", "image/webp"].includes(
+              publicImage.type,
+            ) ||
+            publicImage.size > 1_500_000
+          )
+            throw Error(
+              "Öffentliches Bild: PNG, JPEG oder WebP bis 1,5 MB erforderlich.",
+            );
+          data.imageUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = reject;
+            reader.readAsDataURL(publicImage);
+          });
+        }
+      }
       const created = await portalRequest<Item>(
         `/networks/${networkId}/content${editing ? "/" + editing.id : ""}`,
         {
@@ -826,6 +865,116 @@ export function NetworkModuleWorkspace({
               </div>
               {module === "veranstaltungen" && (
                 <>
+                  {slug === "unternehmerfreunde" && (
+                    <fieldset>
+                      <legend>
+                        Angaben für eine spätere öffentliche Homepage-Freigabe
+                      </legend>
+                      <p>
+                        Diese Angaben werden erst nach gesonderter Freigabe
+                        durch die Netzwerkleitung öffentlich.
+                      </p>
+                      {[
+                        ["timezone", "Zeitzone (z. B. Europe/Berlin)"],
+                        [
+                          "publicLocation",
+                          "Öffentlicher Ort / gekennzeichnetes Online-Format (keine internen Einwahllinks)",
+                        ],
+                        ["organizer", "Veranstalter"],
+                        ["participationTerms", "Teilnahmebedingungen"],
+                        ["cost", "Kosten (ausdrücklich angeben)"],
+                        [
+                          "registrationUrl",
+                          "Öffentlicher Anmeldelink (optional)",
+                        ],
+                        [
+                          "publicVenueName",
+                          "Öffentlicher Veranstaltungsort: Name",
+                        ],
+                        [
+                          "publicStreetAddress",
+                          "Öffentliche Straße / Hausnummer",
+                        ],
+                        ["publicPostalCode", "Öffentliche Postleitzahl"],
+                        ["publicAddressLocality", "Öffentliche Stadt"],
+                        ["publicAddressCountry", "Ländercode (z. B. DE)"],
+                        [
+                          "publicOnlineUrl",
+                          "Öffentliche Online-URL (keine privaten Zugangsdaten)",
+                        ],
+                        [
+                          "publicPreviousStartDate",
+                          "Ursprünglicher Beginn bei Verschiebung (ISO mit Zeitzone)",
+                        ],
+                      ].map(([field, label]) => (
+                        <label key={field}>
+                          {label}
+                          <input
+                            name={field}
+                            defaultValue={String(
+                              editing?.data[field] ||
+                                (field === "timezone" ? "Europe/Berlin" : ""),
+                            )}
+                          />
+                        </label>
+                      ))}
+                      <label>
+                        Bild für die öffentliche Homepage (PNG/JPEG/WebP,
+                        maximal 1,5 MB)
+                        <input
+                          type="file"
+                          name="homepageImage"
+                          accept="image/png,image/jpeg,image/webp"
+                        />
+                      </label>
+                      <p>
+                        Nur Bilder mit geklärten Veröffentlichungsrechten
+                        hochladen. Externe Bildadressen werden nicht öffentlich
+                        ausgeliefert.
+                      </p>
+                      <label>
+                        Terminart
+                        <select
+                          name="publicEventKind"
+                          defaultValue={String(
+                            editing?.data.publicEventKind || "other",
+                          )}
+                        >
+                          <option value="other">Andere Veranstaltung</option>
+                          <option value="breakfast">
+                            Unternehmerfrühstück
+                          </option>
+                        </select>
+                      </label>
+                      <label>
+                        Öffentliches Format
+                        <select
+                          name="publicAttendanceMode"
+                          defaultValue={String(
+                            editing?.data.publicAttendanceMode || "",
+                          )}
+                        >
+                          <option value="">Noch nicht angegeben</option>
+                          <option value="offline">Vor Ort</option>
+                          <option value="online">Online</option>
+                          <option value="hybrid">Hybrid</option>
+                        </select>
+                      </label>
+                      <label>
+                        Terminstatus
+                        <select
+                          name="eventStatus"
+                          defaultValue={String(
+                            editing?.data.eventStatus || "scheduled",
+                          )}
+                        >
+                          <option value="scheduled">Geplant</option>
+                          <option value="rescheduled">Termin geändert</option>
+                          <option value="cancelled">Abgesagt</option>
+                        </select>
+                      </label>
+                    </fieldset>
+                  )}
                   <div>
                     <label>
                       Beginn

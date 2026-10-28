@@ -541,7 +541,9 @@ export class NetworksService {
       userId: user.id,
       role: "member",
       status: "active",
-      complimentaryAccess: true,
+      ...(target.settings.memberPaymentModel === "network"
+        ? { centrallyFunded: true }
+        : { complimentaryAccess: true }),
       invitedByUserId: actor.id,
       reviewedByUserId: actor.id,
       reviewedAt: now,

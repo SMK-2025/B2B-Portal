@@ -521,6 +521,22 @@ describe("personal annual membership billing", () => {
       copied.organizationId,
     )!.networkProfile!;
     expect(profile).toEqual(organization.networkProfile);
+    expect(copied.homepageGrants).toBeUndefined();
+    const central = f.networks.create(f.owner, {
+      name: "Central copy",
+      slug: "central-copy",
+      memberPaymentModel: "network",
+    });
+    f.networks.setAccess(f.owner, central.id, { status: "active" });
+    f.networks.copyPartner(f.owner, central.id, {
+      email: user.email,
+      sourceSlug: f.network.slug,
+    });
+    const centralCopy = f.store.networkMemberships.find(
+      (m) => m.networkId === central.id && m.userId === user.id,
+    )!;
+    expect(centralCopy.centrallyFunded).toBe(true);
+    expect(centralCopy.homepageGrants).toBeUndefined();
     profile.companyName = "Independent";
     expect(organization.networkProfile!.companyName).toBe("Original");
     expect(() =>

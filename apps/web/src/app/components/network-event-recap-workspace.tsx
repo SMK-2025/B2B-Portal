@@ -64,7 +64,10 @@ export function NetworkEventRecapWorkspace() {
       return;
     }
     for (const file of files) {
-      if (!file.type.startsWith("image/") || file.size > 1_500_000) {
+      if (
+        !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
+        file.size > 1_500_000
+      ) {
         setNotice("Jedes Bild muss eine Bilddatei mit maximal 1,5 MB sein.");
         continue;
       }
@@ -223,6 +226,13 @@ export function NetworkEventRecapWorkspace() {
               <div>
                 <span>VERANSTALTUNGSRÜCKBLICK</span>
                 <h2>{editing.title}</h2>
+                <p>
+                  Dieser Editor speichert den Rückblick zunächst im
+                  geschlossenen Portal. Die öffentliche Homepage-Freigabe
+                  erfolgt separat unter „Öffentliche Homepage-Freigaben“.
+                  Interne Ergebnisse und nächste Schritte werden nie öffentlich
+                  übertragen.
+                </p>
               </div>
               <button type="button" onClick={() => setEditing(null)}>
                 ×

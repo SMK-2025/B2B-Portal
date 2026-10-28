@@ -46,6 +46,13 @@ import {
 export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   private readonly logger = new Logger(PortalStore.name);
   private sql: import("postgres").Sql | null = null;
+  private homepagePersistenceFailed = false;
+  private pendingPersistenceWrites = 0;
+  homepageReadsSafe(): boolean {
+    return (
+      !this.homepagePersistenceFailed && this.pendingPersistenceWrites === 0
+    );
+  }
   private writeQueue: Promise<void> = Promise.resolve();
   readonly users = new Map<string, UserRecord>();
   readonly userByEmail = new Map<string, string>();
@@ -157,6 +164,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   async persist(): Promise<void> {
     if (!this.sql) return;
     const payload = this.snapshot();
+    this.pendingPersistenceWrites++;
     this.writeQueue = this.writeQueue.then(async () => {
       await this.sql!.unsafe(
         `INSERT INTO portal_state (id,payload,revision,updated_at)
@@ -168,7 +176,14 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
         [payload],
       );
     });
-    return this.writeQueue;
+    return this.writeQueue
+      .catch((error) => {
+        this.homepagePersistenceFailed = true;
+        throw error;
+      })
+      .finally(() => {
+        this.pendingPersistenceWrites--;
+      });
   }
 
   private async restore(): Promise<void> {

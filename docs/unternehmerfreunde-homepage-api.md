@@ -1,52 +1,19 @@
-# Öffentliche Homepage-API – Änderungsvorschlag
+# Öffentliche Homepage-API – lokaler Entwurf, 28.10.2026
 
-Stand: 27.10.2026. Keine Produktionsfreigaben gesetzt. Keine Buchungen, Rechnungen, Mitgliederkonten oder Finanzierungsmodelle geändert.
+Verbindlicher Prüfstand und Betriebsgrenzen: [Integrationsabnahme](unternehmerfreunde-abnahme.md).
+Diese Fassung ersetzt die bisherige administratorseitige Profilfreigabe. Alte Administratorfreigaben sind keine Nutzerzustimmung. Keine produktive Integration freigegeben; isoliertes Staging fehlt.
 
-## Routen
+Basis: /api/networks/homepage/unternehmerfreunde. Andere Netzwerke sind ausgeschlossen.
 
-- `GET /api/networks/homepage/unternehmerfreunde/feed`: anonyme, ausschließlich lesende öffentliche Projektion. Keine Mitgliedersitzung erforderlich oder zulässig als Integrationsvoraussetzung.
-- `GET /api/networks/homepage/unternehmerfreunde/manage`: vorhandene Portal-Anmeldung und Netzwerkleitung oder Plattformadministration erforderlich.
-- `POST /api/networks/homepage/unternehmerfreunde/{members|events|recaps}/{id}`: gleiche Berechtigungsprüfung; ID muss zum ausgewählten Netzwerk gehören. Body: `{ "enabled": true, "fields": ["title", "description"], "rightsConfirmed": true }`. Widerruf: `{ "enabled": false }`.
-- Oberfläche: `/portal/netzwerk/unternehmerfreunde/veroeffentlichungen`, verlinkt in der Netzwerkverwaltung.
+- GET /feed: anonymer, strikt projizierter Feed gemäß gemeinsamem homepage-v1.json.
+- GET /my-profiles: angemeldetes Mitglied sieht ausschließlich eigene Mitgliedschaften und Zustimmungen.
+- POST /members/:id/preview: eigene Feldauswahl als Vorschau ohne Speicherung.
+- POST /members/:id/consent: ausschließlich Eigentümer der Mitgliedschaft; Body { "enabled": true, "fields": ["title", "description"], "rightsConfirmed": true }. Widerruf { "enabled": false }. Standard ausgeschaltet. Zustimmung an Nutzer-ID UND Mitgliedschafts-ID gebunden.
+- POST /members/:id/moderation: zuständige Netzwerkleitung/Plattformverwaltung; ausschließlich { "hidden": true } oder false. Keine Zustimmung oder Felderweiterung möglich.
+- GET /manage: berechtigte Redaktion prüft aktuelle öffentliche Projektionen.
+- POST /{events|recaps}/:id: separate redaktionelle Feldauswahl, Freigabe und Widerruf. Der bisherige Administrator-Endpunkt für members verweigert Änderungen.
+- GET /{members|events|recaps}/:id/media/:field: nur ausdrücklich freigegebene gespeicherte PNG/JPEG/WebP, Freigabeprüfung pro Abruf, keine externen Abrufe/Redirects. Nach Widerruf 404.
 
-Andere Slugs ergeben 404. Die Freigabe gilt nur für das aktive Netzwerk `unternehmerfreunde`. Bestehende Freigaben innerhalb des geschlossenen Portals werden nicht migriert. Fehlendes `homepageGrants` bedeutet privat.
+Alle verändernden und Vorschau-Endpunkte verwenden die vorhandene Portal-Anmeldung. Die Homepage erhält keinen Mitgliederzugang. Lesen ist ohne Cache; fehlende Konfiguration und technische Fehler ergeben auf dynamischen Homepage-Seiten und Sitemap 500, fehlende Datensätze in einem gültigen Feed 404. Ungültige Gesamtantwort und ungültiger Datensatz sind diagnostisch getrennt; beide stoppen den Feed.
 
-## Datenformat v1
-
-Antwort: `{version:1, network:"unternehmerfreunde", generatedAt:ISO8601, members:[], events:[], recaps:[]}`. Jeder Eintrag enthält `id`, `network`, `publication:{enabled:true}`, `updatedAt` und nur ausgewählte erlaubte Felder. Keine ungefilterten Datenobjekte oder Profil-Spreads.
-
-| Sammlung | Erlaubte Felder |
-|---|---|
-| members | title, description, industry, services, website, image, contact.email und contact.phone jeweils einzeln freigegeben; contact.public=true |
-| events | title, description, image, startsAt, endsAt, timezone, location, organizer, terms, cost, registrationUrl, status |
-| recaps | title, description, date, images |
-
-Mitglieder werden aus aktiven Mitgliedschaften und veröffentlichten Unternehmensprofilen gelesen. Besucher und Netzwerkadministratoren werden nicht als öffentliche Mitglieder ausgegeben. Kontakte fehlen standardmäßig. Freigaben sind an die konkrete Netzwerkmitgliedschaft gebunden, nicht global an das Unternehmen.
-
-Veranstaltungen und Rückblicke basieren auf vorhandenen Event-Datensätzen. Interne Verwaltungsveranstaltungen, Entwürfe und archivierte Einträge bleiben ausgeschlossen. Rückblicktext kommt aus `data.recapSummary`, Bilder aus `data.recapImages`. Es werden keine Teilnehmerlisten, Rückblick-Ergebnisnotizen, Nachrichten, Rollen, Zahlungsdaten oder internen IDs übertragen.
-
-Die Veranstaltungsbearbeitung bietet ergänzende Datenfelder: `imageUrl`, `timezone`, `publicLocation`, `organizer`, `participationTerms`, `cost`, `registrationUrl`, `eventStatus`. Öffentlicher Ort ist bewusst getrennt vom internen Ort/Einwahllink. Bild, Titel, Beschreibung, Beginn, Zeitzone, öffentlicher Ort, Veranstalter, Bedingungen, Kosten und Status sind für die Freigabe Pflicht. Absagen bleiben als `cancelled` sichtbar; kein Anmeldebutton wird angezeigt. Änderungen werden aus den aktuellen Quelldaten gelesen.
-
-Bilder: HTTPS-URLs oder bereits vorhandene Base64-PNG/JPEG/WebP bis 2 MB; keine SVG-/HTML-Data-URLs. Rückblicke maximal sechs Bilder. Rechte müssen ausdrücklich bestätigt werden. Für produktiven Betrieb werden optimierte Bilder auf einem freigegebenen Medienhost empfohlen; dessen Konfiguration ist noch abzustimmen. URL-Parameter mit Token, Passwort, Secret, Einladung oder Session werden ausgeschlossen.
-
-## Freigaben und Widerruf
-
-Neue Felder sind optional und privat. Vorhandene Persistenz speichert die Freigabe im jeweiligen Quell-Datensatz; vorhandener PersistenceInterceptor persistiert Änderungen. Jede Änderung schreibt ein internes Audit-Ereignis mit Bearbeiter, Zeitpunkt, Datensatz und Feldauswahl. Diese Metadaten werden nicht öffentlich geliefert. Netzwerkleitung bestätigt die dokumentierte Veröffentlichungsberechtigung; das Kontrollkästchen ersetzt keine tatsächliche Einwilligung oder sonstige Rechtsgrundlage.
-
-`Cache-Control: no-store, max-age=0`, `CDN-Cache-Control: no-store`; Homepage verwendet serverseitiges `fetch(...,{cache:'no-store'})` und dynamische Seiten. Jeder neue Seitenaufruf liest den aktuellen Stand. Widerruf, Deaktivierung, Entwurf, Archivierung oder Löschung entfernt die Ausgabe beim nächsten Abruf. Bereits angezeigte, heruntergeladene oder bei Suchmaschinen gespeicherte Inhalte können nicht nachträglich aus fremden Geräten gelöscht werden. Es wird kein persistenter öffentlicher Cache und kein Webhook benötigt. API-Ausfall: leere Ausgabe mit Fehlerhinweis, niemals alte Daten weiterverwenden. Timeout 5 Sekunden; neuer Besucheraufruf versucht erneut. Kein stilles Wiederholen schreibender Vorgänge.
-
-## Zugriffsschutz und Betrieb
-
-Öffentliches Lesen benötigt keinen Schlüssel; es liefert ausschließlich freigegebene Inhalte. Die Homepage benötigt keine Mitglieder- oder Administratorsitzung. Änderungen ausschließlich im Portal, anhand der bestehenden Authentifizierung und serverseitig geprüfter Netzwerkleitung. Temporäres Rate-Limit: 120 Feed-Aufrufe je IP und Minute je API-Prozess, maximal 10.000 aktive IP-Buckets. Für mehrere API-Instanzen ist vor Rollout ein gemeinsamer Gateway-/Redis-Limiter erforderlich; bestehende PortalStore-Architektur muss ebenfalls auf konsistente Mehrinstanz-Persistenz geprüft werden. HTTPS am bestehenden Gateway beibehalten.
-
-## Abnahme vor Bereitstellung
-
-Backend und Portaloberfläche gemeinsam in einer isolierten Vorschau bereitstellen. Tests mit fiktiven Datensätzen durchführen: leerer Standard, einzelne Freigabe, falscher Mandant, private Kontakte, interne Veranstaltung, Änderung, Absage, Widerruf und API-Ausfall. Der Änderungsvorschlag setzt selbst keine echte Freigabe. End-to-End-Prüfung der produktiven externen API steht bis zu deren Bereitstellung aus. Kein automatisches Merge oder produktives Deployment.
-
-## Ergänzung: strukturierte Veranstaltungsangaben
-
-Neue optionale, einzeln auswählbare Freigabefelder: `eventKind` (`breakfast` oder `other`), `attendanceMode` (`offline`, `online`, `hybrid`), `venue` (Objekt mit `name`, `streetAddress`, `postalCode`, `addressLocality`, `addressCountry` als ISO-Ländercode), `onlineUrl` (ausschließlich öffentliche HTTPS-Adresse), `previousStartDate` (ISO-Zeitstempel mit Zeitzone bei Verschiebung).
-
-Alle stammen aus gesonderten öffentlichen Eingabefeldern im Veranstaltungseditor. Interne Ortsangaben und Einwahldaten werden nicht übernommen. Bestehende Freigaben werden nicht erweitert: neue Felder benötigen eigene Auswahl. Ein Frühstück erscheint auf der Startseite nur mit freigegebener Terminart breakfast. Für Event-Markup benötigt die Homepage eine vollständige Anschrift bei offline, eine ausdrücklich öffentliche Online-Adresse bei online, beides bei hybrid. Fehlende Daten werden nicht erfunden; ohne sie bleibt die normale Veranstaltungsseite erhalten. Bei rescheduled ist für Markup zusätzlich previousStartDate erforderlich. Beginn benötigt einen ISO-Zeitstempel mit Z oder explizitem UTC-Offset, die benannte Zeitzone muss gültig sein.
-
-Serverseitige Homepage-Memoisierung gilt nur innerhalb einer einzelnen Anfrage, nicht dauerhaft. Bei API-Ausfall werden betroffene Inhaltsseiten und Sitemap als Fehler ausgeliefert; kein Ersatz durch vermeintlich gelöschte Datensätze. Suchmaschinenentfernung und bereits offene Browser benötigen separat Aktualisierung. Die öffentliche API bleibt nur lesend; alle Schreib- und Freigabeaktionen erfordern die bestehende geschützte Administration.
+Branche und Leistungen bleiben Textfelder. Neuigkeiten sowie zusätzliche Profilbereiche/Herobilder sind noch nicht im gemeinsamen Vertrag umgesetzt und dürfen nicht als angebunden gelten. Details, Feldgrenzen, Testbefehle, Bedienung, Speicherung und offene Abnahmen stehen im Prüfbericht.

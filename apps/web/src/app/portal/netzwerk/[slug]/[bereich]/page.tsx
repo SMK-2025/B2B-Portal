@@ -1,3 +1,4 @@
+import { HomepageProfileConsent } from "../../../../components/homepage-profile-consent";
 import { notFound } from "next/navigation";
 import { NetworkShell } from "../../../../components/network-shell";
 import { NetworkModuleWorkspace } from "../../../../components/network-module-workspace";
@@ -85,7 +86,13 @@ export default async function Page({
     body = <AccountSettingsWorkspace networkSlug={slug} />;
   else if (bereich === "kommunikation")
     body = <NetworkConversationsWorkspace />;
-  else if (bereich === "profil") body = <NetworkProfileWorkspace />;
+  else if (bereich === "profil")
+    body = (
+      <>
+        <NetworkProfileWorkspace />
+        {slug === "unternehmerfreunde" && <HomepageProfileConsent />}
+      </>
+    );
   else if (bereich === "auswertungen")
     body = <NetworkAdministrationWorkspace mode="analytics" slug={slug} />;
   else if (bereich === "einstellungen")

@@ -328,7 +328,8 @@ export function NetworkModuleWorkspace({
             : form.get("mode") === "Hybrid"
               ? "hybrid"
               : "offline";
-        data.location = form.get("publicLocation") || editing?.data.location || "";
+        data.location =
+          form.get("publicLocation") || editing?.data.location || "";
         if (publicImage instanceof File && publicImage.size) {
           if (
             !["image/png", "image/jpeg", "image/webp"].includes(
@@ -378,6 +379,18 @@ export function NetworkModuleWorkspace({
           ? current.map((i) => (i.id === created.id ? created : i))
           : [created, ...current],
       );
+      if (
+        module === "veranstaltungen" &&
+        slug === "unternehmerfreunde" &&
+        access?.isInitiator &&
+        Boolean(created.homepageGrants?.events?.enabled) !==
+          (form.get("homepagePublish") === "on")
+      ) {
+        setEditing(created);
+        throw new Error(
+          "Die Veranstaltung wurde im Portal gespeichert, die Homepage-Freigabe aber noch nicht übernommen. Bitte nach Abschluss der Server-Aktualisierung erneut speichern.",
+        );
+      }
       setDialog(false);
       setEditing(null);
       setNotice(

@@ -1248,7 +1248,7 @@ export function NetworkModuleWorkspace({
               {module === "veranstaltungen" &&
                 slug === "unternehmerfreunde" &&
                 access?.isInitiator && (
-                  <label className="memberAnnualConsent">
+                  <label className="networkEventPublishConsent">
                     <input
                       type="checkbox"
                       name="homepagePublish"
@@ -1257,8 +1257,10 @@ export function NetworkModuleWorkspace({
                       }
                     />
                     <span>
-                      Auf der Homepage als Veranstaltung veröffentlichen
-                      <small>
+                      <span className="networkEventPublishTitle">
+                        Auf der Homepage als Veranstaltung veröffentlichen
+                      </span>
+                      <span className="networkEventPublishHelp">
                         Mit dem Häkchen gibst du diese Veranstaltungsangaben und
                         das Bild öffentlich frei und bestätigst die
                         Veröffentlichungsrechte. Ohne Häkchen bleibt die
@@ -1266,7 +1268,7 @@ export function NetworkModuleWorkspace({
                         Bild, Ort, Veranstalter, Kosten und Teilnahmebedingungen
                         ausfüllen sowie „Alle Partner“ und „Veröffentlicht“
                         wählen.
-                      </small>
+                      </span>
                     </span>
                   </label>
                 )}

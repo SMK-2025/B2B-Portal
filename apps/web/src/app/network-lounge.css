@@ -1331,3 +1331,35 @@
   width: 112px;
   height: 76px;
 }
+.networkContentModal form > label.networkEventPublishConsent {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #183044;
+}
+.networkContentModal label.networkEventPublishConsent > input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  margin: 3px 0 0;
+  padding: 0;
+  accent-color: var(--network-accent, #5267d8);
+}
+.networkEventPublishConsent > span {
+  min-width: 0;
+}
+.networkEventPublishConsent .networkEventPublishTitle,
+.networkEventPublishConsent .networkEventPublishHelp {
+  display: block;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.6;
+  color: inherit;
+}
+.networkEventPublishConsent .networkEventPublishTitle {
+  margin-bottom: 6px;
+}

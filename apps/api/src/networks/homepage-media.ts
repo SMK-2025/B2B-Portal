@@ -1,7 +1,12 @@
 import { isIP } from "node:net";
 export function mediaOrigin() {
   try {
-    const u = new URL(process.env.PUBLIC_HOMEPAGE_MEDIA_ORIGIN || "");
+    const u = new URL(
+      process.env.PUBLIC_HOMEPAGE_MEDIA_ORIGIN ||
+        (process.env.NODE_ENV === "production"
+          ? "https://portalapi-production-c9ea.up.railway.app"
+          : ""),
+    );
     if (
       u.protocol !== "https:" ||
       u.username ||

@@ -197,6 +197,13 @@ function Consent({
         </button>
       </p>
       <p role="status">{notice}</p>
+      {!items.length && !notice && (
+        <p>
+          Für deinen Zugang ist hier noch keine Partnerseite zugeordnet. Lege
+          zuerst deine Unternehmensseite im Netzwerk an. Es ist keine
+          öffentliche Profilfreigabe aktiv.
+        </p>
+      )}
       {enabled && previewedFields !== JSON.stringify([...selected].sort()) && (
         <p>
           Bitte prüfe vor der Freigabe die Vorschau deiner aktuellen

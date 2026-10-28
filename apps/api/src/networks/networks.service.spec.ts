@@ -303,6 +303,19 @@ describe("network tenancy", () => {
         recapImages: ["data:image/png;base64,AA=="],
       },
     });
+    expect(
+      networks.networkNotifications(partnerBearer, network.id),
+    ).toContainEqual(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          contentId: event.id,
+          event: expect.objectContaining({
+            title: event.title,
+            startsAt: event.startsAt,
+          }),
+        }),
+      }),
+    );
     networks.updateOwnAttendance(initiatorBearer, network.id, event.id, {
       response: "registered",
       companionCount: 1,

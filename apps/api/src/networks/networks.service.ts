@@ -3352,7 +3352,33 @@ export class NetworksService {
             })()),
       )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .slice(0, 100);
+      .slice(0, 100)
+      .map((notification) => {
+        const content = this.store.networkContents.get(
+          String(notification.data.contentId || ""),
+        );
+        if (
+          !content ||
+          content.networkId !== networkId ||
+          content.type !== "event"
+        )
+          return notification;
+        return {
+          ...notification,
+          data: {
+            ...notification.data,
+            event: {
+              title: content.title,
+              description: content.description.slice(0, 180),
+              startsAt: content.startsAt,
+              endsAt: content.endsAt,
+              status: content.data.eventStatus,
+              imageUrl:
+                content.data.imageUrl || content.data.coverImageUrl || null,
+            },
+          },
+        };
+      });
   }
   vote(
     authorization: string | undefined,

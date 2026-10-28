@@ -1400,3 +1400,35 @@
   font-size: 16px;
   line-height: 1.6;
 }
+.networkContentModal form > .networkEventFields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.networkEventFields > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.networkEventFields label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 16px;
+}
+.networkEventFields .networkEventExtras {
+  order: 2;
+  padding: 16px;
+  border: 1px solid #d9dfe9;
+  border-radius: 12px;
+}
+.networkEventExtras[open] > label,
+.networkEventExtras[open] > div,
+.networkEventExtras[open] > details {
+  margin-top: 16px;
+}
+@media (max-width: 700px) {
+  .networkEventFields > div {
+    grid-template-columns: 1fr;
+  }
+}

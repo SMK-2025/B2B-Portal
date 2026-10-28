@@ -2186,18 +2186,13 @@ export class NetworksService {
       const required = [
         ["Titel", record.title],
         ["Beschreibung", record.description],
-        ["Veranstaltungsort", record.data.publicLocation],
-        ["Veranstalter", record.data.organizer],
-        ["Kosten (z. B. kostenlos)", record.data.cost],
-        ["Teilnahmebedingungen", record.data.participationTerms],
       ];
       for (const [label, value] of required)
         if (typeof value !== "string" || !value.trim())
           issues.push(`${label} fehlt`);
       if (!record.startsAt || !Number.isFinite(Date.parse(record.startsAt)))
         issues.push("Beginn fehlt oder ist ungültig");
-      if (!record.data.imageUrl) issues.push("Veranstaltungsbild fehlt");
-      else if (!decodePublicImage(record.data.imageUrl))
+      if (record.data.imageUrl && !decodePublicImage(record.data.imageUrl))
         issues.push(
           "Veranstaltungsbild kann nicht verarbeitet werden – bitte erneut als PNG, JPG oder WebP bis 1,5 MB hochladen",
         );
@@ -2220,7 +2215,7 @@ export class NetworksService {
         throw new BadRequestException(
           "Das Netzwerk muss zuerst vom Betreiber aktiviert werden. Deine Eingaben bleiben im Formular erhalten.",
         );
-      if (!mediaOrigin())
+      if (record.data.imageUrl && !mediaOrigin())
         throw new BadRequestException(
           "Die öffentliche Bildbereitstellung ist derzeit nicht eingerichtet. Bitte den Betreiber informieren. Deine Eingaben sind korrekt und bleiben im Formular erhalten.",
         );

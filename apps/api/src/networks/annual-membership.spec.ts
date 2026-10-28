@@ -43,7 +43,7 @@ describe("personal annual membership billing", () => {
     expect(() =>
       f.networks.createContent(f.owner, f.network.id, {
         ...input,
-        data: { ...input.data, cost: "" },
+        startsAt: null,
       }),
     ).toThrow();
     expect(f.store.networkContents.size).toBe(before);
@@ -53,7 +53,7 @@ describe("personal annual membership billing", () => {
       f.networks.updateContent(f.owner, f.network.id, event.id, {
         title: "Nicht gespeichert",
         homepagePublish: true,
-        data: { cost: "" },
+        startsAt: null,
       }),
     ).toThrow();
     expect(f.store.networkContents.get(event.id)?.title).toBe(input.title);
@@ -80,6 +80,11 @@ describe("personal annual membership billing", () => {
     expect(published.data.imageUrl).toBe(input.data.imageUrl);
     expect(published.data.organizer).toBe(input.data.organizer);
     expect(published.data.cost).toBe(input.data.cost);
+    const minimal = f.networks.createContent(f.owner, f.network.id, {
+      ...input,
+      data: { category: "Netzwerkveranstaltung" },
+    });
+    expect(minimal.homepageGrants?.events?.enabled).toBe(true);
   });
   it("registers centrally funded members without personal billing and keeps individual networks unchanged", async () => {
     const f = await fixture();

@@ -149,7 +149,7 @@ describe("homepage publication", () => {
     expect(
       projectHomepage("events", {
         ...event,
-        data: { ...event.data, cost: "" },
+        startsAt: null,
       }),
     ).toBeNull();
   });

@@ -198,11 +198,6 @@ export function projectHomepage(
     if (
       !output.startsAt ||
       !Number.isFinite(Date.parse(String(output.startsAt))) ||
-      !output.location ||
-      !output.organizer ||
-      !output.terms ||
-      !output.cost ||
-      !output.image ||
       !output.status ||
       !output.timezone
     )

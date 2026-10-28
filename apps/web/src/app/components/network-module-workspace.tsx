@@ -288,17 +288,10 @@ export function NetworkModuleWorkspace({
         ["title", "Titel"],
         ["description", "Beschreibung"],
         ["startsAt", "Beginn"],
-        ["publicLocation", "Veranstaltungsort"],
-        ["organizer", "Veranstalter"],
-        ["cost", "Kosten"],
-        ["participationTerms", "Teilnahmebedingungen"],
       ];
       const missing = fields.filter(
         ([name]) => !String(form.get(name) ?? "").trim(),
       );
-      const image = form.get("homepageImage");
-      if (!(image instanceof File && image.size > 0) && !editing?.data.imageUrl)
-        missing.push(["homepageImage", "Veranstaltungsbild"]);
       if (missing.length) {
         setNotice(
           `Bitte noch ergänzen: ${missing.map(([, label]) => label).join(", ")}. Bereits ausgefüllte Angaben bleiben erhalten.`,
@@ -364,7 +357,7 @@ export function NetworkModuleWorkspace({
               ? "hybrid"
               : "offline";
         data.location =
-          form.get("publicLocation") || editing?.data.location || "";
+          form.get("publicLocation") || form.get("location") || "";
         if (publicImage instanceof File && publicImage.size) {
           if (
             !["image/png", "image/jpeg", "image/webp"].includes(
@@ -396,9 +389,17 @@ export function NetworkModuleWorkspace({
             startsAt: form.get("startsAt")
               ? new Date(String(form.get("startsAt"))).toISOString()
               : null,
-            endsAt: form.get("endsAt")
-              ? new Date(String(form.get("endsAt"))).toISOString()
-              : null,
+            endsAt:
+              module === "veranstaltungen" &&
+              form.get("durationMinutes") &&
+              form.get("startsAt")
+                ? new Date(
+                    Date.parse(String(form.get("startsAt"))) +
+                      Number(form.get("durationMinutes")) * 60000,
+                  ).toISOString()
+                : form.get("endsAt")
+                  ? new Date(String(form.get("endsAt"))).toISOString()
+                  : null,
             visibility: form.get("visibility"),
             data,
             ...(module === "veranstaltungen" &&
@@ -904,7 +905,7 @@ export function NetworkModuleWorkspace({
             </header>
             <form onSubmit={submit}>
               <label>
-                Titel
+                {module === "veranstaltungen" ? "Thema / Titel *" : "Titel"}
                 <input
                   name="title"
                   defaultValue={editing?.title || ""}
@@ -927,7 +928,12 @@ export function NetworkModuleWorkspace({
                   <select
                     name="category"
                     required
-                    defaultValue={String(editing?.data.category || "")}
+                    defaultValue={String(
+                      editing?.data.category ||
+                        (module === "veranstaltungen"
+                          ? "Netzwerkveranstaltung"
+                          : ""),
+                    )}
                   >
                     <option value="" disabled>
                       Bitte passend einordnen
@@ -955,9 +961,10 @@ export function NetworkModuleWorkspace({
                 </label>
               </div>
               {module === "veranstaltungen" && (
-                <>
+                <div className="networkEventFields">
                   {
-                    <>
+                    <details className="networkEventExtras">
+                      <summary>Bild und zusätzliche Angaben (optional)</summary>
                       <label>
                         Veranstalter
                         <input
@@ -971,7 +978,7 @@ export function NetworkModuleWorkspace({
                       </label>
                       <div>
                         <label>
-                          Kosten
+                          Kosten (optional)
                           <input
                             name="cost"
                             placeholder="z. B. Kostenfrei oder 15 € pro Person"
@@ -994,7 +1001,7 @@ export function NetworkModuleWorkspace({
                         </label>
                       </div>
                       <label>
-                        Teilnahmebedingungen
+                        Teilnahmebedingungen (optional)
                         <input
                           name="participationTerms"
                           placeholder="z. B. Anmeldung bis zum Vortag erforderlich"
@@ -1091,11 +1098,11 @@ export function NetworkModuleWorkspace({
                           editing?.data.timezone || "Europe/Berlin",
                         )}
                       />
-                    </>
+                    </details>
                   }
                   <div>
                     <label>
-                      Beginn
+                      Datum und Uhrzeit *
                       <input
                         name="startsAt"
                         defaultValue={
@@ -1115,8 +1122,8 @@ export function NetworkModuleWorkspace({
                         required
                       />
                     </label>
-                    <label>
-                      Ende
+                    <label hidden style={{ display: "none" }}>
+                      Ende (automatisch aus der Dauer)
                       <input
                         name="endsAt"
                         type="datetime-local"
@@ -1136,6 +1143,30 @@ export function NetworkModuleWorkspace({
                   </div>
                   <div>
                     <label>
+                      Dauer in Minuten (optional)
+                      <input
+                        type="number"
+                        name="durationMinutes"
+                        min="1"
+                        max="43200"
+                        placeholder="z. B. 120"
+                        defaultValue={
+                          editing?.startsAt && editing?.endsAt
+                            ? Math.max(
+                                1,
+                                Math.round(
+                                  (Date.parse(editing.endsAt) -
+                                    Date.parse(editing.startsAt)) /
+                                    60000,
+                                ),
+                              )
+                            : ""
+                        }
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    <label>
                       Format
                       <select
                         name="mode"
@@ -1148,8 +1179,8 @@ export function NetworkModuleWorkspace({
                     </label>
                     <label>
                       {slug === "unternehmerfreunde"
-                        ? "Veranstaltungsort / öffentliche Ortsangabe"
-                        : "Ort oder Einwahllink"}
+                        ? "Adresse / Veranstaltungsort"
+                        : "Adresse / Veranstaltungsort"}
                       <input
                         name={
                           slug === "unternehmerfreunde"
@@ -1180,7 +1211,7 @@ export function NetworkModuleWorkspace({
                       </select>
                     </label>
                     <label>
-                      Höchstteilnehmerzahl
+                      Maximale Personenanzahl (optional)
                       <input
                         name="capacity"
                         defaultValue={String(editing?.data.capacity || "")}
@@ -1190,14 +1221,14 @@ export function NetworkModuleWorkspace({
                     </label>
                   </div>
                   <label>
-                    Anmeldeschluss
+                    Anmeldeschluss (optional)
                     <input
                       name="deadline"
                       defaultValue={String(editing?.data.deadline || "")}
                       type="datetime-local"
                     />
                   </label>
-                </>
+                </div>
               )}
               {module === "aufgaben" && (
                 <div>
@@ -1299,10 +1330,9 @@ export function NetworkModuleWorkspace({
                         Mit dem Häkchen gibst du diese Veranstaltungsangaben und
                         das Bild öffentlich frei und bestätigst die
                         Veröffentlichungsrechte. Ohne Häkchen bleibt die
-                        Veranstaltung nur im Portal. Zum Veröffentlichen bitte
-                        Bild, Ort, Veranstalter, Kosten und Teilnahmebedingungen
-                        ausfüllen sowie „Alle Partner“ und „Veröffentlicht“
-                        wählen.
+                        Veranstaltung nur im Portal. Zusätzliche Angaben und ein
+                        Bild sind freiwillig. Zum Veröffentlichen „Alle Partner“
+                        und „Veröffentlicht“ wählen.
                       </span>
                     </span>
                   </label>

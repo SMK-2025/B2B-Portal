@@ -87,10 +87,12 @@ type Access = {
   enabledModules: string[];
   offeredModules: string[];
   logoUrl: string | null;
+  companyLogoUrl?: string | null;
   primaryColor: string;
   secondaryColor: string;
 };
 type Mine = {
+  organization?: { networkProfile?: { logoUrl?: string | null } | null } | null;
   membership: { role: string };
   network: {
     id: string;
@@ -275,6 +277,8 @@ export function NetworkShell({
             enabledModules: network.enabledModules,
             offeredModules: network.offeredModules,
             logoUrl: network.logoUrl,
+            companyLogoUrl:
+              membership?.organization?.networkProfile?.logoUrl || null,
             primaryColor: network.primaryColor,
             secondaryColor: network.secondaryColor,
           });
@@ -472,7 +476,23 @@ export function NetworkShell({
                 onClick={() => setAccount(!account)}
                 aria-expanded={account}
               >
-                <span>{initials}</span>
+                <span className="networkAccountAvatar">
+                  {access.companyLogoUrl ? (
+                    <img
+                      src={access.companyLogoUrl}
+                      alt="Unternehmenslogo"
+                      onError={() =>
+                        setAccess((previous) =>
+                          previous
+                            ? { ...previous, companyLogoUrl: null }
+                            : previous,
+                        )
+                      }
+                    />
+                  ) : (
+                    initials
+                  )}
+                </span>
                 <p>
                   <b>
                     {access.firstName ||

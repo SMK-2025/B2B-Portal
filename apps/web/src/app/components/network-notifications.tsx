@@ -55,7 +55,7 @@ export function NetworkNotifications() {
     <>
       <button
         type="button"
-        aria-label="Benachrichtigungen"
+        aria-label={`Benachrichtigungen${items.some((i) => !i.readAt) ? `: ${items.filter((i) => !i.readAt).length} ungelesen` : ""}`}
         title="Neuigkeiten und Vernetzungsanfragen"
         className="networkNewsTrigger"
         aria-expanded={open}
@@ -75,7 +75,11 @@ export function NetworkNotifications() {
         >
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
         </svg>
-        <span>Neuigkeiten</span> {items.filter((i) => !i.readAt).length || ""}
+        {items.some((i) => !i.readAt) && (
+          <span className="networkNotificationBadge">
+            {items.filter((i) => !i.readAt).length}
+          </span>
+        )}
       </button>
       {open && (
         <section

@@ -28,6 +28,7 @@ type Item = {
 };
 type Attendance = {
   id: string;
+  memberUserId?: string;
   membershipId: string;
   memberName: string;
   organizationName: string;
@@ -213,6 +214,12 @@ export function NetworkModuleWorkspace({
   useEffect(() => {
     void load();
   }, [module, slug, access?.networkId]);
+  useEffect(() => {
+    if (module !== "veranstaltungen" || !networkId || !items.length) return;
+    const id = new URLSearchParams(window.location.search).get("event");
+    const item = items.find((entry) => entry.id === id);
+    if (item) void openAttendance(item);
+  }, [items, networkId, module]);
   async function load() {
     const token = getPortalSession();
     if (!token || !config) {
@@ -301,7 +308,7 @@ export function NetworkModuleWorkspace({
         options: form.get("options"),
       };
       if (!file) delete data.file;
-      if (module === "veranstaltungen" && slug === "unternehmerfreunde") {
+      if (module === "veranstaltungen") {
         for (const field of [
           "timezone",
           "publicLocation",
@@ -681,6 +688,14 @@ export function NetworkModuleWorkspace({
                       {item.data.category}
                     </span>
                   )}
+                {module === "veranstaltungen" &&
+                  (item.data.imageUrl || item.data.coverImageUrl) && (
+                    <img
+                      className="networkEventThumbnail"
+                      src={item.data.imageUrl || item.data.coverImageUrl}
+                      alt=""
+                    />
+                  )}
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
                 <small>
@@ -701,10 +716,16 @@ export function NetworkModuleWorkspace({
               <div className="networkRowActions networkRowActionsStacked">
                 <div className="networkTextActions">
                   <button
-                    onClick={() => setThreadId(item.id)}
+                    onClick={() =>
+                      module === "veranstaltungen"
+                        ? void openAttendance(item)
+                        : setThreadId(item.id)
+                    }
                     title="Austausch, Termine und nächste Schritte"
                   >
-                    Austausch
+                    {module === "veranstaltungen"
+                      ? "Veranstaltung ansehen"
+                      : "Austausch"}
                   </button>
                   {module === "angebote" &&
                     access?.enabledModules.includes("communication") &&
@@ -902,7 +923,7 @@ export function NetworkModuleWorkspace({
               </div>
               {module === "veranstaltungen" && (
                 <>
-                  {slug === "unternehmerfreunde" && (
+                  {
                     <>
                       <label>
                         Veranstalter
@@ -1038,7 +1059,7 @@ export function NetworkModuleWorkspace({
                         )}
                       />
                     </>
-                  )}
+                  }
                   <div>
                     <label>
                       Beginn
@@ -1271,44 +1292,140 @@ export function NetworkModuleWorkspace({
             <header>
               <div>
                 <span>VERANSTALTUNG</span>
-                <h2>Anwesenheit · {attendanceEvent.title}</h2>
+                <h2>{attendanceEvent.title}</h2>
               </div>
               <button onClick={() => setAttendanceEvent(null)}>×</button>
             </header>
-            <form onSubmit={saveOwnAttendance}>
-              <div>
-                <label>
-                  Meine Rückmeldung
-                  <select name="response">
-                    <option value="registered">Ich nehme teil</option>
-                    <option value="declined">Ich nehme nicht teil</option>
-                  </select>
-                </label>
-                <label>
-                  Begleitpersonen
-                  <input
-                    name="companionCount"
-                    type="number"
-                    min="0"
-                    max="20"
-                    defaultValue="0"
-                  />
-                </label>
-              </div>
-              <label>
-                Gäste – ein Name pro Zeile
-                <textarea name="guestNames" rows={2} />
-              </label>
-              <label>
-                Hinweis zur Teilnahme
-                <textarea name="note" rows={2} />
-              </label>
-              {!access?.readOnly && (
-                <button className="networkPrimary">
-                  Rückmeldung speichern
-                </button>
+            <div className="networkEventDetails">
+              {(attendanceEvent.data.imageUrl ||
+                attendanceEvent.data.coverImageUrl) && (
+                <img
+                  src={
+                    attendanceEvent.data.imageUrl ||
+                    attendanceEvent.data.coverImageUrl
+                  }
+                  alt=""
+                />
               )}
-            </form>
+              <p style={{ whiteSpace: "pre-wrap" }}>
+                {attendanceEvent.description}
+              </p>
+              <dl>
+                <dt>Termin</dt>
+                <dd>
+                  {attendanceEvent.startsAt
+                    ? new Date(attendanceEvent.startsAt).toLocaleString(
+                        "de-DE",
+                        { timeZone: "Europe/Berlin" },
+                      )
+                    : "Wird noch bekannt gegeben"}
+                  {attendanceEvent.endsAt
+                    ? ` – ${new Date(attendanceEvent.endsAt).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`
+                    : ""}
+                </dd>
+                {[
+                  [
+                    "Ort",
+                    attendanceEvent.data.publicLocation ||
+                      attendanceEvent.data.location,
+                  ],
+                  ["Veranstalter", attendanceEvent.data.organizer],
+                  ["Kosten", attendanceEvent.data.cost],
+                  [
+                    "Teilnahmebedingungen",
+                    attendanceEvent.data.participationTerms,
+                  ],
+                  ["Format", attendanceEvent.data.mode],
+                ].map(([label, value]) =>
+                  value ? (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>{String(value)}</dd>
+                    </div>
+                  ) : null,
+                )}
+              </dl>
+              {attendanceEvent.data.eventStatus === "cancelled" ? (
+                <strong>Abgesagt</strong>
+              ) : attendanceEvent.startsAt &&
+                Date.parse(attendanceEvent.endsAt || attendanceEvent.startsAt) <
+                  Date.now() ? (
+                <strong>Bereits stattgefunden</strong>
+              ) : null}
+            </div>
+            {!access?.readOnly &&
+              attendanceEvent.data.eventStatus !== "cancelled" &&
+              (!attendanceEvent.startsAt ||
+                Date.parse(
+                  attendanceEvent.endsAt || attendanceEvent.startsAt,
+                ) >= Date.now()) && (
+                <form
+                  key={`${attendanceEvent.id}-${JSON.stringify(attendance)}`}
+                  onSubmit={saveOwnAttendance}
+                >
+                  <div>
+                    <label>
+                      Meine Rückmeldung
+                      <select
+                        name="response"
+                        defaultValue={
+                          attendance.find(
+                            (row) => row.memberUserId === access?.currentUserId,
+                          )?.response || "registered"
+                        }
+                      >
+                        <option value="registered">Ich nehme teil</option>
+                        <option value="declined">Ich nehme nicht teil</option>
+                      </select>
+                    </label>
+                    <label>
+                      Begleitpersonen
+                      <input
+                        name="companionCount"
+                        type="number"
+                        min="0"
+                        max="20"
+                        defaultValue={
+                          attendance.find(
+                            (row) => row.memberUserId === access?.currentUserId,
+                          )?.companionCount || 0
+                        }
+                      />
+                    </label>
+                  </div>
+                  <label>
+                    Gäste – ein Name pro Zeile
+                    <textarea
+                      name="guestNames"
+                      rows={2}
+                      defaultValue={
+                        attendance
+                          .find(
+                            (row) => row.memberUserId === access?.currentUserId,
+                          )
+                          ?.guestNames.join("\n") || ""
+                      }
+                    />
+                  </label>
+                  <label>
+                    Hinweis zur Teilnahme
+                    <textarea
+                      name="note"
+                      rows={2}
+                      defaultValue={
+                        attendance.find(
+                          (row) => row.memberUserId === access?.currentUserId,
+                        )?.note || ""
+                      }
+                    />
+                  </label>
+                  {!access?.readOnly && (
+                    <button className="networkPrimary">
+                      Teilnahme bestätigen / Rückmeldung speichern
+                    </button>
+                  )}
+                </form>
+              )}
             {access?.canManage && (
               <>
                 <header>

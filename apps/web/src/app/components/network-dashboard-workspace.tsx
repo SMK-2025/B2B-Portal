@@ -27,6 +27,7 @@ type Dashboard = {
   };
   recentMembers: { id: string; name: string; logoUrl: string | null }[];
   upcomingEvents: Item[];
+  recentEvents?: Item[];
   eventRecaps: Item[];
   announcements: Item[];
 };
@@ -106,7 +107,7 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
       </section>
     );
   const enabled = (module: string) => access?.enabledModules.includes(module),
-    event = data.upcomingEvents[0],
+    event = data.upcomingEvents[0] || data.recentEvents?.[0],
     recap = data.eventRecaps[0],
     eventImage = itemImage(event),
     recapImage = itemImage(recap);
@@ -204,7 +205,13 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
         {enabled("events") && (
           <section className="networkCard loungeCard">
             <header>
-              <h2>Unser nächstes Treffen</h2>
+              <h2>
+                {data.upcomingEvents.length
+                  ? "Unser nächstes Treffen"
+                  : event
+                    ? "Letzte Veranstaltung"
+                    : "Unser nächstes Treffen"}
+              </h2>
               <Link
                 href={`${base}/veranstaltungen` as never}
                 aria-label="Alle Veranstaltungen"
@@ -234,6 +241,9 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                     )}
                   </div>
                   <h3>{event.title}</h3>
+                  {!data.upcomingEvents.length && (
+                    <strong>Bereits stattgefunden</strong>
+                  )}
                   <p className="loungeDate">
                     {new Date(event.startsAt!).toLocaleDateString("de-DE", {
                       weekday: "long",
@@ -251,7 +261,9 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                   <p className="loungeExcerpt">{event.description}</p>
                   <Link
                     className="loungeDarkButton"
-                    href={`${base}/veranstaltungen` as never}
+                    href={
+                      `${base}/veranstaltungen?event=${encodeURIComponent(event.id)}` as never
+                    }
                   >
                     Treffen ansehen →
                   </Link>

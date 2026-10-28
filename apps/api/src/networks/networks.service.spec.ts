@@ -311,6 +311,31 @@ describe("network tenancy", () => {
       networks.attendance(initiatorBearer, network.id, event.id),
     ).toHaveLength(1);
     expect(
+      networks.attendance(initiatorBearer, network.id, event.id)[0],
+    ).toMatchObject({
+      response: "registered",
+      memberUserId: initiatorRegistration.user.id,
+    });
+    const past = networks.createContent(initiatorBearer, network.id, {
+      type: "event",
+      title: "Vergangenes Treffen",
+      description: "Rückblick",
+      status: "published",
+      startsAt: new Date(Date.now() - 60_000).toISOString(),
+      data: { category: "Netzwerkveranstaltung" },
+    });
+    expect(
+      networks.dashboard(initiatorBearer, network.id).recentEvents,
+    ).toContainEqual(expect.objectContaining({ id: past.id }));
+    expect(
+      networks.dashboard(initiatorBearer, network.id).upcomingEvents,
+    ).not.toContainEqual(expect.objectContaining({ id: past.id }));
+    expect(() =>
+      networks.updateOwnAttendance(initiatorBearer, network.id, past.id, {
+        response: "registered",
+      }),
+    ).toThrow(/keine Anmeldung/i);
+    expect(
       networks.dashboard(initiatorBearer, network.id).eventRecaps,
     ).toContainEqual(expect.objectContaining({ id: event.id }));
     expect(

@@ -2263,7 +2263,17 @@ export class NetworksService {
     const actor = this.auth.authenticate(authorization);
     this.requireWritableNetwork(actor.id, networkId);
     this.requireEnabledModule(networkId, "events", actor.id);
-    this.event(networkId, eventId);
+    const event = this.event(networkId, eventId);
+    if (!this.canReadContent(actor.id, event))
+      throw new NotFoundException("Veranstaltung nicht verfügbar.");
+    if (
+      event.data.eventStatus === "cancelled" ||
+      (event.startsAt &&
+        Date.parse(event.endsAt || event.startsAt) < Date.now())
+    )
+      throw new BadRequestException(
+        "Für diese Veranstaltung ist keine Anmeldung mehr möglich.",
+      );
     const membership = this.store.networkMemberships.find(
       (item) =>
         item.networkId === networkId &&
@@ -2596,9 +2606,23 @@ export class NetworksService {
         .slice(0, 8),
       recentMembers,
       upcomingEvents: events
-        .filter((item) => item.startsAt && item.startsAt >= now)
+        .filter(
+          (item) =>
+            item.startsAt &&
+            Date.parse(item.endsAt || item.startsAt) >= Date.parse(now) &&
+            item.data.eventStatus !== "cancelled",
+        )
         .sort((a, b) => (a.startsAt || "").localeCompare(b.startsAt || ""))
         .slice(0, 4),
+      recentEvents: events
+        .filter(
+          (item) =>
+            item.startsAt &&
+            Date.parse(item.endsAt || item.startsAt) < Date.parse(now) &&
+            item.data.eventStatus !== "cancelled",
+        )
+        .sort((a, b) => Date.parse(b.startsAt!) - Date.parse(a.startsAt!))
+        .slice(0, 1),
       eventRecaps: events
         .filter(
           (item) =>
@@ -3986,6 +4010,7 @@ export class NetworksService {
       organization = this.store.organizations.get(membership.organizationId);
     return {
       ...record,
+      memberUserId: membership.userId,
       memberName: user
         ? `${user.firstName} ${user.lastName}`.trim()
         : "Mitglied",

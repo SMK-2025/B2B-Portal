@@ -283,6 +283,34 @@ export function NetworkModuleWorkspace({
     const token = getPortalSession();
     if (!token || !networkId) return;
     const form = new FormData(event.currentTarget);
+    if (module === "veranstaltungen" && form.get("homepagePublish") === "on") {
+      const fields = [
+        ["title", "Titel"],
+        ["description", "Beschreibung"],
+        ["startsAt", "Beginn"],
+        ["publicLocation", "Veranstaltungsort"],
+        ["organizer", "Veranstalter"],
+        ["cost", "Kosten"],
+        ["participationTerms", "Teilnahmebedingungen"],
+      ];
+      const missing = fields.filter(
+        ([name]) => !String(form.get(name) ?? "").trim(),
+      );
+      const image = form.get("homepageImage");
+      if (!(image instanceof File && image.size > 0) && !editing?.data.imageUrl)
+        missing.push(["homepageImage", "Veranstaltungsbild"]);
+      if (missing.length) {
+        setNotice(
+          `Bitte noch ergänzen: ${missing.map(([, label]) => label).join(", ")}. Bereits ausgefüllte Angaben bleiben erhalten.`,
+        );
+        const field = event.currentTarget.elements.namedItem(missing[0][0]);
+        if (field instanceof HTMLElement) {
+          field.focus();
+          field.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+        return;
+      }
+    }
     setBusy(true);
     try {
       const documentFile = form.get("file"),
@@ -1130,7 +1158,9 @@ export function NetworkModuleWorkspace({
                         }
                         defaultValue={String(
                           slug === "unternehmerfreunde"
-                            ? editing?.data.publicLocation || ""
+                            ? editing?.data.publicLocation ||
+                                editing?.data.location ||
+                                ""
                             : editing?.data.location || "",
                         )}
                       />

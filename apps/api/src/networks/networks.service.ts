@@ -2065,6 +2065,8 @@ export class NetworksService {
     const record = { ...stored, data: { ...stored.data } };
     this.ensureModule(this.raw(networkId), record.type, user.id);
     this.requireContentUpdate(user.id, networkId, record);
+    if (input.visibility === "members" || input.visibility === "administrators")
+      record.visibility = input.visibility;
     if (
       record.type === "event" &&
       !this.isNetworkManager(user.id, networkId) &&

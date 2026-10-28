@@ -62,6 +62,24 @@ describe("personal annual membership billing", () => {
     });
     expect(revoked.homepageGrants?.events?.enabled).toBe(false);
     expect(revoked.homepageGrants?.recaps).toBeUndefined();
+    f.networks.updateContent(f.owner, f.network.id, event.id, {
+      visibility: "administrators",
+    });
+    const published = f.networks.updateContent(
+      f.owner,
+      f.network.id,
+      event.id,
+      {
+        visibility: "members",
+        homepagePublish: true,
+        data: { publicLocation: "Wiehl, Restaurant" },
+      },
+    );
+    expect(published.visibility).toBe("members");
+    expect(published.homepageGrants?.events?.enabled).toBe(true);
+    expect(published.data.imageUrl).toBe(input.data.imageUrl);
+    expect(published.data.organizer).toBe(input.data.organizer);
+    expect(published.data.cost).toBe(input.data.cost);
   });
   it("registers centrally funded members without personal billing and keeps individual networks unchanged", async () => {
     const f = await fixture();

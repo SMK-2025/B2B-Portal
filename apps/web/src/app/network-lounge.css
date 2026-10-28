@@ -1432,3 +1432,67 @@
     grid-template-columns: 1fr;
   }
 }
+.networkPortal
+  :is(.networkSidebar, .networkMobileNav):has(.networkAdminNav[open])
+  .networkSimpleNav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  flex: 0 0 auto;
+  margin: 8px 0 12px;
+  padding: 0;
+}
+.networkPortal
+  :is(.networkSidebar, .networkMobileNav):has(.networkAdminNav[open])
+  .networkSimpleNav
+  > small {
+  display: none;
+}
+.networkPortal
+  :is(.networkSidebar, .networkMobileNav):has(.networkAdminNav[open])
+  .networkSimpleNav
+  > a {
+  font-size: 0;
+  gap: 0;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 4px;
+  margin: 0;
+}
+.networkPortal
+  :is(.networkSidebar, .networkMobileNav):has(.networkAdminNav[open])
+  .networkSimpleNav
+  > a
+  > span {
+  font-size: 18px;
+}
+.networkPortal
+  :is(.networkSidebar, .networkMobileNav):has(.networkAdminNav[open])
+  .networkMoreNav {
+  display: none;
+}
+.networkPortal
+  :is(.networkSidebar, .networkMobileNav):has(.networkAdminNav[open])
+  .networkAdminNav {
+  margin-top: 0;
+}
+.networkPortal
+  :is(.networkSidebar, .networkMobileNav)
+  .networkAdminNav[open]
+  nav {
+  gap: 4px;
+}
+.networkPortal
+  :is(.networkSidebar, .networkMobileNav)
+  .networkAdminNav[open]
+  nav
+  a {
+  padding-top: 9px;
+  padding-bottom: 9px;
+  min-height: 44px;
+}
+.networkPortal .networkMobileNav[open] {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}

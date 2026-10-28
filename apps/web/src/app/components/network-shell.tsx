@@ -359,6 +359,11 @@ export function NetworkShell({
       key={item.path || "home"}
       className={isActive(item.path) ? "active" : ""}
       href={href(item.path) as never}
+      title={
+        item.path === "spielplan" && slug === "bayer04leverkusen"
+          ? "Bundesliga"
+          : item.label
+      }
     >
       <span>
         <NetworkNavigationIcon path={item.path} />
@@ -390,7 +395,14 @@ export function NetworkShell({
             <b>Netzwerk-Verwaltung</b>
             <small>Initiator</small>
           </summary>
-          <nav>{visibleAdmin.map(itemLink)}{slug==='unternehmerfreunde' && <a href={`/portal/netzwerk/${slug}/veroeffentlichungen`}>Öffentliche Homepage-Freigaben</a>}</nav>
+          <nav>
+            {visibleAdmin.map(itemLink)}
+            {slug === "unternehmerfreunde" && (
+              <a href={`/portal/netzwerk/${slug}/veroeffentlichungen`}>
+                Öffentliche Homepage-Freigaben
+              </a>
+            )}
+          </nav>
         </details>
       )}
     </>

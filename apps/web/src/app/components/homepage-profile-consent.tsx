@@ -197,13 +197,6 @@ function Consent({
         </button>
       </p>
       <p role="status">{notice}</p>
-      {!items.length && !notice && (
-        <p>
-          Für deinen Zugang ist hier noch keine Partnerseite zugeordnet. Lege
-          zuerst deine Unternehmensseite im Netzwerk an. Es ist keine
-          öffentliche Profilfreigabe aktiv.
-        </p>
-      )}
       {enabled && previewedFields !== JSON.stringify([...selected].sort()) && (
         <p>
           Bitte prüfe vor der Freigabe die Vorschau deiner aktuellen
@@ -244,6 +237,7 @@ export function HomepageProfileConsent() {
         eine gesonderte Aktualisierung.
       </p>
       <p role="status">{notice}</p>
+      {!items.length && !notice && <p>Für deinen Zugang ist hier noch keine Partnerseite zugeordnet. Es ist keine öffentliche Profilfreigabe aktiv.</p>}
       {items.map((item) => (
         <Consent
           key={item.id + JSON.stringify(item.grant)}

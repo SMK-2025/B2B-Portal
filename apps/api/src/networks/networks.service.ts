@@ -34,6 +34,7 @@ import {
 } from "./bundesliga-schedule";
 import { partnerHero, partnerSections } from "./partner-onepager";
 import { homepageFields, projectHomepage } from "./homepage-publication";
+import { decodePublicImage, mediaOrigin } from "./homepage-media";
 import {
   PROB_TABLE,
   PROB_TABLE_SOURCE,
@@ -2178,13 +2179,54 @@ export class NetworksService {
       ...record,
       homepageGrants: { ...record.homepageGrants, events: grant },
     };
-    if (
-      grant.enabled &&
-      (network.status !== "active" || !projectHomepage("events", candidate))
-    )
-      throw new BadRequestException(
-        "Für die Homepage bitte Bild, Beginn, Ort, Veranstalter, Kosten und Teilnahmebedingungen ausfüllen sowie Alle Partner und Veröffentlicht wählen. Die Veranstaltung wurde nicht gespeichert.",
-      );
+    if (grant.enabled) {
+      const issues: string[] = [];
+      const required = [
+        ["Titel", record.title],
+        ["Beschreibung", record.description],
+        ["Veranstaltungsort", record.data.publicLocation],
+        ["Veranstalter", record.data.organizer],
+        ["Kosten (z. B. kostenlos)", record.data.cost],
+        ["Teilnahmebedingungen", record.data.participationTerms],
+      ];
+      for (const [label, value] of required)
+        if (typeof value !== "string" || !value.trim())
+          issues.push(`${label} fehlt`);
+      if (!record.startsAt || !Number.isFinite(Date.parse(record.startsAt)))
+        issues.push("Beginn fehlt oder ist ungültig");
+      if (!record.data.imageUrl) issues.push("Veranstaltungsbild fehlt");
+      else if (!decodePublicImage(record.data.imageUrl))
+        issues.push(
+          "Veranstaltungsbild kann nicht verarbeitet werden – bitte erneut als PNG, JPG oder WebP bis 1,5 MB hochladen",
+        );
+      if (record.visibility !== "members")
+        issues.push("Sichtbarkeit muss auf „Alle Partner“ stehen");
+      if (!["published", "active", "completed"].includes(record.status))
+        issues.push("Status muss auf „Veröffentlicht“ stehen");
+      try {
+        new Intl.DateTimeFormat("de-DE", {
+          timeZone: String(record.data.timezone || "Europe/Berlin"),
+        }).format();
+      } catch {
+        issues.push("Zeitzone ist ungültig");
+      }
+      if (issues.length)
+        throw new BadRequestException(
+          `Noch nicht gespeichert. Für die Homepage bitte korrigieren: ${issues.join("; ")}. Deine Eingaben bleiben im Formular erhalten.`,
+        );
+      if (network.status !== "active")
+        throw new BadRequestException(
+          "Das Netzwerk muss zuerst vom Betreiber aktiviert werden. Deine Eingaben bleiben im Formular erhalten.",
+        );
+      if (!mediaOrigin())
+        throw new BadRequestException(
+          "Die öffentliche Bildbereitstellung ist derzeit nicht eingerichtet. Bitte den Betreiber informieren. Deine Eingaben sind korrekt und bleiben im Formular erhalten.",
+        );
+      if (!projectHomepage("events", candidate))
+        throw new BadRequestException(
+          "Die Homepage-Freigabe konnte nicht verarbeitet werden. Bitte den Betreiber informieren. Deine Eingaben bleiben im Formular erhalten.",
+        );
+    }
     record.homepageGrants = candidate.homepageGrants;
     this.operatorAudit(
       userId,

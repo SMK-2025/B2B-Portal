@@ -667,7 +667,20 @@ export function NetworkModuleWorkspace({
         </header>
         <div className="networkContentRows">
           {visible.map((item) => (
-            <article key={item.id}>
+            <article
+              key={item.id}
+              className={
+                module === "veranstaltungen" ? "networkEventRow" : undefined
+              }
+            >
+              {module === "veranstaltungen" &&
+                (item.data.imageUrl || item.data.coverImageUrl) && (
+                  <img
+                    className="networkEventThumbnail"
+                    src={item.data.imageUrl || item.data.coverImageUrl}
+                    alt=""
+                  />
+                )}
               <div>
                 <span className={`networkMemberStatus ${item.status}`}>
                   {labels[item.status]}
@@ -687,14 +700,6 @@ export function NetworkModuleWorkspace({
                     <span className="networkContentCategory">
                       {item.data.category}
                     </span>
-                  )}
-                {module === "veranstaltungen" &&
-                  (item.data.imageUrl || item.data.coverImageUrl) && (
-                    <img
-                      className="networkEventThumbnail"
-                      src={item.data.imageUrl || item.data.coverImageUrl}
-                      alt=""
-                    />
                   )}
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
@@ -1272,6 +1277,11 @@ export function NetworkModuleWorkspace({
                     </span>
                   </label>
                 )}
+              {notice && (
+                <p className="networkEventFormError" role="alert">
+                  {notice}
+                </p>
+              )}
               <div className="adminNetworkDialogActions">
                 <button type="button" onClick={() => setDialog(false)}>
                   Abbrechen

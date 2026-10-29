@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { PartnerChatWorkspace } from "./partner-chat-workspace";
+import { ProfileDialog, type Member } from "./network-members-workspace";
 type Person = { userId: string; name: string; company: string; role: string };
 type Attachment = {
   id: string;
@@ -28,6 +29,7 @@ type Message = {
   deadline?: string;
 };
 type Thread = {
+  type?: string;
   id: string;
   title: string;
   description: string;
@@ -36,6 +38,7 @@ type Thread = {
   canEdit: boolean;
   participants: Person[];
   data: {
+    discussionOpen?: boolean;
     imageUrl?: string | null;
     messages?: Message[];
     options?: string;
@@ -125,6 +128,8 @@ export function NetworkThreadDialog({
   const access = useNetworkAccess(),
     [thread, setThread] = useState<Thread | null>(null),
     [people, setPeople] = useState<Person[]>([]),
+    [members, setMembers] = useState<Member[]>([]),
+    [selectedMember, setSelectedMember] = useState<Member | null>(null),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [kind, setKind] = useState("message");
@@ -133,14 +138,57 @@ export function NetworkThreadDialog({
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !selectedMember) onClose();
     };
     document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = previous;
       document.removeEventListener("keydown", onKey);
     };
-  }, [contentId]);
+  }, [contentId, selectedMember]);
+  useEffect(() => {
+    const token = getPortalSession();
+    if (!token || !access?.networkId) return;
+    let active = true;
+    portalRequest<Member[]>(`/networks/${access.networkId}/memberships`, {
+      token,
+    })
+      .then((rows) => {
+        if (active)
+          setMembers(
+            rows.filter(
+              (row) =>
+                row.status === "active" &&
+                row.organization?.networkProfile?.status === "published",
+            ),
+          );
+      })
+      .catch(() => {
+        if (active) setMembers([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [access?.networkId]);
+  function authorBadge(userId: string, name: string) {
+    const member = members.find((row) => row.userId === userId);
+    const logo = member?.organization?.networkProfile?.logoUrl;
+    return member ? (
+      <button
+        className="networkDiscussionAuthor"
+        onClick={() => setSelectedMember(member)}
+        title="Unternehmensseite öffnen"
+      >
+        {logo ? <img src={logo} alt="" /> : <span>{name.slice(0, 1)}</span>}
+        <b>{name}</b>
+      </button>
+    ) : (
+      <span className="networkDiscussionAuthor">
+        <span>{name.slice(0, 1)}</span>
+        <b>{name}</b>
+      </span>
+    );
+  }
   async function load() {
     const token = getPortalSession();
     if (!token || !access?.networkId) return;
@@ -321,7 +369,7 @@ export function NetworkThreadDialog({
                   className={m.userId === thread.currentUserId ? "own" : ""}
                 >
                   <header>
-                    <b>{m.author}</b>
+                    {authorBadge(m.userId, m.author)}
                     <small>
                       {new Date(m.createdAt).toLocaleString("de-DE")}
                     </small>
@@ -438,7 +486,14 @@ export function NetworkThreadDialog({
                 </article>
               ))}
             </div>
+            {thread.data.discussionOpen === false && (
+              <p className="networkDiscussionClosed">
+                Dieser Beitrag dient zur Information. Die Diskussion ist
+                geschlossen.
+              </p>
+            )}
             {!access?.readOnly &&
+              thread.data.discussionOpen !== false &&
               !["draft", "archived"].includes(thread.status) && (
                 <form onSubmit={send} className="networkExchangeComposer">
                   <label>
@@ -530,6 +585,12 @@ export function NetworkThreadDialog({
           </>
         )}
       </section>
+      {selectedMember && (
+        <ProfileDialog
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
     </div>
   );
 }

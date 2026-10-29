@@ -97,8 +97,8 @@ const configs: Record<string, Config> = {
   },
   themen: {
     type: "topic",
-    singular: "Partnerthema",
-    plural: "Themen und Ankündigungen",
+    singular: "Beitrag",
+    plural: "Aktuelles",
     empty: "Noch keine Partnerthemen veröffentlicht",
     purpose:
       "Teilen Sie Neuigkeiten, holen Sie Meinungen ein und fördern Sie den offenen Austausch im gesamten Partnerkreis.",
@@ -335,6 +335,7 @@ export function NetworkModuleWorkspace({
       };
       if (!file) delete data.file;
       if (module === "themen") {
+        data.discussionOpen = form.get("discussionOpen") === "on";
         if (form.get("removeArticleImage") === "on") data.imageUrl = null;
         const image = form.get("articleImage");
         if (image instanceof File && image.size) {
@@ -948,7 +949,9 @@ export function NetworkModuleWorkspace({
                       editing?.data.category ||
                         (module === "veranstaltungen"
                           ? "Netzwerkveranstaltung"
-                          : ""),
+                          : module === "themen" && access?.isInitiator
+                            ? "Neuigkeit des Initiators"
+                            : ""),
                     )}
                   >
                     <option value="" disabled>
@@ -1295,6 +1298,14 @@ export function NetworkModuleWorkspace({
               )}
               {module === "themen" && (
                 <>
+                  <label className="networkEventPublishConsent">
+                    <input
+                      type="checkbox"
+                      name="discussionOpen"
+                      defaultChecked={editing?.data.discussionOpen !== false}
+                    />
+                    <span>Offene Diskussion für Mitglieder erlauben</span>
+                  </label>
                   <label>
                     Beitragsfoto (optional)
                     <input
@@ -1320,23 +1331,26 @@ export function NetworkModuleWorkspace({
                       </label>
                     </div>
                   )}
-                  <label>
-                    Keywords
-                    <input
-                      name="keywords"
-                      defaultValue={String(editing?.data.keywords || "")}
-                      placeholder="Kommagetrennte Schlagworte"
-                    />
-                  </label>
-                  <label>
-                    Antwortoptionen bei einer Umfrage
-                    <textarea
-                      name="options"
-                      defaultValue={String(editing?.data.options || "")}
-                      rows={3}
-                      placeholder="2 bis 10 Optionen, jeweils eine pro Zeile. Abstimmung im Austauschbereich."
-                    />
-                  </label>
+                  <details>
+                    <summary>Umfrage und Schlagworte (optional)</summary>
+                    <label>
+                      Schlagworte
+                      <input
+                        name="keywords"
+                        defaultValue={String(editing?.data.keywords || "")}
+                        placeholder="Kommagetrennte Schlagworte"
+                      />
+                    </label>
+                    <label>
+                      Antwortoptionen bei einer Umfrage
+                      <textarea
+                        name="options"
+                        defaultValue={String(editing?.data.options || "")}
+                        rows={3}
+                        placeholder="2 bis 10 Optionen, jeweils eine pro Zeile. Abstimmung im Austauschbereich."
+                      />
+                    </label>
+                  </details>
                 </>
               )}
               <div>

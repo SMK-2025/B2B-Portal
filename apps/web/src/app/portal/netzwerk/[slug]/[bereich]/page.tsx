@@ -44,7 +44,7 @@ const pages: Record<string, [string, string]> = {
     "Direkt miteinander sprechen, Bilder teilen und neue Kontakte persönlich vertiefen.",
   ],
   themen: [
-    "Community und Austausch",
+    "Aktuelles aus dem Netzwerk",
     "Neuigkeiten teilen, Meinungen einholen, Erfolge sichtbar machen und gemeinsam Ideen entwickeln.",
   ],
   aufgaben: [

@@ -3076,6 +3076,10 @@ export class NetworksService {
         "Dieser Austausch ist noch nicht geöffnet oder bereits archiviert.",
       );
     const kind = String(input.kind || "message");
+    if (record.type === "topic" && record.data.discussionOpen === false)
+      throw new BadRequestException(
+        "Für diesen Beitrag ist die Diskussion geschlossen.",
+      );
     if (!["message", "meeting", "action"].includes(kind))
       throw new BadRequestException("Ungültiger Beitrag.");
     const attachments = input.file ? [this.checkedAttachment(input.file)] : [];

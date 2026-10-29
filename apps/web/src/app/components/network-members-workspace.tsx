@@ -41,7 +41,7 @@ export type PartnerPageProfile = {
   updatedAt: string;
 };
 type Profile = PartnerPageProfile;
-type Member = {
+export type Member = {
   id: string;
   userId: string;
   role: string;

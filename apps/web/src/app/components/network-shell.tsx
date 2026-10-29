@@ -106,6 +106,7 @@ const NetworkAccessContext = createContext<Access | null>(null);
 export const useNetworkAccess = () => useContext(NetworkAccessContext);
 const primaryPartnerItems = [
   { path: "", label: "Startseite", icon: "⌂" },
+  { path: "themen", label: "Aktuelles", icon: "◉", module: "community" },
   {
     path: "mitglieder",
     label: "Partner entdecken",
@@ -145,7 +146,6 @@ const morePartnerItems = [
     icon: "◇",
     module: "services",
   },
-  { path: "themen", label: "Community", icon: "◉", module: "community" },
   { path: "aufgaben", label: "Aufgaben", icon: "✓", module: "tasks" },
   { path: "dokumente", label: "Dokumente", icon: "▤", module: "documents" },
 ];
@@ -165,7 +165,7 @@ const adminItems = [
   },
   {
     path: "themen",
-    label: "Mitteilungen & Community",
+    label: "Aktuelles & Mitteilungen",
     icon: "◉",
     module: "community",
   },

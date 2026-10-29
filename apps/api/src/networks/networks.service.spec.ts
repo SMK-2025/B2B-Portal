@@ -316,6 +316,24 @@ describe("network tenancy", () => {
       data: { category: "Erfolge & Empfehlungen", imageUrl: photo },
     });
     expect(article.data.imageUrl).toBe(photo);
+    networks.updateContent(initiatorBearer, network.id, article.id, {
+      data: { discussionOpen: false },
+    });
+    expect(() =>
+      networks.reply(partnerBearer, network.id, article.id, {
+        kind: "message",
+        body: "Mein Kommentar",
+      }),
+    ).toThrow(/Diskussion geschlossen/);
+    networks.updateContent(initiatorBearer, network.id, article.id, {
+      data: { discussionOpen: true },
+    });
+    expect(
+      networks.reply(partnerBearer, network.id, article.id, {
+        kind: "message",
+        body: "Mein Kommentar",
+      }).data.messages,
+    ).toHaveLength(1);
     expect(
       networks.updateContent(initiatorBearer, network.id, article.id, {
         description: "Aktualisierter Rückblick",

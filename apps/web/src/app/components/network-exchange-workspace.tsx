@@ -36,6 +36,7 @@ type Thread = {
   canEdit: boolean;
   participants: Person[];
   data: {
+    imageUrl?: string | null;
     messages?: Message[];
     options?: string;
     votes?: Record<string, number>;
@@ -270,6 +271,13 @@ export function NetworkThreadDialog({
           <>
             <div className="networkExchangeMessages">
               <article className="networkExchangeIntro">
+                {thread.data.imageUrl && (
+                  <img
+                    className="networkArticlePhoto"
+                    src={thread.data.imageUrl}
+                    alt="Beitragsfoto"
+                  />
+                )}
                 <p>{thread.description}</p>
                 {thread.data.options && (
                   <section className="networkExchangeAction">

@@ -12,6 +12,7 @@ type Item = {
   description: string;
   startsAt: string | null;
   updatedAt: string;
+  createdAt?: string;
   data: Record<string, unknown>;
 };
 type Dashboard = {
@@ -355,13 +356,43 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
               <div className="loungeNews">
                 {data.announcements.length ? (
                   data.announcements.slice(0, 2).map((item) => (
-                    <Link href={`${base}/themen` as never} key={item.id}>
+                    <Link
+                      href={
+                        `${base}/themen?article=${encodeURIComponent(item.id)}` as never
+                      }
+                      key={item.id}
+                    >
+                      <time
+                        className="loungeArticleDate"
+                        dateTime={item.createdAt || item.updatedAt}
+                      >
+                        <strong>
+                          {new Date(
+                            item.createdAt || item.updatedAt,
+                          ).toLocaleDateString("de-DE", {
+                            day: "2-digit",
+                            timeZone: "Europe/Berlin",
+                          })}
+                        </strong>
+                        <span>
+                          {new Date(
+                            item.createdAt || item.updatedAt,
+                          ).toLocaleDateString("de-DE", {
+                            month: "short",
+                            timeZone: "Europe/Berlin",
+                          })}
+                        </span>
+                      </time>
                       {itemImage(item) && <img src={itemImage(item)} alt="" />}
                       <div>
                         <h3>{item.title}</h3>
                         <p className="loungeExcerpt">{item.description}</p>
                         <time>
-                          {new Date(item.updatedAt).toLocaleDateString("de-DE")}
+                          {new Date(
+                            item.createdAt || item.updatedAt,
+                          ).toLocaleDateString("de-DE", {
+                            timeZone: "Europe/Berlin",
+                          })}
                         </time>
                       </div>
                     </Link>

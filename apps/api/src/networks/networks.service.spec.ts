@@ -303,6 +303,34 @@ describe("network tenancy", () => {
         recapImages: ["data:image/png;base64,AA=="],
       },
     });
+    networks.updateSettings(initiatorBearer, network.id, {
+      enabledModules: ["profiles", "events", "documents", "community"],
+    });
+    const photo =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=";
+    const article = networks.createContent(initiatorBearer, network.id, {
+      type: "topic",
+      title: "Unser Netzwerkabend",
+      description: "Ein gemeinsamer Rückblick",
+      status: "published",
+      data: { category: "Erfolge & Empfehlungen", imageUrl: photo },
+    });
+    expect(article.data.imageUrl).toBe(photo);
+    expect(
+      networks.updateContent(initiatorBearer, network.id, article.id, {
+        description: "Aktualisierter Rückblick",
+      }).data.imageUrl,
+    ).toBe(photo);
+    expect(() =>
+      networks.updateContent(initiatorBearer, network.id, article.id, {
+        data: { imageUrl: "data:image/png;base64,AA==" },
+      }),
+    ).toThrow(/Foto/);
+    expect(
+      networks.updateContent(initiatorBearer, network.id, article.id, {
+        data: { imageUrl: null },
+      }).data.imageUrl,
+    ).toBeNull();
     expect(
       networks.networkNotifications(partnerBearer, network.id),
     ).toContainEqual(

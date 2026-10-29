@@ -23,6 +23,7 @@ type Item = {
   homepageGrants?: { events?: { enabled: boolean } };
   visibility: "members" | "administrators";
   updatedAt: string;
+  createdAt?: string;
   data: Record<string, any>;
   attendanceSummary?: { registrations: number; persons: number };
 };
@@ -215,6 +216,10 @@ export function NetworkModuleWorkspace({
     void load();
   }, [module, slug, access?.networkId]);
   useEffect(() => {
+    if (module === "themen" && items.length) {
+      const id = new URLSearchParams(window.location.search).get("article");
+      if (items.some((item) => item.id === id)) setThreadId(id);
+    }
     if (module !== "veranstaltungen" || !networkId || !items.length) return;
     const id = new URLSearchParams(window.location.search).get("event");
     const item = items.find((entry) => entry.id === id);
@@ -329,6 +334,15 @@ export function NetworkModuleWorkspace({
         options: form.get("options"),
       };
       if (!file) delete data.file;
+      if (module === "themen") {
+        if (form.get("removeArticleImage") === "on") data.imageUrl = null;
+        const image = form.get("articleImage");
+        if (image instanceof File && image.size) {
+          if (!["image/png", "image/jpeg", "image/webp"].includes(image.type))
+            throw new Error("Bitte ein PNG-, JPG- oder WebP-Foto auswählen.");
+          data.imageUrl = (await readDocument(image)).dataUrl;
+        }
+      }
       if (module === "veranstaltungen") {
         for (const field of [
           "timezone",
@@ -699,10 +713,12 @@ export function NetworkModuleWorkspace({
             <article
               key={item.id}
               className={
-                module === "veranstaltungen" ? "networkEventRow" : undefined
+                ["veranstaltungen", "themen"].includes(module)
+                  ? "networkEventRow"
+                  : undefined
               }
             >
-              {module === "veranstaltungen" &&
+              {["veranstaltungen", "themen"].includes(module) &&
                 (item.data.imageUrl || item.data.coverImageUrl) && (
                   <img
                     className="networkEventThumbnail"
@@ -737,7 +753,7 @@ export function NetworkModuleWorkspace({
                     ? new Date(item.startsAt).toLocaleString("de-DE")
                     : module === "veranstaltungen"
                       ? "Ohne Termin"
-                      : `Zuletzt aktualisiert ${new Date(item.updatedAt).toLocaleDateString("de-DE")}`}{" "}
+                      : `Beitrag vom ${new Date(item.createdAt || item.updatedAt).toLocaleDateString("de-DE")}`}{" "}
                   ·{" "}
                   {item.visibility === "administrators"
                     ? "Nur Verwaltung"
@@ -1279,6 +1295,31 @@ export function NetworkModuleWorkspace({
               )}
               {module === "themen" && (
                 <>
+                  <label>
+                    Beitragsfoto (optional)
+                    <input
+                      name="articleImage"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                    />
+                    <small>
+                      PNG, JPG oder WebP bis 1,5 MB. Das Foto erscheint im
+                      Beitrag und auf der Netzwerk-Startseite.
+                    </small>
+                  </label>
+                  {editing?.data.imageUrl && (
+                    <div>
+                      <img
+                        className="networkArticlePhoto"
+                        src={String(editing.data.imageUrl)}
+                        alt="Aktuelles Beitragsfoto"
+                      />
+                      <label className="networkEventPublishConsent">
+                        <input type="checkbox" name="removeArticleImage" />
+                        <span>Foto entfernen</span>
+                      </label>
+                    </div>
+                  )}
                   <label>
                     Keywords
                     <input

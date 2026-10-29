@@ -1622,3 +1622,51 @@
   object-fit: contain;
   padding: 3px;
 }
+.networkArticlePhoto {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.loungeNews > a > .loungeArticleDate {
+  flex: 0 0 46px;
+  min-height: 62px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: var(--network-accent, #5267d8);
+  color: #fff;
+}
+.loungeArticleDate strong {
+  font-size: 22px;
+  line-height: 1.15;
+}
+.loungeArticleDate span {
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.loungeNews > a > img {
+  flex: 0 0 86px;
+  width: 86px;
+  height: 72px;
+}
+.loungeNews > a > div {
+  min-width: 0;
+}
+.loungeNews > a {
+  gap: 12px;
+}
+@media (max-width: 420px) {
+  .loungeNews > a {
+    flex-wrap: wrap;
+  }
+  .loungeNews > a > div {
+    flex: 1 1 150px;
+  }
+}

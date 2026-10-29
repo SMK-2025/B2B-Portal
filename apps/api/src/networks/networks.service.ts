@@ -3653,6 +3653,14 @@ export class NetworksService {
     data: Record<string, unknown>,
     creating: boolean,
   ) {
+    if (
+      type === "topic" &&
+      data.imageUrl != null &&
+      !decodePublicImage(data.imageUrl)
+    )
+      throw new BadRequestException(
+        "Bitte ein gültiges PNG-, JPG- oder WebP-Foto bis 1,5 MB hochladen.",
+      );
     if (type === "topic" && data.options) {
       const options = String(data.options)
         .split(/\r?\n/)

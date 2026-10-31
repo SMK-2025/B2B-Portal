@@ -134,7 +134,23 @@ export class AutomaticBillingService
           typeof (error as { stderr?: unknown })?.stderr === "string"
             ? String((error as { stderr: string }).stderr)
             : "";
+        const stdout =
+          typeof (error as { stdout?: unknown })?.stdout === "string"
+            ? String((error as { stdout: string }).stdout)
+            : "";
+        const validationErrors = (
+          stdout.match(/<error\b[^>]*>[\s\S]*?<\/error>/g) || []
+        )
+          .slice(0, 5)
+          .map((s) =>
+            s
+              .replace(/<[^>]*>/g, " ")
+              .replace(/\s+/g, " ")
+              .trim(),
+          )
+          .join("; ");
         this.selfTestDiagnostic =
+          validationErrors ||
           stderr
             .split(/\r?\n/)
             .filter((line) => /Exception:|Error:|Caused by:/i.test(line))

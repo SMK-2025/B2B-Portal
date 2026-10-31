@@ -21,6 +21,7 @@ export class AutomaticBillingService
   private running = false;
   formatValidated = false;
   formatError: string | null = null;
+  selfTestDiagnostic: string | null = null;
   readiness() {
     return {
       configured: !!this.sql,
@@ -128,6 +129,25 @@ export class AutomaticBillingService
     } catch (error) {
       if (!this.formatValidated) {
         const detail = error instanceof Error ? error.message : "";
+        // Only the synthetic preflight (never a member invoice) reaches this branch.
+        const stderr =
+          typeof (error as { stderr?: unknown })?.stderr === "string"
+            ? String((error as { stderr: string }).stderr)
+            : "";
+        this.selfTestDiagnostic =
+          stderr
+            .split(/\r?\n/)
+            .filter((line) => /Exception:|Error:|Caused by:/i.test(line))
+            .slice(-3)
+            .map((line) =>
+              line.replace(/\/tmp\/b2b-invoice-[^\s)]+/g, "[temporary-file]"),
+            )
+            .join(" ")
+            .slice(0, 800) ||
+          detail
+            .split(/\r?\n/)[0]
+            .replace(/\/tmp\/b2b-invoice-[^\s)]+/g, "[temporary-file]")
+            .slice(0, 250);
         this.formatError = detail.includes("--action combine")
           ? "COMBINE"
           : detail.includes("--action validate")

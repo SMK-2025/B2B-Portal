@@ -16,7 +16,7 @@ COPY packages packages
 RUN pnpm --filter @portal/api build
 
 FROM node:22-alpine AS runtime
-RUN apk add --no-cache openjdk17-jre-headless ghostscript ca-certificates \
+RUN apk add --no-cache openjdk17-jre ghostscript ca-certificates \
     && mkdir -p /opt/b2b \
     && wget -q 'https://github.com/ZUGFeRD/mustangproject/releases/download/core-2.26.0/Mustang-CLI-2.26.0.jar' -O /opt/b2b/mustang.jar \
     && echo '42d7868cb68264874a7b8cab4c3587b03b23ccc7cd72373da917f66758bb9736  /opt/b2b/mustang.jar' | sha256sum -c - \

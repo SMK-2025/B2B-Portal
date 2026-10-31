@@ -1,4 +1,5 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { NetworkOrderRecord } from "../core/domain";
@@ -15,9 +16,17 @@ const money = (n: number) =>
   }) + " EUR";
 export async function invoicePdf(data: InvoiceData): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
+  doc.registerFontkit(fontkit);
   const page = doc.addPage([595.28, 841.89]),
-    regular = await doc.embedFont(StandardFonts.Helvetica),
-    bold = await doc.embedFont(StandardFonts.HelveticaBold);
+    regular = await doc.embedFont(
+      await readFile(join(__dirname, "../../assets/NotoSans-Regular.ttf")),
+      { subset: true },
+    ),
+    bold = await doc.embedFont(
+      await readFile(join(__dirname, "../../assets/NotoSans-Bold.ttf")),
+      { subset: true },
+    );
+  const supported = new Set(regular.getCharacterSet());
   const ink = rgb(0.16, 0.15, 0.25),
     accent = rgb(0.39, 0.49, 0.95);
   const clean = (s: string) => {
@@ -26,7 +35,7 @@ export async function invoicePdf(data: InvoiceData): Promise<Uint8Array> {
       .replace(/[–—]/g, "-")
       .replace(/[„“”]/g, '"')
       .replace(/[‘’]/g, "'");
-    if (/[^\x20-\x7e\u00a0-\u00ff€]/.test(normalized))
+    if ([...normalized].some((char) => !supported.has(char.codePointAt(0)!)))
       throw Error(
         "Rechnungsdaten enthalten Zeichen, die mit der eingebundenen Schrift nicht verlustfrei dargestellt werden können.",
       );

@@ -18,6 +18,7 @@ export class HealthController {
       status: "ok",
       einvoiceValidated: this.billing.formatValidated,
       einvoiceCheck: this.billing.formatError,
+      einvoiceReadiness: this.billing.readiness(),
       testAccountReset:
         this.store.maintenanceReceipts.get(RESET_TEST_MEMBER_JOB)?.state ||
         "not_run",

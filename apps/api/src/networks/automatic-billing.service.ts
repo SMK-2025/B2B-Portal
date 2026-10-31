@@ -21,6 +21,15 @@ export class AutomaticBillingService
   private running = false;
   formatValidated = false;
   formatError: string | null = null;
+  readiness() {
+    return {
+      configured: !!this.sql,
+      persistenceReady: this.store.homepageReadsSafe(),
+      running: this.running,
+      validated: this.formatValidated,
+      check: this.formatError,
+    };
+  }
   private logger = new Logger(AutomaticBillingService.name);
   constructor(
     private store: PortalStore,

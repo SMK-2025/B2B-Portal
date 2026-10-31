@@ -142,7 +142,10 @@ export async function zugferdInvoice(d: InvoiceData): Promise<Uint8Array> {
     try {
       await readFile(out);
     } catch {
-      throw new Error(`combine: ${combined.stderr.slice(-1800) || combined.stdout.slice(-1800)}`);
+      throw Object.assign(new Error("--action combine did not produce a PDF"), {
+        stderr: combined.stderr,
+        stdout: combined.stdout,
+      });
     }
     const report = await run(
       java,

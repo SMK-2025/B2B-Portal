@@ -113,7 +113,7 @@ export async function zugferdInvoice(d: InvoiceData): Promise<Uint8Array> {
       options,
     );
     const java = process.env.B2B_JAVA || "java";
-    await run(
+    const combined = await run(
       java,
       [
         "-Xmx512m",
@@ -138,6 +138,12 @@ export async function zugferdInvoice(d: InvoiceData): Promise<Uint8Array> {
       ],
       options,
     );
+    // The CLI catches combination errors and can exit successfully without a file.
+    try {
+      await readFile(out);
+    } catch {
+      throw new Error(`combine: ${combined.stderr.slice(-1800) || combined.stdout.slice(-1800)}`);
+    }
     const report = await run(
       java,
       [

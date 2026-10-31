@@ -102,7 +102,7 @@ export async function zugferdInvoice(d: InvoiceData): Promise<Uint8Array> {
         `--permit-file-read=${icc}`,
         "-dBATCH",
         "-dNOPAUSE",
-        "-dPDFA=1",
+        "-dPDFA=3",
         "-sDEVICE=pdfwrite",
         "-sColorConversionStrategy=RGB",
         "-dPDFACompatibilityPolicy=1",

@@ -11,6 +11,34 @@ import { PortalStore } from "../core/portal.store";
 export class EmailService {
   constructor(@Optional() private readonly store?: PortalStore) {}
   private readonly logger = new Logger(EmailService.name);
+  async sendInvoice(
+    to: string,
+    number: string,
+    dueOn: string,
+    pdf: Uint8Array,
+  ) {
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
+      throw new ServiceUnavailableException(
+        "Rechnungsversand ist nicht konfiguriert.",
+      );
+    const subject = `B2B Matching - Rechnung ${number}`;
+    const text = `Guten Tag,\n\nim Anhang erhalten Sie Ihre Rechnung ${number} für Ihre gebuchte B2B-Matching-Portalnutzung. Bitte überweisen Sie den Rechnungsbetrag bis zum ${new Date(dueOn + "T12:00:00Z").toLocaleDateString("de-DE")}. Die Bankverbindung und der Leistungszeitraum stehen auf der Rechnung.\n\nMedia Online Innovations Group, Inhaber Martin Kelm\nIm Weidenblech 25, 51371 Leverkusen\nmail@media-online-innovations.group`;
+    await this.send({
+      to,
+      bcc: OPERATOR_EMAIL,
+      subject,
+      text,
+      html: `<p>${this.escape(text).replace(/\n/g, "<br>")}</p>`,
+      attachments: [
+        {
+          content: Buffer.from(pdf).toString("base64"),
+          filename: `${number}.pdf`,
+          type: "application/pdf",
+          disposition: "attachment",
+        },
+      ],
+    });
+  }
   async sendOperatorInformation(subject: string, text: string) {
     if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
       throw new ServiceUnavailableException(
@@ -233,6 +261,13 @@ export class EmailService {
     subject: string;
     text: string;
     html: string;
+    attachments?: {
+      content: string;
+      filename: string;
+      type: string;
+      disposition: string;
+    }[];
+    bcc?: string;
   }): Promise<void> {
     const apiKey = process.env.SENDGRID_API_KEY;
     const fromEmail = process.env.MAIL_FROM_EMAIL;
@@ -259,9 +294,18 @@ export class EmailService {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        personalizations: [{ to: [{ email: message.to }] }],
+        personalizations: [
+          {
+            to: [{ email: message.to }],
+            ...(message.bcc &&
+            message.bcc.toLowerCase() !== message.to.toLowerCase()
+              ? { bcc: [{ email: message.bcc }] }
+              : {}),
+          },
+        ],
         from: { email: fromEmail, name: fromName },
         subject: message.subject,
+        ...(message.attachments ? { attachments: message.attachments } : {}),
         content: [
           { type: "text/plain", value: message.text },
           { type: "text/html", value: message.html },

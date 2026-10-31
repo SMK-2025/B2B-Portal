@@ -10,6 +10,16 @@ type Quote = {
   grossCents: number;
   initiator: boolean;
   memberPaymentModel?: "individual" | "network";
+  months?: number;
+  billing?: {
+    version: string;
+    freeUntil: string | null;
+    paidFrom: string | null;
+    paidThrough: string | null;
+    autoRenew: boolean;
+    renewalMonths: number;
+    automaticInvoices: boolean;
+  } | null;
 };
 const money = (n: number) =>
   (n / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
@@ -114,6 +124,22 @@ export function MemberAnnualRegistrationFields({
   if (summaryOnly)
     return (
       <div className="full registrationPriceStep">
+        {quote.billing?.freeUntil && (
+          <p>
+            <strong>
+              Kostenlos bis{" "}
+              {new Date(
+                quote.billing.freeUntil + "T12:00:00Z",
+              ).toLocaleDateString("de-DE")}
+              .
+            </strong>{" "}
+            Danach gilt der unten angegebene Gesamtpreis für {quote.months}{" "}
+            Monate
+            {quote.billing.paidThrough &&
+              ` bis ${new Date(quote.billing.paidThrough + "T12:00:00Z").toLocaleDateString("de-DE")}`}
+            .
+          </p>
+        )}
         <p className="registrationPortalPurpose">
           Dein Zugang zum unabhängigen Business- und Partnerportal im Umfeld von{" "}
           {quote.networkName}.
@@ -124,7 +150,7 @@ export function MemberAnnualRegistrationFields({
             <dd>{money(quote.monthlyNetCents)} netto / Monat</dd>
           </div>
           <div>
-            <dt>12 Monate netto</dt>
+            <dt>{quote.months || 12} Monate netto</dt>
             <dd>{money(quote.annualNetCents)}</dd>
           </div>
           <div>
@@ -132,13 +158,15 @@ export function MemberAnnualRegistrationFields({
             <dd>{money(quote.vatCents)}</dd>
           </div>
           <div className="registrationPriceTotal">
-            <dt>Jahresbetrag im Voraus</dt>
+            <dt>Gesamtbetrag</dt>
             <dd>{money(quote.grossCents)}</dd>
           </div>
         </dl>
         <p className="registrationPriceTerms">
-          Separate Rechnung · keine Online-Abbuchung · keine automatische
-          Verlängerung
+          Separate Rechnung · keine Online-Abbuchung ·{" "}
+          {quote.billing?.autoRenew
+            ? "Saisonverlängerung, im Mitgliedskonto ausschaltbar"
+            : "keine automatische Verlängerung"}
         </p>
         {onContinue && (
           <form
@@ -172,7 +200,10 @@ export function MemberAnnualRegistrationFields({
       <h2>Deine Portalnutzung für {quote.networkName}</h2>
       <p>Alle Funktionen für deinen persönlichen Partnerzugang.</p>
       <p>
-        <b>{money(quote.monthlyNetCents)} netto pro Monat × 12 Monate</b>
+        <b>
+          {money(quote.monthlyNetCents)} netto pro Monat × {quote.months || 12}{" "}
+          Monate
+        </b>
       </p>
       <p>
         Jahresbeitrag netto: {money(quote.annualNetCents)}
@@ -182,8 +213,42 @@ export function MemberAnnualRegistrationFields({
         <strong>Gesamtbetrag im Voraus: {money(quote.grossCents)}</strong>
       </p>
       <p>
-        Zwölf Monate ab Buchung, sofortiger Zugang. Die Jahresrechnung erhältst
-        du separat. Keine Online-Abbuchung, keine automatische Verlängerung.
+        {quote.billing ? (
+          <>
+            Sofortiger Zugang.
+            {quote.billing.freeUntil && (
+              <>
+                {" "}
+                Kostenlos bis{" "}
+                {new Date(
+                  quote.billing.freeUntil + "T12:00:00Z",
+                ).toLocaleDateString("de-DE")}
+                .
+              </>
+            )}{" "}
+            {quote.billing.paidFrom && quote.billing.paidThrough && (
+              <>
+                Kostenpflichtiger Zeitraum:{" "}
+                {new Date(
+                  quote.billing.paidFrom + "T12:00:00Z",
+                ).toLocaleDateString("de-DE")}{" "}
+                bis{" "}
+                {new Date(
+                  quote.billing.paidThrough + "T12:00:00Z",
+                ).toLocaleDateString("de-DE")}
+                .
+              </>
+            )}{" "}
+            {quote.billing.freeUntil
+              ? "Die Rechnung wird 15 Tage vor Ende der kostenlosen Nutzung versendet, zahlbar innerhalb von 14 Tagen. Bei späterer Anmeldung erfolgt der Versand nach der Buchung."
+              : "Die Rechnung folgt nach der Buchung mit 14 Tagen Zahlungsziel."}
+          </>
+        ) : (
+          <>
+            Zwölf Monate ab Buchung, sofortiger Zugang. Die Rechnung erhältst du
+            separat. Keine Online-Abbuchung, keine automatische Verlängerung.
+          </>
+        )}
       </p>
     </div>
   );
@@ -191,6 +256,35 @@ export function MemberAnnualRegistrationFields({
   return (
     <>
       {!hidePrice && price}
+      {quote.billing?.automaticInvoices && (
+        <label className="full memberAnnualConsent">
+          <input type="checkbox" name="pdfInvoiceAccepted" required />
+          <span>
+            Ich stimme zu, Rechnungen als PDF per E-Mail an meine angegebene
+            Rechnungsadresse zu erhalten.
+          </span>
+        </label>
+      )}
+      {quote.billing && (
+        <input
+          type="hidden"
+          name="acceptedBillingVersion"
+          value={quote.billing.version}
+        />
+      )}
+      {quote.billing?.autoRenew && (
+        <label className="full memberAnnualConsent">
+          <input type="checkbox" required name="renewalAccepted" />
+          <span>
+            Ich stimme der automatischen Verlängerung um jeweils{" "}
+            {quote.billing.renewalMonths} Monate zum hier genannten Monatspreis
+            zu. Ich kann die Verlängerung bis 16 Kalendertage vor Beginn der
+            Folgesaison im Mitgliedskonto ausschalten. Bei Saisonbeginn am
+            01.07. gilt der 15.06. einschließlich; die Folgerechnung wird am
+            16.06. versendet.
+          </span>
+        </label>
+      )}
       <input
         type="hidden"
         name="acceptedMonthlyNetCents"
@@ -275,15 +369,18 @@ export function MemberAnnualRegistrationFields({
           <Link href="/agb" target="_blank">
             Vertragsbedingungen
           </Link>{" "}
-          sowie die oben dargestellte zwölfmonatige Laufzeit.
+          sowie die oben dargestellte Laufzeit von {quote.months || 12} Monaten
+          und die ausdrücklich bestätigten Abrechnungsbedingungen.
         </span>
       </label>
       <label className="full memberAnnualConsent">
         <input type="checkbox" name="paymentObligationAccepted" required />
         <span>
           Ich buche verbindlich für insgesamt {money(quote.grossCents)}{" "}
-          inklusive 19 % MwSt. für zwölf Monate im Voraus. Die Zahlungspflicht
-          besteht auch bei sofortiger Freischaltung.
+          inklusive 19 % MwSt. für {quote.months || 12} Monate.{" "}
+          {quote.billing?.freeUntil
+            ? "Bis zum angegebenen Ende der kostenlosen Nutzung fallen keine Nutzungsgebühren an. Die Rechnung betrifft ausschließlich den vereinbarten kostenpflichtigen Zeitraum."
+            : "Die Zahlungspflicht besteht auch bei sofortiger Freischaltung."}
         </span>
       </label>
       <button className="primary full" disabled={loading}>

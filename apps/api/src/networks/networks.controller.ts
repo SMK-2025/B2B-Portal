@@ -9,10 +9,58 @@ import {
   Query,
 } from "@nestjs/common";
 import { NetworksService } from "./networks.service";
+import { AutomaticBillingService } from "./automatic-billing.service";
 
 @Controller("networks")
 export class NetworksController {
-  constructor(private readonly networks: NetworksService) {}
+  constructor(
+    private readonly networks: NetworksService,
+    private readonly billing: AutomaticBillingService,
+  ) {}
+  @Get("admin/invoice-status") async invoiceStatus(
+    @Headers("authorization") auth: string | undefined,
+  ) {
+    this.networks.memberRegistrations(auth);
+    return this.billing.status();
+  }
+  @Get("admin/invoice-status/:invoiceId/pdf") async invoicePdf(
+    @Headers("authorization") auth: string | undefined,
+    @Param("invoiceId") id: string,
+  ) {
+    this.networks.memberRegistrations(auth);
+    const result = await this.billing.document(id);
+    if (!result)
+      throw new BadRequestException("Rechnungs-PDF noch nicht verfügbar.");
+    return result;
+  }
+  @Get(":networkId/my-billing") myBilling(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+  ) {
+    return this.networks.myBilling(auth, id);
+  }
+  @Get(":networkId/billing-offer") billingOffer(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+  ) {
+    return this.networks.billingOffer(auth, id);
+  }
+  @Post(":networkId/my-billing/:orderId/accept-policy") acceptPolicy(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Param("orderId") orderId: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.acceptBillingPolicy(auth, id, orderId, body);
+  }
+  @Post(":networkId/my-billing/:orderId/renewal") renewal(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Param("orderId") orderId: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.changeRenewal(auth, id, orderId, body);
+  }
   @Get("admin/operator-mails") operatorMails(
     @Headers("authorization") auth: string | undefined,
   ) {

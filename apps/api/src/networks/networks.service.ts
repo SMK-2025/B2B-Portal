@@ -35,6 +35,8 @@ import {
 import { partnerHero, partnerSections } from "./partner-onepager";
 import { homepageFields, projectHomepage } from "./homepage-publication";
 import { decodePublicImage, mediaOrigin } from "./homepage-media";
+import { calendarDate, addCalendarDays } from "./invoice-schedule";
+import { memberBillingSettings } from "./member-billing-settings";
 import {
   PROB_TABLE,
   PROB_TABLE_SOURCE,
@@ -47,6 +49,7 @@ import {
   pricing,
   validMemberPrice,
   memberPrice,
+  annualOrder,
 } from "./annual-membership";
 import {
   allProductModuleIds,
@@ -239,9 +242,64 @@ export class NetworksService {
     const user = this.auth.authenticate(authorization);
     this.requirePlatformAdmin(user.id);
     const network = this.raw(id);
-    network.settings.memberMonthlyNetCents = validMemberPrice(
-      input.monthlyNetCents,
-    );
+    const cents = validMemberPrice(input.monthlyNetCents);
+    if (input.billing && typeof input.billing === "object") {
+      const b = input.billing as Record<string, unknown>;
+      const months = Number(b.months),
+        renewalMonths = Number(b.renewalMonths || 12);
+      if (
+        !Number.isInteger(months) ||
+        months < 1 ||
+        months > 36 ||
+        !Number.isInteger(renewalMonths) ||
+        renewalMonths < 1 ||
+        renewalMonths > 36
+      )
+        throw new BadRequestException(
+          "Laufzeit bitte in ganzen Monaten von 1 bis 36 angeben.",
+        );
+      const freeUntil = b.freeUntil ? calendarDate(b.freeUntil) : null;
+      const paidFrom = b.paidFrom
+        ? calendarDate(b.paidFrom)
+        : freeUntil
+          ? addCalendarDays(freeUntil, 1)
+          : null;
+      const paidThrough = b.paidThrough ? calendarDate(b.paidThrough) : null;
+      if (
+        (paidFrom && !paidThrough) ||
+        (!paidFrom && paidThrough) ||
+        (paidFrom && paidThrough && paidFrom > paidThrough) ||
+        (freeUntil && paidFrom !== addCalendarDays(freeUntil, 1))
+      )
+        throw new BadRequestException(
+          "Bitte zusammenhängenden Zeitraum nach der kostenlosen Nutzung angeben.",
+        );
+      if (b.autoRenew === true && (!paidThrough || renewalMonths !== 12))
+        throw new BadRequestException(
+          "Automatische Saisonverlängerung benötigt ein festes Saisonende und zwölf Folgemonate.",
+        );
+      if (paidFrom && paidThrough) {
+        const start = new Date(paidFrom + "T12:00:00Z");
+        start.setUTCMonth(start.getUTCMonth() + months);
+        if (
+          start.toISOString().slice(0, 10) !== addCalendarDays(paidThrough, 1)
+        )
+          throw new BadRequestException(
+            "Monatsanzahl und Leistungszeitraum stimmen nicht überein.",
+          );
+      }
+      network.settings.memberBilling = {
+        months,
+        freeUntil,
+        paidFrom,
+        paidThrough,
+        autoRenew: b.autoRenew === true,
+        renewalMonths,
+        automaticInvoices: b.automaticInvoices === true,
+        version: randomUUID(),
+      };
+    }
+    network.settings.memberMonthlyNetCents = cents;
     network.updatedAt = new Date().toISOString();
     return { ...network, memberPrice: pricing(network) };
   }
@@ -260,6 +318,117 @@ export class NetworksService {
           Date.parse(o.serviceEndsAt) <= Date.now() + 42 * 86400000,
         expired: !!o.serviceEndsAt && Date.parse(o.serviceEndsAt) <= Date.now(),
       }));
+  }
+  myBilling(authorization: string | undefined, networkId: string) {
+    const user = this.auth.authenticate(authorization);
+    this.requireNetworkAccess(user.id, networkId);
+    return [...this.store.networkOrders.values()]
+      .filter(
+        (o) =>
+          o.networkId === networkId &&
+          o.orderedByUserId === user.id &&
+          o.kind === "member_annual" &&
+          o.status === "accepted",
+      )
+      .sort((a, b) =>
+        (b.serviceEndsAt || "").localeCompare(a.serviceEndsAt || ""),
+      );
+  }
+  billingOffer(authorization: string | undefined, networkId: string) {
+    const user = this.auth.authenticate(authorization);
+    this.requireNetworkAccess(user.id, networkId);
+    const network = this.raw(networkId);
+    return {
+      networkName: network.name,
+      ...pricing(network),
+      centrallyFunded: network.settings.memberPaymentModel === "network",
+    };
+  }
+  acceptBillingPolicy(
+    authorization: string | undefined,
+    networkId: string,
+    orderId: string,
+    input: Record<string, unknown>,
+  ) {
+    const orders = this.myBilling(authorization, networkId),
+      source = orders.find((o) => o.id === orderId);
+    const network = this.raw(networkId);
+    if (
+      !source ||
+      source.billingPolicy ||
+      !network.settings.memberBilling ||
+      network.settings.memberPaymentModel === "network"
+    )
+      throw new BadRequestException(
+        "Für diese Buchung ist keine Umstellung verfügbar.",
+      );
+    if (
+      source.paymentStatus === "paid" ||
+      source.invoiceSentAt ||
+      source.invoiceReference
+    )
+      throw new BadRequestException(
+        "Für diese Buchung besteht bereits eine Zahlung oder Rechnung. Bitte den Betreiber zur individuellen Umstellung kontaktieren; es wird keine weitere Rechnung ausgelöst.",
+      );
+    const next = annualOrder(network, source.orderedByUserId, {
+      ...input,
+      legalName: source.invoiceCompany,
+      invoiceContact: source.invoiceContact,
+      invoiceEmail: source.invoiceEmail,
+      invoiceStreet: source.invoiceStreet,
+      invoicePostalCode: source.invoicePostalCode,
+      invoiceCity: source.invoiceCity,
+      invoiceCountry: source.invoiceCountry,
+      invoiceVatId: source.invoiceVatId,
+    });
+    next.membershipId = source.membershipId;
+    next.organizationId = source.organizationId;
+    next.billingPolicy!.sourceOrderId = source.id;
+    source.status = "cancelled";
+    this.store.networkOrders.set(next.id, next);
+    this.operatorAudit(
+      source.orderedByUserId,
+      networkId,
+      "billing.policy.accepted",
+      {
+        oldOrderId: source.id,
+        newOrderId: next.id,
+        version: next.billingPolicy!.version,
+      },
+    );
+    return next;
+  }
+  changeRenewal(
+    authorization: string | undefined,
+    networkId: string,
+    orderId: string,
+    input: Record<string, unknown>,
+  ) {
+    const order = this.myBilling(authorization, networkId).find(
+      (o) => o.id === orderId,
+    );
+    if (!order?.billingPolicy?.renewalDeadline)
+      throw new BadRequestException(
+        "Für diese Buchung ist keine automatische Verlängerung vereinbart.",
+      );
+    if (typeof input.enabled !== "boolean")
+      throw new BadRequestException(
+        "Bitte einen gültigen Verlängerungsstatus angeben.",
+      );
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Berlin",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    if (today > order.billingPolicy.renewalDeadline)
+      throw new BadRequestException(
+        "Die Änderungsfrist für diese Saison ist abgelaufen. Bitte den Betreiber kontaktieren.",
+      );
+    order.billingPolicy.renewalDisabledAt = input.enabled
+      ? null
+      : new Date().toISOString();
+    return order;
   }
   updateMemberInvoice(
     authorization: string | undefined,
@@ -366,6 +535,9 @@ export class NetworksService {
       trialEndsAt: null,
       enabledModules: fullPortalModules(),
       settings: {
+        ...(input.billing
+          ? { memberBilling: memberBillingSettings(input.billing) }
+          : {}),
         closedNetwork: true,
         selfRegistration: false,
         crossNetworkMatching: false,

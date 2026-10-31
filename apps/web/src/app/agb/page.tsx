@@ -11,7 +11,7 @@ export default function Agb() {
       eyebrow="VERTRAGSBEDINGUNGEN"
       title="Allgemeine Geschäftsbedingungen"
       intro="Klare Regeln für geschlossene Partnerportale, Initiatoren und eingeladene Netzwerkpartner."
-      updated="19. Oktober 2026"
+      updated="31. Oktober 2026"
     >
       <LegalSection title="1. Anbieter und Geltungsbereich">
         <p>
@@ -73,24 +73,50 @@ export default function Agb() {
       <LegalSection title="6. Persönliche Jahresmitgliedschaft und Preise">
         <p>
           Jedes eingeladene Partnermitglied bucht seinen eigenen Zugang
-          einschließlich aller Portal-Funktionen für zwölf Monate. Der
-          Standardpreis beträgt 69,00 Euro netto pro Monat, entsprechend 828,00
-          Euro netto zuzüglich 157,32 Euro (19 %) Umsatzsteuer, insgesamt 985,32
-          Euro brutto für zwölf Monate im Voraus. Der Plattformbetreiber kann je
-          Netzwerk einen abweichenden Preis festlegen. Maßgeblich ist
-          ausschließlich der bei der verbindlichen Buchung angezeigte und
-          ausdrücklich bestätigte Preis. Spätere Preisänderungen wirken nicht
-          rückwirkend auf bestehende Buchungen.
+          einschließlich aller Portal-Funktionen für die bei der Buchung
+          ausgewiesene Laufzeit. Ohne abweichende Vereinbarung beträgt diese
+          zwölf Monate. Der Standardpreis beträgt 69,00 Euro netto pro Monat,
+          entsprechend 828,00 Euro netto zuzüglich 157,32 Euro (19 %)
+          Umsatzsteuer, insgesamt 985,32 Euro brutto für zwölf Monate im Voraus.
+          Der Plattformbetreiber kann je Netzwerk einen abweichenden Preis
+          festlegen. Maßgeblich ist ausschließlich der bei der verbindlichen
+          Buchung angezeigte und ausdrücklich bestätigte Preis. Spätere
+          Preisänderungen wirken nicht rückwirkend auf bestehende Buchungen.
         </p>
         <p>
-          Die Laufzeit beginnt mit der verbindlichen Buchung und sofortigen
-          Freischaltung. Der Gesamtbetrag wird jährlich im Voraus berechnet. Die
-          Rechnung wird anschließend manuell durch den Anbieter versendet; das
-          Zahlungsziel ergibt sich aus der Rechnung. Eine Online-Abbuchung
-          erfolgt nicht. Eine neue kostenpflichtige Laufzeit erfordert eine
-          gesonderte Vereinbarung; es gibt keine automatische Verlängerung.
-          Bestehende Konten werden durch diese Umstellung nicht ohne neue
-          Buchung nachträglich kostenpflichtig.
+          Kostenlose Nutzungsphase, kostenpflichtiger Leistungszeitraum,
+          Monatsbetrag und Gesamtbetrag werden vor der verbindlichen Buchung
+          angezeigt. Bei vereinbarter kostenloser Anfangsphase wird die Rechnung
+          15 Kalendertage vor deren letztem Tag per E-Mail versendet. Das
+          Zahlungsziel beträgt 14 Kalendertage nach Rechnungsdatum. Bei einer
+          späteren Buchung erfolgt die Rechnungsstellung nach der Buchung mit 14
+          Kalendertagen Zahlungsziel. Eine Online-Abbuchung erfolgt nicht. Der
+          Versand im PDF-Format setzt die ausdrückliche Zustimmung des
+          Empfängers voraus. Bestehende Konten werden durch diese Umstellung
+          nicht ohne neue Buchung nachträglich kostenpflichtig.
+        </p>
+        <p>
+          Eine automatische Verlängerung gilt nur, wenn sie bei der Buchung
+          ausdrücklich vereinbart und bestätigt wurde. Bei einer
+          Saisonvereinbarung verlängert sich der Zugang um jeweils zwölf Monate
+          zum bestätigten Monatspreis, sofern die Verlängerung nicht
+          fristgerecht im Mitgliedskonto ausgeschaltet wird. Die Frist endet
+          einschließlich 16 Kalendertage vor dem Beginn der Folgesaison. Für
+          eine Saison vom 01.07. bis 30.06. ist dies der 15.06.; die
+          Folgerechnung wird am 16.06. versendet und ist innerhalb von 14
+          Kalendertagen zahlbar. Ausschalten und erneutes Einschalten werden im
+          Mitgliedskonto bestätigt. Nach Ablauf der Frist ist für die betroffene
+          Saison eine individuelle Abstimmung mit dem Anbieter erforderlich.
+          Ohne ausdrückliche Vereinbarung findet keine automatische Verlängerung
+          statt.
+        </p>
+        <p>
+          Neue Abrechnungseinstellungen ändern bereits bestätigte Buchungen
+          nicht rückwirkend. Eine Umstellung bestehender Mitglieder auf eine
+          Saisonvereinbarung oder automatische Verlängerung erfordert deren
+          ausdrückliche Zustimmung. Bei zentraler Finanzierung durch das
+          Netzwerk entsteht für Mitglieder keine persönliche Rechnung aus der
+          Portalnutzung.
         </p>
       </LegalSection>
       <LegalSection title="7. Nutzung und Inhalte">

@@ -1,5 +1,6 @@
 import { Controller, Get } from "@nestjs/common";
 import { PortalStore } from "./core/portal.store";
+import { AutomaticBillingService } from "./networks/automatic-billing.service";
 import {
   RETIRE_INITIATOR_JOB,
   RESET_TEST_MEMBER_JOB,
@@ -7,18 +8,30 @@ import {
 
 @Controller("health")
 export class HealthController {
-  constructor(private readonly store: PortalStore) {}
+  constructor(
+    private readonly store: PortalStore,
+    private readonly billing: AutomaticBillingService,
+  ) {}
   @Get()
   status() {
     return {
       status: "ok",
+      einvoiceValidated: this.billing.formatValidated,
       testAccountReset:
         this.store.maintenanceReceipts.get(RESET_TEST_MEMBER_JOB)?.state ||
         "not_run",
       service: "portal-api",
       apiRelease: "2026-10-22-partner-media-chat",
-      revision: process.env.RAILWAY_GIT_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || null,
-      capabilities: ["partner-hero-image", "partner-onepager-sections", "bundesliga-schedule", "direct-partner-chat"],
+      revision:
+        process.env.RAILWAY_GIT_COMMIT_SHA ||
+        process.env.VERCEL_GIT_COMMIT_SHA ||
+        null,
+      capabilities: [
+        "partner-hero-image",
+        "partner-onepager-sections",
+        "bundesliga-schedule",
+        "direct-partner-chat",
+      ],
       timestamp: new Date().toISOString(),
       maintenance:
         this.store.maintenanceReceipts.get(RETIRE_INITIATOR_JOB)?.state ||

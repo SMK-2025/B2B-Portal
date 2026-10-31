@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
+import { InvoiceDispatchStatus } from "./invoice-dispatch-status";
 type Row = {
   id: string;
   networkName: string;
@@ -17,6 +18,7 @@ type Row = {
   annualNetCents: number;
   vatCents: number;
   grossCents: number;
+  minimumTermMonths?: number;
   submittedAt: string;
   serviceStartsAt: string;
   serviceEndsAt: string;
@@ -30,7 +32,19 @@ type Row = {
 type Network = {
   id: string;
   name: string;
-  memberPrice: { monthlyNetCents: number };
+  memberPrice: {
+    monthlyNetCents: number;
+    months?: number;
+    billing?: {
+      months: number;
+      freeUntil: string | null;
+      paidFrom: string | null;
+      paidThrough: string | null;
+      autoRenew: boolean;
+      renewalMonths: number;
+      automaticInvoices: boolean;
+    } | null;
+  };
 };
 const money = (n: number) =>
     (n / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" }),
@@ -64,11 +78,23 @@ export function AdminMemberRegistrations() {
     e.preventDefault();
     setBusy(true);
     try {
-      const value = new FormData(e.currentTarget).get("price"),
+      const form = new FormData(e.currentTarget);
+      const value = form.get("price"),
         cents = Math.round(Number(value) * 100);
       await portalRequest(`/networks/${id}/member-pricing`, {
         token: getPortalSession() || "",
-        body: { monthlyNetCents: cents },
+        body: {
+          monthlyNetCents: cents,
+          billing: {
+            months: Number(form.get("months")),
+            freeUntil: form.get("freeUntil"),
+            paidFrom: form.get("paidFrom"),
+            paidThrough: form.get("paidThrough"),
+            autoRenew: form.get("autoRenew") === "on",
+            renewalMonths: 12,
+            automaticInvoices: form.get("automaticInvoices") === "on",
+          },
+        },
       });
       setNotice(
         "Preis für künftige Buchungen gespeichert. Bestehende Jahresbuchungen bleiben unverändert.",
@@ -182,6 +208,7 @@ export function AdminMemberRegistrations() {
   }
   return (
     <div className="memberBillingWorkspace">
+      <InvoiceDispatchStatus />
       <section className="networkCard">
         <header>
           <h2>Mitgliedspreise je Partnernetzwerk</h2>
@@ -202,10 +229,66 @@ export function AdminMemberRegistrations() {
                   defaultValue={n.memberPrice.monthlyNetCents / 100}
                 />
               </label>
+              <label>
+                Laufzeit in Monaten
+                <input
+                  name="months"
+                  type="number"
+                  min="1"
+                  max="36"
+                  required
+                  defaultValue={n.memberPrice.months || 12}
+                />
+              </label>
+              <label>
+                Kostenlos bis einschließlich
+                <input
+                  name="freeUntil"
+                  type="date"
+                  defaultValue={n.memberPrice.billing?.freeUntil || ""}
+                />
+              </label>
+              <label>
+                Kostenpflichtig ab
+                <input
+                  name="paidFrom"
+                  type="date"
+                  defaultValue={n.memberPrice.billing?.paidFrom || ""}
+                />
+              </label>
+              <label>
+                Kostenpflichtig bis einschließlich
+                <input
+                  name="paidThrough"
+                  type="date"
+                  defaultValue={n.memberPrice.billing?.paidThrough || ""}
+                />
+              </label>
+              <label>
+                <input
+                  name="autoRenew"
+                  type="checkbox"
+                  defaultChecked={n.memberPrice.billing?.autoRenew || false}
+                />
+                Automatische Verlängerung um zwölf Monate vereinbaren
+              </label>
+              <label>
+                <input
+                  name="automaticInvoices"
+                  type="checkbox"
+                  defaultChecked={
+                    n.memberPrice.billing?.automaticInvoices || false
+                  }
+                />
+                Rechnungen automatisch erstellen und mit BCC versenden
+              </label>
               <small>
-                × 12 Monate im Voraus, zzgl. 19 % MwSt. Initiator kostenlos.
+                Netto pro Monat × Laufzeit, zzgl. 19 % MwSt. Änderungen gelten
+                für neu bestätigte Buchungen. Versand 15 Tage vor Ende der
+                kostenlosen Nutzung, Zahlungsziel 14 Tage. Bei Folgesaison am
+                01.07.: Verlängerung ausschaltbar bis 15.06., Rechnung am 16.06.
               </small>
-              <button disabled={busy}>Preis speichern</button>
+              <button disabled={busy}>Abrechnung speichern</button>
             </form>
           ))}
         </div>
@@ -257,10 +340,10 @@ export function AdminMemberRegistrations() {
                     new Date(Date.parse(r.serviceEndsAt) - 1).toISOString(),
                   )}
                 </b>{" "}
-                · zwölf Monate
+                · {r.minimumTermMonths || 12} Monate
                 <br />
-                {money(r.monthlyNetCents)} × 12 = {money(r.annualNetCents)}{" "}
-                netto + {money(r.vatCents)} MwSt. ={" "}
+                {money(r.monthlyNetCents)} × {r.minimumTermMonths || 12} ={" "}
+                {money(r.annualNetCents)} netto + {money(r.vatCents)} MwSt. ={" "}
                 <b>{money(r.grossCents)} brutto im Voraus</b>
               </p>
               <p>

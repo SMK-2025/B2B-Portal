@@ -107,6 +107,15 @@ export function AdminNetworkWorkspace() {
           legalName: form.get("legalName"),
           websiteUrl: form.get("websiteUrl"),
           memberPaymentModel: form.get("memberPaymentModel"),
+          billing: {
+            months: Number(form.get("billingMonths")),
+            freeUntil: form.get("billingFreeUntil"),
+            paidFrom: form.get("billingPaidFrom"),
+            paidThrough: form.get("billingPaidThrough"),
+            autoRenew: form.get("billingAutoRenew") === "on",
+            renewalMonths: 12,
+            automaticInvoices: form.get("billingAutoInvoices") === "on",
+          },
           memberMonthlyNetCents: Math.round(
             Number(form.get("memberMonthlyPrice")) * 100,
           ),
@@ -604,13 +613,52 @@ export function AdminNetworkWorkspace() {
                     required
                   />
                   <small>
-                    Bei Einzelzahlung: pro Partnermitglied, zwölf Monate im
-                    Voraus zzgl. 19 % MwSt. Bei zentraler Zahlung erfolgt die
+                    Bei Einzelzahlung: pro Partnermitglied für die eingestellte
+                    Laufzeit zzgl. 19 % MwSt. Bei zentraler Zahlung erfolgt die
                     Netzwerkrechnung separat gemäß Vereinbarung; dieser Preis
                     wird den Mitgliedern nicht angezeigt. Initiator kostenlos.
                     Später unter „Anmeldungen & Mitgliedsjahre“ änderbar.
                   </small>
                 </label>
+                <label>
+                  Laufzeit in Monaten
+                  <input
+                    type="number"
+                    name="billingMonths"
+                    min="1"
+                    max="36"
+                    defaultValue={12}
+                    required
+                  />
+                </label>
+                <details>
+                  <summary>Saison und Rechnungsversand (optional)</summary>
+                  <label>
+                    Kostenlos bis einschließlich
+                    <input type="date" name="billingFreeUntil" />
+                  </label>
+                  <label>
+                    Kostenpflichtig ab
+                    <input type="date" name="billingPaidFrom" />
+                  </label>
+                  <label>
+                    Kostenpflichtig bis einschließlich
+                    <input type="date" name="billingPaidThrough" />
+                  </label>
+                  <label>
+                    <input type="checkbox" name="billingAutoRenew" />
+                    Verlängerung um zwölf Monate vereinbaren
+                  </label>
+                  <label>
+                    <input type="checkbox" name="billingAutoInvoices" />
+                    Validierte E-Rechnungen automatisch versenden
+                  </label>
+                  <p>
+                    Versand 15 Tage vor Ende der kostenlosen Phase, Zahlungsziel
+                    14 Tage. Bestehende Buchungen werden nicht rückwirkend
+                    geändert.
+                  </p>
+                </details>
                 <label>
                   Wer bezahlt die Netzwerkmitgliedschaften?
                   <select

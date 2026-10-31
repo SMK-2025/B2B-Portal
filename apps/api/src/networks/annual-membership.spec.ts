@@ -6,6 +6,61 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("snapshots a five-month season only after explicit consent and supports timely renewal opt-out", async () => {
+    const f = await fixture();
+    f.networks.memberPricing(f.owner, f.network.id, {
+      monthlyNetCents: 6900,
+      billing: {
+        months: 5,
+        freeUntil: "2027-01-31",
+        paidFrom: "2027-02-01",
+        paidThrough: "2027-06-30",
+        autoRenew: true,
+        renewalMonths: 12,
+        automaticInvoices: true,
+      },
+    });
+    const version = f.network.settings.memberBilling!.version;
+    expect(pricing(f.network)).toMatchObject({
+      months: 5,
+      annualNetCents: 34500,
+      grossCents: 41055,
+    });
+    expect(() => f.orgs.create(f.member, f.input, true)).toThrow();
+    f.orgs.create(
+      f.member,
+      {
+        ...f.input,
+        acceptedBillingVersion: version,
+        renewalAccepted: true,
+        pdfInvoiceAccepted: true,
+      },
+      true,
+    );
+    const order = [...f.store.networkOrders.values()][0];
+    expect(order.minimumTermMonths).toBe(5);
+    expect(order.billingPolicy).toMatchObject({
+      version,
+      invoiceDate: "2027-01-16",
+      paymentDueDate: "2027-01-30",
+      renewalDeadline: "2027-06-15",
+      renewalInvoiceDate: "2027-06-16",
+      autoRenew: true,
+    });
+    expect(order.serviceEndsAt).toBe("2027-06-30T22:00:00.000Z");
+    f.networks.changeRenewal(f.member, f.network.id, order.id, {
+      enabled: false,
+    });
+    expect(order.billingPolicy?.renewalDisabledAt).toBeTruthy();
+    expect(() =>
+      f.networks.changeRenewal(f.owner, f.network.id, order.id, {
+        enabled: true,
+      }),
+    ).toThrow();
+    f.networks.memberPricing(f.owner, f.network.id, { monthlyNetCents: 8000 });
+    expect(order.monthlyNetCents).toBe(6900);
+    expect(order.grossCents).toBe(41055);
+  });
   afterEach(() => vi.unstubAllEnvs());
   it("publishes or withdraws an event in the same save without partial writes or member escalation", async () => {
     vi.stubEnv("PUBLIC_HOMEPAGE_MEDIA_ORIGIN", "https://api.example.test");

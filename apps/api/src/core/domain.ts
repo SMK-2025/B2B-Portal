@@ -170,6 +170,16 @@ export interface NetworkRecord {
     billingMode?: "standard" | "cooperation_free";
     memberPaymentModel?: "individual" | "network";
     memberMonthlyNetCents?: number;
+    memberBilling?: {
+      months: number;
+      freeUntil: string | null;
+      paidFrom: string | null;
+      paidThrough: string | null;
+      autoRenew: boolean;
+      renewalMonths: number;
+      automaticInvoices: boolean;
+      version: string;
+    };
   };
   createdAt: string;
   updatedAt: string;
@@ -331,7 +341,22 @@ export interface NetworkOrderRecord {
   moduleUnitPrices: Partial<Record<NetworkModule, number>>;
   monthlyNetCents: number;
   setupNetCents: number;
-  minimumTermMonths: 12;
+  minimumTermMonths: number;
+  billingPolicy?: {
+    version: string;
+    acceptedAt: string;
+    pdfConsentAt?: string;
+    freeUntil: string | null;
+    invoiceDate: string;
+    paymentDueDate: string;
+    autoRenew: boolean;
+    renewalMonths: number;
+    renewalDeadline: string | null;
+    renewalInvoiceDate: string | null;
+    automaticInvoices: boolean;
+    renewalDisabledAt?: string | null;
+    sourceOrderId?: string;
+  };
   termsVersion: string;
   pricingVersion: string;
   authorityConfirmed: boolean;

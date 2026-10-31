@@ -3,6 +3,11 @@ import { randomUUID } from "node:crypto";
 import type { NetworkRecord, NetworkOrderRecord } from "../core/domain";
 import { emailAddress, requiredText } from "../core/validation";
 import {
+  addCalendarDays,
+  invoiceSchedule,
+  berlinMidnight,
+} from "./invoice-schedule";
+import {
   allProductModuleIds,
   expandNetworkModules,
 } from "./network-module-catalog";
@@ -16,14 +21,16 @@ export function memberPrice(network: NetworkRecord) {
 }
 export function pricing(network: NetworkRecord) {
   const monthlyNetCents = memberPrice(network),
-    annualNetCents = monthlyNetCents * 12,
+    annualNetCents =
+      monthlyNetCents * (network.settings.memberBilling?.months || 12),
     vatCents = Math.round((annualNetCents * 19) / 100);
   return {
     monthlyNetCents,
     annualNetCents,
     vatCents,
     grossCents: annualNetCents + vatCents,
-    months: 12,
+    months: network.settings.memberBilling?.months || 12,
+    billing: network.settings.memberBilling || null,
     vatPercent: 19,
     currency: "EUR",
   };
@@ -50,6 +57,27 @@ export function annualOrder(
       "Das Partnernetzwerk muss vor einer kostenpflichtigen Mitgliederbuchung vollständig aktiviert sein.",
     );
   const quote = pricing(network);
+  const policy = network.settings.memberBilling;
+  if (
+    policy?.automaticInvoices &&
+    input.pdfInvoiceAccepted !== true &&
+    input.pdfInvoiceAccepted !== "on"
+  )
+    throw new BadRequestException(
+      "Bitte den Rechnungsversand als PDF an die Rechnungs-E-Mail bestätigen.",
+    );
+  if (policy && input.acceptedBillingVersion !== policy.version)
+    throw new BadRequestException(
+      "Die Abrechnungseinstellungen wurden geändert. Bitte neu laden und die aktuellen Bedingungen bestätigen.",
+    );
+  if (
+    policy?.autoRenew &&
+    input.renewalAccepted !== true &&
+    input.renewalAccepted !== "on"
+  )
+    throw new BadRequestException(
+      "Bitte die automatische Saisonverlängerung ausdrücklich bestätigen.",
+    );
   if (
     input.paymentObligationAccepted !== true ||
     input.termsAccepted !== true ||
@@ -64,8 +92,25 @@ export function annualOrder(
     );
   const now = new Date(),
     end = new Date(now);
-  end.setUTCFullYear(end.getUTCFullYear() + 1);
-  if (end.getUTCMonth() !== now.getUTCMonth()) end.setUTCDate(0);
+  end.setUTCMonth(end.getUTCMonth() + quote.months);
+  if (end.getUTCDate() !== now.getUTCDate()) end.setUTCDate(0);
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+  if (policy?.paidThrough && today > policy.paidThrough)
+    throw new BadRequestException(
+      "Dieser Abrechnungszeitraum ist abgelaufen. Bitte den Betreiber kontaktieren.",
+    );
+  const schedule = policy?.freeUntil ? invoiceSchedule(policy.freeUntil) : null;
+  const serviceStart = policy?.paidFrom
+    ? berlinMidnight(policy.paidFrom)
+    : now.toISOString();
+  const serviceEnd = policy?.paidThrough
+    ? berlinMidnight(addCalendarDays(policy.paidThrough, 1))
+    : end.toISOString();
   return {
     id: randomUUID(),
     kind: "member_annual",
@@ -116,7 +161,33 @@ export function annualOrder(
     vatCents: quote.vatCents,
     grossCents: quote.grossCents,
     setupNetCents: 0,
-    minimumTermMonths: 12,
+    minimumTermMonths: quote.months,
+    ...(policy
+      ? {
+          billingPolicy: {
+            version: policy.version,
+            acceptedAt: now.toISOString(),
+            ...(policy.automaticInvoices
+              ? { pdfConsentAt: now.toISOString() }
+              : {}),
+            freeUntil: policy.freeUntil,
+            invoiceDate: schedule?.invoiceDate || today,
+            paymentDueDate:
+              schedule?.paymentDueDate || addCalendarDays(today, 14),
+            autoRenew: policy.autoRenew,
+            renewalMonths: policy.renewalMonths,
+            renewalDeadline:
+              policy.autoRenew && policy.paidThrough
+                ? addCalendarDays(addCalendarDays(policy.paidThrough, 1), -16)
+                : null,
+            renewalInvoiceDate:
+              policy.autoRenew && policy.paidThrough
+                ? addCalendarDays(addCalendarDays(policy.paidThrough, 1), -15)
+                : null,
+            automaticInvoices: policy.automaticInvoices,
+          },
+        }
+      : {}),
     termsVersion: "member-annual-2026-10-19",
     pricingVersion: "member-flat-annual-2026-10-19",
     authorityConfirmed: true,
@@ -127,10 +198,21 @@ export function annualOrder(
     decidedAt: now.toISOString(),
     decidedByUserId: null,
     paymentStatus: "open",
-    paymentDueAt: null,
+    paymentDueAt: policy
+      ? new Date(
+          Date.parse(
+            berlinMidnight(
+              addCalendarDays(
+                schedule?.paymentDueDate || addCalendarDays(today, 14),
+                1,
+              ),
+            ),
+          ) - 1,
+        ).toISOString()
+      : null,
     paidAt: null,
-    serviceStartsAt: now.toISOString(),
-    serviceEndsAt: end.toISOString(),
+    serviceStartsAt: serviceStart,
+    serviceEndsAt: serviceEnd,
     invoiceSentAt: null,
     invoiceReference: null,
   };

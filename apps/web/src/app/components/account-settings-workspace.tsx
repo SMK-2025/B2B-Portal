@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { MemberBillingAccount } from "./member-billing-account";
 import {
   clearPortalSession,
   getPortalSession,
@@ -97,6 +98,7 @@ export function AccountSettingsWorkspace({
     );
   return (
     <div className="networkFunctionalWorkspace accountSecuritySettings">
+      <MemberBillingAccount />
       {notice && (
         <p role="status" className="networkModulePurpose">
           {notice}

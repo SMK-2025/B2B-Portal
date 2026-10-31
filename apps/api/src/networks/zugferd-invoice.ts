@@ -132,7 +132,7 @@ export async function zugferdInvoice(d: InvoiceData): Promise<Uint8Array> {
         "--version",
         "2",
         "--profile",
-        "EN16931",
+        "e",
         "--no-additional-attachments",
         "--disable-file-logging",
       ],
@@ -152,7 +152,21 @@ export async function zugferdInvoice(d: InvoiceData): Promise<Uint8Array> {
       ],
       options,
     );
-    if (!/<summary\s+status=["']valid["']/.test(report.stdout))
+    const summaries = [
+      ...report.stdout.matchAll(/<summary\s+status=["']([^"']+)["']/g),
+    ];
+    const pdfReport =
+      /<pdf\b[^>]*>([\s\S]*?)<\/pdf>/.exec(report.stdout)?.[1] || "";
+    if (
+      !summaries.length ||
+      summaries.some((s) => s[1] !== "valid") ||
+      !pdfReport ||
+      /isCompliant[=\s"'>:]+false|status=["']invalid/i.test(pdfReport) ||
+      !(
+        /isCompliant[=\s"'>:]+true/i.test(pdfReport) ||
+        /<summary\s+status=["']valid["']/.test(pdfReport)
+      )
+    )
       throw Error("ZUGFeRD validation did not confirm validity");
     return await readFile(out);
   } finally {

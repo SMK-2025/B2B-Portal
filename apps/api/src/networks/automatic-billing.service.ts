@@ -20,6 +20,7 @@ export class AutomaticBillingService
   private timer?: ReturnType<typeof setInterval>;
   private running = false;
   formatValidated = false;
+  formatError: string | null = null;
   private logger = new Logger(AutomaticBillingService.name);
   constructor(
     private store: PortalStore,
@@ -79,6 +80,7 @@ export class AutomaticBillingService
         };
         await zugferdInvoice(sample);
         this.formatValidated = true;
+        this.formatError = null;
       }
       const today = new Intl.DateTimeFormat("en-CA", {
         timeZone: "Europe/Berlin",
@@ -114,7 +116,17 @@ export class AutomaticBillingService
         )
           await this.renew(order, today);
       }
-    } catch {
+    } catch (error) {
+      if (!this.formatValidated) {
+        const detail = error instanceof Error ? error.message : "";
+        this.formatError = detail.includes("--action combine")
+          ? "COMBINE"
+          : detail.includes("--action validate")
+            ? "VALIDATE"
+            : detail.includes("gs ")
+              ? "PDFA_CONVERSION"
+              : "FORMAT_CHECK";
+      }
       this.logger.error(
         "Automatische Abrechnung fehlgeschlagen. Bitte Abrechnungsstatus prüfen.",
       );

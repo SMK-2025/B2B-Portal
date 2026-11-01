@@ -170,11 +170,11 @@ export class EmailService {
     const link = `${this.webUrl()}/registrieren?network=${encodeURIComponent(input.networkSlug)}&email=${encodeURIComponent(input.email)}&invite=${encodeURIComponent(input.inviteToken)}`;
     await this.send({
       to: input.email,
-      subject: `Einladung in das Partnerportal ${input.networkName}`,
-      text: `Sie wurden in das geschlossene Partnerportal ${input.networkName} eingeladen.\n\nRegistrierung starten:\n${link}`,
+      subject: `Ihre Einladung zum Netzwerkpartner-Portal · ${input.networkName}`,
+      text: `Sie wurden in das Netzwerkpartner-Portal der Media Online Innovations Group eingeladen. Ihr Netzwerk: ${input.networkName}. Lernen Sie Unternehmen kennen, entdecken Sie Leistungen und knüpfen Sie neue Kontakte. Anbieter und Betreiber ist die Media Online Innovations Group.\n\nRegistrierung starten:\n${link}`,
       html: this.template(
         "Ihre Netzwerkeinladung",
-        `Sie wurden eingeladen, dem geschlossenen Partnerportal <strong>${this.escape(input.networkName)}</strong> beizutreten.`,
+        `Sie wurden in das <strong>Netzwerkpartner-Portal der Media Online Innovations Group</strong> eingeladen. Ihr Netzwerk: ${this.escape(input.networkName)}.<br><br>Lernen Sie Unternehmen kennen, entdecken Sie Leistungen und knüpfen Sie neue Kontakte. Anbieter und Betreiber ist die Media Online Innovations Group.`,
         "Registrierung starten",
         link,
         "Die Aufnahme erfolgt nach Prüfung durch die Netzwerkverwaltung.",
@@ -192,10 +192,10 @@ export class EmailService {
     await this.send({
       to: input.email,
       subject: `Ihr Zugang zum Netzwerk ${input.networkName}`,
-      text: `Ihr bestehendes B2B-Matching-Konto wurde für das geschlossene Unternehmensnetzwerk ${input.networkName} freigeschaltet.\n\nJetzt anmelden:\n${link}`,
+      text: `Ihr bestehendes B2B-Matching-Konto wurde für das Netzwerk ${input.networkName} im Netzwerkpartner-Portal der Media Online Innovations Group freigeschaltet.\n\nJetzt anmelden:\n${link}`,
       html: this.template(
         "Ihr Netzwerkzugang ist freigeschaltet",
-        `Ihr bestehendes B2B-Matching-Konto wurde für das geschlossene Unternehmensnetzwerk <strong>${this.escape(input.networkName)}</strong> freigeschaltet.`,
+        `Ihr bestehendes B2B-Matching-Konto wurde für das Netzwerk <strong>${this.escape(input.networkName)}</strong> im Netzwerkpartner-Portal der Media Online Innovations Group freigeschaltet.`,
         "Zum Netzwerk anmelden",
         link,
         "Melden Sie sich mit Ihrer bestehenden E-Mail-Adresse und Ihrem vorhandenen Passwort an.",

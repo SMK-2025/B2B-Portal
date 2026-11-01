@@ -93,7 +93,7 @@ export function MemberAnnualRegistrationFields({
       return (
         <div className="full">
           <p>
-            Deine persönliche Einladung zu {quote.networkName}. Erstelle deinen
+            Deine persönliche Einladung ins Business-Netzwerk im Umfeld von {quote.networkName}. Erstelle deinen
             Zugang und werde Teil unseres Business-Netzwerks.
           </p>
           {onContinue && (
@@ -197,8 +197,8 @@ export function MemberAnnualRegistrationFields({
     );
   const price = (
     <div className="full pricingClarity">
-      <h2>Deine Portalnutzung für {quote.networkName}</h2>
-      <p>Alle Funktionen für deinen persönlichen Partnerzugang.</p>
+      <h2>Deine Nutzung des Netzwerkpartner-Portals</h2>
+      <p>Alle Funktionen für deinen persönlichen Partnerzugang. Anbieter und Vertragspartner: Media Online Innovations Group.</p>
       <p>
         <b>
           {money(quote.monthlyNetCents)} netto pro Monat × {quote.months || 12}{" "}

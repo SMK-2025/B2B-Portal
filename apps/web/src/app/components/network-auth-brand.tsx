@@ -57,8 +57,8 @@ export function NetworkAuthFrame({
             <span>{brand.name.slice(0, 2).toUpperCase()}</span>
           )}
           <div>
-            <b>{brand.name}</b>
-            <small>Geschütztes Partnerportal</small>
+            <b>{brand.slug === "bayer04leverkusen" ? "Das Netzwerkpartner-Portal" : brand.name}</b>
+            <small>{brand.slug === "bayer04leverkusen" ? "der Media Online Innovations Group" : "Geschütztes Partnerportal"}</small>
           </div>
         </Link>
         <em>Sicherer Netzwerkzugang</em>
@@ -66,15 +66,15 @@ export function NetworkAuthFrame({
       <section>
         <aside>
           <span>
-            {kind === "login" ? "WILLKOMMEN ZURÜCK" : "PERSÖNLICHE EINLADUNG"}
+            {brand.slug === "bayer04leverkusen" ? "UNABHÄNGIG. INHABERGEFÜHRT. PERSÖNLICH." : kind === "login" ? "WILLKOMMEN ZURÜCK" : "PERSÖNLICHE EINLADUNG"}
           </span>
           <h1>
-            {kind === "login"
+            {brand.slug === "bayer04leverkusen" ? "Gemeinsam mehr erreichen. Persönlich verbunden." : kind === "login"
               ? `Willkommen bei ${brand.name}.`
               : `Ihr Zugang zu ${brand.name}.`}
           </h1>
           <p>
-            {kind === "login"
+            {brand.slug === "bayer04leverkusen" ? "Lerne Menschen und Unternehmen aus deinem Business-Netzwerk kennen, entdecke Angebote und Leistungen und komm direkt ins Gespräch – auch zwischen den gemeinsamen Treffen." : kind === "login"
               ? "Informationen, Kontakte, Veranstaltungen und Zusammenarbeit in Ihrem geschlossenen Partnernetzwerk."
               : "Richten Sie Ihren persönlichen Zugang ein. Ihre Daten und Unternehmensseite bleiben ausschließlich innerhalb dieses Netzwerks sichtbar."}
           </p>
@@ -88,7 +88,7 @@ export function NetworkAuthFrame({
       </section>
       <footer>
         <span>
-          © {new Date().getFullYear()} {brand.name}
+          © {new Date().getFullYear()} Media Online Innovations Group
         </span>
         <span>Technisch bereitgestellt durch B2B Matching</span>
       </footer>

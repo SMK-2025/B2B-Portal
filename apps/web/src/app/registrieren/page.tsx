@@ -199,8 +199,8 @@ export default function RegistrationPage() {
               <span>{networkBrand.name.slice(0, 2).toUpperCase()}</span>
             )}
             <div>
-              <b>{networkBrand.name}</b>
-              <small>Geschütztes Partnerportal</small>
+              <b>{networkBrand.slug === "bayer04leverkusen" ? "Das Netzwerkpartner-Portal" : networkBrand.name}</b>
+              <small>{networkBrand.slug === "bayer04leverkusen" ? "der Media Online Innovations Group" : "Geschütztes Partnerportal"}</small>
             </div>
           </Link>
           <em>Persönliche Einladung</em>
@@ -222,7 +222,9 @@ export default function RegistrationPage() {
           ) : (
             <>
               <span>
-                {networkBrand
+                {networkBrand?.slug === "bayer04leverkusen"
+                  ? "UNABHÄNGIG. INHABERGEFÜHRT. PERSÖNLICH."
+                  : networkBrand
                   ? `IHR START BEI ${networkBrand.name.toUpperCase()}`
                   : "IHR PARTNERPORTAL-ZUGANG"}
               </span>
@@ -232,10 +234,10 @@ export default function RegistrationPage() {
                 Persönlich verbunden.
               </h2>
               <p>
-                Lerne die Menschen hinter den Unternehmen kennen und bleib auch
+                {networkBrand?.slug === "bayer04leverkusen" ? "Dieses Portal wird unabhängig vom Verein durch die inhabergeführte Media Online Innovations Group bereitgestellt und betrieben. Entdecke Unternehmen und Leistungen, knüpfe Kontakte und bleib auch zwischen den Treffen im Gespräch." : <>Lerne die Menschen hinter den Unternehmen kennen und bleib auch
                 zwischen gemeinsamen Treffen im Gespräch. Teile Ideen, stell
                 dein Angebot vor und finde neue Kontakte – persönlich und
-                geschützt innerhalb unserer Partnergemeinschaft.
+                geschützt innerhalb unserer Partnergemeinschaft.</>}
               </p>
               <div className="authBenefits">
                 <article>

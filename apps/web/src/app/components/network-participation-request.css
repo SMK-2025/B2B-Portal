@@ -18,6 +18,18 @@
 .participationWizard .participationCosts p {margin: 12px 0;}
 .participationWizard .participationCosts dd {text-align: right; white-space: nowrap;}
 .participationWizard .legalConsent a {text-decoration: underline;}
+.registrationWizard .participationWizard .legalConsent {
+  padding: 10px 12px;
+  min-height: 0;
+  margin: 0;
+  align-items: start;
+}
+.registrationWizard .participationWizard .legalConsent input[type="checkbox"] {
+  min-height: 18px;
+  height: 18px;
+  width: 18px;
+  margin: 3px 0 0;
+}
 @media (max-width: 480px) {
   .participationWizard .participationCosts {padding: 14px;}
   .participationWizard > label {grid-column: 1 / -1;}

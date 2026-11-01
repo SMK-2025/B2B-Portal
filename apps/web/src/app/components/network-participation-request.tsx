@@ -241,11 +241,6 @@ export function NetworkParticipationRequest() {
         )}
         {step === 3 && (
           <>
-            <p className="full">
-              {fields.firstName} {fields.lastName} · {fields.company}
-              <br />
-              {fields.email}
-            </p>
             {loading && (
               <p className="full" role="status">
                 Aktuelle Konditionen werden geladen …
@@ -333,8 +328,7 @@ export function NetworkParticipationRequest() {
                     }
                   />
                   <span>
-                    Ich akzeptiere die dargestellten Kosten, die Laufzeit und
-                    die genannten Bedingungen für meine Teilnahme nach Freigabe.
+                    Ich akzeptiere die dargestellten Kostenbeiträge.
                   </span>
                 </label>
                 <label className="full legalConsent">
@@ -381,12 +375,6 @@ export function NetworkParticipationRequest() {
                     gelesen und zur Kenntnis genommen.
                   </span>
                 </label>
-                <p className="full">
-                  Du stellst eine Anmeldeanfrage zum Netzwerkpartner-Portal.
-                  Noch keine Zahlung oder Rechnung: Erst nach unserer Freigabe
-                  schließt du die verbindliche Buchung mit deinen
-                  Rechnungsangaben ab.
-                </p>
               </>
             )}
           </>

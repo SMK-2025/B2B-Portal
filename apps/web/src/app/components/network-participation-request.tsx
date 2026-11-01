@@ -408,16 +408,6 @@ export function NetworkParticipationRequest() {
               ? "Registrieren & Teilnahme anfragen"
               : "Weiter"}
         </button>
-        {step === 3 && offer && (
-          <button
-            type="button"
-            className="portalSecondary full"
-            disabled={busy}
-            onClick={loadOffer}
-          >
-            Konditionen aktualisieren
-          </button>
-        )}
       </form>
     </>
   );

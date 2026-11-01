@@ -223,6 +223,11 @@ export class NetworksController {
   ) {
     return this.networks.sharedInvitation(auth, id, body);
   }
+  @Get("participation/quote/:slug") participationQuote(
+    @Param("slug") slug: string,
+  ) {
+    return this.networks.participationQuote(slug);
+  }
   @Post("participation/request") requestParticipation(
     @Body() body: Record<string, unknown>,
   ) {

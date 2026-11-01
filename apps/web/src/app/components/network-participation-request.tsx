@@ -1,27 +1,104 @@
 "use client";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ChangeEvent } from "react";
 import Link from "next/link";
 import { portalRequest } from "../lib/portal-api";
+import "./network-participation-request.css";
+type Offer = {
+  version: string;
+  monthlyNetCents: number;
+  annualNetCents: number;
+  vatCents: number;
+  grossCents: number;
+  months: number;
+  vatPercent: number;
+  centrallyFunded: boolean;
+  billing: null | {
+    freeUntil?: string;
+    paidFrom?: string;
+    paidThrough?: string;
+    autoRenew?: boolean;
+    renewalMonths?: number;
+  };
+  schedule: null | { invoiceDate: string; paymentDueDate: string };
+  renewalDeadline: string | null;
+};
+const money = (cents: number) =>
+  new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(
+    cents / 100,
+  );
+const date = (value?: string) =>
+  value ? value.split("-").reverse().join(".") : "–";
 export function NetworkParticipationRequest() {
-  const [busy, setBusy] = useState(false),
+  const [step, setStep] = useState(1),
+    [busy, setBusy] = useState(false),
     [sent, setSent] = useState(false),
     [error, setError] = useState("");
+  const [offer, setOffer] = useState<Offer | null>(null),
+    [loading, setLoading] = useState(false);
+  const [fields, setFields] = useState({
+    firstName: "",
+    lastName: "",
+    company: "",
+    affiliation: "",
+    email: "",
+    password: "",
+  });
+  const [accurate, setAccurate] = useState(false);
+  const [consents, setConsents] = useState({
+    costsAccepted: false,
+    termsAccepted: false,
+    privacyAcknowledged: false,
+  });
+  async function loadOffer() {
+    setLoading(true);
+    setError("");
+    setOffer(null);
+    setConsents({
+      costsAccepted: false,
+      termsAccepted: false,
+      privacyAcknowledged: false,
+    });
+    try {
+      setOffer(
+        await portalRequest<Offer>(
+          "/networks/participation/quote/bayer04leverkusen",
+        ),
+      );
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Kosten konnten nicht geladen werden.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    if (step === 3) void loadOffer();
+  }, [step]);
+  function field(name: keyof typeof fields) {
+    return {
+      value: fields[name],
+      onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+        setFields((old) => ({ ...old, [name]: e.target.value })),
+    };
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
     setError("");
-    const form = new FormData(event.currentTarget);
+    if (step < 3) {
+      setStep(step + 1);
+      return;
+    }
+    if (!offer) return;
+    setBusy(true);
     try {
       await portalRequest("/networks/participation/request", {
         body: {
+          ...fields,
+          accurate,
+          ...consents,
           network: "bayer04leverkusen",
-          firstName: form.get("firstName"),
-          lastName: form.get("lastName"),
-          email: form.get("email"),
-          password: form.get("password"),
-          company: form.get("company"),
-          affiliation: form.get("affiliation"),
-          accurate: form.get("accurate") === "on",
+          offerVersion: offer.version,
         },
       });
       setSent(true);
@@ -40,109 +117,343 @@ export function NetworkParticipationRequest() {
       <section role="status">
         <h1>Danke für deine Teilnahmeanfrage.</h1>
         <p>
-          Bitte bestätige deine E-Mail-Adresse über den zugesandten Link. Wir
-          prüfen anschließend deine Zugehörigkeit. Bis zur Freigabe sind keine
-          Netzwerkinhalte oder Funktionen verfügbar.
+          Falls noch nicht erfolgt, bestätige bitte deine E-Mail-Adresse über
+          den zugesandten Link. Wir prüfen deine Zugehörigkeit und informieren
+          dich über die Freigabe.
         </p>
         <p>
-          Nach der Freigabe erhältst du deinen persönlichen Link, bestätigst die
-          geltenden Konditionen und richtest deine Unternehmensseite ein.
+          Deine Bestätigungen sind gespeichert. Bis zur Freigabe bleiben
+          Netzwerkinhalte und Unternehmensanlage gesperrt. Danach schließt du
+          die Buchung mit deinen Rechnungsangaben ab und richtest deine
+          Unternehmensseite ein.
         </p>
       </section>
     );
   return (
     <>
-      <h1>Teilnahme anfragen</h1>
-      <p>
-        Lerne Menschen und Unternehmen aus deinem Business-Netzwerk kennen. Wir
-        prüfen deine Zugehörigkeit vor der Freischaltung.
+      <p aria-live="polite">
+        Schritt {step} von 3 ·{" "}
+        {step === 1
+          ? "Du und dein Unternehmen"
+          : step === 2
+            ? "Dein Zugang"
+            : "Kosten & Bestätigung"}
       </p>
-      <form className="formGrid" onSubmit={submit}>
-        <label>
-          Vorname
-          <input
-            name="firstName"
-            required
-            minLength={2}
-            maxLength={100}
-            autoComplete="given-name"
-          />
-        </label>
-        <label>
-          Nachname
-          <input
-            name="lastName"
-            required
-            minLength={2}
-            maxLength={100}
-            autoComplete="family-name"
-          />
-        </label>
-        <label className="full">
-          Unternehmen
-          <input
-            name="company"
-            required
-            minLength={2}
-            maxLength={200}
-            autoComplete="organization"
-          />
-        </label>
-        <label className="full">
-          Geschäftliche E-Mail-Adresse
-          <input name="email" type="email" required autoComplete="email" />
-        </label>
-        <label className="full">
-          Passwort
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={12}
-            maxLength={200}
-            autoComplete="new-password"
-          />
-          <small>
-            Mindestens 12 Zeichen, mit Groß- und Kleinbuchstaben, Zahl und
-            Sonderzeichen. Wenn du bereits ein Konto hast, verwende dein
-            bestehendes Passwort.
-          </small>
-        </label>
-        <label className="full">
-          Dein Bezug zum Business-Bereich
-          <select name="affiliation" required defaultValue="">
-            <option value="" disabled>
-              Bitte auswählen
-            </option>
-            <option>Hospitality-/VIP-Gast</option>
-            <option>Unternehmenspartner/Sponsor</option>
-            <option>Sonstiger Bezug</option>
-          </select>
-        </label>
-        <label className="full legalConsent">
-          <input name="accurate" type="checkbox" required />
-          <span>
-            Ich bestätige, dass meine Angaben korrekt sind. Mein Zugang wird
-            erst nach Prüfung freigeschaltet.
-          </span>
-        </label>
-        <p className="full">
-          Die Anfrage ist noch keine kostenpflichtige Buchung. Nach Freigabe
-          gelten die Konditionen des Netzwerks. Hinweise zur Verarbeitung deiner
-          Angaben findest du im{" "}
-          <Link href="/datenschutz/unternehmen" target="_blank">
-            Datenschutz
-          </Link>
-          .
-        </p>
+      <progress
+        value={step}
+        max={3}
+        aria-label="Fortschritt der Teilnahmeanfrage"
+        style={{ width: "100%", accentColor: "var(--auth-primary, #5267d8)" }}
+      />
+      <h1>
+        {step === 1
+          ? "Lernen wir uns kennen."
+          : step === 2
+            ? "Dein persönlicher Zugang."
+            : "Alles auf einen Blick."}
+      </h1>
+      <form className="formGrid participationWizard" onSubmit={submit}>
+        {step === 1 && (
+          <>
+            <label>
+              Vorname
+              <input
+                {...field("firstName")}
+                required
+                minLength={2}
+                maxLength={100}
+                autoComplete="given-name"
+              />
+            </label>
+            <label>
+              Nachname
+              <input
+                {...field("lastName")}
+                required
+                minLength={2}
+                maxLength={100}
+                autoComplete="family-name"
+              />
+            </label>
+            <label className="full">
+              Unternehmen
+              <input
+                {...field("company")}
+                required
+                minLength={2}
+                maxLength={200}
+                autoComplete="organization"
+              />
+            </label>
+            <label className="full">
+              Dein Bezug zum Business-Bereich
+              <select {...field("affiliation")} required>
+                <option value="" disabled>
+                  Bitte auswählen
+                </option>
+                <option>Hospitality-/VIP-Gast</option>
+                <option>Unternehmenspartner/Sponsor</option>
+                <option>Sonstiger Bezug</option>
+              </select>
+            </label>
+            <label className="full legalConsent">
+              <input
+                type="checkbox"
+                required
+                checked={accurate}
+                onChange={(e) => setAccurate(e.target.checked)}
+              />
+              <span>
+                Ich bestätige, dass meine Angaben korrekt sind. Mein Zugang wird
+                erst nach Prüfung freigeschaltet.
+              </span>
+            </label>
+          </>
+        )}
+        {step === 2 && (
+          <>
+            <label className="full">
+              Geschäftliche E-Mail-Adresse
+              <input
+                {...field("email")}
+                type="email"
+                required
+                autoComplete="email"
+              />
+            </label>
+            <label className="full">
+              Passwort
+              <input
+                {...field("password")}
+                type="password"
+                required
+                minLength={12}
+                maxLength={200}
+                autoComplete="new-password"
+              />
+            </label>
+            <p className="full">
+              Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und
+              Sonderzeichen. Hast du bereits ein Konto, verwende dein
+              bestehendes Passwort.
+            </p>
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <p className="full">
+              {fields.firstName} {fields.lastName} · {fields.company}
+              <br />
+              {fields.email}
+            </p>
+            {loading && (
+              <p className="full" role="status">
+                Aktuelle Konditionen werden geladen …
+              </p>
+            )}
+            {!offer && !loading && (
+              <button
+                className="portalSecondary full"
+                type="button"
+                onClick={loadOffer}
+              >
+                Kosten erneut laden
+              </button>
+            )}
+            {offer && (
+              <>
+                <section
+                  className="full participationCosts"
+                  aria-label="Kostenübersicht"
+                >
+                  <h2>Deine Portalnutzung</h2>
+                  {offer.centrallyFunded ? (
+                    <p>
+                      Das Netzwerk übernimmt die Kosten. Für dich entstehen
+                      keine Mitgliedsgebühren.
+                    </p>
+                  ) : (
+                    <>
+                      {offer.billing?.freeUntil && (
+                        <p>
+                          Kostenlos bis{" "}
+                          <strong>{date(offer.billing.freeUntil)}</strong>.
+                        </p>
+                      )}
+                      <p>
+                        {offer.billing?.paidFrom
+                          ? `${date(offer.billing.paidFrom)} bis ${date(offer.billing.paidThrough)}`
+                          : `Laufzeit: ${offer.months} Monate`}{" "}
+                        · alle Portal-Funktionen
+                      </p>
+                      <dl
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr auto",
+                          gap: "10px",
+                          margin: "16px 0",
+                        }}
+                      >
+                        <dt>Monatspreis netto</dt>
+                        <dd style={{ margin: 0 }}>
+                          {money(offer.monthlyNetCents)}
+                        </dd>
+                        <dt>{offer.months} Monate netto</dt>
+                        <dd style={{ margin: 0 }}>
+                          {money(offer.annualNetCents)}
+                        </dd>
+                        <dt>{offer.vatPercent} % MwSt.</dt>
+                        <dd style={{ margin: 0 }}>{money(offer.vatCents)}</dd>
+                        <dt>
+                          <strong>Gesamtbetrag</strong>
+                        </dt>
+                        <dd style={{ margin: 0 }}>
+                          <strong>{money(offer.grossCents)}</strong>
+                        </dd>
+                      </dl>
+                      {offer.schedule && (
+                        <p>
+                          Rechnungsversand: {date(offer.schedule.invoiceDate)} ·
+                          zahlbar bis {date(offer.schedule.paymentDueDate)}. Bei
+                          späterer Buchung gelten die dann bestätigten
+                          Rechnungstermine.
+                        </p>
+                      )}
+                      {offer.billing?.autoRenew ? (
+                        <p>
+                          Automatische Verlängerung um{" "}
+                          {offer.billing.renewalMonths} Monate nach Ende des
+                          Zeitraums. Du kannst die Verlängerung bis{" "}
+                          {date(offer.renewalDeadline || undefined)} im
+                          Mitgliedskonto ausschalten. Bei unverändertem
+                          Monatspreis:{" "}
+                          {money(
+                            offer.monthlyNetCents *
+                              (offer.billing.renewalMonths || 12),
+                          )}{" "}
+                          netto zuzüglich {offer.vatPercent} % MwSt. für die
+                          Folgelaufzeit.
+                        </p>
+                      ) : (
+                        <p>Keine automatische Verlängerung.</p>
+                      )}
+                    </>
+                  )}
+                  <p>
+                    Bereitgestellt und abgerechnet durch die Media Online
+                    Innovations Group, Inhaber Martin Kelm.
+                  </p>
+                </section>
+                <label className="full legalConsent">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={consents.costsAccepted}
+                    onChange={(e) =>
+                      setConsents({
+                        ...consents,
+                        costsAccepted: e.target.checked,
+                      })
+                    }
+                  />
+                  <span>
+                    Ich akzeptiere die dargestellten Kosten, die Laufzeit und
+                    die genannten Bedingungen für meine Teilnahme nach Freigabe.
+                  </span>
+                </label>
+                <label className="full legalConsent">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={consents.termsAccepted}
+                    onChange={(e) =>
+                      setConsents({
+                        ...consents,
+                        termsAccepted: e.target.checked,
+                      })
+                    }
+                  />
+                  <span>
+                    Ich akzeptiere die{" "}
+                    <Link href="/agb" target="_blank" rel="noopener noreferrer">
+                      AGB
+                    </Link>
+                    .
+                  </span>
+                </label>
+                <label className="full legalConsent">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={consents.privacyAcknowledged}
+                    onChange={(e) =>
+                      setConsents({
+                        ...consents,
+                        privacyAcknowledged: e.target.checked,
+                      })
+                    }
+                  />
+                  <span>
+                    Ich habe die{" "}
+                    <Link
+                      href="/datenschutz/unternehmen"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Datenschutzhinweise
+                    </Link>{" "}
+                    gelesen und zur Kenntnis genommen.
+                  </span>
+                </label>
+                <p className="full">
+                  Du stellst eine Anmeldeanfrage zum Netzwerkpartner-Portal.
+                  Noch keine Zahlung oder Rechnung: Erst nach unserer Freigabe
+                  schließt du die verbindliche Buchung mit deinen
+                  Rechnungsangaben ab.
+                </p>
+              </>
+            )}
+          </>
+        )}
         {error && (
           <p className="error full" role="alert">
             {error}
           </p>
         )}
-        <button className="primary full" disabled={busy}>
-          {busy ? "Anfrage wird gesendet …" : "Teilnahme anfragen"}
+        {step > 1 && (
+          <button
+            type="button"
+            className="portalSecondary"
+            disabled={busy}
+            onClick={() => {
+              setError("");
+              setStep(step - 1);
+            }}
+          >
+            Zurück
+          </button>
+        )}
+        <button
+          type="submit"
+          className="primary full"
+          disabled={busy || (step === 3 && (!offer || loading))}
+        >
+          {busy
+            ? "Anfrage wird gesendet …"
+            : step === 3
+              ? "Registrieren & Teilnahme anfragen"
+              : "Weiter"}
         </button>
+        {step === 3 && offer && (
+          <button
+            type="button"
+            className="portalSecondary full"
+            disabled={busy}
+            onClick={loadOffer}
+          >
+            Konditionen aktualisieren
+          </button>
+        )}
       </form>
     </>
   );

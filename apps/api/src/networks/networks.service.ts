@@ -35,7 +35,11 @@ import {
 import { partnerHero, partnerSections } from "./partner-onepager";
 import { homepageFields, projectHomepage } from "./homepage-publication";
 import { decodePublicImage, mediaOrigin } from "./homepage-media";
-import { calendarDate, addCalendarDays } from "./invoice-schedule";
+import {
+  calendarDate,
+  addCalendarDays,
+  invoiceSchedule,
+} from "./invoice-schedule";
 import { memberBillingSettings } from "./member-billing-settings";
 import {
   PROB_TABLE,
@@ -957,6 +961,30 @@ export class NetworksService {
       expiresAt: record.endsAt,
     };
   }
+  participationQuote(slug: string) {
+    const network = [...this.store.networks.values()].find(
+      (n) => n.slug === slug && n.status === "active",
+    );
+    if (slug !== "bayer04leverkusen" || !network)
+      throw new BadRequestException(
+        "Teilnahmeanfragen sind derzeit nicht verfügbar.",
+      );
+    const quote = pricing(network);
+    const offer = {
+      ...quote,
+      centrallyFunded: network.settings.memberPaymentModel === "network",
+      schedule: quote.billing?.freeUntil
+        ? invoiceSchedule(quote.billing.freeUntil)
+        : null,
+      renewalDeadline:
+        quote.billing?.autoRenew && quote.billing.paidThrough
+          ? addCalendarDays(quote.billing.paidThrough, -15)
+          : null,
+      termsVersion: "member-annual-2026-10-19",
+      privacyVersion: "participation-2026-11-01",
+    };
+    return { ...offer, version: tokenHash(JSON.stringify(offer)) };
+  }
   async requestParticipation(input: Record<string, unknown>) {
     if (input.network !== "bayer04leverkusen")
       throw new ForbiddenException(
@@ -970,6 +998,19 @@ export class NetworksService {
         "Das Netzwerk ist derzeit nicht verfügbar.",
       );
     const email = emailAddress(input.email);
+    const offer = this.participationQuote(String(input.network));
+    if (input.offerVersion !== offer.version)
+      throw new BadRequestException(
+        "Die Konditionen wurden aktualisiert. Bitte lade die Kostenübersicht erneut und bestätige sie.",
+      );
+    if (
+      input.costsAccepted !== true ||
+      input.termsAccepted !== true ||
+      input.privacyAcknowledged !== true
+    )
+      throw new BadRequestException(
+        "Bitte Kosten, AGB und Datenschutzhinweise bestätigen.",
+      );
     const company = requiredText(input.company, "Unternehmen", 2, 200);
     const affiliation = requiredText(
       input.affiliation,
@@ -1021,6 +1062,13 @@ export class NetworksService {
         inviteTokenHash: tokenHash(token),
         usedAt: null,
         admissionStatus: "pending",
+        participationConsent: {
+          offer,
+          acceptedAt: now,
+          costsAccepted: true,
+          termsAccepted: true,
+          privacyAcknowledged: true,
+        },
         company,
         affiliation,
       },

@@ -1,0 +1,24 @@
+.participationWizard .participationCosts {
+  padding: 20px;
+  border: 1px solid #e0e4ec;
+  border-top: 3px solid var(--auth-primary, #5267d8);
+  border-radius: 12px;
+  background: #f8f9fc;
+  min-width: 0;
+}
+.participationWizard p,
+.participationWizard label,
+.participationWizard dt,
+.participationWizard dd,
+.participationWizard .legalConsent {
+  font-size: 16px;
+  line-height: 1.55;
+}
+.participationWizard .participationCosts h2 {font-size: 22px; margin: 0 0 12px;}
+.participationWizard .participationCosts p {margin: 12px 0;}
+.participationWizard .participationCosts dd {text-align: right; white-space: nowrap;}
+.participationWizard .legalConsent a {text-decoration: underline;}
+@media (max-width: 480px) {
+  .participationWizard .participationCosts {padding: 14px;}
+  .participationWizard > label {grid-column: 1 / -1;}
+}

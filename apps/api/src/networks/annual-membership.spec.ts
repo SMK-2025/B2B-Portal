@@ -11,7 +11,7 @@ describe("personal annual membership billing", () => {
     f.store.networkBySlug.delete(f.network.slug);
     f.network.slug = "bayer04leverkusen";
     f.store.networkBySlug.set(f.network.slug, f.network.id);
-    await f.networks.requestParticipation({
+    const request = {
       network: f.network.slug,
       email: "request@example.de",
       password: "Sicher-Portal-2026!",
@@ -20,6 +20,30 @@ describe("personal annual membership billing", () => {
       company: "Anfrage GmbH",
       affiliation: "Hospitality-/VIP-Gast",
       accurate: true,
+      offerVersion: f.networks.participationQuote(f.network.slug).version,
+      costsAccepted: true,
+      termsAccepted: true,
+      privacyAcknowledged: true,
+    };
+    for (const change of [
+      { costsAccepted: false },
+      { termsAccepted: false },
+      { privacyAcknowledged: false },
+      { offerVersion: "stale" },
+    ])
+      await expect(
+        f.networks.requestParticipation({ ...request, ...change }),
+      ).rejects.toThrow();
+    expect(f.store.userByEmail.has("request@example.de")).toBe(false);
+    await f.networks.requestParticipation(request);
+    const stored = [...f.store.networkContents.values()].find(
+      (i) => i.data.email === "request@example.de",
+    )!;
+    expect(stored.data.participationConsent).toMatchObject({
+      costsAccepted: true,
+      termsAccepted: true,
+      privacyAcknowledged: true,
+      offer: { version: request.offerVersion },
     });
     const mail = vi.mocked(f.email.sendVerification).mock.calls.at(-1)![0];
     f.auth.verifyEmail(mail.token);

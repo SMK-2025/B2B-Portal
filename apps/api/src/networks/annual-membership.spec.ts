@@ -6,6 +6,82 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("keeps participation requests locked until owner approval and normal booking", async () => {
+    const f = await fixture();
+    f.store.networkBySlug.delete(f.network.slug);
+    f.network.slug = "bayer04leverkusen";
+    f.store.networkBySlug.set(f.network.slug, f.network.id);
+    await f.networks.requestParticipation({
+      network: f.network.slug,
+      email: "request@example.de",
+      password: "Sicher-Portal-2026!",
+      firstName: "Robin",
+      lastName: "Anfrage",
+      company: "Anfrage GmbH",
+      affiliation: "Hospitality-/VIP-Gast",
+      accurate: true,
+    });
+    const mail = vi.mocked(f.email.sendVerification).mock.calls.at(-1)![0];
+    f.auth.verifyEmail(mail.token);
+    const session = `Bearer ${(await f.auth.login({ email: "request@example.de", password: "Sicher-Portal-2026!" })).token}`;
+    expect(f.networks.participationStatus(session, f.network.slug)).toEqual({
+      status: "pending",
+    });
+    expect(f.networks.mine(session)).toEqual([]);
+    expect(f.networks.claimInitiatorInvitation(session).claimed).toBe(false);
+    expect(() => f.networks.publicBySlug(session, f.network.slug)).toThrow();
+    expect(() =>
+      f.networks.invitationQuote({ invite: mail.networkInviteToken }),
+    ).toThrow();
+    expect(() =>
+      f.orgs.create(
+        session,
+        { ...f.input, networkInviteToken: mail.networkInviteToken },
+        true,
+      ),
+    ).toThrow();
+    await expect(
+      f.networks.adminUserAction(session, f.network.id, {
+        email: "request@example.de",
+        action: "approveRequest",
+      }),
+    ).rejects.toThrow();
+    expect(f.store.networkOrders.size).toBe(0);
+    await f.networks.adminUserAction(f.owner, f.network.id, {
+      email: "request@example.de",
+      action: "approveRequest",
+    });
+    const approved = f.networks.participationStatus(session, f.network.slug);
+    expect(approved.status).toBe("approved");
+    expect(f.networks.mine(session)).toEqual([]);
+    f.orgs.create(
+      session,
+      { ...f.input, networkInviteToken: approved.invite },
+      true,
+    );
+    expect(f.networks.mine(session)).toHaveLength(1);
+    expect(f.store.networkOrders.size).toBe(1);
+  });
+  it("quotes six months from January without changing other networks", async () => {
+    const f = await fixture();
+    f.networks.memberPricing(f.owner, f.network.id, {
+      monthlyNetCents: 6900,
+      billing: {
+        months: 6,
+        freeUntil: "2026-12-31",
+        paidFrom: "2027-01-01",
+        paidThrough: "2027-06-30",
+        autoRenew: true,
+        renewalMonths: 12,
+        automaticInvoices: true,
+      },
+    });
+    expect(pricing(f.network)).toMatchObject({
+      months: 6,
+      annualNetCents: 41400,
+      grossCents: 49266,
+    });
+  });
   it("snapshots a five-month season only after explicit consent and supports timely renewal opt-out", async () => {
     const f = await fixture();
     f.networks.memberPricing(f.owner, f.network.id, {

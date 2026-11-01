@@ -50,8 +50,10 @@ function Confirmation() {
         <div className="check">✓</div>
         <h1>E-Mail bestätigt</h1>
         <p className="lead">
-          Ihre E-Mail-Adresse ist bestätigt. Melden Sie sich jetzt an, um die
-          Registrierung fortzusetzen und Ihr Unternehmen im Netzwerk anzulegen.
+          Ihre E-Mail-Adresse ist bestätigt. Melden Sie sich an, um Ihren
+          Zugangsstatus zu sehen und die nächsten Schritte aufzurufen. Bei einer
+          Teilnahmeanfrage ist zunächst die Freigabe durch den Betreiber
+          erforderlich.
         </p>
         <Link
           className="primary linkButton"

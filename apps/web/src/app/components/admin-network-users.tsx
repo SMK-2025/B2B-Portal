@@ -2,6 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 type Row = {
+  admissionStatus?: string;
+  company?: string;
+  affiliation?: string;
   name: string;
   email: string;
   role: string;
@@ -149,7 +152,11 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
             : action === "paid"
               ? "Zahlung als eingegangen markieren"
               : "Zahlung wieder als offen markieren";
-    if (!window.confirm(`${name}\n${row.name} · ${row.email}\n\n${label}?`))
+    if (
+      !window.confirm(
+        `${name}\n${row.name} · ${row.email}\n\n${action === "approveRequest" ? "Teilnahmeanfrage freigeben und Einladung senden" : action === "rejectRequest" ? "Teilnahmeanfrage ablehnen" : label}?`,
+      )
+    )
       return;
     setError("");
     setLoading(true);
@@ -262,7 +269,17 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.email}>
-                      <td>{row.name}</td>
+                      <td>
+                        {row.name}
+                        {row.company && (
+                          <>
+                            <br />
+                            {row.company}
+                            <br />
+                            {row.affiliation}
+                          </>
+                        )}
+                      </td>
                       <td>{row.email}</td>
                       <td>
                         {row.lastLoginAt
@@ -303,6 +320,24 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                               ⋮
                             </summary>
                             <div>
+                              {row.admissionStatus === "pending" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      action(row, "approveRequest")
+                                    }
+                                  >
+                                    Teilnahme freigeben
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => action(row, "rejectRequest")}
+                                  >
+                                    Anfrage ablehnen
+                                  </button>
+                                </>
+                              )}
                               {row.role !== "visitor" && (
                                 <>
                                   <button

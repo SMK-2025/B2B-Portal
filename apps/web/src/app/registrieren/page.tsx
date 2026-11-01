@@ -6,6 +6,7 @@ import { SiteFooter, SiteHeader } from "../components/site-chrome";
 import { useNetworkBrand } from "../components/network-auth-brand";
 import { MemberAnnualRegistrationFields } from "../components/member-annual-registration-fields";
 import { PartnerLoginForm } from "../components/partner-login-form";
+import { NetworkParticipationRequest } from "../components/network-participation-request";
 import {
   getPortalSession,
   portalRequest,
@@ -199,11 +200,37 @@ export default function RegistrationPage() {
               <span>{networkBrand.name.slice(0, 2).toUpperCase()}</span>
             )}
             <div>
-              <b>{networkBrand.slug === "bayer04leverkusen" ? "Das Netzwerkpartner-Portal" : networkBrand.name}</b>
-              <small>{networkBrand.slug === "bayer04leverkusen" ? "der Media Online Innovations Group" : "Geschütztes Partnerportal"}</small>
+              <b>
+                {networkBrand.slug === "bayer04leverkusen"
+                  ? "Das Netzwerkpartner-Portal"
+                  : networkBrand.name}
+              </b>
+              <small>
+                {networkBrand.slug === "bayer04leverkusen"
+                  ? "der Media Online Innovations Group"
+                  : "Geschütztes Partnerportal"}
+              </small>
             </div>
           </Link>
-          <em>Persönliche Einladung</em>
+          {networkSlug === "bayer04leverkusen" ? (
+            <button
+              type="button"
+              className="portalSecondary"
+              onClick={() => {
+                setLoginMode(false);
+                setNetworkInviteToken("");
+                window.history.replaceState(
+                  null,
+                  "",
+                  `/registrieren?network=${networkSlug}`,
+                );
+              }}
+            >
+              Teilnahme anfragen
+            </button>
+          ) : (
+            <em>Persönliche Einladung</em>
+          )}
         </header>
       ) : (
         <SiteHeader />
@@ -225,8 +252,8 @@ export default function RegistrationPage() {
                 {networkBrand?.slug === "bayer04leverkusen"
                   ? "UNABHÄNGIG. INHABERGEFÜHRT. PERSÖNLICH."
                   : networkBrand
-                  ? `IHR START BEI ${networkBrand.name.toUpperCase()}`
-                  : "IHR PARTNERPORTAL-ZUGANG"}
+                    ? `IHR START BEI ${networkBrand.name.toUpperCase()}`
+                    : "IHR PARTNERPORTAL-ZUGANG"}
               </span>
               <h2>
                 Gemeinsam mehr erreichen.
@@ -234,10 +261,16 @@ export default function RegistrationPage() {
                 Persönlich verbunden.
               </h2>
               <p>
-                {networkBrand?.slug === "bayer04leverkusen" ? "Lerne Menschen und Unternehmen aus deinem Business-Netzwerk kennen, entdecke Angebote und Leistungen und komm direkt ins Gespräch – auch zwischen den gemeinsamen Treffen." : <>Lerne die Menschen hinter den Unternehmen kennen und bleib auch
-                zwischen gemeinsamen Treffen im Gespräch. Teile Ideen, stell
-                dein Angebot vor und finde neue Kontakte – persönlich und
-                geschützt innerhalb unserer Partnergemeinschaft.</>}
+                {networkBrand?.slug === "bayer04leverkusen" ? (
+                  "Lerne Menschen und Unternehmen aus deinem Business-Netzwerk kennen, entdecke Angebote und Leistungen und komm direkt ins Gespräch – auch zwischen den gemeinsamen Treffen."
+                ) : (
+                  <>
+                    Lerne die Menschen hinter den Unternehmen kennen und bleib
+                    auch zwischen gemeinsamen Treffen im Gespräch. Teile Ideen,
+                    stell dein Angebot vor und finde neue Kontakte – persönlich
+                    und geschützt innerhalb unserer Partnergemeinschaft.
+                  </>
+                )}
               </p>
               <div className="authBenefits">
                 <article>
@@ -327,6 +360,8 @@ export default function RegistrationPage() {
                 window.history.replaceState(null, "", url);
               }}
             />
+          ) : !networkRegistration && networkSlug === "bayer04leverkusen" ? (
+            <NetworkParticipationRequest />
           ) : !networkRegistration ? (
             <>
               <h1>Persönliche Einladung erforderlich</h1>

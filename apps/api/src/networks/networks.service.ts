@@ -220,6 +220,13 @@ export class NetworksService {
         "Die Einladung ist ungültig oder abgelaufen.",
       );
     const network = this.raw(invite.networkId);
+    if (
+      invite.data.admissionStatus &&
+      invite.data.admissionStatus !== "approved"
+    )
+      throw new ForbiddenException(
+        "Deine Teilnahme wird geprüft. Vor der Freigabe sind keine Buchung und keine Unternehmensanlage möglich.",
+      );
     if (invite.data.role !== "network_admin" && network.status !== "active")
       throw new BadRequestException(
         "Das Partnernetzwerk ist noch nicht für kostenpflichtige Mitgliedschaften aktiviert.",
@@ -757,6 +764,9 @@ export class NetworksService {
         loginCount?: number;
         lastLoginAt?: string | null;
         loginTrackingStartedAt?: string | null;
+        admissionStatus?: string;
+        company?: string;
+        affiliation?: string;
       }
     >();
     const addUser = (
@@ -868,9 +878,27 @@ export class NetworksService {
     }
     return {
       networkName: network.name,
-      users: [...rows.values()].sort((a, b) =>
-        a.name.localeCompare(b.name, "de"),
-      ),
+      users: [...rows.values()]
+        .map((row) => {
+          const request = invitations.find(
+            (i) => i.data.email === row.email && i.data.admissionStatus,
+          );
+          return request
+            ? {
+                ...row,
+                admissionStatus: String(request.data.admissionStatus),
+                company: String(request.data.company || ""),
+                affiliation: String(request.data.affiliation || ""),
+                status:
+                  request.data.admissionStatus === "pending"
+                    ? "Teilnahme wird geprüft"
+                    : request.data.admissionStatus === "rejected"
+                      ? "Anfrage abgelehnt"
+                      : row.status,
+              }
+            : row;
+        })
+        .sort((a, b) => a.name.localeCompare(b.name, "de")),
     };
   }
 
@@ -929,6 +957,112 @@ export class NetworksService {
       expiresAt: record.endsAt,
     };
   }
+  async requestParticipation(input: Record<string, unknown>) {
+    if (input.network !== "bayer04leverkusen")
+      throw new ForbiddenException(
+        "Teilnahmeanfragen sind für dieses Netzwerk nicht verfügbar.",
+      );
+    const network = [...this.store.networks.values()].find(
+      (n) => n.slug === input.network && n.status === "active",
+    );
+    if (!network)
+      throw new BadRequestException(
+        "Das Netzwerk ist derzeit nicht verfügbar.",
+      );
+    const email = emailAddress(input.email);
+    const company = requiredText(input.company, "Unternehmen", 2, 200);
+    const affiliation = requiredText(
+      input.affiliation,
+      "Zugehörigkeit",
+      2,
+      100,
+    );
+    if (
+      ![
+        "Hospitality-/VIP-Gast",
+        "Unternehmenspartner/Sponsor",
+        "Sonstiger Bezug",
+      ].includes(affiliation) ||
+      input.accurate !== true
+    )
+      throw new BadRequestException(
+        "Bitte Zugehörigkeit auswählen und die Richtigkeit der Angaben bestätigen.",
+      );
+    if (
+      [...this.store.networkContents.values()].some(
+        (i) =>
+          i.networkId === network.id &&
+          i.data.email === email &&
+          i.data.admissionStatus &&
+          !i.data.usedAt,
+      )
+    )
+      throw new BadRequestException(
+        "Für diese E-Mail liegt bereits eine Teilnahmeanfrage vor. Bitte melde dich an, um den Status zu sehen.",
+      );
+    const token = opaqueToken(),
+      now = new Date().toISOString();
+    const record: NetworkContentRecord = {
+      id: randomUUID(),
+      networkId: network.id,
+      type: "announcement",
+      title: `Teilnahmeanfrage: ${company}`,
+      description: affiliation,
+      status: "active",
+      createdByUserId: "system:participation",
+      assignedToUserId: null,
+      startsAt: null,
+      endsAt: new Date(Date.now() + 90 * 86400000).toISOString(),
+      visibility: "administrators",
+      data: {
+        kind: "network_invitation",
+        email,
+        role: "member",
+        inviteTokenHash: tokenHash(token),
+        usedAt: null,
+        admissionStatus: "pending",
+        company,
+        affiliation,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.store.networkContents.set(record.id, record);
+    try {
+      await this.auth.register({ ...input, networkInviteToken: token }, true);
+    } catch (error) {
+      this.store.networkContents.delete(record.id);
+      throw error;
+    }
+    record.createdByUserId = this.store.userByEmail.get(email)!;
+    enqueueOperatorMail(
+      this.store,
+      `participation:${record.id}`,
+      "Neue Teilnahmeanfrage – Prüfung erforderlich",
+      `Netzwerk: ${network.name}\nUnternehmen: ${company}\nE-Mail: ${email}\nZugehörigkeit: ${affiliation}\nBitte in der Nutzerübersicht prüfen und freigeben oder ablehnen. Noch kein Netzwerkzugriff und keine Buchung.`,
+    );
+    return { requested: true };
+  }
+  participationStatus(authorization: string | undefined, slug: string) {
+    const user = this.auth.authenticate(authorization);
+    const network = [...this.store.networks.values()].find(
+      (n) => n.slug === slug,
+    );
+    const request = [...this.store.networkContents.values()].find(
+      (i) =>
+        i.networkId === network?.id &&
+        i.data.email === user.email &&
+        i.data.admissionStatus &&
+        !i.data.usedAt,
+    );
+    if (!request) return { status: null };
+    return {
+      status: request.data.admissionStatus,
+      ...(request.data.admissionStatus === "approved" && user.emailVerifiedAt
+        ? { invite: request.data.admissionOnboardingToken }
+        : {}),
+    };
+  }
   resolveSharedInvitation(input: Record<string, unknown>) {
     const hash = tokenHash(requiredText(input.invite, "Einladung", 20, 200)),
       email = emailAddress(input.email);
@@ -943,6 +1077,13 @@ export class NetworksService {
     if (!shared)
       throw new BadRequestException(
         "Der Netzwerklink ist ungültig oder abgelaufen.",
+      );
+    if (
+      shared.data.admissionStatus &&
+      shared.data.admissionStatus !== "approved"
+    )
+      throw new ForbiddenException(
+        "Deine Teilnahme ist noch nicht freigegeben.",
       );
     if (shared.data.shared !== true) {
       if (shared.data.email !== email)
@@ -995,7 +1136,37 @@ export class NetworksService {
     );
     if (!member && !invited)
       throw new ForbiddenException("Nutzer gehört nicht zu diesem Netzwerk.");
-    if (input.action === "role") {
+    if (input.action === "approveRequest" || input.action === "rejectRequest") {
+      const request = [...this.store.networkContents.values()].find(
+        (i) =>
+          i.networkId === networkId &&
+          i.data.email === email &&
+          i.data.admissionStatus === "pending",
+      );
+      if (!request)
+        throw new BadRequestException(
+          "Keine offene Teilnahmeanfrage gefunden.",
+        );
+      if (!this.store.users.get(userId)?.emailVerifiedAt)
+        throw new BadRequestException(
+          "Bitte zuerst die E-Mail-Bestätigung abwarten.",
+        );
+      if (input.action === "approveRequest") {
+        const token = opaqueToken();
+        await this.email.sendNetworkInvitation({
+          email,
+          networkName: this.raw(networkId).name,
+          networkSlug: this.raw(networkId).slug,
+          inviteToken: token,
+        });
+        request.data.inviteTokenHash = tokenHash(token);
+        request.data.admissionOnboardingToken = token;
+        request.endsAt = new Date(Date.now() + 90 * 86400000).toISOString();
+        request.data.admissionStatus = "approved";
+      } else request.data.admissionStatus = "rejected";
+      request.data.reviewedBy = actor.id;
+      request.updatedAt = new Date().toISOString();
+    } else if (input.action === "role") {
       if (
         !["network_admin", "moderator", "member"].includes(String(input.role))
       )

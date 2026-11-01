@@ -54,6 +54,13 @@ export class OrganizationsService {
       throw new ForbiddenException(
         "Unternehmen können ausschließlich über eine gültige Netzwerkeinladung angelegt werden.",
       );
+    if (
+      invitation?.data.admissionStatus &&
+      invitation.data.admissionStatus !== "approved"
+    )
+      throw new ForbiddenException(
+        "Deine Teilnahme wird geprüft. Die Unternehmensanlage ist erst nach Freigabe möglich.",
+      );
     const requestedRole = input.role as OrganizationRole;
     const role: OrganizationRole = invitation ? "network" : requestedRole;
     if (

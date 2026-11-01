@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { invoiceSchedule } from "./invoice-schedule";
 
 describe("invoice calendar schedule", () => {
+  it("schedules the Bayer04 January season invoice in December", () => {
+    expect(invoiceSchedule("2026-12-31")).toMatchObject({
+      invoiceDate: "2026-12-16",
+      paymentDueDate: "2026-12-30",
+      paidFrom: "2027-01-01",
+    });
+  });
   it("sends 15 days before free access ends and allows 14 days for payment", () => {
     expect(invoiceSchedule("2027-01-31")).toEqual({
       freeUntil: "2027-01-31",

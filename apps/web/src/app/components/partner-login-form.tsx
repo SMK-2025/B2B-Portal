@@ -17,10 +17,12 @@ export function PartnerLoginForm({
   const router = useRouter();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [accessStatus, setAccessStatus] = useState("");
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError("");
+    setAccessStatus("");
     const form = new FormData(event.currentTarget);
     try {
       const result = await portalRequest<{
@@ -78,6 +80,30 @@ export function PartnerLoginForm({
             : destination) as never,
         );
         return;
+      }
+      if (networkSlug) {
+        const participation = await portalRequest<{
+          status: string | null;
+          invite?: string;
+        }>(
+          `/networks/participation/status/${encodeURIComponent(networkSlug)}`,
+          { token: result.token },
+        );
+        if (
+          participation.status === "pending" ||
+          participation.status === "rejected"
+        ) {
+          setAccessStatus(
+            participation.status === "pending"
+              ? "Deine Teilnahme wird geprüft. Nach Freigabe informieren wir dich per E-Mail. Bis dahin sind keine Netzwerkfunktionen verfügbar."
+              : "Deine Teilnahmeanfrage wurde nicht freigegeben. Bei Fragen wende dich bitte an service@b2b-matching.de.",
+          );
+          return;
+        }
+        if (participation.status === "approved" && participation.invite) {
+          onOnboarding(result.token, participation.invite);
+          return;
+        }
       }
       if (networkSlug && invite) {
         const personal = await portalRequest<{ invite: string }>(
@@ -142,6 +168,7 @@ export function PartnerLoginForm({
           {error}
         </p>
       )}
+      {accessStatus && <p role="status">{accessStatus}</p>}
     </>
   );
 }

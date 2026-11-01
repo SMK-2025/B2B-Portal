@@ -223,6 +223,17 @@ export class NetworksController {
   ) {
     return this.networks.sharedInvitation(auth, id, body);
   }
+  @Post("participation/request") requestParticipation(
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.requestParticipation(body);
+  }
+  @Get("participation/status/:slug") participationStatus(
+    @Headers("authorization") auth: string | undefined,
+    @Param("slug") slug: string,
+  ) {
+    return this.networks.participationStatus(auth, slug);
+  }
   @Post("invitations/shared-resolve") resolveShared(
     @Body() body: Record<string, unknown>,
   ) {

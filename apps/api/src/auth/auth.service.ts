@@ -189,7 +189,7 @@ export class AuthService implements OnModuleInit {
       this.store.users.delete(user.id);
       throw error;
     }
-    if (networkInvitation) {
+    if (networkInvitation && !networkInvitation.data.admissionStatus) {
       const network = this.store.networks.get(networkInvitation.networkId);
       enqueueOperatorMail(
         this.store,

@@ -237,7 +237,7 @@ export interface OperatorMailRecord {
   lastError: string | null;
 }
 export interface MaintenanceReceipt {
-  state: "removed" | "absent" | "blocked";
+  state: "removed" | "absent" | "blocked" | "applied";
   completedAt: string;
 }
 

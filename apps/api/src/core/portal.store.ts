@@ -112,6 +112,31 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     });
     await this.runMigrations();
     await this.restore();
+    const billingUpdate = "bayer04-season-january-2027-v1";
+    if (!this.maintenanceReceipts.has(billingUpdate)) {
+      const network = [...this.networks.values()].find(
+        (n) => n.slug === "bayer04leverkusen",
+      );
+      if (network) {
+        network.settings.memberBilling = {
+          ...network.settings.memberBilling,
+          months: 6,
+          freeUntil: "2026-12-31",
+          paidFrom: "2027-01-01",
+          paidThrough: "2027-06-30",
+          autoRenew: true,
+          renewalMonths: 12,
+          automaticInvoices: true,
+          version: billingUpdate,
+        };
+        network.updatedAt = new Date().toISOString();
+        this.maintenanceReceipts.set(billingUpdate, {
+          state: "applied",
+          completedAt: network.updatedAt,
+        });
+        await this.persist();
+      }
+    }
     if (process.env.NODE_ENV === "production") {
       retireLegacyInitiator(this);
       resetTestMember(this);

@@ -106,10 +106,10 @@ const NetworkAccessContext = createContext<Access | null>(null);
 export const useNetworkAccess = () => useContext(NetworkAccessContext);
 const primaryPartnerItems = [
   { path: "", label: "Startseite", icon: "⌂" },
-  { path: "themen", label: "Aktuelles", icon: "◉", module: "community" },
+  { path: "themen", label: "Schwarzes Brett", icon: "◉", module: "community" },
   {
     path: "mitglieder",
-    label: "Partner entdecken",
+    label: "Netzwerk-Mitglieder",
     icon: "♙",
     module: "profiles",
   },
@@ -182,7 +182,13 @@ const adminItems = [
     module: "revenue",
   },
 ];
-export function NetworkShell({
+export function NetworkShell(props: { title: string; intro: string; children: ReactNode; action?: ReactNode; slug: string; networkName?: string }) {
+  const access = useNetworkAccess();
+  const pathname = usePathname();
+  if (!access) return <NetworkFrame {...props} />;
+  return <>{pathname.replace(/\/$/, "") !== `/portal/netzwerk/${props.slug}` && <header className="networkWelcome"><div><span>{access.networkName.toUpperCase()}</span><h1>{props.title}</h1><p>{props.intro}</p></div>{props.action}</header>}{props.children}</>;
+}
+function NetworkFrame({
   title,
   intro,
   children,
@@ -200,6 +206,8 @@ export function NetworkShell({
   const pathname = usePathname(),
     router = useRouter(),
     [account, setAccount] = useState(false),
+    [mobileOpen, setMobileOpen] = useState(false),
+    [navPanel, setNavPanel] = useState<"admin" | "more" | null>(null),
     [access, setAccess] = useState<Access | null>(null),
     [error, setError] = useState(""),
     [trialAcknowledged, setTrialAcknowledged] = useState(false),
@@ -295,7 +303,14 @@ export function NetworkShell({
     return () => {
       active = false;
     };
-  }, [pathname, router, slug]);
+  }, [router, slug]);
+  useEffect(() => {
+    setMobileOpen(false);
+    setAccount(false);
+    const section = pathname.split("/").pop();
+    if (["einstellungen", "auswertungen", "umsaetze", "veroeffentlichungen"].includes(section || "")) setNavPanel("admin");
+    else if (morePartnerItems.some(item => item.path === section)) setNavPanel("more");
+  }, [pathname]);
   useEffect(() => {
     if (!access) return;
     if (!access.readOnly) {
@@ -337,7 +352,7 @@ export function NetworkShell({
         ["bayer-giants", "bayer04leverkusen"].includes(slug)),
     visiblePrimary = primaryPartnerItems.filter(
       (item) =>
-        moduleVisible(item) &&
+        moduleVisible(item) && item.path !== "profil" &&
         !(
           (access.isInitiator || access.role === "visitor") &&
           item.path === "profil"
@@ -362,6 +377,8 @@ export function NetworkShell({
     <Link
       key={item.path || "home"}
       className={isActive(item.path) ? "active" : ""}
+      aria-current={isActive(item.path) ? "page" : undefined}
+      onClick={() => { setMobileOpen(false); setAccount(false); }}
       href={href(item.path) as never}
       title={
         item.path === "spielplan" && slug === "bayer04leverkusen"
@@ -377,40 +394,6 @@ export function NetworkShell({
         : item.label}
     </Link>
   );
-  const navigation = (
-    <>
-      <nav className="networkSimpleNav" aria-label="Netzwerk">
-        <small>NETZWERK</small>
-        {visiblePrimary.map(itemLink)}
-      </nav>
-      {visibleMore.length > 0 && (
-        <details className="networkMoreNav">
-          <summary>
-            <span>＋</span>
-            <b>Weitere Funktionen</b>
-          </summary>
-          <nav>{visibleMore.map(itemLink)}</nav>
-        </details>
-      )}
-      {access.isInitiator && (
-        <details className="networkAdminNav">
-          <summary>
-            <span>⚙</span>
-            <b>Netzwerk-Verwaltung</b>
-            <small>Initiator</small>
-          </summary>
-          <nav>
-            {visibleAdmin.map(itemLink)}
-            {slug === "unternehmerfreunde" && (
-              <a href={`/portal/netzwerk/${slug}/veroeffentlichungen`}>
-                Öffentliche Homepage-Freigaben
-              </a>
-            )}
-          </nav>
-        </details>
-      )}
-    </>
-  );
   const acknowledgeTrial = () => {
     sessionStorage.setItem(
       `network-trial-understood:${access.networkId}`,
@@ -420,33 +403,10 @@ export function NetworkShell({
   };
   return (
     <NetworkAccessContext.Provider value={access}>
-      <main className="networkPortal" style={style}>
-        <aside className="networkSidebar">
-          <Link href={base as never} className="networkBrand">
-            <span>
-              {access.logoUrl ? <img src={access.logoUrl} alt="" /> : initials}
-            </span>
-            <div>
-              <strong>Das Netzwerkpartner-Portal!</strong>
-              <small>Partnerportal</small>
-            </div>
-          </Link>
-          {navigation}
-          <div className="networkSupport">
-            <b>Hilfe & Kontakt</b>
-            <p>Fragen zum Netzwerkzugang?</p>
-            <a href="mailto:service@b2b-matching.de">Support kontaktieren</a>
-          </div>
-          <small className="networkOperatorSignature">
-            Media Online Innovations Group
-          </small>
-        </aside>
+      <main className="networkPortal networkHorizontal" style={style}>
         <section className="networkMain">
           <header className="networkTop">
-            <details className="networkMobileNav">
-              <summary aria-label="Netzwerkmenü öffnen">☰</summary>
-              {navigation}
-            </details>
+            <button className="networkMenuToggle" type="button" aria-label="Netzwerkmenü" aria-expanded={mobileOpen} aria-controls="network-horizontal-navigation" onClick={() => setMobileOpen(!mobileOpen)}>☰</button>
             <div className="networkContext">
               {access.logoUrl ? (
                 <img src={access.logoUrl} alt="" />
@@ -514,11 +474,11 @@ export function NetworkShell({
                     <Link href={`${base}/einstellungen` as never}>
                       Netzwerk-Verwaltung
                     </Link>
-                  ) : (
+                  ) : access.role !== "visitor" && access.enabledModules.includes("profiles") ? (
                     <Link href={`${base}/profil` as never}>
                       Meine Partnerseite
                     </Link>
-                  )}
+                  ) : null}
                   <button type="button" onClick={logout}>
                     Abmelden
                   </button>
@@ -526,6 +486,18 @@ export function NetworkShell({
               )}
             </div>
           </header>
+          <div id="network-horizontal-navigation" className={`networkHorizontalNavigation${mobileOpen ? " isOpen" : ""}`}>
+            <nav aria-label="Netzwerkbereiche" className="networkPrimaryTabs">
+              {visiblePrimary.map((item) => <span key={item.path} onClick={() => setNavPanel(null)}>{itemLink(item)}</span>)}
+              {visibleMore.length > 0 && <button type="button" aria-expanded={navPanel === "more"} onClick={() => setNavPanel(navPanel === "more" ? null : "more")}>Weitere Funktionen ▾</button>}
+              {access.isInitiator && <button type="button" className={navPanel === "admin" ? "active" : ""} aria-expanded={navPanel === "admin"} onClick={() => setNavPanel(navPanel === "admin" ? null : "admin")}>Netzwerkverwaltung ▾</button>}
+            </nav>
+            {navPanel && (navPanel !== "admin" || access.isInitiator) && <nav className="networkSecondaryTabs" aria-label={navPanel === "admin" ? "Netzwerkverwaltung" : "Weitere Funktionen"}>
+              {(navPanel === "admin" ? visibleAdmin : visibleMore).map(itemLink)}
+              {navPanel === "admin" && slug === "unternehmerfreunde" && <Link href={`${base}/veroeffentlichungen` as never} className={isActive("veroeffentlichungen") ? "active" : ""}>Homepage-Freigaben</Link>}
+              <a href="mailto:service@b2b-matching.de">Hilfe & Kontakt</a>
+            </nav>}
+          </div>
           <div
             className="networkContent"
             onSubmitCapture={(event) => {
@@ -542,7 +514,7 @@ export function NetworkShell({
                   : "Testansicht: Änderungen und Einladungen sind bis zur Aktivierung eingeschränkt."}
               </div>
             )}
-            {pathname.replace(/\/$/, "") !== base && (
+            {title && pathname.replace(/\/$/, "") !== base && (
               <header className="networkWelcome">
                 <div>
                   <span>

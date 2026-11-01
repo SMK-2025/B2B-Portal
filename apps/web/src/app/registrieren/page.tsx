@@ -234,7 +234,7 @@ export default function RegistrationPage() {
                 Persönlich verbunden.
               </h2>
               <p>
-                {networkBrand?.slug === "bayer04leverkusen" ? "Dieses Portal wird unabhängig vom Verein durch die inhabergeführte Media Online Innovations Group bereitgestellt und betrieben. Entdecke Unternehmen und Leistungen, knüpfe Kontakte und bleib auch zwischen den Treffen im Gespräch." : <>Lerne die Menschen hinter den Unternehmen kennen und bleib auch
+                {networkBrand?.slug === "bayer04leverkusen" ? "Lerne Menschen und Unternehmen aus deinem Business-Netzwerk kennen, entdecke Angebote und Leistungen und komm direkt ins Gespräch – auch zwischen den gemeinsamen Treffen." : <>Lerne die Menschen hinter den Unternehmen kennen und bleib auch
                 zwischen gemeinsamen Treffen im Gespräch. Teile Ideen, stell
                 dein Angebot vor und finde neue Kontakte – persönlich und
                 geschützt innerhalb unserer Partnergemeinschaft.</>}

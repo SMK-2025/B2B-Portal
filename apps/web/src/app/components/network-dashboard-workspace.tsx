@@ -6,6 +6,7 @@ import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { NetworkMatchdayCard } from "./network-bundesliga-card";
 import { NetworkSystemMessages } from "./network-system-messages";
+import { NetworkThreadDialog } from "./network-exchange-workspace";
 type Item = {
   id: string;
   title: string;
@@ -62,6 +63,7 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
   const access = useNetworkAccess(),
     [data, setData] = useState<Dashboard | null>(null),
     [partners, setPartners] = useState<Partner[]>([]),
+    [threadId, setThreadId] = useState<string | null>(null),
     [message, setMessage] = useState("");
   const base = `/portal/netzwerk/${slug}`;
   useEffect(() => {
@@ -372,14 +374,15 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                 Alle Beiträge →
               </Link>
             </header>
-            <div className="loungeBoardSurface">
+            <div
+              className={`loungeBoardSurface${data.announcements.length <= 1 ? " loungeBoardSurfaceSingle" : ""}`}
+            >
               {data.announcements.length ? (
                 data.announcements.slice(0, 6).map((item, index) => (
-                  <Link
+                  <button
+                    type="button"
                     className={`loungeBoardNote loungeBoardNote${index % 3}`}
-                    href={
-                      `${base}/themen?article=${encodeURIComponent(item.id)}` as never
-                    }
+                    onClick={() => setThreadId(item.id)}
                     key={item.id}
                   >
                     <span className="loungeBoardPin" aria-hidden="true" />
@@ -392,7 +395,7 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                     {itemImage(item) && <img src={itemImage(item)} alt="" />}
                     <h3>{item.title}</h3>
                     <p>{item.description}</p>
-                    <footer>
+                    <div className="loungeNoteBottom">
                       <time dateTime={item.createdAt || item.updatedAt}>
                         {new Date(
                           item.createdAt || item.updatedAt,
@@ -401,8 +404,8 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                         })}
                       </time>
                       <span>Beitrag öffnen ↗</span>
-                    </footer>
-                  </Link>
+                    </div>
+                  </button>
                 ))
               ) : (
                 <div className="loungeBoardEmpty">
@@ -462,6 +465,12 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           </section>
         )}
       </div>
+      {threadId && (
+        <NetworkThreadDialog
+          contentId={threadId}
+          onClose={() => setThreadId(null)}
+        />
+      )}
       <nav className="loungeQuickAccess" aria-label="Weitere Partnerbereiche">
         {[
           ["kommunikation", "PartnerChat", "communication"],

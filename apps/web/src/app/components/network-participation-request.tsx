@@ -314,35 +314,11 @@ export function NetworkParticipationRequest() {
                       {offer.schedule && (
                         <p>
                           Rechnungsversand: {date(offer.schedule.invoiceDate)} ·
-                          zahlbar bis {date(offer.schedule.paymentDueDate)}. Bei
-                          späterer Buchung gelten die dann bestätigten
-                          Rechnungstermine.
+                          zahlbar bis {date(offer.schedule.paymentDueDate)}.
                         </p>
-                      )}
-                      {offer.billing?.autoRenew ? (
-                        <p>
-                          Automatische Verlängerung um{" "}
-                          {offer.billing.renewalMonths} Monate nach Ende des
-                          Zeitraums. Du kannst die Verlängerung bis{" "}
-                          {date(offer.renewalDeadline || undefined)} im
-                          Mitgliedskonto ausschalten. Bei unverändertem
-                          Monatspreis:{" "}
-                          {money(
-                            offer.monthlyNetCents *
-                              (offer.billing.renewalMonths || 12),
-                          )}{" "}
-                          netto zuzüglich {offer.vatPercent} % MwSt. für die
-                          Folgelaufzeit.
-                        </p>
-                      ) : (
-                        <p>Keine automatische Verlängerung.</p>
                       )}
                     </>
                   )}
-                  <p>
-                    Bereitgestellt und abgerechnet durch die Media Online
-                    Innovations Group, Inhaber Martin Kelm.
-                  </p>
                 </section>
                 <label className="full legalConsent">
                   <input

@@ -6,6 +6,7 @@ import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { Status } from "./portal-shell";
 import { AdminNetworkUsers } from "./admin-network-users";
 import { AdminNetworkShare } from "./admin-network-share";
+import { AdminNetworkBilling } from "./admin-network-billing";
 
 type NetworkStatus = "draft" | "trial" | "active" | "suspended";
 type Network = {
@@ -457,6 +458,17 @@ export function AdminNetworkWorkspace() {
                 </section>
               )}
               <footer className="adminNetworkActions">
+                <AdminNetworkBilling
+                  id={network.id}
+                  name={network.name}
+                  onSaved={() => {
+                    void portalRequest<Network[]>("/networks/admin", {
+                      token: getPortalSession() || "",
+                    })
+                      .then(setNetworks)
+                      .catch(showError);
+                  }}
+                />
                 <AdminNetworkShare id={network.id} name={network.name} />
                 <AdminNetworkUsers id={network.id} name={network.name} />
                 {

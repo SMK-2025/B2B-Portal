@@ -253,6 +253,11 @@ export class NetworksService {
     const user = this.auth.authenticate(authorization);
     this.requirePlatformAdmin(user.id);
     const network = this.raw(id);
+    if (
+      input.memberPaymentModel !== undefined &&
+      !["individual", "network"].includes(String(input.memberPaymentModel))
+    )
+      throw new BadRequestException("Ungültiges Zahlungsmodell.");
     const cents = validMemberPrice(input.monthlyNetCents);
     if (input.billing && typeof input.billing === "object") {
       const b = input.billing as Record<string, unknown>;
@@ -311,8 +316,28 @@ export class NetworksService {
       };
     }
     network.settings.memberMonthlyNetCents = cents;
+    if (input.memberPaymentModel !== undefined)
+      network.settings.memberPaymentModel = input.memberPaymentModel as
+        "individual" | "network";
     network.updatedAt = new Date().toISOString();
+    this.operatorAudit(user.id, id, "operator.billing.updated");
     return { ...network, memberPrice: pricing(network) };
+  }
+  adminBilling(authorization: string | undefined, networkId: string) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    const network = this.raw(networkId);
+    return {
+      networkName: network.name,
+      memberPaymentModel: network.settings.memberPaymentModel || "individual",
+      ...pricing(network),
+      schedule: network.settings.memberBilling?.freeUntil
+        ? invoiceSchedule(network.settings.memberBilling.freeUntil)
+        : null,
+      orders: [...this.store.networkOrders.values()]
+        .filter((o) => o.networkId === networkId)
+        .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
+    };
   }
   memberRegistrations(authorization: string | undefined) {
     const user = this.auth.authenticate(authorization);
@@ -763,6 +788,8 @@ export class NetworksService {
         endsAt: string | null;
         profile: string;
         orderId?: string;
+        orderIds?: string[];
+        paidAt?: string | null;
         paymentStatus?: string;
         centrallyFunded?: boolean;
         loginCount?: number;
@@ -820,6 +847,15 @@ export class NetworksService {
             m.centrallyFunded,
         ),
         orderId: order?.id,
+        orderIds: [...this.store.networkOrders.values()]
+          .filter(
+            (o) =>
+              o.networkId === networkId &&
+              o.orderedByUserId === userId &&
+              o.kind === "member_annual",
+          )
+          .map((o) => o.id),
+        paidAt: order?.paidAt,
         paymentStatus: order?.paymentStatus,
         name: `${user.firstName} ${user.lastName}`.trim(),
         email: user.email,

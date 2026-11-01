@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
+import { InvoiceDownload, type BillingInvoice } from "./admin-network-billing";
 type Row = {
   admissionStatus?: string;
   company?: string;
@@ -13,6 +14,8 @@ type Row = {
   endsAt: string | null;
   profile: string;
   orderId?: string;
+  orderIds?: string[];
+  paidAt?: string | null;
   paymentStatus?: string;
   centrallyFunded?: boolean;
   loginCount?: number;
@@ -37,6 +40,8 @@ const date = (value: string | null) =>
   value ? new Date(value).toLocaleDateString("de-DE") : "–";
 export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
+  const [invoiceError, setInvoiceError] = useState("");
   const [rows, setRows] = useState<Row[]>([]),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false);
@@ -133,6 +138,19 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
         { token: getPortalSession() || "" },
       );
       setRows(result.users);
+      setInvoiceError("");
+      setInvoices([]);
+      try {
+        const billing = await portalRequest<{ invoices: BillingInvoice[] }>(
+          `/networks/admin/${id}/billing`,
+          { token: getPortalSession() || "" },
+        );
+        setInvoices(billing.invoices);
+      } catch {
+        setInvoiceError(
+          "Rechnungen konnten nicht geladen werden. Bitte die Nutzerübersicht erneut öffnen.",
+        );
+      }
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Nutzer konnten nicht geladen werden.",
@@ -260,6 +278,8 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                       "Status",
                       "Rolle",
                       "Unternehmensprofil",
+                      "Zahlung",
+                      "Rechnungen",
                       "Aktionen",
                     ].map((label) => (
                       <th key={label}>{label}</th>
@@ -313,6 +333,47 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                       <td>{states[row.status] || row.status}</td>
                       <td>{roles[row.role] || row.role}</td>
                       <td>{row.profile}</td>
+                      <td>
+                        {row.paymentStatus === "paid" ? (
+                          <strong style={{ color: "#166534" }}>
+                            ✓ Gezahlt
+                            {row.paidAt && (
+                              <>
+                                <br />
+                                {date(row.paidAt)}
+                              </>
+                            )}
+                          </strong>
+                        ) : row.orderId ? (
+                          row.paymentStatus === "overdue" ? (
+                            "Überfällig"
+                          ) : (
+                            "Offen"
+                          )
+                        ) : row.centrallyFunded ? (
+                          "Netzwerk zahlt zentral"
+                        ) : (
+                          "Keine Buchung"
+                        )}
+                      </td>
+                      <td>
+                        {invoices
+                          .filter((i) =>
+                            (row.orderIds || [row.orderId]).includes(
+                              i.order_id,
+                            ),
+                          )
+                          .map((i) => (
+                            <InvoiceDownload key={i.id} invoice={i} />
+                          ))}
+                        {!invoices.some((i) =>
+                          (row.orderIds || [row.orderId]).includes(i.order_id),
+                        ) &&
+                          (invoiceError ||
+                            (row.centrallyFunded
+                              ? "Siehe Zahlungsdetails des Netzwerks"
+                              : "Noch keine Rechnung erstellt"))}
+                      </td>
                       <td>
                         {row.name !== "Noch nicht registriert" && (
                           <details className="adminUserMenu">

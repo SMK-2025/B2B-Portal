@@ -23,6 +23,16 @@ export class NetworksController {
     this.networks.memberRegistrations(auth);
     return this.billing.status();
   }
+  @Get("admin/:networkId/billing") async networkBilling(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+  ) {
+    const result = this.networks.adminBilling(auth, id);
+    return {
+      ...result,
+      invoices: await this.billing.status(result.orders.map((o) => o.id)),
+    };
+  }
   @Get("admin/invoice-status/:invoiceId/pdf") async invoicePdf(
     @Headers("authorization") auth: string | undefined,
     @Param("invoiceId") id: string,

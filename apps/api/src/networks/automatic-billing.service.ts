@@ -309,7 +309,15 @@ export class AutomaticBillingService
     await this.store.persist();
     await this.issue(next, today);
   }
-  async status() {
+  async status(orderIds?: string[]) {
+    if (orderIds && !orderIds.length) return [];
+    if (orderIds)
+      return this.sql
+        ? this.sql.unsafe(
+            "SELECT id,order_id,number,status,created_at,sent_at,error,(pdf_base64 IS NOT NULL) AS downloadable FROM b2b_invoices WHERE order_id = ANY($1::text[]) ORDER BY created_at DESC",
+            [orderIds],
+          )
+        : [];
     return this.sql
       ? this.sql.unsafe(
           "SELECT id,order_id,number,status,created_at,sent_at,error FROM b2b_invoices ORDER BY created_at DESC LIMIT 200",

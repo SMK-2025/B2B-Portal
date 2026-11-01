@@ -295,7 +295,7 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           <section className="networkCard loungeCard loungeMemberHighlight">
             <header>
               <div>
-                <h2>Menschen hinter den Unternehmen</h2>
+                <h2>Netzwerk-Mitglieder</h2>
                 <p>Entdecke, wer zu deinem Netzwerk gehört.</p>
               </div>
               <Link
@@ -374,9 +374,7 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                 Alle Beiträge →
               </Link>
             </header>
-            <div
-              className={`loungeBoardSurface${data.announcements.length <= 1 ? " loungeBoardSurfaceSingle" : ""}`}
-            >
+            <div className="loungeBoardSurface">
               {data.announcements.length ? (
                 data.announcements.slice(0, 6).map((item, index) => (
                   <button

@@ -1226,21 +1226,20 @@
     width: 100%;
   }
 }
-.networkPortal .loungeBoardSurfaceSingle { max-width:560px; grid-template-columns:minmax(0,1fr) !important; }
 /* A shared, responsive noticeboard for every network. Matchday styling stays intact. */
 .networkPortal .loungeHeroActions { display:flex; flex-wrap:wrap; gap:12px; }
 .networkPortal .loungePartnerTagline { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:5px; line-height:1.5; }
 .networkPortal .loungeGrid > .loungeNoticeboard { grid-column:1 / -1; order:2; min-width:0; }
 .networkPortal .loungeGrid > .loungeMemberHighlight { order:3; }
 .networkPortal .loungeGrid > .loungeRecapCard { order:4; }
-.networkPortal .loungeGridWithMatchday > .loungeNextEvent { grid-column:span 3; order:1; }
-.networkPortal .loungeGridWithMatchday > .loungeMemberHighlight { grid-column:span 3; order:3; }
+.networkPortal .loungeGridWithMatchday > .loungeNextEvent { grid-column:span 3; order:3; }
+.networkPortal .loungeGridWithMatchday > .loungeMemberHighlight { grid-column:span 3; order:1; }
 .networkPortal .loungeBoardHeading { display:flex; justify-content:space-between; align-items:center; gap:24px; padding:12px 2px 22px; }
 .networkPortal .loungeBoardHeading > div > span { font-size:12px; font-weight:700; letter-spacing:.12em; color:var(--network-accent); }
 .networkPortal .loungeBoardHeading h2 { font-size:28px; line-height:1.25; margin:6px 0 8px; color:var(--network-primary); }
 .networkPortal .loungeBoardHeading p { font-size:16px; margin:0; }
 .networkPortal .loungeBoardHeading > a { flex-shrink:0; width:auto; padding:12px 20px; background:white; }
-.networkPortal .loungeBoardSurface { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:26px; padding:30px 24px; border:1px solid #d9dfe2; border-radius:20px; background:linear-gradient(135deg,#263239,#151d22); box-shadow:inset 0 2px 12px #213b4f08; }
+.networkPortal .loungeBoardSurface { display:grid; width:100%; box-sizing:border-box; grid-template-columns:repeat(3,minmax(0,1fr)); gap:26px; padding:30px 24px; border:8px solid #465159; border-radius:20px; background:linear-gradient(135deg,#263239,#151d22); box-shadow:inset 0 0 0 1px #ffffff20,inset 0 3px 14px #0005,0 6px 18px #17232b18; }
 .networkPortal .loungeBoardNote { position:relative; display:flex; flex-direction:column; min-width:0; width:100%; font:inherit; text-align:left; cursor:pointer; appearance:none; background:#fffefa; color:#213b4f; border:1px solid #e4e3dc; padding:26px 20px 18px; border-radius:3px 3px 12px 3px; box-shadow:0 8px 18px #253c4f15; text-decoration:none; transition:transform .18s,box-shadow .18s; }
 .networkPortal .loungeBoardNote0 { transform:rotate(-1deg); }
 .networkPortal .loungeBoardNote1 { transform:rotate(1deg); background:#f7fbff; }
@@ -1256,8 +1255,8 @@
 .networkPortal .loungeBoardNote .loungeNoteBottom { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:auto; padding-top:12px; border-top:1px solid #dce3e7; font-size:13px; }
 .networkPortal .loungeBoardNote .loungeNoteBottom span { font-weight:600; }
 .networkPortal .loungeBoardEmpty { grid-column:1/-1; text-align:center; padding:20px; }
-.networkPortal .loungeBoardEmpty strong { font-size:20px; color:var(--network-primary); }
-.networkPortal .loungeBoardEmpty p { font-size:16px; margin-bottom:0; }
+.networkPortal .loungeBoardEmpty strong { font-size:20px; color:#fff; }
+.networkPortal .loungeBoardEmpty p { font-size:16px; margin-bottom:0; color:#dce3e7; }
 @media(max-width:1250px) {
  .networkPortal .loungeBoardSurface { grid-template-columns:repeat(2,minmax(0,1fr)); }
  .networkPortal .loungeGridWithMatchday > .loungeNextEvent,

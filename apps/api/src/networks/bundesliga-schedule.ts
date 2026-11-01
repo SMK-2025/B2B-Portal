@@ -5,7 +5,7 @@ export const BUNDESLIGA_SOURCE =
   "https://www.bundesliga.com/de/bundesliga/spieltag/2026-2027/bayer-04-leverkusen";
 export const BUNDESLIGA_TABLE_SOURCE =
   "https://www.bundesliga.com/de/bundesliga/tabelle";
-export const BUNDESLIGA_AS_OF = "2026-10-25";
+export const BUNDESLIGA_AS_OF = "2026-11-01";
 // Official Bundesliga snapshot, checked 26 October 2026 after matchday 7. Dates without a kickoff
 // remain matchday windows, never advertised as confirmed appointments.
 const clubs = [
@@ -44,7 +44,7 @@ const fixtures: Fixture[] = [
   ["2026-10-10", "M05", false, 4, 3],
   ["2026-10-18", "SCF", true, 2, 1],
   ["2026-10-25T14:30:00Z", "TSG", false, 0, 3],
-  ["2026-10-31T14:30:00Z", "VFB", true],
+  ["2026-10-31T14:30:00Z", "VFB", true, 2, 4],
   ["2026-11-08T14:30:00Z", "KOE", false],
   ["2026-11-21T14:30:00Z", "SCP", true],
   ["2026-11-29T18:30:00Z", "BVB", false],
@@ -93,41 +93,41 @@ const standingsOrder = [
   "FCB",
   "BVB",
   "SCF",
-  "B04",
   "RBL",
   "SVW",
-  "M05",
+  "B04",
   "ELV",
+  "M05",
   "FCA",
+  "VFB",
   "TSG",
+  "SCP",
   "HSV",
   "KOE",
-  "SCP",
   "SGE",
-  "VFB",
   "S04",
   "FCU",
   "BMG",
 ];
 const rows = [
-  [5, 2, 0, 25, 6, 17],
-  [5, 2, 0, 12, 4, 17],
-  [4, 1, 2, 16, 9, 13],
-  [4, 1, 2, 16, 12, 13],
-  [4, 0, 3, 20, 11, 12],
-  [3, 3, 1, 15, 14, 12],
-  [3, 1, 3, 16, 13, 10],
-  [3, 1, 3, 12, 15, 10],
-  [2, 3, 2, 17, 13, 9],
-  [3, 0, 4, 14, 14, 9],
+  [5, 3, 0, 27, 8, 18],
+  [5, 3, 0, 14, 6, 18],
+  [5, 1, 2, 18, 10, 16],
+  [5, 0, 3, 22, 11, 15],
+  [4, 3, 1, 17, 14, 15],
+  [4, 1, 3, 18, 16, 13],
+  [4, 1, 3, 16, 16, 13],
+  [3, 1, 4, 17, 17, 10],
+  [2, 3, 3, 18, 15, 9],
+  [3, 0, 5, 14, 15, 9],
+  [3, 0, 5, 14, 16, 9],
+  [2, 3, 3, 6, 9, 9],
   [3, 0, 4, 6, 16, 9],
   [2, 2, 3, 8, 11, 8],
-  [2, 2, 3, 6, 9, 8],
   [2, 2, 3, 10, 17, 8],
-  [2, 0, 5, 10, 13, 6],
-  [1, 3, 3, 4, 7, 6],
+  [1, 3, 4, 4, 9, 6],
   [1, 3, 3, 6, 18, 6],
-  [1, 0, 6, 11, 22, 3],
+  [1, 1, 6, 11, 22, 4],
 ];
 export const BUNDESLIGA_TABLE = rows.map(
   ([wins, draws, losses, goalsFor, goalsAgainst, points], index) => ({

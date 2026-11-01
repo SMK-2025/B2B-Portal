@@ -73,8 +73,8 @@ export const PROB_GAMES: ProBGame[] = [
     startsAt: "2026-10-31T19:00:00+01:00",
     opponent: "Dragons Rhöndorf",
     home: false,
-    officialGiantsScore: null,
-    officialOpponentScore: null,
+    officialGiantsScore: 93,
+    officialOpponentScore: 78,
   },
   {
     id: "2026-11-07-ludwigsburg",

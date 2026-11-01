@@ -2,19 +2,19 @@ import { describe, it, expect } from "vitest";
 import { PROB_GAMES } from "./prob-schedule";
 import { PROB_TABLE, PROB_AS_OF } from "./prob-table";
 import { BUNDESLIGA_GAMES, BUNDESLIGA_TABLE } from "./bundesliga-schedule";
-describe("verified sports snapshot 26 October 2026", () => {
-  it("matches all six Giants results to the official league table", () => {
+describe("verified sports snapshot 1 November 2026", () => {
+  it("matches all seven Giants results to the official league table", () => {
     const completed = PROB_GAMES.filter((g) => g.officialGiantsScore !== null);
-    expect(completed).toHaveLength(6);
+    expect(completed).toHaveLength(7);
     const giants = PROB_TABLE.find((r) => r.team === "Bayer Giants")!;
     expect(giants).toMatchObject({
-      rank: 2,
-      played: 6,
-      wins: 5,
+      rank: 1,
+      played: 7,
+      wins: 6,
       losses: 1,
-      points: 10,
-      goalsFor: 446,
-      goalsAgainst: 409,
+      points: 12,
+      goalsFor: 539,
+      goalsAgainst: 487,
     });
     expect(completed.reduce((s, g) => s + g.officialGiantsScore!, 0)).toBe(
       giants.goalsFor,
@@ -28,13 +28,19 @@ describe("verified sports snapshot 26 October 2026", () => {
       expect(r.played).toBe(r.wins + r.losses);
       expect(r.points).toBe(r.wins * 2);
     }
-    expect(PROB_AS_OF).toBe("2026-10-25");
+    expect(PROB_AS_OF).toBe("2026-10-31");
   });
   it("matches Leverkusen's Hoffenheim result and seven matches to the official table", () => {
     const games = BUNDESLIGA_GAMES.filter(
       (g) => g.officialGiantsScore !== null,
     );
-    expect(games).toHaveLength(7);
+    expect(games).toHaveLength(8);
+    expect(games[7]).toMatchObject({
+      opponent: "VfB Stuttgart",
+      home: true,
+      officialGiantsScore: 2,
+      officialOpponentScore: 4,
+    });
     expect(games[6]).toMatchObject({
       opponent: "TSG Hoffenheim",
       home: false,
@@ -45,11 +51,11 @@ describe("verified sports snapshot 26 October 2026", () => {
       (r) => r.team === "Bayer 04 Leverkusen",
     )!;
     expect(team).toMatchObject({
-      rank: 4,
-      played: 7,
+      rank: 6,
+      played: 8,
       points: 13,
-      goalsFor: 16,
-      goalsAgainst: 12,
+      goalsFor: 18,
+      goalsAgainst: 16,
     });
     expect(games.reduce((s, g) => s + g.officialGiantsScore!, 0)).toBe(
       team.goalsFor,

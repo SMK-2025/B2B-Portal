@@ -2852,7 +2852,7 @@ export class NetworksService {
               item.data.category === "Neuigkeit des Initiators"),
         )
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-        .slice(0, 4),
+        .slice(0, 6),
     };
   }
 

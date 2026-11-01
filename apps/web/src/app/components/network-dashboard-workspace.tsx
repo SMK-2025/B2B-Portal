@@ -39,7 +39,11 @@ type Partner = {
   user: { firstName: string; lastName: string } | null;
   organization: {
     displayName: string;
-    networkProfile: { contactName: string; logoUrl: string | null } | null;
+    networkProfile: {
+      contactName: string;
+      logoUrl: string | null;
+      tagline?: string;
+    } | null;
   } | null;
 };
 function itemImage(item?: Item) {
@@ -112,25 +116,32 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
     recap = data.eventRecaps[0],
     eventImage = itemImage(event),
     recapImage = itemImage(recap);
+  const partnerOffset = partners.length
+    ? Math.floor(Date.now() / 86400000) % partners.length
+    : 0;
   const cards = partners.length
-    ? partners.slice(0, 3).map((member) => ({
-        id: member.id,
-        userId: member.userId,
-        name:
-          member.organization!.networkProfile!.contactName ||
-          [member.user?.firstName, member.user?.lastName]
-            .filter(Boolean)
-            .join(" ") ||
-          member.organization!.displayName,
-        company: member.organization!.displayName,
-        logo: member.organization!.networkProfile!.logoUrl,
-      }))
+    ? [...partners.slice(partnerOffset), ...partners.slice(0, partnerOffset)]
+        .slice(0, 3)
+        .map((member) => ({
+          id: member.id,
+          userId: member.userId,
+          name:
+            member.organization!.networkProfile!.contactName ||
+            [member.user?.firstName, member.user?.lastName]
+              .filter(Boolean)
+              .join(" ") ||
+            member.organization!.displayName,
+          company: member.organization!.displayName,
+          logo: member.organization!.networkProfile!.logoUrl,
+          tagline: member.organization!.networkProfile!.tagline,
+        }))
     : data.recentMembers.slice(0, 3).map((member) => ({
         id: member.id,
         userId: "",
         name: member.name,
         company: "Netzwerkpartner",
         logo: member.logoUrl,
+        tagline: undefined,
       }));
   return (
     <div className="networkLoungeHome">
@@ -171,9 +182,16 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
               "Bleib im Gespräch. Entdecke Menschen, Ideen und gemeinsame Chancen – auch zwischen unseren Treffen."}
           </p>
           {enabled("profiles") && (
-            <Link href={`${base}/mitglieder` as never}>
-              Partner kennenlernen →
-            </Link>
+            <div className="loungeHeroActions">
+              <Link href={`${base}/mitglieder` as never}>
+                Partner entdecken →
+              </Link>
+              {!access?.isInitiator && access?.role !== "visitor" && (
+                <Link href={`${base}/profil` as never}>
+                  Meine Partnerseite ↗
+                </Link>
+              )}
+            </div>
           )}
         </div>
         {!data.network.settings?.bannerImageUrl && <small>Symbolbild</small>}
@@ -185,26 +203,13 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           operator={access.role === "platform_admin"}
         />
       )}
-      <section
-        className="loungeWelcomeText"
-        aria-label="Willkommen im Business-Netzwerk"
-      >
-        <h2>Dein Business-Netzwerk. Persönlich verbunden.</h2>
-        <p>
-          Hier vernetzt du dich einfacher mit den Menschen und Unternehmen aus
-          unserem Business-Bereich. Lerne andere Partner kennen, entdecke ihre
-          Angebote und Leistungen und besuche ihre Unternehmensseiten. Im
-          PartnerChat kommst du direkt ins Gespräch – für neue Kontakte,
-          gemeinsame Ideen und Zusammenarbeit, auch zwischen unseren Treffen.
-        </p>
-      </section>
       <div
         className={`loungeGrid${["bayer04leverkusen", "bayer-giants"].includes(slug) && enabled("events") ? " loungeGridWithMatchday" : ""}`}
       >
         {["bayer04leverkusen", "bayer-giants"].includes(slug) &&
           enabled("events") && <NetworkMatchdayCard />}
-        {enabled("events") && (
-          <section className="networkCard loungeCard">
+        {enabled("events") && event && (
+          <section className="networkCard loungeCard loungeNextEvent">
             <header>
               <h2>
                 {data.upcomingEvents.length
@@ -314,6 +319,11 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                         <span>
                           <strong>{member.name}</strong>
                           <small>{member.company}</small>
+                          {member.tagline && (
+                            <small className="loungePartnerTagline">
+                              {member.tagline}
+                            </small>
+                          )}
                         </span>
                         <b aria-hidden="true">↗</b>
                       </Link>
@@ -342,82 +352,72 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
           </section>
         )}
         {enabled("community") && (
-          <section className="networkCard loungeCard">
-            <header>
-              <h2>Aus unserem Netzwerk</h2>
-              <Link
-                href={`${base}/themen` as never}
-                aria-label="Alle Neuigkeiten"
-              >
-                ↗
-              </Link>
-            </header>
-            <div className="loungeCardBody">
-              <div className="loungeNews">
-                {data.announcements.length ? (
-                  data.announcements.slice(0, 2).map((item) => (
-                    <Link
-                      href={
-                        `${base}/themen?article=${encodeURIComponent(item.id)}` as never
-                      }
-                      key={item.id}
-                    >
-                      <time
-                        className="loungeArticleDate"
-                        dateTime={item.createdAt || item.updatedAt}
-                      >
-                        <strong>
-                          {new Date(
-                            item.createdAt || item.updatedAt,
-                          ).toLocaleDateString("de-DE", {
-                            day: "2-digit",
-                            timeZone: "Europe/Berlin",
-                          })}
-                        </strong>
-                        <span>
-                          {new Date(
-                            item.createdAt || item.updatedAt,
-                          ).toLocaleDateString("de-DE", {
-                            month: "short",
-                            timeZone: "Europe/Berlin",
-                          })}
-                        </span>
-                      </time>
-                      {itemImage(item) && <img src={itemImage(item)} alt="" />}
-                      <div>
-                        <h3>{item.title}</h3>
-                        <p className="loungeExcerpt">{item.description}</p>
-                        <time>
-                          {new Date(
-                            item.createdAt || item.updatedAt,
-                          ).toLocaleDateString("de-DE", {
-                            timeZone: "Europe/Berlin",
-                          })}
-                        </time>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="loungeEmpty">
-                    <h3>Neue Impulse. Gemeinsame Ideen.</h3>
-                    <p>
-                      Hier teilt die Netzwerkleitung Neuigkeiten und
-                      Gesprächsanlässe mit dir.
-                    </p>
-                  </div>
-                )}
+          <section
+            className="loungeNoticeboard"
+            aria-labelledby="noticeboard-title"
+          >
+            <header className="loungeBoardHeading">
+              <div>
+                <span>DEIN NETZWERK LEBT</span>
+                <h2 id="noticeboard-title">Das schwarze Brett</h2>
+                <p>
+                  Neuigkeiten, Ideen und Gesprächsstoff – hier bleibt ihr
+                  verbunden.
+                </p>
               </div>
               <Link
                 className="loungeOutlineButton"
                 href={`${base}/themen` as never}
               >
-                Alle Neuigkeiten →
+                Alle Beiträge →
               </Link>
+            </header>
+            <div className="loungeBoardSurface">
+              {data.announcements.length ? (
+                data.announcements.slice(0, 6).map((item, index) => (
+                  <Link
+                    className={`loungeBoardNote loungeBoardNote${index % 3}`}
+                    href={
+                      `${base}/themen?article=${encodeURIComponent(item.id)}` as never
+                    }
+                    key={item.id}
+                  >
+                    <span className="loungeBoardPin" aria-hidden="true" />
+                    <div className="loungeNoteMeta">
+                      <span>Netzwerkleitung · Angepinnt</span>
+                      {Date.now() -
+                        Date.parse(item.createdAt || item.updatedAt) <
+                        7 * 86400000 && <b>Neu</b>}
+                    </div>
+                    {itemImage(item) && <img src={itemImage(item)} alt="" />}
+                    <h3>{item.title}</h3>
+                    <p>{item.description}</p>
+                    <footer>
+                      <time dateTime={item.createdAt || item.updatedAt}>
+                        {new Date(
+                          item.createdAt || item.updatedAt,
+                        ).toLocaleDateString("de-DE", {
+                          timeZone: "Europe/Berlin",
+                        })}
+                      </time>
+                      <span>Beitrag öffnen ↗</span>
+                    </footer>
+                  </Link>
+                ))
+              ) : (
+                <div className="loungeBoardEmpty">
+                  <strong>Platz für neue Impulse.</strong>
+                  <p>
+                    Sobald die Netzwerkleitung einen Beitrag veröffentlicht,
+                    findest du ihn hier am Brett.
+                  </p>
+                </div>
+              )}
             </div>
           </section>
         )}
-        {enabled("events") && (
-          <section className="networkCard loungeCard">
+        {enabled("events") && recap && (
+          <section className="networkCard loungeCard loungeRecapCard">
             <header>
               <h2>Gemeinsam erlebt</h2>
               <Link
@@ -457,44 +457,6 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
                 href={`${base}/rueckblicke` as never}
               >
                 Rückblicke entdecken →
-              </Link>
-            </div>
-          </section>
-        )}
-        {enabled("communication") && (
-          <section className="networkCard loungeCard">
-            <header>
-              <h2>Direkt ins Gespräch</h2>
-            </header>
-            <div className="loungeCardBody">
-              <p className="loungeExcerpt">
-                Eine Frage, eine Idee oder einfach ein persönliches Hallo?
-                Schreibe deinen Netzwerkpartnern direkt im PartnerChat.
-              </p>
-              <Link
-                className="loungeOutlineButton"
-                href={`${base}/kommunikation` as never}
-              >
-                PartnerChat öffnen →
-              </Link>
-            </div>
-          </section>
-        )}
-        {enabled("profiles") && (
-          <section className="networkCard loungeCard">
-            <header>
-              <h2>Leistungen entdecken</h2>
-            </header>
-            <div className="loungeCardBody">
-              <p className="loungeExcerpt">
-                Wer kann dich unterstützen? Entdecke Kompetenzen, Angebote und
-                Unternehmensseiten aus deinem Business-Netzwerk.
-              </p>
-              <Link
-                className="loungeOutlineButton"
-                href={`${base}/mitglieder` as never}
-              >
-                Unternehmen kennenlernen →
               </Link>
             </div>
           </section>

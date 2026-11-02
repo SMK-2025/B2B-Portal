@@ -1,4 +1,5 @@
 "use client";
+import styles from "./status.module.css";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -71,21 +72,20 @@ export default function ParticipationStatusPage() {
     void load();
   }, [load]);
   return (
-    <main
-      style={{
-        maxWidth: 650,
-        margin: "clamp(24px,8vh,90px) auto",
-        padding: 20,
-      }}
-    >
+    <main className={styles.stage}>
+      <div className={styles.preview} aria-hidden="true" inert>
+        <div className={styles.bar}><b>Das Netzwerkpartner-Portal</b><span>Mein Zugang</span></div>
+        <div className={styles.tabs}>Startseite　　 Partner entdecken　　 Veranstaltungen　　 PartnerChat</div>
+        <div className={styles.hero}><small>SCHÖN, DASS DU DA BIST</small><h2>Willkommen in deinem Business-Netzwerk.</h2><p>Partner entdecken und miteinander ins Gespräch kommen.</p></div>
+        <div className={styles.cards}>{[(slug==="bayer04leverkusen"||slug==="bayer-giants")?"Spieltag":"Unser nächstes Treffen","Netzwerk-Mitglieder","Das schwarze Brett","Veranstaltungen"].map(title=><div key={title}><b>{title}</b><i/><i/><i/></div>)}</div>
+      </div>
       <section
-        className="networkCard"
-        style={{ padding: "clamp(20px,4vw,40px)" }}
+        className={styles.panel} aria-labelledby="participation-title"
       >
         <small>
           Das Netzwerkpartner-Portal · der Media Online Innovations Group
         </small>
-        <h1>Meine Teilnahmeanfrage</h1>
+        <h1 id="participation-title">Meine Teilnahmeanfrage</h1>
         {email && (
           <p>
             Angemeldet als <strong>{email}</strong>

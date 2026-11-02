@@ -147,6 +147,7 @@ export function PartnerEditablePreview({
       const index = Number(area.slice(8));
       const sections = [...(draft.sections || [])];
       sections[index] = {
+        ...sections[index],
         title: String(form.get("title") || ""),
         body: String(form.get("body") || ""),
       };

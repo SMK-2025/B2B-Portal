@@ -82,7 +82,7 @@ export interface OrganizationRecord {
 
 export interface NetworkPartnerProfile {
   heroImageUrl?: string | null;
-  sections?: Array<{ title: string; body: string }>;
+  sections?: Array<{ title: string; body: string; area?: string }>;
   personalMessage?: string;
   offers?: string;
   lookingFor?: string;

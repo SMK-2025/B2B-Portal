@@ -17,7 +17,7 @@ import type { PartnerPageProfile } from "./network-members-workspace";
 
 type Profile = {
   heroImageUrl?: string | null;
-  sections?: Array<{ title: string; body: string }>;
+  sections?: Array<{ title: string; body: string; area?: string }>;
   personalMessage?: string;
   offers?: string;
   lookingFor?: string;
@@ -69,7 +69,7 @@ export function NetworkProfileWorkspace() {
     [data, setData] = useState<Response | null>(null),
     [logo, setLogo] = useState<string | null>(null),
     [hero, setHero] = useState<string | null>(null),
-    [sections, setSections] = useState<Array<{ title: string; body: string }>>(
+    [sections, setSections] = useState<Array<{ title: string; body: string; area?: string }>>(
       [],
     ),
     [notice, setNotice] = useState(""),
@@ -217,7 +217,7 @@ export function NetworkProfileWorkspace() {
         (!sections.length || input.get("replace") === "on")
       )
         setSections(
-          result.draft.sections as Array<{ title: string; body: string }>,
+          result.draft.sections as Array<{ title: string; body: string; area?: string }>,
         );
       for (const [name, value] of Object.entries(result.draft)) {
         const field = profileForm.current?.elements.namedItem(name);
@@ -560,6 +560,9 @@ export function NetworkProfileWorkspace() {
                   {sections.map((section, index) => (
                     <fieldset className="full partnerSectionEditor" key={index}>
                       <legend>Inhaltsbereich {index + 1}</legend>
+                      <label>Rubrik<select value={section.area||"about"} disabled={!data.canEdit} onChange={event=>setSections(current=>current.map((s,i)=>i===index?{...s,area:event.target.value}:s))}>
+                        <option value="about">Vorstellung</option><option value="services">Leistungen</option><option value="personal">Persönlich</option><option value="offers">Angebote</option><option value="looking">Gesuche</option>
+                      </select></label>
                       <label>
                         Überschrift
                         <input

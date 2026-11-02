@@ -15,7 +15,7 @@ import { partnerBranding } from "../lib/partner-branding";
 import { PartnerBusinessCard } from "./partner-business-card";
 export type PartnerPageProfile = {
   heroImageUrl?: string | null;
-  sections?: Array<{ title: string; body: string }>;
+  sections?: Array<{ title: string; body: string; area?: string }>;
   personalMessage?: string;
   offers?: string;
   lookingFor?: string;
@@ -410,17 +410,9 @@ export function ProfileDialog({
   const areas = [
     { id: "about", label: "Vorstellung" },
     { id: "services", label: "Leistungen" },
-    ...(p.personalMessage || editControls
-      ? [{ id: "personal", label: "Persönlich" }]
-      : []),
-    ...(p.sections || []).map((section, index) => ({
-      id: `section-${index}`,
-      label: section.title,
-    })),
-    ...(p.offers || editControls ? [{ id: "offers", label: "Angebote" }] : []),
-    ...(p.lookingFor || editControls
-      ? [{ id: "looking", label: "Gesuche" }]
-      : []),
+    {id:"personal",label:"Persönlich"},
+    {id:"offers",label:"Angebote"},
+    {id:"looking",label:"Gesuche"},
     { id: "contact", label: "Kontakt" },
   ];
   function showArea(id: string) {
@@ -627,26 +619,6 @@ export function ProfileDialog({
                 <p>{p.personalMessage}</p>
               </section>
             )}
-            {p.sections?.map((section, index) => (
-              <section
-                className="partnerOnepagerSection"
-                id={`partner-section-${index}`}
-                key={index}
-                hidden={activeArea !== `section-${index}`}
-              >
-                {editControls?.(`section-${index}`)}
-                <small>
-                  UNSER UNTERNEHMEN · {String(index + 1).padStart(2, "0")}
-                </small>
-                <h3>{section.title}</h3>
-                {section.body
-                  .split(/\n\s*\n/)
-                  .filter(Boolean)
-                  .map((paragraph, i) => (
-                    <p key={i}>{paragraph}</p>
-                  ))}
-              </section>
-            ))}
             {(p.offers || editControls) && (
               <section hidden={activeArea !== "offers"}>
                 {editControls?.("offers")}
@@ -663,6 +635,27 @@ export function ProfileDialog({
                 <p>{p.lookingFor}</p>
               </section>
             )}
+            {p.sections?.map((section, index) => (
+              <section
+                className="partnerOnepagerSection"
+                id={`partner-section-${index}`}
+                key={index}
+                hidden={activeArea !== (section.area || "about")}
+              >
+                {editControls?.(`section-${index}`)}
+                <small>
+                  {areas.find(a=>a.id===(section.area||"about"))?.label}
+                </small>
+                <h3>{section.title}</h3>
+                {section.body
+                  .split(/\n\s*\n/)
+                  .filter(Boolean)
+                  .map((paragraph, i) => (
+                    <p key={i}>{paragraph}</p>
+                  ))}
+              </section>
+            ))}
+            {((activeArea==="personal"&&!p.personalMessage)||(activeArea==="offers"&&!p.offers)||(activeArea==="looking"&&!p.lookingFor)) && !editControls && !p.sections?.some(s=>s.area===activeArea) && <p>Hier sind noch keine Angaben hinterlegt.</p>}
           </main>
           <aside id="partner-contact" hidden={activeArea !== "contact"}>
             {editControls?.("contact")}

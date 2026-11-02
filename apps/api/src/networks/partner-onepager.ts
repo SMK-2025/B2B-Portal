@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-export type PartnerSection = { title: string; body: string };
+export type PartnerSection = { title: string; body: string; area?: string };
 export function partnerSections(value: unknown): PartnerSection[] {
   if (!Array.isArray(value) || value.length > 30)
     throw new BadRequestException(
@@ -20,7 +20,9 @@ export function partnerSections(value: unknown): PartnerSection[] {
       throw new BadRequestException(
         "Jeder Bereich benötigt eine Überschrift (max. 160 Zeichen) und Text (max. 3.000 Zeichen).",
       );
-    return { title: title.trim(), body: body.trim() };
+    const area=(item as Record<string,unknown>).area;
+    if(area!==undefined && (typeof area!=="string" || !["about","services","personal","offers","looking"].includes(area))) throw new BadRequestException("Bitte eine gültige Rubrik wählen.");
+    return { title: title.trim(), body: body.trim(), ...(typeof area==="string"?{area}:{}) };
   });
 }
 export function partnerHero(value: unknown): string | null {

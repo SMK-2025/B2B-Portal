@@ -163,9 +163,10 @@ export class CompanyImport {
                     additionalProperties: false,
                     properties: {
                       title: { type: "string", maxLength: 160 },
+                      area:{type:"string",enum:["about","services","personal","offers","looking"],description:"Rubrik: Vorstellung, Leistungen, Persönlich, Angebote oder Gesuche. Nur mit belegten Angaben."},
                       body: { type: "string", maxLength: 3000 },
                     },
-                    required: ["title", "body"],
+                    required: ["title", "body","area"],
                   },
                 },
               },

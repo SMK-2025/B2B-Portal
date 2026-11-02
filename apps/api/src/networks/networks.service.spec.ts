@@ -296,7 +296,7 @@ describe("network tenancy", () => {
       title: "Partnerabend",
       description: "Gemeinsamer Austausch",
       status: "published",
-      startsAt: "2026-11-01T18:00:00.000Z",
+      startsAt: new Date(Date.now() + 7 * 86400000).toISOString(),
       data: {
         category: "Netzwerkveranstaltung",
         recapSummary: "Ein erfolgreicher Partnerabend.",

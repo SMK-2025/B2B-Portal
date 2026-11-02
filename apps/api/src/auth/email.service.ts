@@ -256,6 +256,19 @@ export class EmailService {
     });
   }
 
+  async sendLoginCode(email: string, code: string, purpose: string) {
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
+      throw new ServiceUnavailableException(
+        "Der Codeversand ist gerade nicht verfügbar.",
+      );
+    const text = `Ihr Sicherheitscode für ${purpose}: ${code}. Er ist zehn Minuten gültig. Geben Sie diesen Code nicht weiter.`;
+    await this.send({
+      to: email,
+      subject: "Ihr Sicherheitscode · Netzwerkpartner-Portal",
+      text,
+      html: "<p>" + text + "</p>",
+    });
+  }
   private async send(message: {
     to: string;
     subject: string;

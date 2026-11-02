@@ -32,7 +32,9 @@ export class PersistenceInterceptor implements NestInterceptor {
           : undefined;
       if (user?.visitorNetworkId) {
         const path = String(request.path || request.url).split("?")[0];
-        const securityRead = /\/auth\/(session\/check|account)$/.test(path);
+        const securityRead = /\/auth\/(session\/check|account(?:\/mfa)?)$/.test(
+          path,
+        );
         if (
           !["GET", "HEAD", "OPTIONS"].includes(request.method) &&
           !securityRead

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { InvoiceDownload, type BillingInvoice } from "./admin-network-billing";
 type Row = {
+  userId?: string;
   admissionStatus?: string;
   company?: string;
   affiliation?: string;
@@ -160,16 +161,25 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
     }
   }
   async function action(row: Row, action: string, role?: string) {
+    if (
+      action === "deleteUser" &&
+      window.prompt(
+        `Zugang und persönliche Netzwerkdaten von ${row.name} aus „${name}“ endgültig löschen? Andere Netzwerkzugänge bleiben erhalten. Beim letzten Zugang wird auch das Konto gelöscht. Zur Bestätigung die E-Mail-Adresse eingeben:`,
+      ) !== row.email
+    )
+      return;
     const label =
-      action === "role"
-        ? `Rolle auf ${roles[role || ""] || role} ändern${role === "network_admin" ? " (kostenlos, ohne eigene Unternehmensseite; bestehende Buchung bleibt erhalten)" : ""}`
-        : action === "suspend"
-          ? "Zugang sperren (Vertrag bleibt bestehen)"
-          : action === "activate"
-            ? "Sperre aufheben"
-            : action === "paid"
-              ? "Zahlung als eingegangen markieren"
-              : "Zahlung wieder als offen markieren";
+      action === "deleteUser"
+        ? "Netzwerkzugang endgültig löschen"
+        : action === "role"
+          ? `Rolle auf ${roles[role || ""] || role} ändern${role === "network_admin" ? " (kostenlos, ohne eigene Unternehmensseite; bestehende Buchung bleibt erhalten)" : ""}`
+          : action === "suspend"
+            ? "Zugang sperren (Vertrag bleibt bestehen)"
+            : action === "activate"
+              ? "Sperre aufheben"
+              : action === "paid"
+                ? "Zahlung als eingegangen markieren"
+                : "Zahlung wieder als offen markieren";
     if (
       !window.confirm(
         `${name}\n${row.name} · ${row.email}\n\n${action === "approveRequest" ? "Teilnahmeanfrage freigeben und Einladung senden" : action === "rejectRequest" ? "Teilnahmeanfrage ablehnen" : label}?`,
@@ -181,7 +191,19 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
     try {
       await portalRequest(`/networks/admin/${id}/users/action`, {
         token: getPortalSession() || "",
-        body: { email: row.email, action, role, orderId: row.orderId },
+        body: {
+          email: row.email,
+          action,
+          role,
+          orderId: row.orderId,
+          ...(action === "deleteUser"
+            ? {
+                confirmUserId: row.userId,
+                confirmEmail: row.email,
+                confirmNetwork: id,
+              }
+            : {}),
+        },
       });
       await open();
     } catch (e) {
@@ -465,6 +487,16 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                                 </>
                               )}
                             </div>
+                            {row.userId && (
+                              <button
+                                type="button"
+                                className="portalReject"
+                                disabled={loading}
+                                onClick={() => action(row, "deleteUser")}
+                              >
+                                Zugang und Daten löschen
+                              </button>
+                            )}
                           </details>
                         )}
                       </td>

@@ -4,6 +4,9 @@ import type { FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 type Order = {
+  hasPdf?: boolean;
+  paymentStatus?: string;
+  paidAt?: string;
   id: string;
   monthlyNetCents: number;
   grossCents: number;
@@ -29,7 +32,9 @@ const date = (v: string) =>
   new Date(v.length === 10 ? v + "T12:00:00Z" : v).toLocaleDateString("de-DE", {
     timeZone: "Europe/Berlin",
   });
-export function MemberBillingAccount() {
+export function MemberBillingAccount({
+  historyNetwork,
+}: { historyNetwork?: { id: string; name: string } } = {}) {
   const access = useNetworkAccess(),
     [orders, setOrders] = useState<Order[]>([]),
     [offer, setOffer] = useState<{
@@ -50,17 +55,16 @@ export function MemberBillingAccount() {
     [busy, setBusy] = useState(false);
   async function load() {
     const token = getPortalSession();
-    if (token && access?.networkId) {
-      setOffer(
-        await portalRequest(`/networks/${access.networkId}/billing-offer`, {
-          token,
-        }),
-      );
+    const id = access?.networkId || historyNetwork?.id;
+    if (token && id) {
+      if (access?.networkId)
+        setOffer(
+          await portalRequest(`/networks/${access.networkId}/billing-offer`, {
+            token,
+          }),
+        );
       setOrders(
-        await portalRequest<Order[]>(
-          `/networks/${access.networkId}/my-billing`,
-          { token },
-        ),
+        await portalRequest<Order[]>(`/networks/${id}/my-billing`, { token }),
       );
     }
   }
@@ -68,12 +72,24 @@ export function MemberBillingAccount() {
     void load().catch(() =>
       setNotice("Abrechnung konnte nicht geladen werden."),
     );
-  }, [access?.networkId]);
+  }, [access?.networkId, historyNetwork?.id]);
+  const [networks, setNetworks] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!access?.networkId && !historyNetwork && getPortalSession())
+      portalRequest<{ id: string; name: string }[]>(
+        "/networks/account/billing-history/networks",
+        { token: getPortalSession()! },
+      )
+        .then(setNetworks)
+        .catch(() =>
+          setNotice("Zahlungshistorie konnte nicht geladen werden."),
+        );
+  }, [access?.networkId, historyNetwork?.id]);
   async function toggle(o: Order) {
     setBusy(true);
     try {
       await portalRequest(
-        `/networks/${access?.networkId}/my-billing/${encodeURIComponent(o.id)}/renewal`,
+        `/networks/${access?.networkId || historyNetwork?.id}/my-billing/${encodeURIComponent(o.id)}/renewal`,
         {
           token: getPortalSession() || "",
           body: { enabled: !!o.billingPolicy?.renewalDisabledAt },
@@ -117,11 +133,30 @@ export function MemberBillingAccount() {
       setBusy(false);
     }
   }
-  if (!orders.length) return notice ? <p role="status">{notice}</p> : null;
+  if (networks.length && !access?.networkId && !historyNetwork)
+    return (
+      <>
+        {networks.map((n) => (
+          <MemberBillingAccount key={n.id} historyNetwork={n} />
+        ))}
+      </>
+    );
+  if (!orders.length)
+    return (
+      <p role="status">
+        {notice ||
+          (offer?.centrallyFunded
+            ? "Dein Netzwerk übernimmt die Kosten. Es gibt keine persönliche Rechnung."
+            : "Keine persönlichen Buchungen vorhanden.")}
+      </p>
+    );
   return (
     <section className="networkCard accountSecurityCard">
       <header>
-        <h2>Meine Abrechnung & Verlängerung</h2>
+        <h2>
+          Meine Abrechnung & Verlängerung
+          {historyNetwork && " · " + historyNetwork.name}
+        </h2>
       </header>
       {notice && <p role="status">{notice}</p>}
       {offer?.billing &&
@@ -170,7 +205,7 @@ export function MemberBillingAccount() {
             </button>
           </form>
         )}
-      {orders.slice(0, 3).map((o) => (
+      {orders.map((o) => (
         <div key={o.id} style={{ padding: 20 }}>
           <p>
             <strong>
@@ -234,6 +269,49 @@ export function MemberBillingAccount() {
               Rechnung: {o.invoiceReference}
               {o.invoiceSentAt && ` · versendet ${date(o.invoiceSentAt)}`}
             </p>
+          )}
+          <p>
+            Zahlungsstatus:{" "}
+            {o.paymentStatus === "paid"
+              ? "Gezahlt" + (o.paidAt ? " am " + date(o.paidAt) : "")
+              : o.paymentStatus === "overdue"
+                ? "Überfällig"
+                : "Offen"}
+          </p>
+          {o.hasPdf && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const pdf = await portalRequest<{
+                    base64: string;
+                    number: string;
+                  }>(
+                    `/networks/${access?.networkId || historyNetwork?.id}/my-billing/${o.id}/pdf`,
+                    { token: getPortalSession() || "" },
+                  );
+                  const url = URL.createObjectURL(
+                    new Blob(
+                      [
+                        Uint8Array.from(atob(pdf.base64), (c) =>
+                          c.charCodeAt(0),
+                        ),
+                      ],
+                      { type: "application/pdf" },
+                    ),
+                  );
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = pdf.number + ".pdf";
+                  a.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch {
+                  setNotice("Rechnung konnte nicht geladen werden.");
+                }
+              }}
+            >
+              Rechnung als PDF herunterladen
+            </button>
           )}
         </div>
       ))}

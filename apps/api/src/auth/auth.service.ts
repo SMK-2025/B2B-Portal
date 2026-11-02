@@ -7,7 +7,8 @@ import {
   Optional,
   UnauthorizedException,
 } from "@nestjs/common";
-import { randomUUID } from "node:crypto";
+import { randomUUID, randomInt, timingSafeEqual } from "node:crypto";
+import type { UserRecord } from "../core/domain";
 import { PortalStore } from "../core/portal.store";
 import { emailAddress, requiredText } from "../core/validation";
 import {
@@ -22,6 +23,100 @@ import { enqueueOperatorMail } from "../core/operator-mail";
 
 @Injectable()
 export class AuthService implements OnModuleInit {
+  private readonly challenges = new Map<
+    string,
+    {
+      userId: string;
+      purpose: string;
+      digest: string;
+      credential: string;
+      until: number;
+      attempts: number;
+    }
+  >();
+  private async challenge(user: UserRecord, purpose: string) {
+    const now = Date.now();
+    for (const [k, v] of this.challenges) {
+      if (v.until <= now) this.challenges.delete(k);
+      else if (v.userId === user.id && v.purpose === purpose) {
+        if (v.until - now > 540000)
+          throw new BadRequestException(
+            "Bitte warten Sie eine Minute vor dem nächsten Code.",
+          );
+        this.challenges.delete(k);
+      }
+    }
+    const id = opaqueToken(),
+      code = String(randomInt(100000, 1000000));
+    this.challenges.set(id, {
+      userId: user.id,
+      purpose,
+      digest: tokenHash(id + code),
+      credential: user.passwordHash,
+      until: now + 600000,
+      attempts: 0,
+    });
+    try {
+      await this.email.sendLoginCode(
+        user.email,
+        code,
+        purpose === "login"
+          ? "die Anmeldung"
+          : purpose === "enable"
+            ? "das Einschalten der Zwei-Schritt-Anmeldung"
+            : "das Ausschalten der Zwei-Schritt-Anmeldung",
+      );
+    } catch (e) {
+      this.challenges.delete(id);
+      throw e;
+    }
+    return id;
+  }
+  private consume(
+    input: Record<string, unknown>,
+    purpose: string,
+    owner?: string,
+  ) {
+    const id = String(input.challengeId),
+      c = this.challenges.get(id);
+    const user = c && this.store.users.get(c.userId);
+    if (
+      !c ||
+      !user ||
+      c.until <= Date.now() ||
+      c.purpose !== purpose ||
+      (owner && user.id !== owner) ||
+      c.credential !== user.passwordHash ||
+      ++c.attempts > 5 ||
+      !timingSafeEqual(
+        Buffer.from(c.digest),
+        Buffer.from(tokenHash(id + String(input.code))),
+      )
+    )
+      throw new UnauthorizedException("Der Code ist ungültig oder abgelaufen.");
+    this.challenges.delete(id);
+    return user;
+  }
+  async configureMfa(auth: string | undefined, input: Record<string, unknown>) {
+    const user = this.authenticate(auth),
+      enabled = input.enabled === true,
+      purpose = enabled ? "enable" : "disable";
+    if (input.challengeId) {
+      this.consume(input, purpose, user.id);
+      this.revokeUserTokens(user.id);
+      user.emailMfa = enabled;
+      await this.store.persist();
+      return { changed: true };
+    }
+    await this.reauthenticate(user, input.currentPassword);
+    return { challengeId: await this.challenge(user, purpose) };
+  }
+  verifyLogin(input: Record<string, unknown>) {
+    const user = this.consume(input, "login");
+    if (!user.emailVerifiedAt || !user.emailMfa)
+      throw new UnauthorizedException();
+    return this.issueSession(user);
+  }
   private readonly logger = new Logger(AuthService.name);
   private readonly securityAttempts = new Map<
     string,
@@ -240,6 +335,16 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException(
         "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.",
       );
+    if (user.emailMfa)
+      return {
+        challengeId: await this.challenge(user, "login"),
+        token: "",
+        expiresInSeconds: 0,
+        user: this.publicUser(user),
+      };
+    return this.issueSession(user);
+  }
+  private issueSession(user: UserRecord) {
     const token = opaqueToken();
     this.store.sessions.set(tokenHash(token), {
       tokenHash: tokenHash(token),
@@ -306,6 +411,7 @@ export class AuthService implements OnModuleInit {
       pending = user.pendingEmailChange;
     return {
       ...this.publicUser(user),
+      emailMfa: !!user.emailMfa,
       pendingEmail:
         pending && Date.parse(pending.expiresAt) > Date.now()
           ? pending.email
@@ -339,6 +445,8 @@ export class AuthService implements OnModuleInit {
     this.securityAttempts.delete(user.id);
   }
   private revokeUserTokens(userId: string) {
+    for (const [id, c] of this.challenges)
+      if (c.userId === userId) this.challenges.delete(id);
     for (const [key, value] of this.store.sessions)
       if (value.userId === userId) this.store.sessions.delete(key);
     for (const [key, value] of this.store.passwordResetTokens)

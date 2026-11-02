@@ -15,10 +15,12 @@ export function AccountSettingsWorkspace({
   const [account, setAccount] = useState<{
       email: string;
       pendingEmail: string | null;
+      emailMfa: boolean;
     } | null>(null),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [done, setDone] = useState(false);
+  const [challenge, setChallenge] = useState("");
   async function load() {
     const token = getPortalSession();
     if (!token) {
@@ -99,6 +101,90 @@ export function AccountSettingsWorkspace({
   return (
     <div className="networkFunctionalWorkspace accountSecuritySettings">
       <MemberBillingAccount />
+      {account && (
+        <section className="networkCard accountSecurityCard">
+          <header>
+            <h2>Anmeldung in zwei Schritten</h2>
+          </header>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const form = new FormData(e.currentTarget);
+              setBusy(true);
+              setNotice("");
+              try {
+                const result = await portalRequest<{
+                  challengeId?: string;
+                  changed?: boolean;
+                }>("/auth/account/mfa", {
+                  token: getPortalSession() || "",
+                  body: {
+                    enabled: !account.emailMfa,
+                    currentPassword: form.get("password"),
+                    challengeId: challenge || undefined,
+                    code: form.get("code"),
+                  },
+                });
+                if (result.challengeId) setChallenge(result.challengeId);
+                if (result.changed) {
+                  clearPortalSession();
+                  window.location.assign(login);
+                }
+              } catch (error) {
+                setNotice(
+                  error instanceof Error
+                    ? error.message
+                    : "Änderung fehlgeschlagen.",
+                );
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            <p>
+              {account.emailMfa ? "Aktiv" : "Nicht aktiv"} · Bei aktivierter
+              Prüfung erhältst du bei jeder Anmeldung einen sechsstelligen Code
+              per E-Mail.
+            </p>
+            {challenge ? (
+              <label>
+                Code aus der E-Mail
+                <input
+                  name="code"
+                  key="code"
+                  required
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                />
+              </label>
+            ) : (
+              <label>
+                Aktuelles Passwort
+                <input
+                  key="pwd"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+            )}
+            <button disabled={busy}>
+              {challenge
+                ? "Änderung bestätigen und neu anmelden"
+                : account.emailMfa
+                  ? "Deaktivierung bestätigen lassen"
+                  : "Aktivierung bestätigen lassen"}
+            </button>
+            {challenge && (
+              <button type="button" onClick={() => setChallenge("")}>
+                Abbrechen
+              </button>
+            )}
+          </form>
+        </section>
+      )}
       {notice && (
         <p role="status" className="networkModulePurpose">
           {notice}

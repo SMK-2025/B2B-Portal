@@ -355,9 +355,26 @@ export class NetworksService {
         expired: !!o.serviceEndsAt && Date.parse(o.serviceEndsAt) <= Date.now(),
       }));
   }
+  myBillingNetworks(authorization: string | undefined) {
+    const user = this.auth.authenticate(authorization);
+    const ids = new Set(
+      [...this.store.networkOrders.values()]
+        .filter(
+          (o) =>
+            o.orderedByUserId === user.id &&
+            o.kind === "member_annual" &&
+            o.status === "accepted",
+        )
+        .map((o) => o.networkId),
+    );
+    return [...ids].map((id) => ({
+      id,
+      name: this.store.networks.get(id)?.name || "Netzwerk",
+    }));
+  }
   myBilling(authorization: string | undefined, networkId: string) {
     const user = this.auth.authenticate(authorization);
-    this.requireNetworkAccess(user.id, networkId);
+    // Own accepted orders stay available after the membership ends. Never return network-wide records.
     return [...this.store.networkOrders.values()]
       .filter(
         (o) =>
@@ -789,6 +806,7 @@ export class NetworksService {
         profile: string;
         orderId?: string;
         orderIds?: string[];
+        userId?: string;
         paidAt?: string | null;
         paymentStatus?: string;
         centrallyFunded?: boolean;
@@ -847,6 +865,7 @@ export class NetworksService {
             m.centrallyFunded,
         ),
         orderId: order?.id,
+        userId,
         orderIds: [...this.store.networkOrders.values()]
           .filter(
             (o) =>
@@ -1220,6 +1239,20 @@ export class NetworksService {
     );
     if (!member && !invited)
       throw new ForbiddenException("Nutzer gehört nicht zu diesem Netzwerk.");
+    if (input.action === "deleteUser") {
+      if (
+        input.confirmEmail !== email ||
+        input.confirmNetwork !== networkId ||
+        input.confirmUserId !== userId
+      )
+        throw new BadRequestException(
+          "Löschung nicht bestätigt oder Zugang inzwischen geändert.",
+        );
+      const result = removeNetworkUser(this.store, networkId, userId, email);
+      this.operatorAudit(actor.id, networkId, "operator.user.removed");
+      await this.store.persist();
+      return result;
+    }
     if (input.action === "approveRequest" || input.action === "rejectRequest") {
       const request = [...this.store.networkContents.values()].find(
         (i) =>
@@ -4797,3 +4830,4 @@ export class NetworksService {
       : null;
   }
 }
+import { removeNetworkUser } from "./remove-network-user";

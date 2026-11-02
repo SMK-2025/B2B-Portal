@@ -24,7 +24,15 @@ function fixture() {
     store: {
       networkOrders: new Map([
         ["old", existing],
-        ["other", { id: "other", networkId: "b", submittedAt: "2026-02-01" }],
+        [
+          "other",
+          {
+            ...existing,
+            id: "other",
+            networkId: "b",
+            submittedAt: "2026-02-01",
+          },
+        ],
       ]),
     },
   });

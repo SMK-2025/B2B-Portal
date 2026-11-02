@@ -43,11 +43,43 @@ export class NetworksController {
       throw new BadRequestException("Rechnungs-PDF noch nicht verfügbar.");
     return result;
   }
-  @Get(":networkId/my-billing") myBilling(
+  @Get("account/billing-history/networks") myBillingNetworks(
+    @Headers("authorization") auth: string | undefined,
+  ) {
+    return this.networks.myBillingNetworks(auth);
+  }
+  @Get(":networkId/my-billing/:orderId/pdf") async memberPdf(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") networkId: string,
+    @Param("orderId") orderId: string,
+  ) {
+    if (!this.networks.myBilling(auth, networkId).some((o) => o.id === orderId))
+      throw new BadRequestException("Rechnung nicht verfügbar.");
+    const invoice = (
+      (await this.billing.status([orderId])) as {
+        id: string;
+        downloadable: boolean;
+      }[]
+    )[0];
+    const pdf =
+      invoice?.downloadable &&
+      (await this.billing.document(String(invoice.id)));
+    if (!pdf) throw new BadRequestException("Rechnung nicht verfügbar.");
+    return pdf;
+  }
+  @Get(":networkId/my-billing") async myBilling(
     @Headers("authorization") auth: string | undefined,
     @Param("networkId") id: string,
   ) {
-    return this.networks.myBilling(auth, id);
+    const orders = this.networks.myBilling(auth, id);
+    const invoices = (await this.billing.status(orders.map((o) => o.id))) as {
+      order_id: string;
+      downloadable: boolean;
+    }[];
+    return orders.map((o) => ({
+      ...o,
+      hasPdf: invoices.some((i) => i.order_id === o.id && i.downloadable),
+    }));
   }
   @Get(":networkId/billing-offer") billingOffer(
     @Headers("authorization") auth: string | undefined,

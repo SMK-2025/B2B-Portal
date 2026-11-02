@@ -26,6 +26,86 @@ describe("personal account security", () => {
     }
     return { store, email, auth, password, next, user };
   }
+  it("requires mailbox control for enrollment, login and disable; revokes sessions and rejects replay", async () => {
+    const f = await fixture(),
+      email = "mfa@example.org",
+      u = await f.user(email),
+      send = vi.spyOn(f.email, "sendLoginCode").mockResolvedValue();
+    const begin = await f.auth.configureMfa(u.bearer, {
+      enabled: true,
+      currentPassword: f.password,
+    });
+    await f.auth.configureMfa(u.bearer, {
+      enabled: true,
+      challengeId: begin.challengeId,
+      code: send.mock.lastCall![1],
+    });
+    expect(() => f.auth.authenticate(u.bearer)).toThrow();
+    const pending = await f.auth.login({ email, password: f.password });
+    expect(pending.token).toBe("");
+    expect(f.store.sessions.size).toBe(0);
+    const input = {
+      challengeId: "challengeId" in pending ? pending.challengeId : "",
+      code: send.mock.lastCall![1],
+    };
+    expect(() => f.auth.verifyLogin({ ...input, code: "000000" })).toThrow();
+    const session = f.auth.verifyLogin(input);
+    expect(() => f.auth.verifyLogin(input)).toThrow();
+    const bearer = "Bearer " + session.token;
+    const disable = await f.auth.configureMfa(bearer, {
+      enabled: false,
+      currentPassword: f.password,
+    });
+    expect(() =>
+      f.auth.verifyLogin({
+        challengeId: disable.challengeId,
+        code: send.mock.lastCall![1],
+      }),
+    ).toThrow();
+    await f.auth.configureMfa(bearer, {
+      enabled: false,
+      challengeId: disable.challengeId,
+      code: send.mock.lastCall![1],
+    });
+    expect(
+      (await f.auth.login({ email, password: f.password })).token,
+    ).toBeTruthy();
+  });
+  it("expires codes, limits guesses and fails closed when delivery fails", async () => {
+    const f = await fixture(),
+      email = "fail@example.org",
+      u = await f.user(email);
+    f.store.users.get(u.id)!.emailMfa = true;
+    const send = vi
+      .spyOn(f.email, "sendLoginCode")
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue();
+    await expect(f.auth.login({ email, password: f.password })).rejects.toThrow(
+      "offline",
+    );
+    const pending = await f.auth.login({ email, password: f.password });
+    const id = "challengeId" in pending ? pending.challengeId : "";
+    for (let i = 0; i < 5; i++)
+      expect(() =>
+        f.auth.verifyLogin({ challengeId: id, code: "000000" }),
+      ).toThrow();
+    expect(() =>
+      f.auth.verifyLogin({ challengeId: id, code: send.mock.lastCall![1] }),
+    ).toThrow();
+    const clock = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 61000);
+    try {
+      const next = await f.auth.login({ email, password: f.password });
+      clock.mockReturnValue(Date.now() + 601000);
+      expect(() =>
+        f.auth.verifyLogin({
+          challengeId: "challengeId" in next ? next.challengeId : "",
+          code: send.mock.lastCall![1],
+        }),
+      ).toThrow();
+    } finally {
+      clock.mockRestore();
+    }
+  });
   it("keeps a new registration separate after the original account changes email", async () => {
     const f = await fixture(),
       original = await f.user("original@example.de");

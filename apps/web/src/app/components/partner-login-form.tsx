@@ -15,6 +15,7 @@ export function PartnerLoginForm({
   onOnboarding: (token: string, invite: string) => void;
 }) {
   const router = useRouter();
+  const [challenge, setChallenge] = useState("");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const [accessStatus, setAccessStatus] = useState("");
@@ -27,10 +28,17 @@ export function PartnerLoginForm({
     try {
       const result = await portalRequest<{
         token: string;
+        challengeId?: string;
         user: { accountRole: string };
-      }>("/auth/login", {
-        body: { email: form.get("email"), password: form.get("password") },
+      }>(challenge ? "/auth/login/code" : "/auth/login", {
+        body: challenge
+          ? { challengeId: challenge, code: form.get("code") }
+          : { email: form.get("email"), password: form.get("password") },
       });
+      if (result.challengeId) {
+        setChallenge(result.challengeId);
+        return;
+      }
       savePortalSession(result.token, form.get("remember") === "on");
       const redirect = new URLSearchParams(window.location.search).get(
         "redirect",
@@ -127,26 +135,47 @@ export function PartnerLoginForm({
       <h1>Willkommen zurück.</h1>
       <p className="lead">Melde dich mit deinem persönlichen Zugang an.</p>
       <form className="formGrid" onSubmit={login}>
-        <label className="full">
-          E-Mail-Adresse
-          <input
-            key={email}
-            type="email"
-            name="email"
-            defaultValue={email}
-            required
-            autoComplete="email"
-          />
-        </label>
-        <label className="full">
-          Passwort
-          <input
-            type="password"
-            name="password"
-            required
-            autoComplete="current-password"
-          />
-        </label>
+        {challenge ? (
+          <label className="full">
+            Sicherheitscode aus Ihrer E-Mail
+            <input
+              key="code"
+              autoFocus
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              name="code"
+              required
+            />{" "}
+            <button type="button" onClick={() => setChallenge("")}>
+              Zurück zur Anmeldung
+            </button>
+          </label>
+        ) : (
+          <>
+            <label className="full">
+              E-Mail-Adresse
+              <input
+                key={email}
+                type="email"
+                name="email"
+                defaultValue={email}
+                required
+                autoComplete="email"
+              />
+            </label>
+            <label className="full">
+              Passwort
+              <input
+                type="password"
+                name="password"
+                required
+                autoComplete="current-password"
+              />
+            </label>
+          </>
+        )}
         <div className="loginOptions">
           <label>
             <input type="checkbox" name="remember" /> Angemeldet bleiben

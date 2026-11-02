@@ -32,6 +32,7 @@ export interface UserRecord {
   id: string;
   visitorNetworkId?: string;
   loginCount?: number;
+  emailMfa?: boolean;
   lastLoginAt?: string | null;
   loginTrackingStartedAt?: string;
   email: string;

@@ -36,8 +36,20 @@ export class AuthController {
   @Post("verify-email") verifyEmail(@Body("token") token: unknown) {
     return this.auth.verifyEmail(token);
   }
-  @Post("login") login(@Body() body: Record<string, unknown>) {
-    return this.auth.login(body);
+  @Post("login") async login(@Body() body: Record<string, unknown>) {
+    const result = await this.auth.login(body);
+    return "challengeId" in result
+      ? { challengeId: result.challengeId }
+      : result;
+  }
+  @Post("login/code") verifyLogin(@Body() body: Record<string, unknown>) {
+    return this.auth.verifyLogin(body);
+  }
+  @Post("account/mfa") configureMfa(
+    @Headers("authorization") auth: string | undefined,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.auth.configureMfa(auth, body);
   }
   @Post("password-reset/request") requestPasswordReset(
     @Body() body: Record<string, unknown>,

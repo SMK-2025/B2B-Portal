@@ -187,8 +187,7 @@ export class EmailService {
     networkName: string;
     networkSlug: string;
   }): Promise<void> {
-    const redirect = `/portal/netzwerk/${encodeURIComponent(input.networkSlug)}`;
-    const link = `${this.webUrl()}/anmelden?redirect=${encodeURIComponent(redirect)}`;
+    const link = `${this.webUrl()}/registrieren?network=${encodeURIComponent(input.networkSlug)}&mode=login`;
     await this.send({
       to: input.email,
       subject: `Ihr Zugang zum Netzwerk ${input.networkName}`,

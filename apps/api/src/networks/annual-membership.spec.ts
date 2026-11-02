@@ -75,6 +75,9 @@ describe("personal annual membership billing", () => {
       email: "request@example.de",
       action: "approveRequest",
     });
+    expect(f.networks.participationNetworks(session)).toEqual([
+      { slug: f.network.slug, name: f.network.name },
+    ]);
     const approved = f.networks.participationStatus(session, f.network.slug);
     expect(approved.status).toBe("approved");
     expect(f.networks.mine(session)).toEqual([]);
@@ -85,17 +88,34 @@ describe("personal annual membership billing", () => {
     );
     expect(f.networks.mine(session)).toHaveLength(1);
     expect(f.store.networkOrders.size).toBe(1);
-    const uid=f.store.userByEmail.get(request.email)!;
-    const erase={action:"deleteUser",email:request.email,confirmUserId:uid,confirmEmail:request.email,confirmNetwork:f.network.id};
-    await expect(f.networks.adminUserAction(session,f.network.id,erase)).rejects.toThrow();
-    await expect(f.networks.adminUserAction(f.owner,f.network.id,{...erase,confirmUserId:"wrong"})).rejects.toThrow();
-    expect(f.networks.myBilling(session,f.network.id)).toHaveLength(1);
-    expect(f.networks.myBilling(session,"different-network")).toHaveLength(0);
-    await f.networks.adminUserAction(f.owner,f.network.id,erase);
-    expect(()=>f.auth.authenticate(session)).toThrow();
+    const uid = f.store.userByEmail.get(request.email)!;
+    const erase = {
+      action: "deleteUser",
+      email: request.email,
+      confirmUserId: uid,
+      confirmEmail: request.email,
+      confirmNetwork: f.network.id,
+    };
+    await expect(
+      f.networks.adminUserAction(session, f.network.id, erase),
+    ).rejects.toThrow();
+    await expect(
+      f.networks.adminUserAction(f.owner, f.network.id, {
+        ...erase,
+        confirmUserId: "wrong",
+      }),
+    ).rejects.toThrow();
+    expect(f.networks.myBilling(session, f.network.id)).toHaveLength(1);
+    expect(f.networks.myBilling(session, "different-network")).toHaveLength(0);
+    await f.networks.adminUserAction(f.owner, f.network.id, erase);
+    expect(() => f.auth.authenticate(session)).toThrow();
     expect(f.store.userByEmail.has(request.email)).toBe(false);
     expect(f.store.networkOrders.size).toBe(0);
-    expect(f.networks.adminUsers(f.owner,f.network.id).users.some(x=>x.email===request.email)).toBe(false);
+    expect(
+      f.networks
+        .adminUsers(f.owner, f.network.id)
+        .users.some((x) => x.email === request.email),
+    ).toBe(false);
   });
   it("quotes six months from January without changing other networks", async () => {
     const f = await fixture();

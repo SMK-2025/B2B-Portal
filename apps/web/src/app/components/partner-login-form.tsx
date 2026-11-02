@@ -15,6 +15,7 @@ export function PartnerLoginForm({
   onOnboarding: (token: string, invite: string) => void;
 }) {
   const router = useRouter();
+  const [choices, setChoices] = useState<{ slug: string; name: string }[]>([]);
   const [challenge, setChallenge] = useState("");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -117,6 +118,22 @@ export function PartnerLoginForm({
         onOnboarding(result.token, personal.invite);
         return;
       }
+      if (!networkSlug) {
+        const requests = await portalRequest<{ slug: string; name: string }[]>(
+          "/networks/participation/mine",
+          { token: result.token },
+        );
+        if (requests.length === 1) {
+          router.replace(
+            `/teilnahmestatus/${encodeURIComponent(requests[0].slug)}` as never,
+          );
+          return;
+        }
+        if (requests.length) {
+          setChoices(requests);
+          return;
+        }
+      }
       throw new Error(
         "Für dieses Konto besteht kein aktiver Partnerportal-Zugang. Öffne gegebenenfalls deine persönliche Einladung.",
       );
@@ -126,6 +143,20 @@ export function PartnerLoginForm({
       setBusy(false);
     }
   }
+  if (choices.length)
+    return (
+      <>
+        <h1>Dein Netzwerk auswählen</h1>
+        {choices.map((n) => (
+          <Link
+            key={n.slug}
+            href={`/teilnahmestatus/${encodeURIComponent(n.slug)}` as never}
+          >
+            {n.name}
+          </Link>
+        ))}
+      </>
+    );
   return (
     <>
       <h1>Willkommen zurück.</h1>

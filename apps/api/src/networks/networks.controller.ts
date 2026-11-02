@@ -275,6 +275,11 @@ export class NetworksController {
   ) {
     return this.networks.requestParticipation(body);
   }
+  @Get("participation/mine") participationNetworks(
+    @Headers("authorization") auth: string | undefined,
+  ) {
+    return this.networks.participationNetworks(auth);
+  }
   @Get("participation/status/:slug") participationStatus(
     @Headers("authorization") auth: string | undefined,
     @Param("slug") slug: string,

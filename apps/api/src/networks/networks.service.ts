@@ -1146,6 +1146,23 @@ export class NetworksService {
     );
     return { requested: true };
   }
+  participationNetworks(authorization: string | undefined) {
+    const user = this.auth.authenticate(authorization);
+    const ids = new Set(
+      [...this.store.networkContents.values()]
+        .filter(
+          (i) =>
+            i.data.kind === "network_invitation" &&
+            i.data.email === user.email &&
+            i.data.admissionStatus &&
+            !i.data.usedAt,
+        )
+        .map((i) => i.networkId),
+    );
+    return [...this.store.networks.values()]
+      .filter((n) => ids.has(n.id))
+      .map((n) => ({ slug: n.slug, name: n.name }));
+  }
   participationStatus(authorization: string | undefined, slug: string) {
     const user = this.auth.authenticate(authorization);
     const network = [...this.store.networks.values()].find(
@@ -1270,11 +1287,10 @@ export class NetworksService {
         );
       if (input.action === "approveRequest") {
         const token = opaqueToken();
-        await this.email.sendNetworkInvitation({
+        await this.email.sendNetworkAccessGranted({
           email,
           networkName: this.raw(networkId).name,
           networkSlug: this.raw(networkId).slug,
-          inviteToken: token,
         });
         request.data.inviteTokenHash = tokenHash(token);
         request.data.admissionOnboardingToken = token;

@@ -1,0 +1,101 @@
+.partnerSetupEntry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: clamp(20px, 4vw, 42px);
+  border-radius: 18px;
+  background: linear-gradient(115deg, var(--network-soft, #edf1f7), white);
+  border: 1px solid #dde3ea;
+}
+.partnerSetupEntry small,
+.setupHead small {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-size: 0.76rem;
+}
+.partnerSetupEntry h2,
+.setupHead h2 {
+  margin: 0.4em 0;
+}
+.partnerSetupDialog {
+  box-sizing: border-box;
+  width: min(840px, calc(100% - 24px));
+  max-height: 90dvh;
+  margin: auto;
+  padding: clamp(16px, 3vw, 32px);
+  border: 1px solid #dbe1e7;
+  border-radius: 20px;
+  color: #162e40;
+  box-shadow: 0 24px 80px #12243940;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.partnerSetupDialog::backdrop {
+  background: #102437a6;
+  backdrop-filter: blur(4px);
+}
+.setupHead {
+  position: relative;
+  padding-bottom: 16px;
+}
+.setupHead > button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  border: 1px solid #dbe1e7;
+  background: white;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+}
+.setupHead nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+}
+.setupHead nav button {
+  background: #f0f3f6;
+  border: 0;
+  border-radius: 8px;
+  color: #374655;
+  padding: 9px 12px;
+}
+.setupHead nav [aria-current] {
+  background: #172e40;
+  color: white;
+}
+.partnerSetupDialog .networkProfileLayout {
+  display: block;
+}
+.partnerSetupDialog .networkProfilePreview,
+.partnerSetupDialog [hidden] {
+  display: none !important;
+}
+.partnerSetupDialog .networkProfileActions {
+  position: static;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.partnerSetupDialog summary {
+  padding: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+@media (max-width: 600px) {
+  .partnerSetupEntry {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .partnerSetupDialog .formGrid {
+    grid-template-columns: 1fr;
+  }
+  .setupHead nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}

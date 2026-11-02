@@ -51,6 +51,7 @@ export function PartnerLoginForm({
         return;
       }
       type LoginNetwork = {
+        needsPartnerSetup?: boolean;
         membership: { role: string };
         network: { slug: string; settings?: { setupCompletedAt?: string } };
       };
@@ -84,7 +85,9 @@ export function PartnerLoginForm({
           (requested.membership.role === "network_admin" &&
           !requested.network.settings?.setupCompletedAt
             ? `${base}/einstellungen?setup=1`
-            : destination) as never,
+            : requested.needsPartnerSetup && destination === base
+              ? `${base}/profil?einrichten=1`
+              : destination) as never,
         );
         return;
       }

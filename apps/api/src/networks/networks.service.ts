@@ -1178,12 +1178,29 @@ export class NetworksService {
     if (!request) return { status: null };
     return {
       status: request.data.admissionStatus,
-      ...(network && user.emailVerifiedAt && request.data.admissionStatus==="pending" ? {preview:{
-        slug:network.slug,name:network.name,logoUrl:network.logoUrl,primaryColor:network.primaryColor,secondaryColor:network.secondaryColor,
-        modules:network.enabledModules, bannerImageUrl:network.settings.bannerImageUrl||null,
-        bannerTitle:network.settings.welcomeTitle||network.settings.bannerTitle||null,
-        bannerDescription:network.settings.welcomeIntro||network.settings.bannerDescription||null,
-      }}:{}),
+      ...(network &&
+      user.emailVerifiedAt &&
+      request.data.admissionStatus === "pending"
+        ? {
+            preview: {
+              slug: network.slug,
+              name: network.name,
+              logoUrl: network.logoUrl,
+              primaryColor: network.primaryColor,
+              secondaryColor: network.secondaryColor,
+              modules: network.enabledModules,
+              bannerImageUrl: network.settings.bannerImageUrl || null,
+              bannerTitle:
+                network.settings.welcomeTitle ||
+                network.settings.bannerTitle ||
+                null,
+              bannerDescription:
+                network.settings.welcomeIntro ||
+                network.settings.bannerDescription ||
+                null,
+            },
+          }
+        : {}),
       ...(request.data.admissionStatus === "approved" && user.emailVerifiedAt
         ? { invite: request.data.admissionOnboardingToken }
         : {}),
@@ -1781,6 +1798,11 @@ export class NetworksService {
       .map((item) => ({
         membership: item,
         network: this.get(item.networkId),
+        needsPartnerSetup:
+          !["visitor", "network_admin"].includes(item.role) &&
+          this.canEditCompany(user.id, item.organizationId, item.role) &&
+          this.userModules(user.id, item.networkId).includes("profiles") &&
+          !this.store.organizations.get(item.organizationId)?.networkProfile,
         organization: this.store.organizations.get(item.organizationId),
       }));
   }

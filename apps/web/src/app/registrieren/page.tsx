@@ -146,7 +146,9 @@ export default function RegistrationPage() {
           networkInviteToken,
         },
       });
-      setStep("submitted");
+      router.replace(
+        `/portal/netzwerk/${encodeURIComponent(networkSlug)}/profil?einrichten=1` as never,
+      );
     } catch (error) {
       setMessage(
         error instanceof Error

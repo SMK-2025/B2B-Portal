@@ -48,9 +48,11 @@ describe("personal annual membership billing", () => {
     const mail = vi.mocked(f.email.sendVerification).mock.calls.at(-1)![0];
     f.auth.verifyEmail(mail.token);
     const session = `Bearer ${(await f.auth.login({ email: "request@example.de", password: "Sicher-Portal-2026!" })).token}`;
-    expect(f.networks.participationStatus(session, f.network.slug)).toMatchObject({
+    expect(
+      f.networks.participationStatus(session, f.network.slug),
+    ).toMatchObject({
       status: "pending",
-      preview:{slug:f.network.slug,name:f.network.name},
+      preview: { slug: f.network.slug, name: f.network.name },
     });
     expect(f.networks.mine(session)).toEqual([]);
     expect(f.networks.claimInitiatorInvitation(session).claimed).toBe(false);
@@ -88,6 +90,14 @@ describe("personal annual membership billing", () => {
       true,
     );
     expect(f.networks.mine(session)).toHaveLength(1);
+    expect(f.networks.mine(session)[0].needsPartnerSetup).toBe(true);
+    const org = f.store.organizations.get(
+      f.networks.mine(session)[0].membership.organizationId,
+    )!;
+    org.networkProfile = { status: "draft" } as NonNullable<
+      typeof org.networkProfile
+    >;
+    expect(f.networks.mine(session)[0].needsPartnerSetup).toBe(false);
     expect(f.store.networkOrders.size).toBe(1);
     const uid = f.store.userByEmail.get(request.email)!;
     const erase = {

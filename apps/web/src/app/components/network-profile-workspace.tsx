@@ -402,12 +402,10 @@ export function NetworkProfileWorkspace() {
             </header>
             <form onSubmit={importWebsite}>
               <p>
-                PagePilot AI recherchiert deine öffentliche Homepage und
-                relevante Unterseiten über OpenAI. Daraus entsteht ein
-                bearbeitbarer Onepager-Entwurf mit Vorstellung, Leistungen und
-                weiteren passenden Inhaltsbereichen. Du prüfst und
-                veröffentlichst selbst. Unbekannte Angaben bleiben leer;
-                Herobild und persönliche Netzwerkangebote ergänzt du selbst.
+                PagePilot AI erstellt aus deiner öffentlichen Firmenhomepage
+                und ihren Unterseiten einen Entwurf für deine Partnerseite.
+                Du prüfst die Texte, ergänzt Bilder und Angebote und entscheidest,
+                wann du die Seite veröffentlichst.
               </p>
               <label>
                 Firmenhomepage
@@ -421,7 +419,7 @@ export function NetworkProfileWorkspace() {
               </label>
               <label className="networkImportCheck">
                 <input name="consent" type="checkbox" required />
-                Ich möchte die angegebene öffentliche Homepage mit OpenAI
+                Ich möchte meine öffentliche Firmenhomepage mit PagePilot AI
                 auswerten lassen.
               </label>
               <label className="networkImportCheck">

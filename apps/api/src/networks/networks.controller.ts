@@ -17,6 +17,59 @@ export class NetworksController {
     private readonly networks: NetworksService,
     private readonly billing: AutomaticBillingService,
   ) {}
+  @Post("admin/:n/service-members") createService(
+    @Headers("authorization") a: string | undefined,
+    @Param("n") n: string,
+    @Body() b: Record<string, unknown>,
+  ) {
+    return this.networks.createServiceMember(a, n, b);
+  }
+  @Get("admin/:n/service-members/:u/profile") readService(
+    @Headers("authorization") a: string | undefined,
+    @Param("n") n: string,
+    @Param("u") u: string,
+  ) {
+    return this.networks.serviceProfile(a, n, u);
+  }
+  @Post("admin/:n/service-members/:u/profile") editService(
+    @Headers("authorization") a: string | undefined,
+    @Param("n") n: string,
+    @Param("u") u: string,
+    @Body() b: Record<string, unknown>,
+  ) {
+    return this.networks.serviceProfile(a, n, u, b);
+  }
+  @Post("admin/:n/service-members/:u/profile/import") importService(
+    @Headers("authorization") a: string | undefined,
+    @Param("n") n: string,
+    @Param("u") u: string,
+    @Body() b: Record<string, unknown>,
+  ) {
+    return this.networks.serviceImport(a, n, u, b);
+  }
+  @Post("admin/:n/service-members/:u/handover") handover(
+    @Headers("authorization") a: string | undefined,
+    @Param("n") n: string,
+    @Param("u") u: string,
+  ) {
+    return this.networks.handoverService(a, n, u);
+  }
+  @Post("admin/:n/service-members/:u/invoice") invoiceService(
+    @Headers("authorization") a: string | undefined,
+    @Param("n") n: string,
+    @Param("u") u: string,
+    @Body() b: Record<string, unknown>,
+  ) {
+    return this.billing.dispatchServiceInvoice(
+      this.networks.serviceInvoice(a, n, u),
+      b.resend === true,
+    );
+  }
+  @Post("service-members/claim") claimService(
+    @Body() b: Record<string, unknown>,
+  ) {
+    return this.networks.claimService(b);
+  }
   @Get("admin/invoice-status") async invoiceStatus(
     @Headers("authorization") auth: string | undefined,
   ) {

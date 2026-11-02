@@ -53,7 +53,9 @@ type Response = {
   canEdit: boolean;
 };
 
-export function NetworkProfileWorkspace() {
+export function NetworkProfileWorkspace({
+  service,
+}: { service?: { networkId: string; userId: string } } = {}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [step, setStep] = useState(0);
   const steps = ["Unternehmen", "Leistungen", "Gestaltung", "Kontakt"];
@@ -65,19 +67,22 @@ export function NetworkProfileWorkspace() {
       null,
     );
   const access = useNetworkAccess(),
-    networkId = access?.networkId || "",
+    networkId = service?.networkId || access?.networkId || "",
+    profilePath = service
+      ? `/networks/admin/${networkId}/service-members/${service.userId}/profile`
+      : `/networks/${networkId}/profile`,
     [data, setData] = useState<Response | null>(null),
     [logo, setLogo] = useState<string | null>(null),
     [hero, setHero] = useState<string | null>(null),
-    [sections, setSections] = useState<Array<{ title: string; body: string; area?: string }>>(
-      [],
-    ),
+    [sections, setSections] = useState<
+      Array<{ title: string; body: string; area?: string }>
+    >([]),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
   useEffect(() => {
     const token = getPortalSession();
     if (!token || !networkId) return;
-    portalRequest<Response>(`/networks/${networkId}/profile`, { token })
+    portalRequest<Response>(profilePath, { token })
       .then((value) => {
         setData(value);
         autoOpen.current =
@@ -95,7 +100,19 @@ export function NetworkProfileWorkspace() {
             : "Partnerseite konnte nicht geladen werden.",
         ),
       );
-  }, [networkId]);
+  }, [networkId, profilePath]);
+  const reviewed = useRef(false);
+  useEffect(() => {
+    if (
+      data &&
+      !service &&
+      !reviewed.current &&
+      new URLSearchParams(location.search).has("pruefen")
+    ) {
+      reviewed.current = true;
+      openEditablePreview();
+    }
+  }, [data, service]);
   useEffect(() => {
     if (data && autoOpen.current) {
       autoOpen.current = false;
@@ -140,38 +157,35 @@ export function NetworkProfileWorkspace() {
     const form = new FormData(formElement);
     setBusy(true);
     try {
-      const profile = await portalRequest<Profile>(
-        `/networks/${networkId}/profile`,
-        {
-          token,
-          body: {
-            companyName: form.get("companyName"),
-            tagline: form.get("tagline"),
-            description: form.get("description"),
-            services: form.get("services"),
-            industries: form.get("industries"),
-            street: form.get("street"),
-            postalCode: form.get("postalCode"),
-            city: form.get("city"),
-            country: form.get("country"),
-            websiteUrl: form.get("websiteUrl"),
-            contactName: form.get("contactName"),
-            contactPosition: form.get("contactPosition"),
-            contactEmail: form.get("contactEmail"),
-            contactPhone: form.get("contactPhone"),
-            logoUrl: logo,
-            heroImageUrl: hero,
-            sections,
-            personalMessage: form.get("personalMessage"),
-            offers: form.get("offers"),
-            lookingFor: form.get("lookingFor"),
-            meetingUrl: form.get("meetingUrl"),
-            primaryColor: form.get("primaryColor"),
-            secondaryColor: form.get("secondaryColor"),
-            publish,
-          },
+      const profile = await portalRequest<Profile>(profilePath, {
+        token,
+        body: {
+          companyName: form.get("companyName"),
+          tagline: form.get("tagline"),
+          description: form.get("description"),
+          services: form.get("services"),
+          industries: form.get("industries"),
+          street: form.get("street"),
+          postalCode: form.get("postalCode"),
+          city: form.get("city"),
+          country: form.get("country"),
+          websiteUrl: form.get("websiteUrl"),
+          contactName: form.get("contactName"),
+          contactPosition: form.get("contactPosition"),
+          contactEmail: form.get("contactEmail"),
+          contactPhone: form.get("contactPhone"),
+          logoUrl: logo,
+          heroImageUrl: hero,
+          sections,
+          personalMessage: form.get("personalMessage"),
+          offers: form.get("offers"),
+          lookingFor: form.get("lookingFor"),
+          meetingUrl: form.get("meetingUrl"),
+          primaryColor: form.get("primaryColor"),
+          secondaryColor: form.get("secondaryColor"),
+          publish,
         },
-      );
+      });
       verifyPartnerMediaSave({ heroImageUrl: hero, logoUrl: logo }, profile);
       setData((current) => (current ? { ...current, profile } : current));
       if (publish) dialog.current?.close();
@@ -203,7 +217,7 @@ export function NetworkProfileWorkspace() {
       const result = await portalRequest<{
         draft: Record<string, unknown>;
         sources: string[];
-      }>(`/networks/${networkId}/profile/import`, {
+      }>(profilePath + "/import", {
         token,
         timeoutMs: 120_000,
         body: {
@@ -217,7 +231,11 @@ export function NetworkProfileWorkspace() {
         (!sections.length || input.get("replace") === "on")
       )
         setSections(
-          result.draft.sections as Array<{ title: string; body: string; area?: string }>,
+          result.draft.sections as Array<{
+            title: string;
+            body: string;
+            area?: string;
+          }>,
         );
       for (const [name, value] of Object.entries(result.draft)) {
         const field = profileForm.current?.elements.namedItem(name);
@@ -291,10 +309,10 @@ export function NetworkProfileWorkspace() {
     const token = getPortalSession();
     if (!token || !data?.canEdit)
       throw new Error("Bitte melde dich erneut an.");
-    const saved = await portalRequest<Profile>(
-      `/networks/${networkId}/profile`,
-      { token, body: { ...value, publish: value.status === "published" } },
-    );
+    const saved = await portalRequest<Profile>(profilePath, {
+      token,
+      body: { ...value, publish: value.status === "published" },
+    });
     verifyPartnerMediaSave(value, saved);
     setData((current) => (current ? { ...current, profile: saved } : current));
     setPreview(saved);
@@ -402,9 +420,9 @@ export function NetworkProfileWorkspace() {
             </header>
             <form onSubmit={importWebsite}>
               <p>
-                PagePilot AI erstellt aus deiner öffentlichen Firmenhomepage
-                und ihren Unterseiten einen Entwurf für deine Partnerseite.
-                Du prüfst die Texte, ergänzt Bilder und Angebote und entscheidest,
+                PagePilot AI erstellt aus deiner öffentlichen Firmenhomepage und
+                ihren Unterseiten einen Entwurf für deine Partnerseite. Du
+                prüfst die Texte, ergänzt Bilder und Angebote und entscheidest,
                 wann du die Seite veröffentlichst.
               </p>
               <label>
@@ -560,9 +578,28 @@ export function NetworkProfileWorkspace() {
                   {sections.map((section, index) => (
                     <fieldset className="full partnerSectionEditor" key={index}>
                       <legend>Inhaltsbereich {index + 1}</legend>
-                      <label>Rubrik<select value={section.area||"about"} disabled={!data.canEdit} onChange={event=>setSections(current=>current.map((s,i)=>i===index?{...s,area:event.target.value}:s))}>
-                        <option value="about">Vorstellung</option><option value="services">Leistungen</option><option value="personal">Persönlich</option><option value="offers">Angebote</option><option value="looking">Gesuche</option>
-                      </select></label>
+                      <label>
+                        Rubrik
+                        <select
+                          value={section.area || "about"}
+                          disabled={!data.canEdit}
+                          onChange={(event) =>
+                            setSections((current) =>
+                              current.map((s, i) =>
+                                i === index
+                                  ? { ...s, area: event.target.value }
+                                  : s,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="about">Vorstellung</option>
+                          <option value="services">Leistungen</option>
+                          <option value="personal">Persönlich</option>
+                          <option value="offers">Angebote</option>
+                          <option value="looking">Gesuche</option>
+                        </select>
+                      </label>
                       <label>
                         Überschrift
                         <input
@@ -1043,10 +1080,14 @@ export function NetworkProfileWorkspace() {
                       });
                       return;
                     }
-                    if (form?.reportValidity()) void save(form, true);
+                    if (form?.reportValidity()) void save(form, !service);
                   }}
                 >
-                  {busy ? "Wird gespeichert …" : "Partnerseite veröffentlichen"}
+                  {busy
+                    ? "Wird gespeichert …"
+                    : service
+                      ? "Für die Übergabe speichern"
+                      : "Partnerseite veröffentlichen"}
                 </button>
               )}
             </div>

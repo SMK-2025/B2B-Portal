@@ -11,6 +11,8 @@ export function removeNetworkUser(
   );
   const mids = new Set(members.map((m) => m.id)),
     orgs = new Set(members.map((m) => m.organizationId));
+  const service = s.users.get(u)?.serviceSetup;
+  if (service?.networkId === n) orgs.add(service.organizationId);
   const orders = [...s.networkOrders.values()].filter(
     (o) => o.networkId === n && o.orderedByUserId === u,
   );
@@ -28,7 +30,8 @@ export function removeNetworkUser(
         o.invoiceReference ||
         o.paidAt ||
         o.paymentStatus === "paid" ||
-        (o.billingPolicy?.automaticInvoices &&
+        (o.manualServiceInvoice && service?.sentAt) ||
+        (!o.manualServiceInvoice && o.billingPolicy?.automaticInvoices &&
           o.billingPolicy.invoiceDate <= today),
     )
   )

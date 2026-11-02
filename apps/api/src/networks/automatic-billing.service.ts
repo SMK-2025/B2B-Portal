@@ -1,5 +1,7 @@
 import {
   Injectable,
+  ServiceUnavailableException,
+  ConflictException,
   OnModuleInit,
   OnApplicationShutdown,
   Logger,
@@ -116,6 +118,7 @@ export class AutomaticBillingService
           ["visitor", "network_admin"].includes(membership.role)
         )
           continue;
+        if (order.manualServiceInvoice && !order.invoiceSentAt) continue;
         if (p.invoiceDate <= today && !order.invoiceSentAt)
           await this.issue(order, today);
         if (
@@ -179,8 +182,51 @@ export class AutomaticBillingService
       this.running = false;
     }
   }
+  private readonly manualInFlight = new Set<string>();
+  async dispatchServiceInvoice(order: NetworkOrderRecord, resend: boolean) {
+    if (!this.sql || !this.formatValidated || !order.manualServiceInvoice)
+      throw new ServiceUnavailableException("Der Rechnungsdienst ist noch nicht bereit. Es wurde keine Rechnung versendet.");
+    if (this.manualInFlight.has(order.id))
+      throw new ConflictException("Der Rechnungsversand läuft bereits.");
+    this.manualInFlight.add(order.id);
+    try {
+      if (resend) {
+        const rows = (await this.sql.unsafe(
+          "SELECT number,pdf_base64,payload FROM b2b_invoices WHERE order_id=$1 AND status='sent'",
+          [order.id],
+        )) as { number: string; pdf_base64: string; payload: InvoiceData }[];
+        const r = rows[0];
+        if (!r?.pdf_base64)
+          throw new ConflictException("Kein versendeter Beleg vorhanden.");
+        await this.mail.sendInvoice(
+          r.payload.order.invoiceEmail,
+          r.number,
+          r.payload.dueOn,
+          Buffer.from(r.pdf_base64, "base64"),
+        );
+      } else {
+        await this.issue(
+          order,
+          new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Europe/Berlin",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(new Date()),
+        );
+        if (!order.invoiceSentAt)
+          throw new ConflictException(
+            "Versand nicht bestätigt. Bitte Versandarchiv prüfen.",
+          );
+      }
+      return { sent: true, number: order.invoiceReference };
+    } finally {
+      this.manualInFlight.delete(order.id);
+    }
+  }
   private async issue(order: NetworkOrderRecord, today: string) {
-    if (!this.sql || !order.billingPolicy) return;
+    if (!this.sql || (!order.billingPolicy && !order.manualServiceInvoice))
+      return;
     // A dedicated, transactional ledger is independent of the portal snapshot.
     await this.store.persist();
     await this.sql.begin(async (tx) => {
@@ -252,6 +298,10 @@ export class AutomaticBillingService
       );
       order.invoiceReference = data.number;
       order.invoiceSentAt = new Date().toISOString();
+      if (order.manualServiceInvoice && order.billingPolicy) {
+        order.billingPolicy.invoiceDate = data.issuedOn;
+        order.billingPolicy.paymentDueDate = data.dueOn;
+      }
       order.paymentDueAt = new Date(
         Date.parse(berlinMidnight(addCalendarDays(data.dueOn, 1))) - 1,
       ).toISOString();
@@ -282,6 +332,7 @@ export class AutomaticBillingService
       vat = Math.round(net * 0.19);
     const next: NetworkOrderRecord = {
       ...structuredClone(order),
+      manualServiceInvoice: false,
       id,
       minimumTermMonths: p.renewalMonths,
       annualNetCents: net,

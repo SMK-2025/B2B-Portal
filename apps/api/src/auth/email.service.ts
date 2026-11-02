@@ -201,6 +201,41 @@ export class EmailService {
       ),
     });
   }
+  async sendServiceHandover(
+    email: string,
+    slug: string,
+    name: string,
+    token: string,
+  ) {
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
+      throw new ServiceUnavailableException(
+        "E-Mail-Versand nicht eingerichtet.",
+      );
+    const link =
+      this.webUrl() +
+      "/zugang-uebernehmen?network=" +
+      encodeURIComponent(slug) +
+      "#token=" +
+      encodeURIComponent(token);
+    await this.send({
+      to: email,
+      subject: "Einrichtung erfolgreich abgeschlossen · " + name,
+      text:
+        "Deine Partnerseite ist vorbereitet. Erstelle dein Passwort und prüfe deine Seite im Netzwerk " +
+        name +
+        ". Der Link ist 48 Stunden gültig.\n\nPasswort erstellen: " +
+        link,
+      html: this.template(
+        "Einrichtung erfolgreich abgeschlossen",
+        "Deine Partnerseite im Netzwerk <strong>" +
+          this.escape(name) +
+          "</strong> ist für dich vorbereitet. Nach der Passwortvergabe kannst du sie prüfen und selbst veröffentlichen.",
+        "Passwort erstellen",
+        link,
+        "Dieser persönliche Link ist 48 Stunden gültig und nur einmal verwendbar.",
+      ),
+    });
+  }
 
   async sendTeamInvitation(input: {
     email: string;

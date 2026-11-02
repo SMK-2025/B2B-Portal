@@ -1,8 +1,19 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { ServiceMemberForm } from "./service-member-form";
+import { NetworkProfileWorkspace } from "./network-profile-workspace";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { InvoiceDownload, type BillingInvoice } from "./admin-network-billing";
 type Row = {
+  service?: {
+    sentAt: string | null;
+    claimedAt: string | null;
+    invoicedAt: string | null;
+    individual: boolean;
+    invoiceEmail?: string;
+    months?: number;
+    grossCents?: number;
+  };
   userId?: string;
   admissionStatus?: string;
   company?: string;
@@ -40,6 +51,43 @@ const states: Record<string, string> = {
 const date = (value: string | null) =>
   value ? new Date(value).toLocaleDateString("de-DE") : "–";
 export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
+  const [creating, setCreating] = useState(false),
+    [editor, setEditor] = useState(""),
+    [serviceNotice, setServiceNotice] = useState("");
+  async function serviceAction(row: Row, kind: "invoice" | "handover") {
+    const resend =
+      kind === "invoice" ? !!row.service?.invoicedAt : !!row.service?.sentAt;
+    const details =
+      kind === "invoice" && row.service
+        ? `\n${row.company || row.name} · ${row.service.invoiceEmail}\n${row.service.months} Monate · ${((row.service.grossCents || 0) / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })} inkl. MwSt.\n`
+        : "";
+    if (
+      !window.confirm(
+        `${name} · ${row.name} (${row.email})\n${details}${kind === "handover" ? (resend ? "Neuen Übergabelink senden und bisherigen Link ersetzen?" : "Einrichtung abschließen und Zugangsmail senden?") : resend ? "Dieselbe Rechnung erneut an die Rechnungsadresse senden?" : "Netzwerknutzung jetzt an die vereinbarte Rechnungsadresse fakturieren und versenden?"}`,
+      )
+    )
+      return;
+    setLoading(true);
+    setServiceNotice("");
+    try {
+      await portalRequest(
+        `/networks/admin/${id}/service-members/${row.userId}/${kind}`,
+        { token: getPortalSession() || "", body: { resend } },
+      );
+      setServiceNotice(
+        kind === "invoice"
+          ? "Rechnungsversand bestätigt."
+          : "Übergabemail versendet.",
+      );
+      await open();
+    } catch (e) {
+      setServiceNotice(
+        e instanceof Error ? e.message : "Versand fehlgeschlagen.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
   const dialog = useRef<HTMLDialogElement>(null);
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
   const [invoiceError, setInvoiceError] = useState("");
@@ -240,6 +288,40 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
         <button
           type="button"
           className="portalSecondary"
+          onClick={() => {
+            setCreating(true);
+            setEditor("");
+          }}
+        >
+          Mitglied im Auftrag einrichten
+        </button>
+        {creating && (
+          <ServiceMemberForm
+            id={id}
+            name={name}
+            cancel={() => setCreating(false)}
+            done={() => {
+              setCreating(false);
+              setServiceNotice(
+                "Serviceauftrag angelegt. Es wurde keine E-Mail versendet.",
+              );
+              void open();
+            }}
+          />
+        )}
+        {serviceNotice && <p role="status">{serviceNotice}</p>}
+        {editor && (
+          <section>
+            <button onClick={() => setEditor("")}>Editor schließen</button>
+            <NetworkProfileWorkspace
+              key={editor}
+              service={{ networkId: id, userId: editor }}
+            />
+          </section>
+        )}
+        <button
+          type="button"
+          className="portalSecondary"
           disabled={loading}
           onClick={createVisitor}
         >
@@ -352,7 +434,24 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                               ? `${date(row.startsAt)} – ${date(row.endsAt)}`
                               : "Noch keine Buchung"}
                       </td>
-                      <td>{states[row.status] || row.status}</td>
+                      <td>
+                        {states[row.status] || row.status}
+                        {row.service?.sentAt && (
+                          <>
+                            <br />
+                            Zugangsmail:{" "}
+                            {new Date(row.service.sentAt).toLocaleString(
+                              "de-DE",
+                            )}
+                          </>
+                        )}
+                        {row.service?.invoicedAt && (
+                          <>
+                            <br />
+                            Rechnung versendet: {date(row.service.invoicedAt)}
+                          </>
+                        )}
+                      </td>
                       <td>{roles[row.role] || row.role}</td>
                       <td>{row.profile}</td>
                       <td>
@@ -403,6 +502,44 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                               ⋮
                             </summary>
                             <div>
+                              {row.service && (
+                                <>
+                                  {!row.service.sentAt && (
+                                    <button
+                                      onClick={() => {
+                                        setCreating(false);
+                                        setEditor(row.userId!);
+                                      }}
+                                    >
+                                      Partnerseite im Auftrag bearbeiten
+                                    </button>
+                                  )}
+                                  {!row.service.claimedAt && (
+                                    <button
+                                      disabled={loading}
+                                      onClick={() =>
+                                        serviceAction(row, "handover")
+                                      }
+                                    >
+                                      {row.service.sentAt
+                                        ? "Übergabelink erneut senden"
+                                        : "Einrichtung abschließen & Zugang senden"}
+                                    </button>
+                                  )}
+                                  {row.service.individual && (
+                                    <button
+                                      disabled={loading || !row.service.sentAt}
+                                      onClick={() =>
+                                        serviceAction(row, "invoice")
+                                      }
+                                    >
+                                      {row.service.invoicedAt
+                                        ? "Rechnung erneut senden"
+                                        : "Rechnung für Netzwerknutzung senden"}
+                                    </button>
+                                  )}
+                                </>
+                              )}
                               {row.admissionStatus === "pending" && (
                                 <>
                                   <button

@@ -9,7 +9,13 @@ import {
 import { randomUUID } from "node:crypto";
 import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
-import { opaqueToken, tokenHash, hashPassword } from "../auth/password";
+import {
+  opaqueToken,
+  tokenHash,
+  hashPassword,
+  validatePasswordStrength,
+} from "../auth/password";
+import type { OrganizationRecord } from "../core/domain";
 import type {
   NetworkAttendanceRecord,
   NetworkContentRecord,
@@ -330,6 +336,7 @@ export class NetworksService {
     return {
       networkName: network.name,
       memberPaymentModel: network.settings.memberPaymentModel || "individual",
+      cooperationFree: network.settings.billingMode === "cooperation_free",
       ...pricing(network),
       schedule: network.settings.memberBilling?.freeUntil
         ? invoiceSchedule(network.settings.memberBilling.freeUntil)
@@ -494,6 +501,10 @@ export class NetworksService {
     if (!order || order.kind !== "member_annual")
       throw new NotFoundException("Mitgliedsbuchung nicht gefunden.");
     if (input.invoiceSent === true) {
+      if (order.manualServiceInvoice)
+        throw new BadRequestException(
+          "Bitte die Rechnung über den Serviceauftrag in der Nutzerübersicht versenden.",
+        );
       const reference = requiredText(
         input.invoiceReference,
         "Rechnungsnummer",
@@ -903,6 +914,17 @@ export class NetworksService {
       (m) => m.networkId === networkId,
     ))
       addUser(member.userId, member.role, member.status, member.organizationId);
+    for (const user of this.store.users.values())
+      if (
+        user.serviceSetup?.networkId === networkId &&
+        !user.serviceSetup.claimedAt
+      )
+        addUser(
+          user.id,
+          "member",
+          "In Einrichtung",
+          user.serviceSetup.organizationId,
+        );
     const invitations = [...this.store.networkContents.values()]
       .filter(
         (i) =>
@@ -939,6 +961,33 @@ export class NetworksService {
       networkName: network.name,
       users: [...rows.values()]
         .map((row) => {
+          const user = row.userId
+              ? this.store.users.get(row.userId)
+              : undefined,
+            s = user?.serviceSetup;
+          if (s && s.networkId === networkId) {
+            const o = this.store.networkOrders.get(s.orderId || "");
+            return {
+              ...row,
+              company: this.store.organizations.get(s.organizationId)
+                ?.displayName,
+              centrallyFunded: !s.orderId,
+              status: s.claimedAt
+                ? row.status
+                : s.sentAt
+                  ? "Übergabe versendet"
+                  : "In Einrichtung",
+              service: {
+                sentAt: s.sentAt,
+                claimedAt: s.claimedAt,
+                invoicedAt: o?.invoiceSentAt || null,
+                individual: !!o,
+                invoiceEmail: o?.invoiceEmail,
+                grossCents: o?.grossCents,
+                months: o?.minimumTermMonths,
+              },
+            };
+          }
           const request = invitations.find(
             (i) => i.data.email === row.email && i.data.admissionStatus,
           );
@@ -1277,7 +1326,22 @@ export class NetworksService {
         i.data.kind === "network_invitation" &&
         i.data.email === email,
     );
-    if (!member && !invited)
+    const prepared = this.store.users.get(userId)?.serviceSetup;
+    if (this.handingOver.has(userId))
+      throw new ConflictException("Übergabe läuft bereits.");
+    if (
+      prepared?.networkId === networkId &&
+      !prepared.claimedAt &&
+      input.action !== "deleteUser" &&
+      !(
+        ["paid", "unpaid"].includes(String(input.action)) &&
+        this.store.networkOrders.get(prepared.orderId || "")?.invoiceSentAt
+      )
+    )
+      throw new BadRequestException(
+        "Bitte die Aktionen für den Serviceauftrag verwenden.",
+      );
+    if (!member && !invited && prepared?.networkId !== networkId)
       throw new ForbiddenException("Nutzer gehört nicht zu diesem Netzwerk.");
     if (input.action === "deleteUser") {
       if (
@@ -1798,6 +1862,12 @@ export class NetworksService {
       .map((item) => ({
         membership: item,
         network: this.get(item.networkId),
+        reviewPrepared:
+          user.serviceSetup?.networkId === item.networkId &&
+          !!user.serviceSetup.claimedAt &&
+          !this.store.organizations.get(item.organizationId)?.networkProfile
+            ?.publishedAt &&
+          user.loginCount === 1,
         needsPartnerSetup:
           !["visitor", "network_admin"].includes(item.role) &&
           this.canEditCompany(user.id, item.organizationId, item.role) &&
@@ -1983,6 +2053,261 @@ export class NetworksService {
       });
   }
 
+  private readonly handingOver = new Set<string>();
+  createServiceMember(
+    auth: string | undefined,
+    id: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(auth);
+    this.requirePlatformAdmin(actor.id);
+    const n = this.raw(id),
+      email = emailAddress(input.email),
+      firstName = requiredText(input.firstName, "Vorname", 1, 100),
+      lastName = requiredText(input.lastName, "Nachname", 1, 100),
+      company = requiredText(input.legalName, "Unternehmen", 2, 160),
+      reference = requiredText(input.reference, "Auftragsnachweis", 3, 120);
+    if (
+      n.status !== "active" ||
+      input.confirmed !== true ||
+      this.store.userByEmail.has(email)
+    )
+      throw new BadRequestException(
+        "Nur mit dokumentiertem Auftrag in einem aktiven Netzwerk und neuer E-Mail-Adresse möglich.",
+      );
+    const central =
+      n.settings.memberPaymentModel === "network" ||
+      n.settings.billingMode === "cooperation_free";
+    if (input.central !== central)
+      throw new ConflictException(
+        "Zahlungsmodell geändert. Bitte Ansicht neu öffnen.",
+      );
+    const userId = randomUUID(),
+      organizationId = randomUUID(),
+      now = new Date().toISOString(),
+      websiteUrl = safeUrl(input.websiteUrl);
+    const order = central
+      ? null
+      : annualOrder(
+          n,
+          userId,
+          {
+            ...input,
+            invoiceContact: input.invoiceContact || firstName + " " + lastName,
+            invoiceEmail: input.invoiceEmail || email,
+            invoiceCountry: input.invoiceCountry || "Deutschland",
+          },
+          { reference },
+        );
+    if (order) {
+      order.organizationId = organizationId;
+      order.decidedByUserId = actor.id;
+      this.store.networkOrders.set(order.id, order);
+    }
+    this.store.organizations.set(organizationId, {
+      id: organizationId,
+      displayName: company,
+      legalName: company,
+      role: "network",
+      reviewStatus: "draft",
+      submittedAt: null,
+      approvedAt: null,
+      websiteUrl,
+      emailDomain: null,
+      createdAt: now,
+    });
+    this.store.users.set(userId, {
+      id: userId,
+      email,
+      firstName,
+      lastName,
+      passwordHash: "unavailable",
+      emailVerifiedAt: null,
+      accountRole: "user",
+      createdAt: now,
+      serviceSetup: {
+        networkId: id,
+        organizationId,
+        orderId: order?.id || null,
+        reference,
+        createdBy: actor.id,
+        createdAt: now,
+        sentAt: null,
+        claimedAt: null,
+      },
+    });
+    this.store.userByEmail.set(email, userId);
+    this.operatorAudit(actor.id, id, "service.setup.created");
+    return { userId };
+  }
+  private serviceTarget(auth: string | undefined, id: string, uid: string) {
+    const actor = this.auth.authenticate(auth);
+    this.requirePlatformAdmin(actor.id);
+    const user = this.store.users.get(uid),
+      setup = user?.serviceSetup;
+    if (!user || !setup || setup.networkId !== id)
+      throw new NotFoundException("Serviceauftrag nicht gefunden.");
+    return { user, setup, actor };
+  }
+  serviceProfile(
+    auth: string | undefined,
+    id: string,
+    uid: string,
+    input?: Record<string, unknown>,
+  ) {
+    const { setup } = this.serviceTarget(auth, id, uid);
+    if (setup.sentAt || this.handingOver.has(uid))
+      throw new ForbiddenException(
+        "Die Seite wurde bereits zur Übergabe freigegeben.",
+      );
+    const org = this.store.organizations.get(setup.organizationId)!;
+    return input
+      ? this.writePartnerProfile(org, { ...input, publish: false })
+      : {
+          organization: {
+            displayName: org.displayName,
+            legalName: org.legalName,
+            websiteUrl: org.websiteUrl,
+          },
+          profile: org.networkProfile || null,
+          canEdit: true,
+        };
+  }
+  serviceImport(
+    auth: string | undefined,
+    id: string,
+    uid: string,
+    input: Record<string, unknown>,
+  ) {
+    const { actor } = this.serviceTarget(auth, id, uid);
+    this.serviceProfile(auth, id, uid);
+    if (input.consent !== true)
+      throw new BadRequestException("Bitte die Analyse bestätigen.");
+    return this.companyImport.generate(actor.id, input.websiteUrl);
+  }
+  async handoverService(auth: string | undefined, id: string, uid: string) {
+    const { user, setup, actor } = this.serviceTarget(auth, id, uid),
+      n = this.raw(id);
+    if (n.status !== "active" || setup.claimedAt || this.handingOver.has(uid))
+      throw new ConflictException("Übergabe nicht möglich.");
+    const profile = this.store.organizations.get(
+      setup.organizationId,
+    )?.networkProfile;
+    if (
+      !profile ||
+      ![
+        profile.companyName,
+        profile.tagline,
+        profile.description,
+        profile.services,
+        profile.contactName,
+        profile.contactEmail,
+        profile.contactPosition,
+        profile.contactPhone,
+        profile.street,
+        profile.postalCode,
+        profile.city,
+        profile.country,
+      ].every((x) => x?.trim())
+    )
+      throw new BadRequestException(
+        "Bitte vor der Übergabe Unternehmensseite und Kontakt vollständig als Entwurf speichern.",
+      );
+    this.handingOver.add(uid);
+    try {
+      const raw = opaqueToken();
+      await this.email.sendServiceHandover(user.email, n.slug, n.name, raw);
+      setup.tokenHash = tokenHash(raw);
+      setup.expiresAt = Date.now() + 48 * 3600000;
+      setup.sentAt = new Date().toISOString();
+      this.operatorAudit(actor.id, id, "service.handover.sent");
+      await this.store.persist();
+      return { sent: true };
+    } finally {
+      this.handingOver.delete(uid);
+    }
+  }
+  async claimService(input: Record<string, unknown>) {
+    const digest = tokenHash(requiredText(input.token, "Link", 30, 200)),
+      user = [...this.store.users.values()].find(
+        (u) => u.serviceSetup?.tokenHash === digest,
+      );
+    const s = user?.serviceSetup,
+      n = s && this.raw(s.networkId);
+    if (
+      !user ||
+      !s ||
+      !n ||
+      !s.sentAt ||
+      n.slug !== input.network ||
+      n.status !== "active" ||
+      s.claimedAt ||
+      !s.expiresAt ||
+      s.expiresAt <= Date.now()
+    )
+      throw new BadRequestException(
+        "Der Übergabelink ist ungültig oder abgelaufen.",
+      );
+    const password = requiredText(input.password, "Passwort", 12, 200);
+    if (password !== input.confirmation)
+      throw new BadRequestException("Passwörter stimmen nicht überein.");
+    validatePasswordStrength(password);
+    const hashed = await hashPassword(password);
+    if (
+      this.store.users.get(user.id) !== user ||
+      s.tokenHash !== digest ||
+      s.claimedAt ||
+      this.handingOver.has(user.id) ||
+      s.expiresAt <= Date.now()
+    )
+      throw new ConflictException("Übergabelink nicht mehr gültig.");
+    const now = new Date().toISOString(),
+      mid = randomUUID();
+    this.store.memberships.push({
+      userId: user.id,
+      organizationId: s.organizationId,
+      role: "admin",
+    });
+    this.store.networkMemberships.push({
+      id: mid,
+      networkId: n.id,
+      organizationId: s.organizationId,
+      userId: user.id,
+      role: "organization_admin",
+      status: "active",
+      centrallyFunded: !s.orderId,
+      invitedByUserId: s.createdBy,
+      reviewedByUserId: s.createdBy,
+      reviewedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+    if (s.orderId) {
+      const o = this.store.networkOrders.get(s.orderId);
+      if (o) o.membershipId = mid;
+    }
+    user.passwordHash = hashed;
+    user.emailVerifiedAt = now;
+    s.claimedAt = now;
+    delete s.tokenHash;
+    delete s.expiresAt;
+    await this.store.persist();
+    return { claimed: true };
+  }
+  serviceInvoice(auth: string | undefined, id: string, uid: string) {
+    const { setup } = this.serviceTarget(auth, id, uid),
+      o = this.store.networkOrders.get(setup.orderId || "");
+    if (
+      !setup.sentAt ||
+      !o?.manualServiceInvoice ||
+      o.networkId !== id ||
+      o.orderedByUserId !== uid
+    )
+      throw new BadRequestException(
+        "Rechnung nur nach Übergabemail und bei individueller Abrechnung möglich.",
+      );
+    return o;
+  }
   ownProfile(authorization: string | undefined, networkId: string) {
     const user = this.auth.authenticate(authorization);
     this.requireNetworkAccess(user.id, networkId);
@@ -2052,6 +2377,12 @@ export class NetworksService {
     );
     if (!organization)
       throw new NotFoundException("Unternehmen nicht gefunden.");
+    return this.writePartnerProfile(organization, input);
+  }
+  private writePartnerProfile(
+    organization: OrganizationRecord,
+    input: Record<string, unknown>,
+  ) {
     const publish = input.publish === true,
       logoUrl =
         typeof input.logoUrl === "string" && input.logoUrl.trim()

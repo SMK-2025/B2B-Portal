@@ -52,6 +52,7 @@ export function PartnerLoginForm({
       }
       type LoginNetwork = {
         needsPartnerSetup?: boolean;
+        reviewPrepared?: boolean;
         membership: { role: string };
         network: { slug: string; settings?: { setupCompletedAt?: string } };
       };
@@ -74,11 +75,12 @@ export function PartnerLoginForm({
       );
       if (requested) {
         const base = `/portal/netzwerk/${requested.network.slug}`;
-        const destination =
-          safeRedirect &&
-          (safeRedirect === base ||
-            safeRedirect.startsWith(base + "/") ||
-            safeRedirect.startsWith(base + "?"))
+        const destination = requested.reviewPrepared
+          ? `${base}/profil?pruefen=1`
+          : safeRedirect &&
+              (safeRedirect === base ||
+                safeRedirect.startsWith(base + "/") ||
+                safeRedirect.startsWith(base + "?"))
             ? safeRedirect
             : base;
         router.push(

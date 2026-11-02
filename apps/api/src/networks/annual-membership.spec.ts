@@ -6,6 +6,112 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("does not create a personal invoice for centrally funded service members",async()=>{
+    const f=await fixture();f.network.settings.memberPaymentModel="network";
+    const input={firstName:"Test",lastName:"Zentral",legalName:"Zentrale GmbH",email:"central-test@example.test",reference:"Auftragsmail vom 01.11.",confirmed:true,central:true};
+    expect(()=>f.networks.createServiceMember(f.member,f.network.id,input)).toThrow();
+    const {userId}=f.networks.createServiceMember(f.owner,f.network.id,input);
+    expect(f.store.users.get(userId)?.serviceSetup?.orderId).toBe(null);
+    expect(f.store.networkOrders.size).toBe(0);
+    expect(()=>f.networks.serviceInvoice(f.owner,f.network.id,userId)).toThrow();
+  });
+  it("keeps commissioned setup silent and private until handover; only the operator can release billing", async () => {
+    const f = await fixture(),
+      networkId = f.network.id,
+      email = "prepared@example.test";
+    const input = {
+      ...f.input,
+      email,
+      firstName: "Anna",
+      lastName: "Partner",
+      reference: "Auftrag A-17",
+      confirmed: true,
+      central: false,
+    };
+    const mail = vi.spyOn(f.email, "sendServiceHandover").mockResolvedValue();
+    const reset = vi.spyOn(f.email, "sendPasswordReset").mockResolvedValue();
+    const { userId } = f.networks.createServiceMember(
+      f.owner,
+      networkId,
+      input,
+    );
+    expect(() =>
+      f.networks.createServiceMember(f.owner, networkId, input),
+    ).toThrow();
+    expect(f.store.networkMemberships.some((m) => m.userId === userId)).toBe(
+      false,
+    );
+    expect(() =>
+      f.networks.serviceInvoice(f.owner, networkId, userId),
+    ).toThrow();
+    expect(() =>
+      f.networks.serviceProfile(f.member, networkId, userId),
+    ).toThrow();
+    expect(() => f.networks.serviceProfile(f.owner, "other", userId)).toThrow();
+    await f.auth.requestPasswordReset({ email });
+    expect(reset).not.toHaveBeenCalled();
+    await expect(
+      f.networks.handoverService(f.owner, networkId, userId),
+    ).rejects.toThrow();
+    expect(mail).not.toHaveBeenCalled();
+    const profile = f.networks.serviceProfile(f.owner, networkId, userId, {
+      companyName: "Testfirma",
+      tagline: "Unser Motto",
+      description: "Wir bieten Geschäftspartnern Beratung vor Ort.",
+      services: "Beratungsleistungen",
+      contactName: "Anna Partner",
+      contactEmail: email,
+      contactPosition: "Inhaberin",
+      contactPhone: "01234567",
+      street: "Musterstraße 8",
+      postalCode: "51371",
+      city: "Leverkusen",
+      country: "Deutschland",
+      publish: true,
+    });
+    expect(profile).toMatchObject({ status: "draft" });
+    mail.mockRejectedValueOnce(new Error("Mailfehler"));
+    await expect(
+      f.networks.handoverService(f.owner, networkId, userId),
+    ).rejects.toThrow("Mailfehler");
+    expect(() =>
+      f.networks.serviceInvoice(f.owner, networkId, userId),
+    ).toThrow();
+    await f.networks.handoverService(f.owner, networkId, userId);
+    const old = mail.mock.lastCall![3];
+    expect(f.networks.serviceInvoice(f.owner, networkId, userId)).toMatchObject(
+      {
+        manualServiceInvoice: true,
+        orderedByUserId: userId,
+        termsAccepted: false,
+      },
+    );
+    expect(() =>
+      f.networks.serviceInvoice(f.member, networkId, userId),
+    ).toThrow();
+    await f.networks.handoverService(f.owner, networkId, userId);
+    const token = mail.mock.lastCall![3],
+      password = "Sicher-Testen-2026!",
+      claim = {
+        network: f.network.slug,
+        password,
+        confirmation: password,
+        token,
+      };
+    await expect(
+      f.networks.claimService({ ...claim, token: old }),
+    ).rejects.toThrow();
+    await expect(
+      f.networks.claimService({ ...claim, confirmation: "anders" }),
+    ).rejects.toThrow();
+    await f.networks.claimService(claim);
+    await expect(f.networks.claimService(claim)).rejects.toThrow();
+    expect(
+      f.networks.mine(
+        "Bearer " + (await f.auth.login({ email, password })).token,
+      )[0].reviewPrepared,
+    ).toBe(true);
+  });
   it("keeps participation requests locked until owner approval and normal booking", async () => {
     const f = await fixture();
     f.store.networkBySlug.delete(f.network.slug);

@@ -29,6 +29,18 @@ export type ReviewStatus =
   | "suspended";
 
 export interface UserRecord {
+  serviceSetup?: {
+    networkId: string;
+    organizationId: string;
+    orderId: string | null;
+    reference: string;
+    createdBy: string;
+    createdAt: string;
+    sentAt: string | null;
+    claimedAt: string | null;
+    tokenHash?: string;
+    expiresAt?: number;
+  };
   id: string;
   visitorNetworkId?: string;
   loginCount?: number;
@@ -315,6 +327,7 @@ export interface NetworkRevenueRecord {
 }
 
 export interface NetworkOrderRecord {
+  manualServiceInvoice?: boolean;
   kind?: "member_annual";
   membershipId?: string;
   organizationId?: string;

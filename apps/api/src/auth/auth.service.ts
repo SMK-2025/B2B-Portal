@@ -256,6 +256,10 @@ export class AuthService implements OnModuleInit {
       emailVerifiedAt: null,
       createdAt: new Date().toISOString(),
     };
+    if (this.store.userByEmail.has(email))
+      throw new ConflictException(
+        "Für diese E-Mail-Adresse besteht bereits ein Konto.",
+      );
     this.store.users.set(user.id, user);
     this.store.userByEmail.set(email, user.id);
     const verificationToken = opaqueToken();
@@ -364,7 +368,8 @@ export class AuthService implements OnModuleInit {
     const userId = this.store.userByEmail.get(email);
     if (!userId) return { accepted: true };
     const user = this.store.users.get(userId);
-    if (!user) return { accepted: true };
+    if (!user || (user.serviceSetup && !user.serviceSetup.claimedAt))
+      return { accepted: true };
     const resetToken = opaqueToken();
     this.store.passwordResetTokens.set(tokenHash(resetToken), {
       tokenHash: tokenHash(resetToken),

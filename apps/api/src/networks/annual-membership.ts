@@ -51,6 +51,7 @@ export function annualOrder(
   network: NetworkRecord,
   userId: string,
   input: Record<string, unknown>,
+  operatorMandate?: { reference: string },
 ): NetworkOrderRecord {
   if (network.status !== "active")
     throw new BadRequestException(
@@ -59,6 +60,7 @@ export function annualOrder(
   const quote = pricing(network);
   const policy = network.settings.memberBilling;
   if (
+    !operatorMandate &&
     policy?.automaticInvoices &&
     input.pdfInvoiceAccepted !== true &&
     input.pdfInvoiceAccepted !== "on"
@@ -71,6 +73,7 @@ export function annualOrder(
       "Die Abrechnungseinstellungen wurden geändert. Bitte neu laden und die aktuellen Bedingungen bestätigen.",
     );
   if (
+    !operatorMandate &&
     policy?.autoRenew &&
     input.renewalAccepted !== true &&
     input.renewalAccepted !== "on"
@@ -79,9 +82,10 @@ export function annualOrder(
       "Bitte die automatische Saisonverlängerung ausdrücklich bestätigen.",
     );
   if (
-    input.paymentObligationAccepted !== true ||
-    input.termsAccepted !== true ||
-    input.authorityConfirmed !== true
+    !operatorMandate &&
+    (input.paymentObligationAccepted !== true ||
+      input.termsAccepted !== true ||
+      input.authorityConfirmed !== true)
   )
     throw new BadRequestException(
       "Bitte Jahresbuchung, Vertragsbedingungen und geschäftliche Berechtigung ausdrücklich bestätigen.",
@@ -190,9 +194,17 @@ export function annualOrder(
       : {}),
     termsVersion: "member-annual-2026-10-19",
     pricingVersion: "member-flat-annual-2026-10-19",
-    authorityConfirmed: true,
-    termsAccepted: true,
-    paymentObligationAccepted: true,
+    // The operator's documented mandate is not a member's online acceptance.
+    authorityConfirmed: !operatorMandate,
+    termsAccepted: !operatorMandate,
+    paymentObligationAccepted: !operatorMandate,
+    ...(operatorMandate
+      ? {
+          manualServiceInvoice: true,
+          termsVersion: "operator-mandate",
+          purchaseOrderReference: operatorMandate.reference,
+        }
+      : {}),
     status: "accepted",
     submittedAt: now.toISOString(),
     decidedAt: now.toISOString(),

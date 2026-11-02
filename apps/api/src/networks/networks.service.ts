@@ -1178,6 +1178,12 @@ export class NetworksService {
     if (!request) return { status: null };
     return {
       status: request.data.admissionStatus,
+      ...(network && user.emailVerifiedAt && request.data.admissionStatus==="pending" ? {preview:{
+        slug:network.slug,name:network.name,logoUrl:network.logoUrl,primaryColor:network.primaryColor,secondaryColor:network.secondaryColor,
+        modules:network.enabledModules, bannerImageUrl:network.settings.bannerImageUrl||null,
+        bannerTitle:network.settings.welcomeTitle||network.settings.bannerTitle||null,
+        bannerDescription:network.settings.welcomeIntro||network.settings.bannerDescription||null,
+      }}:{}),
       ...(request.data.admissionStatus === "approved" && user.emailVerifiedAt
         ? { invite: request.data.admissionOnboardingToken }
         : {}),

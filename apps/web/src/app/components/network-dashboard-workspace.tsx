@@ -59,14 +59,19 @@ function itemImage(item?: Item) {
       /^(https?:\/\/|data:image\/(?:png|jpeg|webp);base64,)/i.test(value),
   ) as string | undefined;
 }
-export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
+export type LockedDashboardBrand = {
+  slug:string; name:string; logoUrl:string|null; primaryColor:string;secondaryColor:string;modules:string[];
+  bannerImageUrl:string|null;bannerTitle:string|null;bannerDescription:string|null;
+};
+export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; preview?:LockedDashboardBrand }) {
   const access = useNetworkAccess(),
-    [data, setData] = useState<Dashboard | null>(null),
+    [loaded, setData] = useState<Dashboard | null>(null),
     [partners, setPartners] = useState<Partner[]>([]),
     [threadId, setThreadId] = useState<string | null>(null),
     [message, setMessage] = useState("");
   const base = `/portal/netzwerk/${slug}`;
   useEffect(() => {
+    if(preview)return;
     let active = true;
     const token = getPortalSession();
     if (!token) {
@@ -106,14 +111,15 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
     return () => {
       active = false;
     };
-  }, [slug, access?.currentUserId]);
+  }, [slug, access?.currentUserId,preview]);
+  const data:Dashboard|null=preview?{network:{id:"",name:preview.name,status:"active",settings:preview},recentMembers:[],upcomingEvents:[],eventRecaps:[],announcements:[]}:loaded;
   if (!data)
     return (
       <section className="networkCard networkLoading">
         <p role="status">{message || "Dein Netzwerk wird geladen …"}</p>
       </section>
     );
-  const enabled = (module: string) => access?.enabledModules.includes(module),
+  const enabled = (module: string) => (preview?.modules || access?.enabledModules)?.includes(module),
     event = data.upcomingEvents[0] || data.recentEvents?.[0],
     recap = data.eventRecaps[0],
     eventImage = itemImage(event),
@@ -209,7 +215,7 @@ export function NetworkDashboardWorkspace({ slug }: { slug: string }) {
         className={`loungeGrid${["bayer04leverkusen", "bayer-giants"].includes(slug) && enabled("events") ? " loungeGridWithMatchday" : ""}`}
       >
         {["bayer04leverkusen", "bayer-giants"].includes(slug) &&
-          enabled("events") && <NetworkMatchdayCard />}
+          enabled("events") && (preview?<section className="networkCard loungeCard" style={{background:preview.secondaryColor,color:"white",padding:24,textAlign:"center"}}><small>{slug==="bayer04leverkusen"?"Bundesliga":"Bayer Giants"}</small><h2>Spieltag</h2><p>Ergebnisse und Tabelle</p></section>:<NetworkMatchdayCard />)}
         {enabled("events") && event && (
           <section className="networkCard loungeCard loungeNextEvent">
             <header>

@@ -48,8 +48,9 @@ describe("personal annual membership billing", () => {
     const mail = vi.mocked(f.email.sendVerification).mock.calls.at(-1)![0];
     f.auth.verifyEmail(mail.token);
     const session = `Bearer ${(await f.auth.login({ email: "request@example.de", password: "Sicher-Portal-2026!" })).token}`;
-    expect(f.networks.participationStatus(session, f.network.slug)).toEqual({
+    expect(f.networks.participationStatus(session, f.network.slug)).toMatchObject({
       status: "pending",
+      preview:{slug:f.network.slug,name:f.network.name},
     });
     expect(f.networks.mine(session)).toEqual([]);
     expect(f.networks.claimInitiatorInvitation(session).claimed).toBe(false);

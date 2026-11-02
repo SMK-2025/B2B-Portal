@@ -1,5 +1,7 @@
 "use client";
 import styles from "./status.module.css";
+import {NetworkDashboardWorkspace,type LockedDashboardBrand} from "../../components/network-dashboard-workspace";
+import type {CSSProperties} from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -14,6 +16,7 @@ export default function ParticipationStatusPage() {
   const login =
     "/registrieren?" + new URLSearchParams({ network: slug, mode: "login" });
   const [status, setStatus] = useState("loading"),
+    [preview,setPreview]=useState<LockedDashboardBrand|null>(null),
     [email, setEmail] = useState(""),
     [error, setError] = useState("");
   const load = useCallback(async () => {
@@ -32,11 +35,13 @@ export default function ParticipationStatusPage() {
       const result = await portalRequest<{
         status: string | null;
         invite?: string;
+        preview?:LockedDashboardBrand;
       }>("/networks/participation/status/" + encodeURIComponent(slug), {
         token,
       });
       if (getPortalSession() !== token) return;
       setEmail(user.email);
+      setPreview(result.preview?.slug===slug?result.preview:null);
       if (result.status === "approved" && result.invite) {
         router.replace(
           ("/registrieren?" +
@@ -73,12 +78,11 @@ export default function ParticipationStatusPage() {
   }, [load]);
   return (
     <main className={styles.stage}>
-      <div className={styles.preview} aria-hidden="true" inert>
-        <div className={styles.bar}><b>Das Netzwerkpartner-Portal</b><span>Mein Zugang</span></div>
-        <div className={styles.tabs}>Startseite　　 Partner entdecken　　 Veranstaltungen　　 PartnerChat</div>
-        <div className={styles.hero}><small>SCHÖN, DASS DU DA BIST</small><h2>Willkommen in deinem Business-Netzwerk.</h2><p>Partner entdecken und miteinander ins Gespräch kommen.</p></div>
-        <div className={styles.cards}>{[(slug==="bayer04leverkusen"||slug==="bayer-giants")?"Spieltag":"Unser nächstes Treffen","Netzwerk-Mitglieder","Das schwarze Brett","Veranstaltungen"].map(title=><div key={title}><b>{title}</b><i/><i/><i/></div>)}</div>
-      </div>
+      {preview?.slug===slug && <div className={styles.preview} aria-hidden="true" inert style={{"--network-accent":preview.primaryColor,"--network-primary":preview.secondaryColor} as CSSProperties}>
+        <div className={styles.bar}>{preview.logoUrl && <img src={preview.logoUrl} alt="" style={{maxWidth:76,maxHeight:44,objectFit:"contain"}}/>}<b>Das Netzwerkpartner-Portal</b><span style={{marginLeft:"auto"}}>Mein Zugang</span></div>
+        <div className={styles.tabs} style={{background:preview.secondaryColor}}>Startseite　 {preview.modules.includes("profiles")&&"Partner entdecken　"}{preview.modules.includes("events")&&"Veranstaltungen　"}{preview.modules.includes("communication")&&"PartnerChat"}</div>
+        <div className="networkPortal" style={{display:"block"}}><NetworkDashboardWorkspace slug={slug} preview={preview}/></div>
+      </div>}
       <section
         className={styles.panel} aria-labelledby="participation-title"
       >
@@ -86,6 +90,7 @@ export default function ParticipationStatusPage() {
           Das Netzwerkpartner-Portal · der Media Online Innovations Group
         </small>
         <h1 id="participation-title">Meine Teilnahmeanfrage</h1>
+        {preview?.slug===slug && <p>Dein Netzwerk: <strong>{preview.name}</strong></p>}
         {email && (
           <p>
             Angemeldet als <strong>{email}</strong>

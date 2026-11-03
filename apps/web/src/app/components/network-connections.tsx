@@ -56,7 +56,7 @@ function useConnections() {
   }
   return { access, items, error, busy, act };
 }
-export function NetworkConnectionButton({ userId }: { userId: string }) {
+export function NetworkConnectionButton({ userId, label = "Vernetzung anfragen" }: { userId: string; label?:string }) {
   const { access, items, error, busy, act } = useConnections();
   if (
     !access ||
@@ -84,7 +84,7 @@ export function NetworkConnectionButton({ userId }: { userId: string }) {
               ? current.senderId === access.currentUserId
                 ? "Anfrage gesendet"
                 : "Anfrage erhalten"
-              : "Vernetzung anfragen"}
+              : label}
       </button>
       {error && <small role="alert">{error}</small>}
     </div>

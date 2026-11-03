@@ -340,7 +340,6 @@ export function NetworkModuleWorkspace({
       if (!file) delete data.file;
       if (module === "themen") {
         data.discussionOpen = form.get("discussionOpen") === "on";
-        if (form.get("removeArticleImage") === "on") data.imageUrl = null;
         const image = form.get("articleImage");
         if (image instanceof File && image.size) {
           if (!["image/png", "image/jpeg", "image/webp"].includes(image.type))
@@ -712,7 +711,7 @@ export function NetworkModuleWorkspace({
           return <article className={`loungeBoardNote loungeBoardNote${index%3} boardPaperStory`} key={item.id}>
             <span className="loungeBoardPin" aria-hidden="true"/>
             <button className="boardStoryOpen" type="button" onClick={()=>welcome ? router.push(`/portal/netzwerk/${slug}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never) : setThreadId(item.id)}>
-              {image && <img src={image} style={item.data.boardImageIsLogo ? {objectFit:"contain",background:"white"} : undefined} alt="" loading="lazy"/>}
+              {image && <img src={image} style={item.data.boardImageIsLogo ? {objectFit:"contain",background:"white",width:"66.6667%",marginInline:"auto",display:"block",maxHeight:"96px"} : undefined} alt="" loading="lazy"/>}
               <div className="boardStoryText">
                 <div className="boardStoryMeta"><span>{welcome ? "Neues Mitglied" : item.data.category==="Neuigkeit des Initiators" ? "Netzwerkleitung" : item.data.category || "Netzwerkbeitrag"}</span><time dateTime={date.toISOString()}>{date.toLocaleDateString("de-DE",{day:"numeric",month:"short",year:"numeric"})}</time></div>
                 {item.status!=="published" && <small>{labels[item.status]}</small>}
@@ -1336,9 +1335,10 @@ export function NetworkModuleWorkspace({
                     <span>Offene Diskussion für Mitglieder erlauben</span>
                   </label>
                   <label>
-                    Beitragsfoto (optional)
+                    Beitragsfoto (Pflichtfeld)
                     <input
                       name="articleImage"
+                      required={!editing?.data.imageUrl}
                       type="file"
                       accept="image/png,image/jpeg,image/webp"
                     />
@@ -1354,10 +1354,7 @@ export function NetworkModuleWorkspace({
                         src={String(editing.data.imageUrl)}
                         alt="Aktuelles Beitragsfoto"
                       />
-                      <label className="networkEventPublishConsent">
-                        <input type="checkbox" name="removeArticleImage" />
-                        <span>Foto entfernen</span>
-                      </label>
+                      <small>Das vorhandene Foto bleibt erhalten. Zum Ersetzen ein neues Foto auswählen.</small>
                     </div>
                   )}
                   <details>

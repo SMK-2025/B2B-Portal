@@ -344,11 +344,14 @@ describe("network tenancy", () => {
         data: { imageUrl: "data:image/png;base64,AA==" },
       }),
     ).toThrow(/Foto/);
-    expect(
+    expect(() =>
       networks.updateContent(initiatorBearer, network.id, article.id, {
         data: { imageUrl: null },
-      }).data.imageUrl,
-    ).toBeNull();
+      }),
+    ).toThrow(/Beitragsfoto/);
+    expect(() => networks.createContent(initiatorBearer,network.id,{
+      type:"topic",title:"Ohne Bild",description:"Text ohne Bild",data:{category:"Austausch & Ideen"}
+    })).toThrow(/Beitragsfoto/);
     expect(
       networks.networkNotifications(partnerBearer, network.id),
     ).toContainEqual(

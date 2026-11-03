@@ -2819,6 +2819,8 @@ export class NetworksService {
         ? (input.data as Record<string, unknown>)
         : {}),
     };
+    if ((type === "topic" || type === "announcement") && !decodePublicImage(data.imageUrl))
+      throw new BadRequestException("Bitte ein Beitragsfoto als PNG, JPG oder WebP bis 1,5 MB hochladen.");
     this.validateContentData(type, data, true);
     for (const key of [
       "messages",
@@ -3009,6 +3011,9 @@ export class NetworksService {
       }
       record.data = { ...record.data, ...data };
     }
+    if ((record.type === "topic" || record.type === "announcement") &&
+        !stored.data.welcomeMembershipId && !decodePublicImage(record.data.imageUrl) && record.status !== "archived")
+      throw new BadRequestException("Bitte ein Beitragsfoto als PNG, JPG oder WebP bis 1,5 MB hochladen.");
     record.updatedAt = new Date().toISOString();
     this.applyEventHomepagePublication(
       user.id,

@@ -570,6 +570,7 @@ export function ProfileDialog({
                     Nachricht senden
                   </Link>
                 )}
+              {!editControls && <NetworkConnectionButton userId={member.userId} label="Vernetzen" />}
               {p.meetingUrl && (
                 <a
                   className="networkSecondary"
@@ -670,7 +671,6 @@ export function ProfileDialog({
             {editControls?.("contact")}
             <h3>Digitale Visitenkarte</h3>
             <PartnerBusinessCard profile={p} />
-            <NetworkConnectionButton userId={member.userId} />
             {access?.enabledModules.includes("communication") &&
               member.userId !== access.currentUserId && (
                 <Link

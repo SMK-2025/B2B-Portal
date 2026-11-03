@@ -8,6 +8,7 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 
 // Isolated audit fixture: never starts persistence or sends invitations.
+const articlePhoto = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=";
 describe("functional audit with 50 partners", () => {
   it("records current capabilities and reproducible gaps without touching live data", async () => {
     const store = new PortalStore(),
@@ -111,7 +112,7 @@ describe("functional audit with 50 partners", () => {
       title: "Unfertiger Entwurf",
       description: "Nicht freigegebener Inhalt",
       status: "draft",
-      data: { category: "Austausch & Ideen" },
+      data: { category: "Austausch & Ideen", imageUrl: articlePhoto },
     });
     expect(
       networks
@@ -171,7 +172,7 @@ describe("functional audit with 50 partners", () => {
         type: "topic",
         title: "Gefälschte Mitteilung",
         description: "Unzulässig",
-        data: { category: "Neuigkeit des Initiators" },
+        data: { category: "Neuigkeit des Initiators", imageUrl: articlePhoto },
       }),
     ).toThrow();
     const bytes = Buffer.from("%PDF-1.7\nPortfolio");
@@ -261,7 +262,7 @@ describe("functional audit with 50 partners", () => {
       type: "topic",
       title: "Kooperation gesucht",
       description: "Gemeinsames Vorhaben",
-      data: { category: "Austausch & Ideen" },
+      data: { category: "Austausch & Ideen", imageUrl: articlePhoto },
     });
     expect(
       networks.reply(second.bearer, network.id, topic.id, {
@@ -384,6 +385,7 @@ describe("functional audit with 50 partners", () => {
       data: {
         category: "Austausch & Ideen",
         kind: "network_invitation",
+        imageUrl: articlePhoto,
         role: "network_admin",
         email: "partner01@example.invalid",
         inviteTokenHash: "fake",

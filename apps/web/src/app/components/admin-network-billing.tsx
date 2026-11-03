@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 export type BillingInvoice = {
   id: string;
@@ -44,6 +44,8 @@ const money = (cents: number) =>
 export function InvoiceDownload({ invoice }: { invoice: BillingInvoice }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<{url:string;name:string} | null>(null);
+  useEffect(() => () => { if (file) URL.revokeObjectURL(file.url); }, [file]);
   async function download() {
     setBusy(true);
     setError("");
@@ -57,17 +59,23 @@ export function InvoiceDownload({ invoice }: { invoice: BillingInvoice }) {
           type: "application/pdf",
         }),
       );
+      setFile({url,name:pdf.number+".pdf"});
       const a = document.createElement("a");
       a.href = url;
       a.download = pdf.number + ".pdf";
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      document.body.appendChild(a);
+      try { a.click(); } finally { a.remove(); }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Rechnung nicht verfügbar.");
     } finally {
       setBusy(false);
     }
   }
+  if (!invoice.downloadable) return <span>{invoice.number} · PDF noch nicht verfügbar</span>;
+  if (file) return <span role="group" aria-label={invoice.number}>
+    <a href={file.url} target="_blank" rel="noopener noreferrer">PDF ansehen</a>{" · "}
+    <a href={file.url} download={file.name}>Erneut herunterladen</a>
+  </span>;
   return (
     <span>
       <button
@@ -77,7 +85,7 @@ export function InvoiceDownload({ invoice }: { invoice: BillingInvoice }) {
         onClick={download}
         title={`Rechnung ${invoice.number} herunterladen`}
       >
-        <span aria-hidden="true">▤</span> PDF · {invoice.number}
+        <span aria-hidden="true">▤</span> {busy ? "PDF wird geladen …" : "PDF herunterladen"} · {invoice.number}
       </button>
       {error && <span role="alert">{error}</span>}
     </span>

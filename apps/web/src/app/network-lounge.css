@@ -1,6 +1,15 @@
 /* Shared visual system for all authenticated network workspaces. */
 .boardGallery {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(14px,2vw,24px);align-items:start;padding:clamp(12px,2vw,24px);border:1px solid #d6dfe4;border-radius:18px;background-color:#eef1f3;background-image:radial-gradient(#cdd4d8 1px,transparent 1px);background-size:14px 14px}
-.boardStory:only-child {width:100%;max-width:720px}
+.networkBoardPager {width:100%;min-width:0}
+.networkBoardPager .boardPagedSurface {align-items:stretch;touch-action:pan-y pinch-zoom}
+.networkBoardPager .boardStoryOpen {display:flex;flex-direction:column;flex:1;width:100%;padding:0;text-align:left;border:0;background:transparent;color:inherit;cursor:pointer;font:inherit}
+.networkBoardPager .boardStoryOpen img {border-radius:5px}
+.networkBoardPager .boardStoryText {padding:12px 0 0;flex:1;align-content:start}
+.networkBoardPager .boardStoryManage {margin-top:12px;padding:10px 0 0}
+.boardPageNav {display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;font-size:14px}
+.boardPageNav button {width:44px;height:44px;border-radius:50%;border:1px solid #bfcbd2;background:white;color:#203747;cursor:pointer;font-size:20px}
+.boardPageNav button:not(:disabled):hover {border-color:var(--network-accent);background:var(--network-soft)}
+.boardPageNav button:disabled {opacity:.38;cursor:default}
 .boardStory {position:relative;min-width:0;overflow:hidden;border:1px solid #dbe2e7;border-top:3px solid var(--network-accent);border-radius:12px;background:white;box-shadow:0 4px 14px #1028390b}
 .boardStory .boardStoryOpen {display:block;width:100%;padding:0;text-align:left;border:0;background:white;color:#182e3d;cursor:pointer;font:inherit}
 .boardStoryOpen:focus-visible {outline:3px solid var(--network-accent);outline-offset:-4px}

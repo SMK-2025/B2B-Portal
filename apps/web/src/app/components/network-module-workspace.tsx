@@ -7,6 +7,7 @@ import {
   downloadPartnerFile,
 } from "./network-exchange-workspace";
 import { useNetworkAccess } from "./network-shell";
+import { NetworkBoardPager } from "./network-board-pager";
 import { useRouter } from "next/navigation";
 
 type ContentType =
@@ -703,12 +704,13 @@ export function NetworkModuleWorkspace({
           </button>
         ))}
       </div>
-      {board ? <section className="boardGallery" aria-label="Beiträge am Schwarzen Brett">
-        {visible.map(item => {
+      {board ? <NetworkBoardPager key={JSON.stringify([slug,query,filter])} empty={<p className="boardNoStories">{items.length ? "Keine passenden Beiträge. Ändere die Suche oder den Filter." : "Das Brett ist noch leer. Hier erscheinen die Neuigkeiten aus deinem Netzwerk."}</p>}>
+        {visible.map((item,index) => {
           const image=item.data.imageUrl || item.data.coverImageUrl;
           const welcome=typeof item.data.welcomeMembershipId === "string";
           const date=new Date(item.createdAt || item.updatedAt);
-          return <article className="boardStory" key={item.id}>
+          return <article className={`loungeBoardNote loungeBoardNote${index%3} boardPaperStory`} key={item.id}>
+            <span className="loungeBoardPin" aria-hidden="true"/>
             <button className="boardStoryOpen" type="button" onClick={()=>welcome ? router.push(`/portal/netzwerk/${slug}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never) : setThreadId(item.id)}>
               {image && <img src={image} alt="" loading="lazy"/>}
               <div className="boardStoryText">
@@ -727,8 +729,7 @@ export function NetworkModuleWorkspace({
             </details>}
           </article>
         })}
-        {!visible.length && <p className="boardNoStories">{items.length ? "Keine passenden Beiträge. Ändere die Suche oder den Filter." : "Das Brett ist noch leer. Hier erscheinen die Neuigkeiten aus deinem Netzwerk."}</p>}
-      </section> : <section className="networkCard">
+      </NetworkBoardPager> : <section className="networkCard">
         <header>
           <div>
             <h2>{config.plural}</h2>

@@ -901,6 +901,8 @@ h1,h2,h3,h4,h5,h6,b,strong,button,label,summary{font-weight:500!important}
 .adminUsersTable :is(th,td):first-child{position:sticky;left:0;z-index:1;min-width:0;width:1%;background:#fff}
 .adminUsersTable th:first-child{background:#f5f6fc}
 .adminUsersTable td:nth-child(3){overflow-wrap:anywhere}
+form details label.billingInlineChoice {display:flex;align-items:center;justify-content:flex-start;gap:10px;padding-block:5px}
+form details label.billingInlineChoice input[type=checkbox]{width:18px;height:18px;min-height:0;margin:0;flex:none}
 .adminUsersTable .adminUserMenu summary{display:grid;place-items:center;min-height:44px;width:44px;padding:0;border-radius:8px}
 .adminUsersTable .adminUserMenu summary:is(:hover,:focus-visible),.adminUsersTable .adminUserMenu[open] summary{background:#edf0f8}
 .adminUsersTable .adminUserMenu[open]{width:min(16rem,55vw)}

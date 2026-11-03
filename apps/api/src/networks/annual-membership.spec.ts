@@ -1062,6 +1062,18 @@ describe("personal annual membership billing", () => {
       registered,
     };
   }
+  it("allows rolling business terms without a season and preserves fixed sports renewals", async()=>{
+    const f=await fixture(), billing={months:6,autoRenew:true,renewalMonths:12,automaticInvoices:true};
+    for(const slug of ["bayer04leverkusen","bayer-giants"])
+      expect(()=>f.networks.create(f.owner,{name:slug,slug,billing})).toThrow(/Saisonende/);
+    const n=f.networks.create(f.owner,{name:"Unternehmernetzwerk Leverkusen",slug:"unternehmernetzwerk-leverkusen",billing});
+    f.networks.setAccess(f.owner,n.id,{status:"active"});
+    f.networks.memberPricing(f.owner,n.id,{monthlyNetCents:6900,billing});
+    const order=annualOrder(n,f.registered.user.id,{...f.input,acceptedBillingVersion:n.settings.memberBilling!.version,pdfInvoiceAccepted:true,renewalAccepted:true});
+    expect(order.minimumTermMonths).toBe(6);
+    expect(order.billingPolicy!.renewalDeadline).toBeTruthy();
+    expect(Date.parse(order.billingPolicy!.renewalInvoiceDate!)-Date.parse(order.billingPolicy!.renewalDeadline!)).toBe(86400000);
+  });
   it("shows default 69 euro, records the invoice snapshot and immediately unlocks every function despite open payment", async () => {
     const f = await fixture();
     expect(f.networks.invitationQuote({ invite: f.invite })).toMatchObject({

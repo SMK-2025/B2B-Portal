@@ -644,7 +644,8 @@ export function AdminNetworkWorkspace() {
                   />
                 </label>
                 <details>
-                  <summary>Saison und Rechnungsversand (optional)</summary>
+                  <summary>Abrechnungszeitraum und Rechnungsversand (optional)</summary>
+                  <p>Ohne feste Datumsangaben beginnt die Laufzeit bei der Buchung. Ein fester Zeitraum gilt nur, wenn du ihn ausdrücklich festlegst.</p>
                   <label>
                     Kostenlos bis einschließlich
                     <input type="date" name="billingFreeUntil" />
@@ -657,11 +658,11 @@ export function AdminNetworkWorkspace() {
                     Kostenpflichtig bis einschließlich
                     <input type="date" name="billingPaidThrough" />
                   </label>
-                  <label>
+                  <label className="billingInlineChoice">
                     <input type="checkbox" name="billingAutoRenew" />
                     Verlängerung um zwölf Monate vereinbaren
                   </label>
-                  <label>
+                  <label className="billingInlineChoice">
                     <input type="checkbox" name="billingAutoInvoices" />
                     Validierte E-Rechnungen automatisch versenden
                   </label>
@@ -679,7 +680,7 @@ export function AdminNetworkWorkspace() {
                     defaultValue="individual"
                   >
                     <option value="individual">
-                      Mitglieder zahlen selbst – persönliche Jahresrechnung
+                      Mitglieder zahlen selbst – persönliche Rechnung
                     </option>
                     <option value="network">
                       Netzwerk zahlt zentral – keine Zahlung durch Mitglieder

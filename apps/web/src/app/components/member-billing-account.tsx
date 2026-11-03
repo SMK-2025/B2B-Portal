@@ -186,8 +186,7 @@ export function MemberBillingAccount({
             {offer.billing.autoRenew && (
               <p>
                 Automatische Verlängerung um zwölf Monate zum bestätigten
-                Monatspreis. Bei Folgesaison am 01.07. ausschaltbar bis 15.06.
-                einschließlich, Folgerechnung am 16.06.
+                Monatspreis. Ausschaltbar bis einschließlich 16 Kalendertage vor Beginn des Folgezeitraums. Die Folgerechnung ist 15 Tage vor dessen Beginn vorgesehen.
               </p>
             )}
             <label>

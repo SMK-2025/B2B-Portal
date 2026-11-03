@@ -79,7 +79,7 @@ export function annualOrder(
     input.renewalAccepted !== "on"
   )
     throw new BadRequestException(
-      "Bitte die automatische Saisonverlängerung ausdrücklich bestätigen.",
+      "Bitte die automatische Vertragsverlängerung ausdrücklich bestätigen.",
     );
   if (
     !operatorMandate &&
@@ -115,6 +115,8 @@ export function annualOrder(
   const serviceEnd = policy?.paidThrough
     ? berlinMidnight(addCalendarDays(policy.paidThrough, 1))
     : end.toISOString();
+  const renewalStart = policy?.paidThrough ? addCalendarDays(policy.paidThrough, 1)
+    : new Intl.DateTimeFormat("en-CA", {timeZone:"Europe/Berlin",year:"numeric",month:"2-digit",day:"2-digit"}).format(end);
   return {
     id: randomUUID(),
     kind: "member_annual",
@@ -180,14 +182,8 @@ export function annualOrder(
               schedule?.paymentDueDate || addCalendarDays(today, 14),
             autoRenew: policy.autoRenew,
             renewalMonths: policy.renewalMonths,
-            renewalDeadline:
-              policy.autoRenew && policy.paidThrough
-                ? addCalendarDays(addCalendarDays(policy.paidThrough, 1), -16)
-                : null,
-            renewalInvoiceDate:
-              policy.autoRenew && policy.paidThrough
-                ? addCalendarDays(addCalendarDays(policy.paidThrough, 1), -15)
-                : null,
+            renewalDeadline: policy.autoRenew ? addCalendarDays(renewalStart, -16) : null,
+            renewalInvoiceDate: policy.autoRenew ? addCalendarDays(renewalStart, -15) : null,
             automaticInvoices: policy.automaticInvoices,
           },
         }

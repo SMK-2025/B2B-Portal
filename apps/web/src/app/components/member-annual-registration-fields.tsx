@@ -165,7 +165,7 @@ export function MemberAnnualRegistrationFields({
         <p className="registrationPriceTerms">
           Separate Rechnung · keine Online-Abbuchung ·{" "}
           {quote.billing?.autoRenew
-            ? "Saisonverlängerung, im Mitgliedskonto ausschaltbar"
+            ? "Vertragsverlängerung, im Mitgliedskonto ausschaltbar"
             : "keine automatische Verlängerung"}
         </p>
         {onContinue && (
@@ -279,9 +279,7 @@ export function MemberAnnualRegistrationFields({
             Ich stimme der automatischen Verlängerung um jeweils{" "}
             {quote.billing.renewalMonths} Monate zum hier genannten Monatspreis
             zu. Ich kann die Verlängerung bis 16 Kalendertage vor Beginn der
-            Folgesaison im Mitgliedskonto ausschalten. Bei Saisonbeginn am
-            01.07. gilt der 15.06. einschließlich; die Folgerechnung wird am
-            16.06. versendet.
+            nächsten Vertragslaufzeit im Mitgliedskonto ausschalten. Die Folgerechnung ist 15 Kalendertage vor deren Beginn vorgesehen.
           </span>
         </label>
       )}

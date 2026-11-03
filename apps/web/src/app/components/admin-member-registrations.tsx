@@ -285,8 +285,7 @@ export function AdminMemberRegistrations() {
               <small>
                 Netto pro Monat × Laufzeit, zzgl. 19 % MwSt. Änderungen gelten
                 für neu bestätigte Buchungen. Versand 15 Tage vor Ende der
-                kostenlosen Nutzung, Zahlungsziel 14 Tage. Bei Folgesaison am
-                01.07.: Verlängerung ausschaltbar bis 15.06., Rechnung am 16.06.
+                kostenlosen Nutzung, Zahlungsziel 14 Tage. Verlängerungsfristen richten sich nach dem vereinbarten Vertragszeitraum.
               </small>
               <button disabled={busy}>Abrechnung speichern</button>
             </form>

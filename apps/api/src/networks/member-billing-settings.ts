@@ -4,6 +4,7 @@ import type { NetworkRecord } from "../core/domain";
 import { calendarDate, addCalendarDays } from "./invoice-schedule";
 export function memberBillingSettings(
   input: unknown,
+  slug?: string,
 ): NonNullable<NetworkRecord["settings"]["memberBilling"]> {
   if (!input || typeof input !== "object" || Array.isArray(input))
     throw new BadRequestException("Ungültige Abrechnungseinstellungen.");
@@ -37,9 +38,10 @@ export function memberBillingSettings(
     throw new BadRequestException(
       "Bitte zusammenhängenden Zeitraum nach der kostenlosen Nutzung angeben.",
     );
-  if (b.autoRenew === true && (!paidThrough || renewalMonths !== 12))
+  const sport = slug === "bayer04leverkusen" || slug === "bayer-giants";
+  if (b.autoRenew === true && (renewalMonths !== 12 || (sport && !paidThrough)))
     throw new BadRequestException(
-      "Automatische Saisonverlängerung benötigt ein festes Saisonende und zwölf Folgemonate.",
+      sport ? "Für die Saisonverlängerung bitte ein Saisonende und zwölf Folgemonate angeben." : "Die automatische Verlängerung beträgt zwölf Monate.",
     );
   if (paidFrom && paidThrough) {
     const start = new Date(paidFrom + "T12:00:00Z");

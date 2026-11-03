@@ -706,13 +706,13 @@ export function NetworkModuleWorkspace({
       </div>
       {board ? <NetworkBoardPager key={JSON.stringify([slug,query,filter])} empty={<p className="boardNoStories">{items.length ? "Keine passenden Beiträge. Ändere die Suche oder den Filter." : "Das Brett ist noch leer. Hier erscheinen die Neuigkeiten aus deinem Netzwerk."}</p>}>
         {visible.map((item,index) => {
-          const image=item.data.imageUrl || item.data.coverImageUrl;
+          const image=item.data.boardImageUrl || item.data.imageUrl || item.data.coverImageUrl;
           const welcome=typeof item.data.welcomeMembershipId === "string";
           const date=new Date(item.createdAt || item.updatedAt);
           return <article className={`loungeBoardNote loungeBoardNote${index%3} boardPaperStory`} key={item.id}>
             <span className="loungeBoardPin" aria-hidden="true"/>
             <button className="boardStoryOpen" type="button" onClick={()=>welcome ? router.push(`/portal/netzwerk/${slug}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never) : setThreadId(item.id)}>
-              {image && <img src={image} alt="" loading="lazy"/>}
+              {image && <img src={image} style={item.data.boardImageIsLogo ? {objectFit:"contain",background:"white"} : undefined} alt="" loading="lazy"/>}
               <div className="boardStoryText">
                 <div className="boardStoryMeta"><span>{welcome ? "Neues Mitglied" : item.data.category==="Neuigkeit des Initiators" ? "Netzwerkleitung" : item.data.category || "Netzwerkbeitrag"}</span><time dateTime={date.toISOString()}>{date.toLocaleDateString("de-DE",{day:"numeric",month:"short",year:"numeric"})}</time></div>
                 {item.status!=="published" && <small>{labels[item.status]}</small>}

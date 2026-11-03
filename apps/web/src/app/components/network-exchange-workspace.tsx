@@ -40,6 +40,8 @@ type Thread = {
   data: {
     discussionOpen?: boolean;
     imageUrl?: string | null;
+    boardImageUrl?: string;
+    boardImageIsLogo?: boolean;
     messages?: Message[];
     options?: string;
     votes?: Record<string, number>;
@@ -319,10 +321,11 @@ export function NetworkThreadDialog({
           <>
             <div className="networkExchangeMessages">
               <article className="networkExchangeIntro">
-                {thread.data.imageUrl && (
+                {(thread.data.boardImageUrl || thread.data.imageUrl) && (
                   <img
                     className="networkArticlePhoto"
-                    src={thread.data.imageUrl}
+                    src={thread.data.boardImageUrl || thread.data.imageUrl || undefined}
+                    style={thread.data.boardImageIsLogo ? {objectFit:"contain",background:"white"} : undefined}
                     alt="Beitragsfoto"
                   />
                 )}

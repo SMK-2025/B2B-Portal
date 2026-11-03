@@ -154,6 +154,12 @@ describe("personal annual membership billing", () => {
     expect(f.store.notifications.filter(n=>n.type==="network.member.welcome")).toMatchObject([{userId:f.registered.user.id,data:{networkId:id}}]);
     const feed=f.networks.listContent(f.member,id,"noticeboard");
     expect(feed.some(item=>item.title==="Neu im Netzwerk: Neue Firma")).toBe(true);
+    const welcome = feed.find(item=>item.title==="Neu im Netzwerk: Neue Firma")!;
+    expect(welcome.data.boardImageUrl).toBeTruthy();
+    const company = [...f.store.organizations.values()].find(o=>o.networkProfile?.contactEmail==="referred@example.test")!;
+    company.networkProfile!.logoUrl = "https://example.test/firmenlogo.png";
+    expect(f.networks.listContent(f.member,id,"noticeboard").find(i=>i.id===welcome.id)?.data).toMatchObject({boardImageUrl:company.networkProfile!.logoUrl,boardImageIsLogo:true});
+    expect(f.networks.dashboard(f.member,id).announcements.find(i=>i.id===welcome.id)?.data.boardImageUrl).toBe(company.networkProfile!.logoUrl);
     expect(feed.every(item=>item.networkId===id && item.data.kind!=="network_invitation")).toBe(true);
   });
   it("waives a commissioned order only before invoice issuance", async () => {

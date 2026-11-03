@@ -400,7 +400,7 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                         Date.parse(item.createdAt || item.updatedAt) <
                         7 * 86400000 && <b>Neu</b>}
                     </div>
-                    {itemImage(item) && <img src={itemImage(item)} alt="" />}
+                    <img src={String(item.data.boardImageUrl || itemImage(item) || data.network.settings?.bannerImageUrl || "/images/network-meeting-club.webp")} style={item.data.boardImageIsLogo ? {objectFit:"contain",background:"white"} : undefined} alt="" />
                     <h3>{item.title}</h3>
                     <p>{item.description}</p>
                     <div className="loungeNoteBottom">

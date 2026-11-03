@@ -2746,6 +2746,20 @@ export class NetworksService {
     return membership;
   }
 
+  private boardPresentation(item: NetworkContentRecord): NetworkContentRecord {
+    if (item.type !== "topic" && item.type !== "announcement") return item;
+    const network = this.raw(item.networkId);
+    const membership = typeof item.data.welcomeMembershipId === "string"
+      ? this.store.networkMemberships.find(m => m.id === item.data.welcomeMembershipId && m.networkId === item.networkId && m.status === "active")
+      : undefined;
+    const profile = membership && this.store.organizations.get(membership.organizationId)?.networkProfile;
+    const logo = profile?.status === "published" && profile.logoUrl;
+    const image = logo || item.data.imageUrl || item.data.coverImageUrl || network.settings.bannerImageUrl ||
+      (network.slug === "unternehmernetzwerkleverkusen" ? "/images/leverkusen-skyline.webp" :
+        network.slug === "bayer-giants" ? "/images/network-meeting-sport.webp" : "/images/network-meeting-club.webp");
+    return { ...item, data: { ...item.data, boardImageUrl: image, boardImageIsLogo: Boolean(logo) } };
+  }
+
   listContent(
     authorization: string | undefined,
     networkId: string,
@@ -2772,7 +2786,7 @@ export class NetworksService {
                 item.id,
               ),
             }
-          : item,
+          : board ? this.boardPresentation(item) : item,
       )
       .sort((a, b) => board ? b.createdAt.localeCompare(a.createdAt) : b.updatedAt.localeCompare(a.updatedAt));
   }
@@ -3537,7 +3551,7 @@ export class NetworksService {
               item.data.category === "Neuigkeit des Initiators"),
         )
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-        .slice(0, 6),
+        .slice(0, 6).map(item => this.boardPresentation(item)),
     };
   }
 
@@ -3905,7 +3919,7 @@ export class NetworksService {
       )
         n.readAt = new Date().toISOString();
     return {
-      ...record,
+      ...this.boardPresentation(record),
       currentUserId: actor.id,
       canEdit:
         record.createdByUserId === actor.id ||

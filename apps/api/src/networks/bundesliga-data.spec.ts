@@ -2,12 +2,40 @@ import { describe, expect, it } from "vitest";
 import {
   officialObjects,
   parseOfficialGames,
+  parseOfficialRound,
+  bundesligaSnapshot,
   parseOfficialTable,
 } from "./bundesliga-data";
 import { BUNDESLIGA_GAMES, BUNDESLIGA_TABLE } from "./bundesliga-schedule";
 const page = (value: unknown) =>
   `<script id="ng-state" type="application/json">${JSON.stringify({ response: { b: value } })}</script>`;
 describe("official Bundesliga data", () => {
+  it("selects only the requested full league round and does not invent a final score", () => {
+    const games = bundesligaSnapshot().round.games.map((g, index) => ({
+      dflDatalibraryCompetitionId: "DFL-COM-000001",
+      dflDatalibrarySeasonId: "DFL-SEA-0001KA",
+      matchday: 8,
+      teams: { home: { nameFull: g.home }, away: { nameFull: g.away } },
+      matchStatus: index ? "FINAL_WHISTLE" : "PRE_MATCH",
+      matchDateFixed: true,
+      plannedKickOff: g.kickoff,
+      score: {
+        home: { fulltime: g.homeScore },
+        away: { fulltime: g.awayScore },
+      },
+    }));
+    const rows = parseOfficialRound(
+      page([...games, { ...games[0], matchday: 9 }]),
+      8,
+    );
+    expect(rows).toHaveLength(9);
+    expect(rows[0].homeScore).toBeNull();
+    expect(rows.find((r) => r.home === "Bayer 04 Leverkusen")).toMatchObject({
+      homeScore: 2,
+      awayScore: 4,
+    });
+    expect(() => parseOfficialRound(page(games.slice(1)), 8)).toThrow();
+  });
   it("reads all matchdays, UTC kickoffs, completed scores and provisional windows", () => {
     const html = page(
       BUNDESLIGA_GAMES.map((game) => ({

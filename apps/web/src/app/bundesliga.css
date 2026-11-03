@@ -1,3 +1,83 @@
+.bundesligaRoundPair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.bundesligaRoundPair > .networkCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 35rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+}
+.bundesligaRoundPair header,
+.bundesligaRoundPair .bundesligaSource {
+  flex: none;
+}
+.bundesligaRoundPair .bundesligaTableScroll,
+.bundesligaRoundGames {
+  min-height: 0;
+  overflow: auto;
+  flex: 1;
+}
+.bundesligaRoundGames {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px 12px;
+}
+.bundesligaRoundGames li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #e2e7ec;
+  padding: 8px 0;
+}
+.bundesligaRoundGames li .gameTeam {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 14px;
+}
+.bundesligaRoundGames li .gameTeam:last-child {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.bundesligaRoundGames li .gameTeamLogo {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+.bundesligaRoundGames li strong {
+  background: #edf1f4;
+  color: #182d3b;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  max-width: 8em;
+}
+.bundesligaRoundPair .bundesligaTableScroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+}
+@media (max-width: 880px) {
+  .bundesligaRoundPair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bundesligaRoundPair > .bundesligaRoundCard {
+    height: auto;
+  }
+  .bundesligaRoundPair > .bundesligaTable {
+    height: min(35rem, 70dvh);
+  }
+}
 .bundesligaHomeCard {
   margin-bottom: 24px;
   overflow: hidden;

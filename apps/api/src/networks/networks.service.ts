@@ -3284,6 +3284,7 @@ export class NetworksService {
       logos: football ? BUNDESLIGA_LOGOS : PROB_LOGOS,
       asOf: football ? bundesligaSnapshot().asOf : PROB_AS_OF,
       fetchedAt: football ? bundesligaSnapshot().fetchedAt : null,
+      ...(football ? { round: bundesligaSnapshot().round } : {}),
       table: football ? bundesligaSnapshot().table : PROB_TABLE,
       tableSourceUrl: football ? BUNDESLIGA_TABLE_SOURCE : PROB_TABLE_SOURCE,
       canManage,

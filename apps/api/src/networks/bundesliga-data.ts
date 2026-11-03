@@ -127,7 +127,128 @@ export function parseOfficialTable(html: string): typeof BUNDESLIGA_TABLE {
     throw new Error("Unvollständige Bundesliga-Tabelle");
   return [...rows.values()].sort((a, b) => a.rank - b.rank);
 }
+type ResultRow = {
+  home: string;
+  away: string;
+  kickoff: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+};
+export function parseOfficialRound(html: string, day: number): ResultRow[] {
+  const rows = new Map<string, ResultRow>();
+  for (const i of officialObjects(html)) {
+    if (
+      i.matchday !== day ||
+      i.dflDatalibraryCompetitionId !== "DFL-COM-000001" ||
+      i.dflDatalibrarySeasonId !== "DFL-SEA-0001KA"
+    )
+      continue;
+    const home = i.teams?.home?.nameFull,
+      away = i.teams?.away?.nameFull;
+    if (
+      !Object.hasOwn(BUNDESLIGA_LOGOS, home) ||
+      !Object.hasOwn(BUNDESLIGA_LOGOS, away)
+    )
+      continue;
+    const final = i.matchStatus === "FINAL_WHISTLE",
+      a = i.score?.home?.fulltime,
+      b = i.score?.away?.fulltime;
+    if (final && (!integer(a, 250) || !integer(b, 250))) continue;
+    rows.set(home, {
+      home,
+      away,
+      kickoff:
+        i.matchDateFixed && Number.isFinite(Date.parse(i.plannedKickOff))
+          ? new Date(i.plannedKickOff).toISOString()
+          : null,
+      homeScore: final ? a : null,
+      awayScore: final ? b : null,
+    });
+  }
+  const result = [...rows.values()];
+  if (
+    result.length !== 9 ||
+    new Set(result.flatMap((row) => [row.home, row.away])).size !== 18
+  )
+    throw Error("Unvollständiger Bundesliga-Spieltag");
+  return result.sort((a, b) =>
+    (a.kickoff || "z").localeCompare(b.kickoff || "z"),
+  );
+}
+const roundUrl = (day: number) =>
+  `https://www.bundesliga.com/de/bundesliga/spieltag/2026-2027/${day}`;
+let round = {
+  day: 8,
+  asOf: "2026-11-03",
+  url: roundUrl(8),
+  games: [
+    {
+      home: "SV Elversberg",
+      away: "1. FSV Mainz 05",
+      kickoff: "2026-10-30T19:30:00.000Z",
+      homeScore: 4,
+      awayScore: 1,
+    },
+    {
+      home: "Bayer 04 Leverkusen",
+      away: "VfB Stuttgart",
+      kickoff: "2026-10-31T14:30:00.000Z",
+      homeScore: 2,
+      awayScore: 4,
+    },
+    {
+      home: "FC Augsburg",
+      away: "Sport-Club Freiburg",
+      kickoff: "2026-10-31T14:30:00.000Z",
+      homeScore: 1,
+      awayScore: 2,
+    },
+    {
+      home: "Borussia Mönchengladbach",
+      away: "SC Paderborn 07",
+      kickoff: "2026-10-31T14:30:00.000Z",
+      homeScore: 0,
+      awayScore: 0,
+    },
+    {
+      home: "SV Werder Bremen",
+      away: "TSG Hoffenheim",
+      kickoff: "2026-10-31T14:30:00.000Z",
+      homeScore: 2,
+      awayScore: 0,
+    },
+    {
+      home: "FC Schalke 04",
+      away: "RB Leipzig",
+      kickoff: "2026-10-31T14:30:00.000Z",
+      homeScore: 0,
+      awayScore: 2,
+    },
+    {
+      home: "FC Bayern München",
+      away: "Borussia Dortmund",
+      kickoff: "2026-10-31T17:30:00.000Z",
+      homeScore: 2,
+      awayScore: 2,
+    },
+    {
+      home: "1. FC Union Berlin",
+      away: "1. FC Köln",
+      kickoff: "2026-11-01T14:30:00.000Z",
+      homeScore: 1,
+      awayScore: 1,
+    },
+    {
+      home: "Eintracht Frankfurt",
+      away: "Hamburger SV",
+      kickoff: "2026-11-01T16:30:00.000Z",
+      homeScore: 3,
+      awayScore: 1,
+    },
+  ] as ResultRow[],
+};
 let snapshot = {
+  round,
   games: BUNDESLIGA_GAMES,
   table: BUNDESLIGA_TABLE,
   asOf: BUNDESLIGA_AS_OF,
@@ -166,7 +287,51 @@ export async function refreshBundesliga() {
           snapshot.table.reduce((sum, r) => sum + r.played, 0)
       )
         throw new Error("Veralteter Bundesliga-Quellstand");
-      snapshot = { games, table, asOf: now.slice(0, 10), fetchedAt: now };
+      const last = Math.max(
+        1,
+        ...games
+          .filter((g) => g.officialGiantsScore !== null)
+          .map((g) => g.matchday),
+      );
+      const candidate = Math.max(
+        last,
+        round.day,
+        ...officialObjects(gamesHtml)
+          .filter(
+            (i) =>
+              i.dflDatalibraryCompetitionId === "DFL-COM-000001" &&
+              i.dflDatalibrarySeasonId === "DFL-SEA-0001KA" &&
+              integer(i.matchday, 34) &&
+              Date.parse(i.matchdayRange?.start) <= Date.now(),
+          )
+          .map((i) => i.matchday),
+      );
+      try {
+        const rows = parseOfficialRound(
+          await officialHtml(roundUrl(candidate)),
+          candidate,
+        );
+        if (
+          candidate > round.day ||
+          rows.filter((g) => g.homeScore !== null).length >=
+            round.games.filter((g) => g.homeScore !== null).length
+        )
+          round = {
+            day: candidate,
+            asOf: now.slice(0, 10),
+            url: roundUrl(candidate),
+            games: rows,
+          };
+      } catch {
+        /* Keep the last complete round and its own timestamp. */
+      }
+      snapshot = {
+        round,
+        games,
+        table,
+        asOf: now.slice(0, 10),
+        fetchedAt: now,
+      };
       nextRefresh = Date.now() + 15 * 60_000;
     } catch {
       // Keep last verified data, including its original timestamp. Never invent results.

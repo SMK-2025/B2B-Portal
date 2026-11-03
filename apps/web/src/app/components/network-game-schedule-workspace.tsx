@@ -29,6 +29,18 @@ export type Game = {
   kickoffConfirmed?: boolean;
 };
 export type Schedule = {
+  round?: {
+    day: number;
+    asOf: string;
+    url: string;
+    games: {
+      home: string;
+      away: string;
+      kickoff: string | null;
+      homeScore: number | null;
+      awayScore: number | null;
+    }[];
+  };
   season: string;
   sourceUrl: string;
   canManage: boolean;
@@ -145,7 +157,12 @@ function BundesligaTable({ data }: { data: Schedule }) {
         . Offizieller Tabellenstand; manuell gepflegte Spielergebnisse verändern
         diese Tabelle nicht.
       </p>
-      <div className="bundesligaTableScroll">
+      <div
+        className="bundesligaTableScroll"
+        tabIndex={0}
+        role="region"
+        aria-label="Tabelle durchblättern"
+      >
         <table>
           <caption className="sr-only">
             {data.competition}-Tabelle Saison {data.season}
@@ -409,7 +426,7 @@ export function NetworkGameScheduleWorkspace() {
           </span>
           <h2>
             {football
-              ? "Mit der Werkself im Gespräch bleiben"
+              ? "Der Bundesliga-Spieltag im Überblick"
               : "Gemeinsam mit den Giants durch die Saison"}
           </h2>
           <p>
@@ -422,7 +439,69 @@ export function NetworkGameScheduleWorkspace() {
           Offizieller Spielplan ↗
         </a>
       </section>
-      {data.table.length > 0 && <BundesligaTable data={data} />}
+      {football ? (
+        <div className="bundesligaRoundPair">
+          <section className="networkCard bundesligaRoundCard">
+            <header>
+              <div>
+                <span>Bundesliga · {data.season}</span>
+                <h2>
+                  {data.round
+                    ? `${data.round.day}. Spieltag`
+                    : "Spieltagsergebnisse"}
+                </h2>
+              </div>
+              {data.round && (
+                <a href={data.round.url} target="_blank" rel="noreferrer">
+                  Offizieller Spieltag ↗
+                </a>
+              )}
+            </header>
+            {data.round ? (
+              <>
+                <p className="bundesligaSource">
+                  Alle Begegnungen · Stand{" "}
+                  {new Date(data.round.asOf + "T12:00:00Z").toLocaleDateString(
+                    "de-DE",
+                  )}
+                </p>
+                <ul
+                  className="bundesligaRoundGames"
+                  tabIndex={0}
+                  aria-label="Begegnungen des Spieltags"
+                >
+                  {data.round.games.map((g) => (
+                    <li key={g.home}>
+                      <Team name={g.home} logos={data.logos} />
+                      <strong>
+                        {g.homeScore !== null && g.awayScore !== null
+                          ? `${g.homeScore} : ${g.awayScore}`
+                          : g.kickoff
+                            ? new Date(g.kickoff).toLocaleString("de-DE", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                timeZone: "Europe/Berlin",
+                              })
+                            : "Termin offen"}
+                      </strong>
+                      <Team name={g.away} logos={data.logos} />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="bundesligaSource">
+                Noch keine Spieltagsdaten verfügbar.
+              </p>
+            )}
+          </section>
+          {data.table.length > 0 && <BundesligaTable data={data} />}
+        </div>
+      ) : (
+        data.table.length > 0 && <BundesligaTable data={data} />
+      )}
       <nav className="gameScheduleFilters" aria-label="Spielplan filtern">
         <button
           className={filter === "upcoming" ? "active" : ""}

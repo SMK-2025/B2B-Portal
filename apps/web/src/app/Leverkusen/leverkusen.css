@@ -1,23 +1,17 @@
-.levLanding{max-width:1240px;margin:auto;padding:32px clamp(16px,4vw,52px) 64px;color:#182d40}
-.levHero,.levExample,.levJoin{box-sizing:border-box}
-.levHero{display:grid;grid-template-columns:1.12fr .88fr;background:#152638;color:white;border-radius:22px;overflow:hidden}
-.levHeroText{padding:clamp(26px,5vw,66px)}
-.levLanding .levLabel{display:block;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
-.levLanding h1,.levLanding h2{color:inherit;line-height:1.1;letter-spacing:-.035em;text-wrap:balance;margin:14px 0}
-.levLanding h1{font-size:clamp(2.3rem,4.6vw,4.4rem)}
-.levLanding h2{font-size:clamp(1.7rem,3vw,2.55rem)}
-.levLanding p{color:inherit;line-height:1.6;font-size:1.04rem;margin:12px 0 20px}
-.levLanding small{display:block;line-height:1.5}
-.levHero small{margin-top:10px;color:#d8e1ee}
-.levActions{display:flex;align-items:center;flex-wrap:wrap;gap:12px 22px}.levActions .levLogin{color:white;text-decoration:underline;text-underline-offset:4px}
-.levPhoto{background:linear-gradient(90deg,#15263833,transparent 45%),url('/images/leverkusen-skyline.webp') 80% center/cover}
-.levLanding .levButton{display:inline-flex;gap:16px;align-items:center;justify-content:center;min-height:46px;text-decoration:none;background:#fff;color:#243255;font-weight:650;border-radius:10px;padding:0 18px}
-.levLanding .levButton:hover{text-decoration:underline}
-.levExample,.levJoin{display:grid;align-items:start;gap:clamp(24px,5vw,66px);padding:clamp(28px,5vw,64px) 0}
-.levExample{grid-template-columns:1fr 1fr}.levExample ol{counter-reset:steps;list-style:none;padding:0;margin:0}
-.levExample li{counter-increment:steps;border-top:1px solid #dce2eb;position:relative;padding:14px 0 0 38px}
-.levExample li:before{content:"0" counter(steps);position:absolute;left:0;color:#4658a9;font-weight:650}
-.levExample li p{margin:5px 0 16px}
-.levJoin{grid-template-columns:1fr auto;align-items:center;padding:clamp(20px,4vw,42px);background:#edf0fb;border-radius:18px}
-.levJoin .levButton{background:#34449c;color:#fff}.levJoin small{color:#455467}
-@media(max-width:720px){.levHero,.levExample,.levJoin{grid-template-columns:1fr}.levPhoto{min-height:160px}.levJoin .levButton{justify-self:start}}
+.levLanding{--ink:#103638;--cream:#fbf8f1;--line:#cddad4;background:var(--cream);color:var(--ink)}
+.levLanding *{box-sizing:border-box}.levWrap{width:min(1160px,calc(100% - clamp(36px,8vw,112px)));margin-inline:auto}
+.levLanding h1,.levLanding h2,.levLanding h3{color:inherit;line-height:1.09;text-wrap:balance;letter-spacing:-.035em;margin:0}
+.levLanding h1,.levLanding h2{font-family:Georgia,serif;font-weight:500}.levLanding h1{font-size:clamp(2.7rem,5.4vw,5.4rem);max-width:17ch}.levLanding h2{font-size:clamp(2.1rem,4vw,3.6rem);max-width:27ch}.levLanding h3{font-size:clamp(1.24rem,1.8vw,1.52rem);margin-top:18px}
+.levLanding p{font-size:1.04rem;line-height:1.62;color:inherit;margin:14px 0 0}.levLanding .levLabel,.levCases article>span{display:block;font:700 .8rem/1.4 system-ui;letter-spacing:.11em;text-transform:uppercase;margin-bottom:16px}
+.levLanding .levHero{padding:clamp(66px,8vw,124px) 0;color:white;background:linear-gradient(90deg,#052225f2,#052225ba 44%,transparent 88%),url('/images/leverkusen-skyline.webp') center 55%/cover}.levHero p{max-width:55ch;color:#f3f7f4}.levHero .levLabel,.levPractice .levLabel{color:#ffcf9c}
+.levActions{display:flex;flex-wrap:wrap;align-items:center;gap:16px 26px;margin-top:28px}.levActions a:not(.levButton){color:inherit;text-underline-offset:4px;text-decoration:underline}
+.levLanding a.levButton{display:inline-flex;align-items:center;justify-content:center;padding:13px 22px;background:var(--ink);color:white;text-decoration:none;font-weight:700;border-radius:7px}.levLanding .levHero .levButton{background:#ffcd9b;color:#192e2d}.levLanding a.levButton:hover{filter:brightness(.9)}
+.levGuide{background:white;border-bottom:1px solid var(--line)}.levGuide .levWrap{display:flex;flex-wrap:wrap;gap:0 28px}.levGuide a{padding:13px 0;font-weight:600;color:var(--ink);text-decoration:none}.levGuide a:hover{text-decoration:underline}.levLanding section[id]{scroll-margin-top:100px}
+.levSection{padding-block:clamp(46px,6vw,88px)}.levLead{max-width:72ch}.levBenefits,.levCases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:36px}
+.levBenefits article{background:white;border:1px solid var(--line);border-top:3px solid #318180;border-radius:4px 4px 12px 12px;padding:clamp(20px,2vw,30px)}.levTag{display:flex;align-items:center;gap:10px;font-weight:650}.levTag b{color:#346965;font-family:monospace}
+.levPractice{background:#133d3d;color:#fff}.levCases article{border-top:1px solid #779794;padding-top:22px}.levCases article>span{color:#ffcf9c}.levCases p{color:#e3ece8}
+.levJoin{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,6vw,84px)}.levJoin .levButton{margin-top:22px}.levJoin ol{counter-reset:step;list-style:none;margin:0;padding:0}.levJoin li{counter-increment:step;position:relative;border-bottom:1px solid var(--line);padding:0 0 18px 46px;margin-bottom:18px}.levJoin li:before{content:"0" counter(step);position:absolute;left:0;top:0;color:#346965;font:bold 1.2rem Georgia,serif}.levJoin li p{margin-top:5px}
+.levFaq{background:#eaf0eb}.levFaq h2{margin-bottom:24px}.levFaq details{border-bottom:1px solid #b9cbc3;padding:16px 0}.levFaq summary{cursor:pointer;font-weight:650}.levFaq details p{max-width:75ch}
+.levLanding :is(a,summary):focus-visible{outline:3px solid #c16c33;outline-offset:3px}
+@media(max-width:880px){.levBenefits{grid-template-columns:repeat(2,minmax(0,1fr))}.levCases{grid-template-columns:1fr}}
+@media(max-width:620px){.levLanding .levHero{background-position:68% center;background-image:linear-gradient(90deg,#052225f2,#052225ad),url('/images/leverkusen-skyline.webp')}.levBenefits,.levJoin{grid-template-columns:1fr}.levBenefits{gap:14px}.levGuide .levWrap{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.levGuide a{font-size:.92rem}.levActions{gap:18px}}

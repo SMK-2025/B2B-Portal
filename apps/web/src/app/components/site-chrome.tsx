@@ -12,6 +12,14 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  return <><aside className="networkPitch" aria-label="Eigenes Netzwerkportal"><div className="networkPitchInner"><div>
+    <span>White-Label-Netzwerkportal</span>
+    <h2>Du bringst Menschen zusammen. Warum nicht auch zwischen den Treffen?</h2>
+    <p>Gib deinem Netzwerk ein eigenes Portal – mit eurem Namen, eurem Logo und euren Farben. Dort finden Mitglieder den richtigen Kontakt, teilen Angebote und verabreden sich zum nächsten Treffen. Ihr gestaltet das Netzwerk, wir betreiben die Technik.</p>
+  </div><a className="v2Button" href="mailto:service@b2b-matching.de?subject=Eigenes%20White-Label-Netzwerkportal%20anfragen">Eigenes Netzwerkportal anfragen <span aria-hidden="true">→</span></a></div></aside><FooterLinks/></>;
+}
+
+function FooterLinks() {
   return <footer className="v2Footer"><div className="v2FooterTop"><div><Logo/><p>Das Partnerportal für Netzwerke, die aus Mitgliedern eine aktive Gemeinschaft und aus Kontakten echte Zusammenarbeit machen.</p></div><div><b>Zielgruppen</b>{targetAudiences.slice(0,4).map(item=><Link key={item.href} href={item.href as never}>{item.label}</Link>)}</div><div><b>Weitere Lösungen</b>{targetAudiences.slice(4).map(item=><Link key={item.href} href={item.href as never}>{item.label}</Link>)}</div><div><b>Partnerportal</b><Link href={"/Leverkusen" as never}>B2B-Netzwerk Leverkusen</Link><Link href={'/funktionen' as never}>Funktionen</Link><Link href={'/so-funktionierts' as never}>Einführung</Link><Link href={'/sicherheit' as never}>Sicherheit</Link><Link href="/barrierefreiheit">Barrierefreiheit</Link></div><div><b>Zugang</b><Link href="/anmelden">Anmelden</Link><a href="mailto:service@b2b-matching.de?subject=Partnerportal%20anfragen">Portal anfragen</a></div><div><b>Rechtliches</b><Link href="/impressum">Impressum</Link><Link href="/agb">AGB</Link><Link href="/datenschutz/unternehmen">Datenschutz</Link><Link href="/cookies">Cookies</Link><CookieSettingsButton/></div></div><div className="v2FooterBottom"><span>© 2026 B2B Matching</span><span>Das Netzwerk für Netzwerke.</span></div></footer>;
 }
 

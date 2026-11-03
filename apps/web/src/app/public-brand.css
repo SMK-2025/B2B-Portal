@@ -72,6 +72,14 @@
 @media(max-width:500px){.editorialHero{min-height:780px}.editorialHeroCopy{padding-top:220px}.editorialHero h1{font-size:49px}.editorialHeroCopy>p{font-size:16px}}
 
 /* Originalmarke und zuverlässige mobile Navigation. */
+.v2 .networkPitch{background:linear-gradient(115deg,var(--brand-navy),var(--brand-navy-soft) 60%,var(--brand-petrol-light));color:white;border-top:4px solid var(--brand-lavender);padding:clamp(32px,5vw,72px) clamp(18px,5vw,64px)}
+.networkPitchInner{width:min(100%,1160px);margin:auto;display:flex;align-items:center;justify-content:space-between;gap:clamp(24px,4vw,70px)}
+.networkPitchInner>div{max-width:68ch}.networkPitchInner>div>span{font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-sky-soft)}
+.v2 .networkPitch h2{margin:12px 0;color:white;font-size:clamp(1.8rem,3.5vw,3.2rem);line-height:1.12;letter-spacing:-.03em;text-wrap:balance}
+.v2 .networkPitch p{margin:0;color:var(--brand-sky-soft);font-size:1.04rem;line-height:1.6}
+.v2 .networkPitch a{flex:none;background:white;color:var(--brand-navy);display:inline-flex;align-items:center;gap:12px;justify-content:center;text-align:center}
+.networkPitch a:focus-visible{outline:3px solid var(--brand-sky);outline-offset:4px}
+@media(max-width:800px){.networkPitchInner{flex-direction:column;align-items:flex-start}.v2 .networkPitch a{max-width:100%;box-sizing:border-box}}
 .v2Header{z-index:1000;isolation:isolate;overflow:visible}
 .v2Logo{width:196px!important;height:50px!important;display:flex;align-items:center;overflow:visible}
 .v2Logo img{display:block;width:100%;height:auto;max-height:50px;object-fit:contain}

@@ -164,7 +164,7 @@ describe("personal annual membership billing", () => {
     await f.networks.waiveService(f.owner,id,userId,async()=>{});
     expect(f.store.users.get(userId)?.serviceSetup).toMatchObject({orderId:null,complimentaryAccess:true});
   });
-  it.each(["bayer04leverkusen", "unternehmernetzwerk-leverkusen"])("keeps %s participation requests locked until owner approval and normal booking", async (slug) => {
+  it.each(["bayer04leverkusen", "unternehmernetzwerkleverkusen"])("keeps %s participation requests locked until owner approval and normal booking", async (slug) => {
     const f = await fixture();
     f.store.networkBySlug.delete(f.network.slug);
     f.network.slug = slug;
@@ -1066,7 +1066,7 @@ describe("personal annual membership billing", () => {
     const f=await fixture(), billing={months:6,autoRenew:true,renewalMonths:12,automaticInvoices:true};
     for(const slug of ["bayer04leverkusen","bayer-giants"])
       expect(()=>f.networks.create(f.owner,{name:slug,slug,billing})).toThrow(/Saisonende/);
-    const n=f.networks.create(f.owner,{name:"Unternehmernetzwerk Leverkusen",slug:"unternehmernetzwerk-leverkusen",billing});
+    const n=f.networks.create(f.owner,{name:"Unternehmernetzwerk Leverkusen",slug:"unternehmernetzwerkleverkusen",billing});
     f.networks.setAccess(f.owner,n.id,{status:"active"});
     f.networks.memberPricing(f.owner,n.id,{monthlyNetCents:6900,billing});
     const order=annualOrder(n,f.registered.user.id,{...f.input,acceptedBillingVersion:n.settings.memberBilling!.version,pdfInvoiceAccepted:true,renewalAccepted:true});

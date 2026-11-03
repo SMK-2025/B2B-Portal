@@ -29,7 +29,7 @@ const money = (cents: number) =>
 const date = (value?: string) =>
   value ? value.split("-").reverse().join(".") : "–";
 export function NetworkParticipationRequest({network}:{network:string}) {
-  const local = network === "unternehmernetzwerk-leverkusen";
+  const local = network === "unternehmernetzwerkleverkusen";
   const [step, setStep] = useState(1),
     [busy, setBusy] = useState(false),
     [sent, setSent] = useState(false),

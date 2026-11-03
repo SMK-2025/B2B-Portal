@@ -173,7 +173,7 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
         <img
           src={
             data.network.settings?.bannerImageUrl ||
-            (slug === "unternehmernetzwerk-leverkusen"
+            (slug === "unternehmernetzwerkleverkusen"
               ? "/images/leverkusen-skyline.webp"
               : slug === "bayer-giants"
               ? "/images/network-meeting-sport.webp"

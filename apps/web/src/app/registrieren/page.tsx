@@ -37,13 +37,14 @@ export default function RegistrationPage() {
     [emailLocked, setEmailLocked] = useState(false),
     [networkInviteToken, setNetworkInviteToken] = useState(""),
     [ready, setReady] = useState(false);
-  const acceptsRequests = ["bayer04leverkusen","unternehmernetzwerk-leverkusen"].includes(networkSlug);
+  const acceptsRequests = ["bayer04leverkusen","unternehmernetzwerkleverkusen"].includes(networkSlug);
   const networkRegistration = Boolean(networkSlug && networkInviteToken),
     networkBrand = useNetworkBrand(networkSlug);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setLoginMode(params.get("mode") === "login");
-    setNetworkSlug(params.get("network") || "");
+    const requestedNetwork = params.get("network") || "";
+    setNetworkSlug(requestedNetwork === "unternehmernetzwerk-leverkusen" ? "unternehmernetzwerkleverkusen" : requestedNetwork);
     setInvitedEmail(params.get("email") || "");
     setEmailLocked(Boolean(params.get("email")));
     setNetworkInviteToken(params.get("invite") || "");

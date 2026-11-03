@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title, description, alternates: { canonical: "/Leverkusen" },
   openGraph: { title, description, url: "/Leverkusen", images: ["/images/leverkusen-skyline.webp"] },
 };
-const request = "/registrieren?network=unternehmernetzwerk-leverkusen";
+const request = "/registrieren?network=unternehmernetzwerkleverkusen";
 const login = request + "&mode=login";
 
 const benefits = [

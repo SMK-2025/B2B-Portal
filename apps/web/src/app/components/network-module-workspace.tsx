@@ -7,6 +7,7 @@ import {
   downloadPartnerFile,
 } from "./network-exchange-workspace";
 import { useNetworkAccess } from "./network-shell";
+import { useRouter } from "next/navigation";
 
 type ContentType =
   "event" | "topic" | "task" | "document" | "conversation" | "need" | "service";
@@ -158,6 +159,8 @@ export function NetworkModuleWorkspace({
   slug: string;
 }) {
   const config = configs[module];
+  const board = module === "themen";
+  const router = useRouter();
   const access = useNetworkAccess();
   const [networkId, setNetworkId] = useState("");
   const [items, setItems] = useState<Item[]>([]);
@@ -242,7 +245,7 @@ export function NetworkModuleWorkspace({
       );
       setItems(
         await portalRequest<Item[]>(
-          `/networks/${access.networkId}/content?type=${config.type}`,
+          `/networks/${access.networkId}/content?type=${board ? "noticeboard" : config.type}`,
           { token },
         ),
       );
@@ -643,10 +646,10 @@ export function NetworkModuleWorkspace({
 
   return (
     <div className="networkFunctionalWorkspace">
-      <section className="networkModulePurpose">
+      {!board && <section className="networkModulePurpose">
         <strong>Gemeinsam mehr erreichen</strong>
         <p>{config.purpose}</p>
-      </section>
+      </section>}
       <div className="networkMemberToolbar">
         <label>
           <span>⌕</span>
@@ -679,7 +682,7 @@ export function NetworkModuleWorkspace({
           </button>
         )}
       </div>
-      <div className="networkMemberStats">
+      <div className={board ? "boardCounts" : "networkMemberStats"}>
         <button
           className={filter === "Alle" ? "active" : ""}
           onClick={() => setFilter("Alle")}
@@ -687,7 +690,7 @@ export function NetworkModuleWorkspace({
           <strong>{items.length}</strong>
           <span>Gesamt</span>
         </button>
-        {(["published", "active", "completed"] as const).map((value) => (
+        {(["published", "active", "completed"] as const).filter(value => !board || value === "published").map((value) => (
           <button
             key={value}
             className={filter === labels[value] ? "active" : ""}
@@ -700,7 +703,32 @@ export function NetworkModuleWorkspace({
           </button>
         ))}
       </div>
-      <section className="networkCard">
+      {board ? <section className="boardGallery" aria-label="Beiträge am Schwarzen Brett">
+        {visible.map(item => {
+          const image=item.data.imageUrl || item.data.coverImageUrl;
+          const welcome=typeof item.data.welcomeMembershipId === "string";
+          const date=new Date(item.createdAt || item.updatedAt);
+          return <article className="boardStory" key={item.id}>
+            <button className="boardStoryOpen" type="button" onClick={()=>welcome ? router.push(`/portal/netzwerk/${slug}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never) : setThreadId(item.id)}>
+              {image && <img src={image} alt="" loading="lazy"/>}
+              <div className="boardStoryText">
+                <div className="boardStoryMeta"><span>{welcome ? "Neues Mitglied" : item.data.category==="Neuigkeit des Initiators" ? "Netzwerkleitung" : item.data.category || "Netzwerkbeitrag"}</span><time dateTime={date.toISOString()}>{date.toLocaleDateString("de-DE",{day:"numeric",month:"short",year:"numeric"})}</time></div>
+                {item.status!=="published" && <small>{labels[item.status]}</small>}
+                <h2>{item.title}</h2><p>{item.description}</p>
+                <strong>{welcome ? "Unternehmensseite ansehen" : "Beitrag öffnen"} →</strong>
+              </div>
+            </button>
+            {!welcome && canEditItem(item) && <details className="boardStoryManage"><summary>Beitrag verwalten</summary>
+              <button onClick={()=>{setEditing(item);setDialog(true);}}>Bearbeiten</button>
+              {item.status!=="published" && <button disabled={busy} onClick={()=>void change(item,"published")}>Veröffentlichen</button>}
+              {item.status!=="completed" && <button disabled={busy} onClick={()=>void change(item,"completed")}>Erledigen</button>}
+              {item.status!=="archived" && <button disabled={busy} onClick={()=>void change(item,"archived")}>Archivieren</button>}
+              <button disabled={busy} onClick={()=>void remove(item)}>Löschen</button>
+            </details>}
+          </article>
+        })}
+        {!visible.length && <p className="boardNoStories">{items.length ? "Keine passenden Beiträge. Ändere die Suche oder den Filter." : "Das Brett ist noch leer. Hier erscheinen die Neuigkeiten aus deinem Netzwerk."}</p>}
+      </section> : <section className="networkCard">
         <header>
           <div>
             <h2>{config.plural}</h2>
@@ -892,7 +920,7 @@ export function NetworkModuleWorkspace({
             )}
           </div>
         )}
-      </section>
+      </section>}
       {canCreate && dialog && (
         <div
           className="networkModalBackdrop"

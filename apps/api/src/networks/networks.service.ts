@@ -2806,16 +2806,13 @@ export class NetworksService {
   ) {
     const user = this.auth.authenticate(authorization);
     this.requireNetworkAccess(user.id, networkId);
-    this.ensureModule(this.raw(networkId), type, user.id);
-    const canSeeAdministrativeContent = this.isNetworkManager(
-      user.id,
-      networkId,
-    );
+    const board = type === "noticeboard";
+    this.ensureModule(this.raw(networkId), board ? "topic" : type, user.id);
     return [...this.store.networkContents.values()]
       .filter(
         (item) =>
           item.networkId === networkId &&
-          (!type || item.type === type) &&
+          (board ? item.type === "topic" || (item.type === "announcement" && item.visibility === "members" && ["published","active","completed"].includes(item.status)) : !type || item.type === type) &&
           this.canReadContent(user.id, item) &&
           this.contentModuleAvailable(user.id, item),
       )
@@ -2830,7 +2827,7 @@ export class NetworksService {
             }
           : item,
       )
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      .sort((a, b) => board ? b.createdAt.localeCompare(a.createdAt) : b.updatedAt.localeCompare(a.updatedAt));
   }
 
   createContent(

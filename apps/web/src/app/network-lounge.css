@@ -1,4 +1,22 @@
 /* Shared visual system for all authenticated network workspaces. */
+.boardGallery {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(14px,2vw,24px);align-items:start;padding:clamp(12px,2vw,24px);border:1px solid #d6dfe4;border-radius:18px;background-color:#eef1f3;background-image:radial-gradient(#cdd4d8 1px,transparent 1px);background-size:14px 14px}
+.boardStory:only-child {width:100%;max-width:720px}
+.boardStory {position:relative;min-width:0;overflow:hidden;border:1px solid #dbe2e7;border-top:3px solid var(--network-accent);border-radius:12px;background:white;box-shadow:0 4px 14px #1028390b}
+.boardStory .boardStoryOpen {display:block;width:100%;padding:0;text-align:left;border:0;background:white;color:#182e3d;cursor:pointer;font:inherit}
+.boardStoryOpen:focus-visible {outline:3px solid var(--network-accent);outline-offset:-4px}
+.boardStoryOpen img {display:block;width:100%;aspect-ratio:2.35;object-fit:cover}
+.boardStoryText {padding:18px;display:grid;gap:12px;overflow-wrap:anywhere}
+.boardStoryMeta,.boardCounts {display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.boardStoryMeta {justify-content:space-between;color:#4c5f6b;font-size:14px}
+.boardStoryMeta span {font-weight:650;background:var(--network-soft);border-radius:6px;padding:4px 8px}
+.boardStoryText h2 {margin:0;font-size:clamp(20px,2vw,25px);line-height:1.22}
+.boardStoryText p {margin:0;line-height:1.55;font-size:16px;color:#425766;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.boardStoryText strong {font-size:15px}.boardStoryOpen:hover strong{text-decoration:underline}
+.boardCounts button,.boardStoryManage button {font:inherit;font-size:14px;cursor:pointer;background:white;color:#294150;border:1px solid #d6dfe4;border-radius:8px;padding:8px 12px}
+.boardCounts button.active {border-color:var(--network-accent);background:var(--network-soft)}.boardCounts strong{margin-right:6px}
+.boardStoryManage {padding:10px 18px;border-top:1px solid #e6ebee;font-size:14px}
+.boardStoryManage summary {cursor:pointer}.boardStoryManage button{margin:8px 4px 0 0}
+.boardNoStories {grid-column:1/-1;margin:0;background:white;border-radius:8px;padding:18px}
 .networkPortal.networkHorizontal { display:block; }
 .networkHorizontal > .networkSidebar { display:none; }
 .networkHorizontal .networkMain { width:100%; min-width:0; margin:0; }

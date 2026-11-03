@@ -152,6 +152,9 @@ describe("personal annual membership billing", () => {
     f.networks.updateOwnProfile(token,id,profile);
     f.networks.updateOwnProfile(token,id,profile);
     expect(f.store.notifications.filter(n=>n.type==="network.member.welcome")).toMatchObject([{userId:f.registered.user.id,data:{networkId:id}}]);
+    const feed=f.networks.listContent(f.member,id,"noticeboard");
+    expect(feed.some(item=>item.title==="Neu im Netzwerk: Neue Firma")).toBe(true);
+    expect(feed.every(item=>item.networkId===id && item.data.kind!=="network_invitation")).toBe(true);
   });
   it("waives a commissioned order only before invoice issuance", async () => {
     const f=await fixture(), id=f.network.id, {userId}=f.networks.createServiceMember(f.owner,id,{...f.input,firstName:"Eva",lastName:"Gast",email:"free@example.test",reference:"Auftrag 1",central:false,confirmed:true});

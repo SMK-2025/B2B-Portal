@@ -163,6 +163,16 @@ export class OrganizationsService {
         updatedAt: now,
       });
       if (invitation) invitation.data.usedAt = now;
+      const referrer = invitation?.data.referrer;
+      if(typeof referrer==="string" && referrer!==user.id && this.store.networkMemberships.some(m=>m.networkId===requestedNetwork.id && m.userId===referrer && m.status==="active" && m.role!=="visitor" && m.organizationId!==organization.id)) {
+        const id="referral:"+requestedNetwork.id+":"+user.id, credit=!centrallyFunded && requestedNetwork.settings.billingMode!=="cooperation_free";
+        if (!this.store.notifications.some(n=>n.id===id)) this.store.notifications.push({
+          id, userId:referrer, type:"network.referral.success",createdAt:now,readAt:null,
+          data:{networkId:requestedNetwork.id,creditMonths:credit?1:0,title:credit?
+            "Empfehlung erfolgreich: Ein Freimonat für deine nächste Netzwerkrechnung wurde gutgeschrieben.":
+            "Empfehlung erfolgreich: Ein neues Mitglied ist dem Netzwerk beigetreten."}
+        });
+      }
       if (centrallyFunded)
         enqueueOperatorMail(
           this.store,

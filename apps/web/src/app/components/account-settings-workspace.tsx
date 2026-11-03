@@ -16,10 +16,12 @@ export function AccountSettingsWorkspace({
       email: string;
       pendingEmail: string | null;
       emailMfa: boolean;
+      welcomeMail: boolean;
     } | null>(null),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [done, setDone] = useState(false);
+  const [credits,setCredits]=useState<{network:string;available:number;redeemed:number}[]|null>(null);
   const [challenge, setChallenge] = useState("");
   async function load() {
     const token = getPortalSession();
@@ -29,6 +31,7 @@ export function AccountSettingsWorkspace({
     }
     try {
       setAccount(await portalRequest("/auth/account", { token, body: {} }));
+      setCredits(await portalRequest("/networks/account/referral-balance",{token}));
     } catch (e) {
       setNotice(
         e instanceof Error
@@ -101,6 +104,12 @@ export function AccountSettingsWorkspace({
   return (
     <div className="networkFunctionalWorkspace accountSecuritySettings">
       <MemberBillingAccount />
+      <section className="networkCard accountSecurityCard"><header><h2>Meine Empfehlungen</h2></header>
+        {credits===null ? <p>Guthaben nicht geladen.</p> : credits.length ? credits.map((c,i)=><p key={i}>{c.network}: {c.available} Freimonat(e) verfügbar · {c.redeemed} verrechnet</p>) : <p>Aktuell kein Freimonat vorgemerkt.</p>}
+        {account && <label><input type="checkbox" checked={account.welcomeMail} disabled={busy} onChange={async e=>{
+          const enabled=e.target.checked;setBusy(true);try{setAccount(await portalRequest("/auth/account/welcome-mail",{token:getPortalSession()||"",body:{enabled}}));}catch{setNotice("Einstellung konnte nicht gespeichert werden.");}finally{setBusy(false);}
+        }}/> Per E-Mail über neue Unternehmensseiten in meinen Netzwerken informieren</label>}
+      </section>
       {account && (
         <section className="networkCard accountSecurityCard">
           <header>

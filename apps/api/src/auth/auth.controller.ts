@@ -4,6 +4,9 @@ import { AuthService } from "./auth.service";
 @Controller("auth")
 export class AuthController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
+  @Post("account/welcome-mail") welcomeMail(@Headers("authorization") auth:string|undefined,@Body() b:Record<string,unknown>) {
+    return this.auth.welcomeMail(auth,b.enabled);
+  }
   @Post("account") account(@Headers("authorization") authorization?: string) {
     return this.auth.account(authorization);
   }

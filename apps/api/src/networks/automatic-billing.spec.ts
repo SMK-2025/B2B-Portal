@@ -11,6 +11,7 @@ function fixture() {
     queue = Promise.resolve();
   const unsafe = async (query: string, args: any[] = []) => {
     if (query.includes("pg_advisory")) return [];
+    if (query.startsWith("INSERT INTO b2b_referral_redemptions")) return [{credit_id: args[0]}];
     if (query.startsWith("SELECT id")) return row ? [{ id: row.id }] : [];
     if (query.includes("nextval")) return [{ n: String(++counter) }];
     if (query.startsWith("INSERT")) {
@@ -49,7 +50,8 @@ function fixture() {
     },
   };
   const send = vi.fn().mockResolvedValue(undefined),
-    service = new AutomaticBillingService(new PortalStore(), {
+    store = new PortalStore(),
+    service = new AutomaticBillingService(store, {
       sendInvoice: send,
     } as unknown as EmailService);
   (service as any).sql = sql;
@@ -60,9 +62,19 @@ function fixture() {
   } as NetworkOrderRecord;
   const issue = () =>
     (service as any).issue(order, "2027-01-16") as Promise<void>;
-  return { issue, send, row: () => row, count: () => counter };
+  return { store, order, issue, send, row: () => row, count: () => counter };
 }
 describe("automatic invoice delivery safeguards", () => {
+  it.each([1,5,8])("applies at most the billed months, without changing the contract (%s credits)", async credits=>{
+    vi.spyOn(generator,"zugferdInvoice").mockResolvedValue(new Uint8Array([1]));
+    const f=fixture();Object.assign(f.order,{networkId:"n",orderedByUserId:"u",monthlyNetCents:6900,minimumTermMonths:5,annualNetCents:34500,serviceEndsAt:"2027-07-01"});
+    f.store.networks.set("n",{settings:{memberPaymentModel:"individual"}} as never);
+    for(let i=0;i<credits;i++) f.store.notifications.push({id:String(i),userId:"u",type:"network.referral.success",data:{creditMonths:1,networkId:"n"},createdAt:"",readAt:null});
+    await f.issue();await f.issue();
+    const net=Math.max(0,5-credits)*6900;
+    expect(f.row().payload).toMatchObject({referralMonths:Math.min(credits,5),order:{grossCents:net+Math.round(net*.19),serviceEndsAt:"2027-07-01"}});
+    expect(f.order.annualNetCents).toBe(34500); expect(f.send).toHaveBeenCalledTimes(1);
+  });
   it("reserves one number and sends once even for concurrent attempts", async () => {
     vi.spyOn(generator, "zugferdInvoice").mockResolvedValue(
       new Uint8Array([1]),

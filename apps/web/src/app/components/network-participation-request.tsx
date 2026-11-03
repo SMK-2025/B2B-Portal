@@ -99,6 +99,7 @@ export function NetworkParticipationRequest() {
           ...consents,
           network: "bayer04leverkusen",
           offerVersion: offer.version,
+          referral: new URLSearchParams(window.location.search).get("ref"),
         },
       });
       setSent(true);

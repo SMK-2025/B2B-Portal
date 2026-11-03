@@ -30,6 +30,7 @@ export function ServiceMemberForm({
   cancel: () => void;
 }) {
   const [q, setQ] = useState<Quote | null>(null),
+    [complimentary, setComplimentary] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -51,6 +52,7 @@ export function ServiceMemberForm({
         body: {
           ...Object.fromEntries(new FormData(e.currentTarget)),
           central,
+          complimentaryAccess: complimentary,
           confirmed: true,
           acceptedMonthlyNetCents: q.monthlyNetCents,
           acceptedBillingVersion: q.billing?.version || null,
@@ -89,7 +91,14 @@ export function ServiceMemberForm({
           {field("legalName", "Unternehmen / Rechnungsempfänger")}
           {field("websiteUrl", "Firmenhomepage (optional)", "url", false)}
           {field("reference", "Auftragsnachweis (z. B. E-Mail vom …)")}
-          {!central && (
+          <label className="full">
+            Abrechnung für dieses Mitglied
+            <select value={complimentary ? "free" : "standard"} onChange={e => setComplimentary(e.target.value === "free")}>
+              <option value="standard">{central ? "Netzwerkkonditionen · keine persönliche Rechnung" : "Kostenpflichtig nach Netzwerkkonditionen"}</option>
+              <option value="free">Kostenloser Mitgliedszugang</option>
+            </select>
+          </label>
+          {!central && !complimentary && (
             <>
               {field("invoiceEmail", "Rechnungs-E-Mail", "email")}
               {field("invoiceStreet", "Straße und Hausnummer")}
@@ -99,24 +108,22 @@ export function ServiceMemberForm({
             </>
           )}
           <p className="full">
-            {central
+            {complimentary ? "Beitragsfrei: 0,00 €. Keine Rechnung für die Netzwerknutzung und keine kostenpflichtige Verlängerung." : central
               ? "Keine persönliche Rechnung."
               : `Netzwerknutzung: ${q.months} × ${money(q.monthlyNetCents)} netto, Gesamtpreis ${money(q.grossCents)} inkl. MwSt.`}{" "}
-            {!central &&
+            {!central && !complimentary &&
               q.billing?.paidFrom &&
               `Leistungszeitraum: ${q.billing.paidFrom} bis ${q.billing.paidThrough}.`}{" "}
-            {!central &&
+            {!central && !complimentary &&
               q.billing?.freeUntil &&
               `Kostenfrei bis ${q.billing.freeUntil}.`}{" "}
-            {!central &&
+            {!central && !complimentary &&
               q.billing?.autoRenew &&
               `Verlängerung: ${q.billing.renewalMonths} Monate nach den Netzwerkkonditionen.`}
           </p>
           <label className="legalConsent full">
             <input required type="checkbox" />
-            Ich bestätige als Betreiber den vorliegenden Auftrag zu diesen
-            Konditionen einschließlich Laufzeit, etwaiger Verlängerung und
-            vereinbarter Rechnungszustellung.
+            Ich bestätige als Betreiber den vorliegenden Auftrag zu den angezeigten Konditionen.
           </label>
           <button className="portalPrimary" disabled={busy}>
             Ohne E-Mail anlegen

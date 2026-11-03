@@ -39,6 +39,21 @@ export class OperatorMailService implements OnModuleInit, OnModuleDestroy {
     if (this.running) return;
     this.running = true;
     try {
+      for(const notice of this.store.notifications.filter(n=>n.data.welcomeMail==="pending").slice(0,20)){
+        const post=this.store.networkContents.get(String(notice.data.contentId)), recipient=this.store.users.get(notice.userId),
+          network=post && this.store.networks.get(post.networkId), member=this.store.networkMemberships.find(m=>m.id===post?.data.welcomeMembershipId),
+          org=member && this.store.organizations.get(member.organizationId);
+        if(!post || post.status!=="published" || !recipient?.emailVerifiedAt || !recipient.welcomeMailOptInAt || network?.status!=="active" || member?.status!=="active" || org?.networkProfile?.status!=="published" || !this.store.networkMemberships.some(m=>m.userId===recipient.id && m.networkId===network.id && m.status==="active" && m.role!=="visitor")){
+          notice.data.welcomeMail="skipped"; continue;
+        }
+        notice.data.welcomeMail="sending"; await this.store.persist();
+        try {
+          await this.email.sendNetworkNote(recipient.email,network.name,post.title,post.description,"Unternehmensseite ansehen",
+            "/portal/netzwerk/"+encodeURIComponent(network.slug)+"/mitglieder?profil="+encodeURIComponent(member.id));
+          notice.data.welcomeMail="sent";
+        } catch { notice.data.welcomeMail="failed"; this.logger.warn("Mitglieder-Info konnte nicht bestätigt werden."); }
+        await this.store.persist();
+      }
       const pending = [...this.store.operatorMails.values()]
         .filter((m) => !m.sentAt && Date.parse(m.nextAttemptAt) <= Date.now())
         .slice(0, 20);

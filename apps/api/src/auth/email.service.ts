@@ -39,6 +39,11 @@ export class EmailService {
       ],
     });
   }
+  async sendNetworkNote(to:string,network:string,subject:string,body:string,cta:string,path:string) {
+    const link=this.webUrl()+path;
+    await this.send({to,subject:subject+" · "+network,text:body+"\n\n"+link,
+      html:this.template(this.escape(subject),this.escape(body),this.escape(cta),link,"Dein Netzwerkpartner-Portal")});
+  }
   async sendOperatorInformation(subject: string, text: string) {
     if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
       throw new ServiceUnavailableException(

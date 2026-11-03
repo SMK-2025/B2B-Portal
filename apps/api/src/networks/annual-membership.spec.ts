@@ -112,6 +112,55 @@ describe("personal annual membership billing", () => {
       )[0].reviewPrepared,
     ).toBe(true);
   });
+  it.each([false, true])("hands over an individually free partner without charging anyone (central=%s)", async (central) => {
+    const f = await fixture(), id = f.network.id, email = "gratis@example.test";
+    if (central) f.network.settings.memberPaymentModel = "network";
+    const input = { email, firstName: "Anna", lastName: "Partner", legalName: "Gratisfirma",
+      reference: "Auftrag A-18", confirmed: true, central, complimentaryAccess: true };
+    expect(() => f.networks.createServiceMember(f.member, id, input)).toThrow();
+    const { userId } = f.networks.createServiceMember(f.owner, id, input);
+    expect(f.networks.adminUsers(f.owner, id).users.find(u => u.userId === userId))
+      .toMatchObject({ complimentaryAccess: true, centrallyFunded: false });
+    f.networks.serviceProfile(f.owner, id, userId, {companyName:"Gratisfirma", tagline:"Unser Motto",
+      description:"Wir beraten Geschäftspartner vor Ort.", services:"Beratung", contactName:"Anna Partner",
+      contactEmail:email, contactPosition:"Inhaberin", contactPhone:"01234567", street:"Weg 8",
+      postalCode:"51371",city:"Leverkusen",country:"Deutschland"});
+    const mail = vi.spyOn(f.email, "sendServiceHandover").mockResolvedValue();
+    await f.networks.handoverService(f.owner,id,userId);
+    const password = "Sicher-Testen-2026!";
+    await f.networks.claimService({token:mail.mock.lastCall![3],network:f.network.slug,password,confirmation:password});
+    const auth = "Bearer " + (await f.auth.login({email,password})).token;
+    expect(f.networks.billingOffer(auth,id).complimentaryAccess).toBe(true);
+    expect(f.networks.myBilling(auth,id)).toHaveLength(0);
+    expect(f.store.networkMemberships.find(m => m.userId === userId)).toMatchObject({
+      role:"organization_admin", status:"active", complimentaryAccess:true, centrallyFunded:false });
+    expect(() => f.networks.serviceInvoice(f.owner,id,userId)).toThrow();
+  });
+  it("attributes a confirmed booking once and announces only the published partner page", async () => {
+    const f=await fixture(), id=f.network.id; f.orgs.create(f.member,f.input);
+    const {path}=await f.networks.referral(f.member,id,{});
+    const personal=f.networks.resolveSharedInvitation({invite:new URL(path,"https://test.invalid").searchParams.get("invite"),email:"referred@example.test"});
+    const reg=await f.auth.register({email:"referred@example.test",password:"Pass-Test-2027!",firstName:"Eva",lastName:"Gast",networkInviteToken:personal.invite},true);
+    expect(f.store.notifications.some(n=>n.type==="network.referral.success")).toBe(false);
+    f.auth.verifyEmail(reg.verificationToken);
+    const token="Bearer "+(await f.auth.login({email:"referred@example.test",password:"Pass-Test-2027!"})).token;
+    f.orgs.create(token,{...f.input,legalName:"Neue Firma",networkInviteToken:personal.invite});
+    expect(f.store.notifications.filter(n=>n.type==="network.referral.success")).toMatchObject([{userId:f.registered.user.id,data:{networkId:id,creditMonths:1}}]);
+    expect(f.store.notifications.some(n=>n.type==="network.member.welcome")).toBe(false);
+    const profile={publish:true,companyName:"Neue Firma",tagline:"Hallo Netzwerk",description:"Wir helfen Unternehmen vor Ort.",services:"Persönliche Beratung",
+      street:"Beispielweg 1",postalCode:"51371",city:"Leverkusen",country:"Deutschland",contactName:"Eva Gast",contactPosition:"Inhaberin",contactPhone:"02140000",contactEmail:"referred@example.test"};
+    f.networks.updateOwnProfile(token,id,profile);
+    f.networks.updateOwnProfile(token,id,profile);
+    expect(f.store.notifications.filter(n=>n.type==="network.member.welcome")).toMatchObject([{userId:f.registered.user.id,data:{networkId:id}}]);
+  });
+  it("waives a commissioned order only before invoice issuance", async () => {
+    const f=await fixture(), id=f.network.id, {userId}=f.networks.createServiceMember(f.owner,id,{...f.input,firstName:"Eva",lastName:"Gast",email:"free@example.test",reference:"Auftrag 1",central:false,confirmed:true});
+    await expect(f.networks.waiveService(f.member,id,userId,async()=>{})).rejects.toThrow();
+    await expect(f.networks.waiveService(f.owner,id,userId,async()=>{throw Error("Beleg vorhanden");})).rejects.toThrow();
+    expect(f.store.users.get(userId)?.serviceSetup?.orderId).toBeTruthy();
+    await f.networks.waiveService(f.owner,id,userId,async()=>{});
+    expect(f.store.users.get(userId)?.serviceSetup).toMatchObject({orderId:null,complimentaryAccess:true});
+  });
   it("keeps participation requests locked until owner approval and normal booking", async () => {
     const f = await fixture();
     f.store.networkBySlug.delete(f.network.slug);

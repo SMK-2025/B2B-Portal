@@ -30,6 +30,7 @@ type Row = {
   paidAt?: string | null;
   paymentStatus?: string;
   centrallyFunded?: boolean;
+  complimentaryAccess?: boolean;
   loginCount?: number;
   lastLoginAt?: string | null;
   loginTrackingStartedAt?: string | null;
@@ -374,6 +375,7 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                 <thead>
                   <tr>
                     {[
+                      "Aktionen",
                       "Name",
                       "E-Mail-Adresse",
                       "Letzter Login",
@@ -384,7 +386,6 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                       "Unternehmensprofil",
                       "Zahlung",
                       "Rechnungen",
-                      "Aktionen",
                     ].map((label) => (
                       <th key={label}>{label}</th>
                     ))}
@@ -393,108 +394,6 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.email}>
-                      <td>
-                        {row.name}
-                        {row.company && (
-                          <>
-                            <br />
-                            {row.company}
-                            <br />
-                            {row.affiliation}
-                          </>
-                        )}
-                      </td>
-                      <td>{row.email}</td>
-                      <td>
-                        {row.lastLoginAt
-                          ? new Date(row.lastLoginAt).toLocaleString("de-DE", {
-                              timeZone: "Europe/Berlin",
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            })
-                          : row.loginCount === undefined
-                            ? "–"
-                            : "Noch kein Login erfasst"}
-                      </td>
-                      <td
-                        title={
-                          row.loginTrackingStartedAt
-                            ? `Erfasst seit ${new Date(row.loginTrackingStartedAt).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`
-                            : undefined
-                        }
-                      >
-                        {row.loginCount ?? "–"}
-                      </td>
-                      <td>
-                        {row.role === "network_admin" || row.role === "visitor"
-                          ? "Kostenlos · keine Vertragslaufzeit"
-                          : row.centrallyFunded
-                            ? "Zentrale Abrechnung mit Netzwerk"
-                            : row.startsAt
-                              ? `${date(row.startsAt)} – ${date(row.endsAt)}`
-                              : "Noch keine Buchung"}
-                      </td>
-                      <td>
-                        {states[row.status] || row.status}
-                        {row.service?.sentAt && (
-                          <>
-                            <br />
-                            Zugangsmail:{" "}
-                            {new Date(row.service.sentAt).toLocaleString(
-                              "de-DE",
-                            )}
-                          </>
-                        )}
-                        {row.service?.invoicedAt && (
-                          <>
-                            <br />
-                            Rechnung versendet: {date(row.service.invoicedAt)}
-                          </>
-                        )}
-                      </td>
-                      <td>{roles[row.role] || row.role}</td>
-                      <td>{row.profile}</td>
-                      <td>
-                        {row.paymentStatus === "paid" ? (
-                          <strong style={{ color: "#166534" }}>
-                            ✓ Gezahlt
-                            {row.paidAt && (
-                              <>
-                                <br />
-                                {date(row.paidAt)}
-                              </>
-                            )}
-                          </strong>
-                        ) : row.orderId ? (
-                          row.paymentStatus === "overdue" ? (
-                            "Überfällig"
-                          ) : (
-                            "Offen"
-                          )
-                        ) : row.centrallyFunded ? (
-                          "Netzwerk zahlt zentral"
-                        ) : (
-                          "Keine Buchung"
-                        )}
-                      </td>
-                      <td>
-                        {invoices
-                          .filter((i) =>
-                            (row.orderIds || [row.orderId]).includes(
-                              i.order_id,
-                            ),
-                          )
-                          .map((i) => (
-                            <InvoiceDownload key={i.id} invoice={i} />
-                          ))}
-                        {!invoices.some((i) =>
-                          (row.orderIds || [row.orderId]).includes(i.order_id),
-                        ) &&
-                          (invoiceError ||
-                            (row.centrallyFunded
-                              ? "Siehe Zahlungsdetails des Netzwerks"
-                              : "Noch keine Rechnung erstellt"))}
-                      </td>
                       <td>
                         {row.name !== "Noch nicht registriert" && (
                           <details className="adminUserMenu">
@@ -525,6 +424,16 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                                         ? "Übergabelink erneut senden"
                                         : "Einrichtung abschließen & Zugang senden"}
                                     </button>
+                                  )}
+                                  {row.service.individual && !row.service.invoicedAt && row.paymentStatus !== "paid" && (
+                                    <button disabled={loading} onClick={async () => {
+                                      if (!window.confirm(name + " · " + row.email + ": Diesen Zugang dauerhaft beitragsfrei stellen? Die offene Buchung wird aufgehoben.")) return;
+                                      setLoading(true);
+                                      try { await portalRequest(`/networks/admin/${id}/service-members/${row.userId}/complimentary`, {token:getPortalSession() || "", body:{}});
+                                        await open(); setServiceNotice("Der Mitgliedszugang ist jetzt beitragsfrei.");
+                                      } catch(e) { setServiceNotice(e instanceof Error ? e.message : "Änderung fehlgeschlagen."); }
+                                      finally { setLoading(false); }
+                                    }}>Mitglied beitragsfrei stellen</button>
                                   )}
                                   {row.service.individual && (
                                     <button
@@ -636,6 +545,108 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                             )}
                           </details>
                         )}
+                      </td>
+                      <td>
+                        {row.name}
+                        {row.company && (
+                          <>
+                            <br />
+                            {row.company}
+                            <br />
+                            {row.affiliation}
+                          </>
+                        )}
+                      </td>
+                      <td>{row.email}</td>
+                      <td>
+                        {row.lastLoginAt
+                          ? new Date(row.lastLoginAt).toLocaleString("de-DE", {
+                              timeZone: "Europe/Berlin",
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })
+                          : row.loginCount === undefined
+                            ? "–"
+                            : "Noch kein Login erfasst"}
+                      </td>
+                      <td
+                        title={
+                          row.loginTrackingStartedAt
+                            ? `Erfasst seit ${new Date(row.loginTrackingStartedAt).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`
+                            : undefined
+                        }
+                      >
+                        {row.loginCount ?? "–"}
+                      </td>
+                      <td>
+                        {row.role === "network_admin" || row.role === "visitor"
+                          ? "Kostenlos · keine Vertragslaufzeit"
+                          : row.complimentaryAccess ? "Kostenloser Mitgliedszugang" : row.centrallyFunded
+                            ? "Zentrale Abrechnung mit Netzwerk"
+                            : row.startsAt
+                              ? `${date(row.startsAt)} – ${date(row.endsAt)}`
+                              : "Noch keine Buchung"}
+                      </td>
+                      <td>
+                        {states[row.status] || row.status}
+                        {row.service?.sentAt && (
+                          <>
+                            <br />
+                            Zugangsmail:{" "}
+                            {new Date(row.service.sentAt).toLocaleString(
+                              "de-DE",
+                            )}
+                          </>
+                        )}
+                        {row.service?.invoicedAt && (
+                          <>
+                            <br />
+                            Rechnung versendet: {date(row.service.invoicedAt)}
+                          </>
+                        )}
+                      </td>
+                      <td>{roles[row.role] || row.role}</td>
+                      <td>{row.profile}</td>
+                      <td>
+                        {row.paymentStatus === "paid" ? (
+                          <strong style={{ color: "#166534" }}>
+                            ✓ Gezahlt
+                            {row.paidAt && (
+                              <>
+                                <br />
+                                {date(row.paidAt)}
+                              </>
+                            )}
+                          </strong>
+                        ) : row.orderId ? (
+                          row.paymentStatus === "overdue" ? (
+                            "Überfällig"
+                          ) : (
+                            "Offen"
+                          )
+                        ) : row.complimentaryAccess ? "Beitragsfrei" : row.centrallyFunded ? (
+                          "Netzwerk zahlt zentral"
+                        ) : (
+                          "Keine Buchung"
+                        )}
+                      </td>
+                      <td>
+                        {invoices
+                          .filter((i) =>
+                            (row.orderIds || [row.orderId]).includes(
+                              i.order_id,
+                            ),
+                          )
+                          .map((i) => (
+                            <InvoiceDownload key={i.id} invoice={i} />
+                          ))}
+                        {!invoices.some((i) =>
+                          (row.orderIds || [row.orderId]).includes(i.order_id),
+                        ) &&
+                          (invoiceError ||
+                            (row.complimentaryAccess ? "Keine Rechnung erforderlich" : row.centrallyFunded
+                              ? "Siehe Zahlungsdetails des Netzwerks"
+                              : "Noch keine Rechnung erstellt"))}
                       </td>
                     </tr>
                   ))}

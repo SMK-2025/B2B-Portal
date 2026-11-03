@@ -54,6 +54,9 @@ export class NetworksController {
   ) {
     return this.networks.handoverService(a, n, u);
   }
+  @Post("admin/:n/service-members/:u/complimentary") waiveService(
+    @Headers("authorization") a: string | undefined, @Param("n") n: string, @Param("u") u: string,
+  ) { return this.networks.waiveService(a, n, u, id => this.billing.reserveWaiver(id)); }
   @Post("admin/:n/service-members/:u/invoice") invoiceService(
     @Headers("authorization") a: string | undefined,
     @Param("n") n: string,
@@ -310,6 +313,10 @@ export class NetworksController {
     @Body() body: Record<string, unknown>,
   ) {
     return this.networks.createVisitor(auth, id, body);
+  }
+  @Get("account/referral-balance") balance(@Headers("authorization") a:string|undefined){ return this.billing.referralBalance(this.networks.referralAccountId(a)); }
+  @Post(":n/referral") refer(@Headers("authorization") a:string|undefined,@Param("n") n:string,@Body() b:Record<string,unknown>){
+    return this.networks.referral(a,n,b);
   }
   @Post("admin/:networkId/shared-invitation") sharedInvitation(
     @Headers("authorization") auth: string | undefined,

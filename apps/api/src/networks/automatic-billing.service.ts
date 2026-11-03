@@ -47,6 +47,8 @@ export class AutomaticBillingService
     });
     await this.sql
       .unsafe(`CREATE SEQUENCE IF NOT EXISTS b2b_invoice_sequence START 1;
+      CREATE TABLE IF NOT EXISTS b2b_waived_service_orders (order_id text PRIMARY KEY);
+      CREATE TABLE IF NOT EXISTS b2b_referral_redemptions (credit_id text PRIMARY KEY, order_id text NOT NULL);
       CREATE TABLE IF NOT EXISTS b2b_invoices (
         id text PRIMARY KEY, order_id text UNIQUE NOT NULL, number text UNIQUE NOT NULL,
         payload jsonb NOT NULL, pdf_base64 text, status text NOT NULL DEFAULT 'ready',
@@ -183,6 +185,26 @@ export class AutomaticBillingService
     }
   }
   private readonly manualInFlight = new Set<string>();
+  async referralBalance(userId:string) {
+    const credits=this.store.notifications.filter(n=>n.userId===userId && n.type==="network.referral.success" && n.data.creditMonths===1);
+    const ids=credits.map(n=>n.id);
+    if(ids.length && !this.sql) throw new ServiceUnavailableException("Guthaben ist derzeit nicht abrufbar.");
+    const used=ids.length?(await this.sql!.unsafe("SELECT credit_id FROM b2b_referral_redemptions WHERE credit_id=ANY($1::text[])",[ids])) as {credit_id:string}[]:[];
+    return [...new Set(credits.map(n=>String(n.data.networkId)))].map(networkId=>({
+      network:this.store.networks.get(networkId)?.name || "Netzwerk",
+      available:credits.filter(n=>n.data.networkId===networkId && !used.some(r=>r.credit_id===n.id)).length,
+      redeemed:credits.filter(n=>n.data.networkId===networkId && used.some(r=>r.credit_id===n.id)).length
+    }));
+  }
+  async reserveWaiver(orderId: string) {
+    if (!this.sql || this.manualInFlight.has(orderId)) throw new ConflictException("Rechnungsstatus kann momentan nicht sicher geprüft werden.");
+    await this.sql.begin(async tx => {
+      await tx.unsafe("SELECT pg_advisory_xact_lock(6620427)");
+      if ((await tx.unsafe("SELECT id FROM b2b_invoices WHERE order_id=$1", [orderId])).length)
+        throw new ConflictException("Die Rechnungsstellung wurde bereits ausgelöst.");
+      await tx.unsafe("INSERT INTO b2b_waived_service_orders(order_id) VALUES ($1) ON CONFLICT DO NOTHING", [orderId]);
+    });
+  }
   async dispatchServiceInvoice(order: NetworkOrderRecord, resend: boolean) {
     if (!this.sql || !this.formatValidated || !order.manualServiceInvoice)
       throw new ServiceUnavailableException("Der Rechnungsdienst ist noch nicht bereit. Es wurde keine Rechnung versendet.");
@@ -231,6 +253,8 @@ export class AutomaticBillingService
     await this.store.persist();
     await this.sql.begin(async (tx) => {
       await tx.unsafe("SELECT pg_advisory_xact_lock(6620427)");
+      if (order.manualServiceInvoice && (await tx.unsafe("SELECT order_id FROM b2b_waived_service_orders WHERE order_id=$1", [order.id])).length)
+        throw new ConflictException("Dieser Auftrag ist beitragsfrei.");
       const existing = await tx.unsafe(
         "SELECT id FROM b2b_invoices WHERE order_id=$1",
         [order.id],
@@ -248,6 +272,22 @@ export class AutomaticBillingService
         dueOn,
         order: structuredClone(order),
       };
+      const network=this.store.networks.get(order.networkId);
+      if(network && network.settings.memberPaymentModel!=="network" && network.settings.billingMode!=="cooperation_free" && order.monthlyNetCents>0){
+        let months=0;
+        for(const n of this.store.notifications){
+          if(months>=order.minimumTermMonths) break;
+          if(n.userId!==order.orderedByUserId || n.type!=="network.referral.success" || n.data.networkId!==order.networkId || n.data.creditMonths!==1) continue;
+          if((await tx.unsafe("INSERT INTO b2b_referral_redemptions(credit_id,order_id) VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING credit_id",[n.id,order.id])).length) months++;
+        }
+        if(months){
+          payload.referralMonths=months;
+          const billed=order.minimumTermMonths-months;
+          payload.order.annualNetCents=billed*order.monthlyNetCents;
+          payload.order.vatCents=Math.round(payload.order.annualNetCents*0.19);
+          payload.order.grossCents=payload.order.annualNetCents+payload.order.vatCents;
+        }
+      }
       await tx.unsafe(
         "INSERT INTO b2b_invoices(id,order_id,number,payload) VALUES($1,$2,$3,$4::jsonb)",
         [randomUUID(), order.id, number, JSON.stringify(payload)],

@@ -411,12 +411,19 @@ export class AuthService implements OnModuleInit {
     return { changed: true };
   }
 
+  welcomeMail(auth:string|undefined, enabled:unknown) {
+    const u=this.authenticate(auth);
+    if(typeof enabled!=="boolean") throw new BadRequestException("Ungültige Auswahl.");
+    if(enabled) u.welcomeMailOptInAt=new Date().toISOString(); else delete u.welcomeMailOptInAt;
+    return this.account(auth);
+  }
   account(authorization: string | undefined) {
     const user = this.authenticate(authorization),
       pending = user.pendingEmailChange;
     return {
       ...this.publicUser(user),
       emailMfa: !!user.emailMfa,
+      welcomeMail: !!user.welcomeMailOptInAt,
       pendingEmail:
         pending && Date.parse(pending.expiresAt) > Date.now()
           ? pending.email

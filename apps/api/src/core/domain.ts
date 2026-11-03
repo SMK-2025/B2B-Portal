@@ -33,6 +33,7 @@ export interface UserRecord {
     networkId: string;
     organizationId: string;
     orderId: string | null;
+    complimentaryAccess?: true;
     reference: string;
     createdBy: string;
     createdAt: string;
@@ -43,6 +44,7 @@ export interface UserRecord {
   };
   id: string;
   visitorNetworkId?: string;
+  welcomeMailOptInAt?: string;
   loginCount?: number;
   emailMfa?: boolean;
   lastLoginAt?: string | null;

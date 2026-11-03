@@ -1,6 +1,7 @@
 "use client";
 import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
+import {useSearchParams} from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -104,6 +105,14 @@ export function NetworkMembersWorkspace() {
   useEffect(() => {
     void load();
   }, [networkId]);
+  const openedFromLink = useRef("");
+  const profileId = useSearchParams().get("profil");
+  useEffect(() => {
+    const id = profileId;
+    if (!id || openedFromLink.current === networkId + id) return;
+    const member = members.find(m => m.id === id && m.status === "active" && m.organization?.networkProfile?.status === "published");
+    if (member) { openedFromLink.current = networkId + id; setSelected(member); }
+  }, [members, networkId, profileId]);
   const visible = useMemo(
     () =>
       members.filter(

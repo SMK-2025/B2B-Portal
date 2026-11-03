@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { NetworkOrderRecord } from "../core/domain";
 export type InvoiceData = {
+  referralMonths?: number;
   number: string;
   issuedOn: string;
   dueOn: string;
@@ -139,7 +140,8 @@ export async function invoicePdf(data: InvoiceData): Promise<Uint8Array> {
   write("Netto / Monat", 465, 363, 9, true, true);
   write("Netto", 543, 363, 9, true, true);
   write("Portalnutzung und Vernetzung", 52, 332, 10, true);
-  write(String(o.minimumTermMonths), 384, 332, 10, false, true);
+  if (data.referralMonths) write(`Berücksichtigt: ${data.referralMonths} Freimonat(e) aus Empfehlung`, 52, 314, 9);
+  write(String(o.minimumTermMonths - (data.referralMonths || 0)), 384, 332, 10, false, true);
   write(money(o.monthlyNetCents), 465, 332, 10, false, true);
   write(money(o.annualNetCents!), 543, 332, 10, false, true);
   write("Nettobetrag", 454, 291, 10, false, true);

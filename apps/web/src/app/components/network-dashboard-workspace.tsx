@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -69,6 +70,7 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
     [partners, setPartners] = useState<Partner[]>([]),
     [threadId, setThreadId] = useState<string | null>(null),
     [message, setMessage] = useState("");
+  const router = useRouter();
   const base = `/portal/netzwerk/${slug}`;
   useEffect(() => {
     if(preview)return;
@@ -386,12 +388,12 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                   <button
                     type="button"
                     className={`loungeBoardNote loungeBoardNote${index % 3}`}
-                    onClick={() => setThreadId(item.id)}
+                    onClick={() => typeof item.data.welcomeMembershipId === "string" ? router.push(`${base}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never) : setThreadId(item.id)}
                     key={item.id}
                   >
                     <span className="loungeBoardPin" aria-hidden="true" />
                     <div className="loungeNoteMeta">
-                      <span>Netzwerkleitung · Angepinnt</span>
+                      <span>{typeof item.data.welcomeMembershipId === "string" ? "Neu im Netzwerk" : "Netzwerkleitung · Angepinnt"}</span>
                       {Date.now() -
                         Date.parse(item.createdAt || item.updatedAt) <
                         7 * 86400000 && <b>Neu</b>}

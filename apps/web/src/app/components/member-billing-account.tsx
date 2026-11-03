@@ -42,6 +42,7 @@ export function MemberBillingAccount({
       grossCents: number;
       months: number;
       centrallyFunded: boolean;
+      complimentaryAccess?: boolean;
       billing: {
         version: string;
         freeUntil: string | null;
@@ -145,7 +146,7 @@ export function MemberBillingAccount({
     return (
       <p role="status">
         {notice ||
-          (offer?.centrallyFunded
+          (offer?.complimentaryAccess ? "Dein Mitgliedszugang ist beitragsfrei. Es gibt keine Rechnung für die Netzwerknutzung." : offer?.centrallyFunded
             ? "Dein Netzwerk übernimmt die Kosten. Es gibt keine persönliche Rechnung."
             : "Keine persönlichen Buchungen vorhanden.")}
       </p>

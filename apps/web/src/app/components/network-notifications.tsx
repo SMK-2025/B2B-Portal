@@ -15,6 +15,8 @@ export function NetworkNotifications() {
         createdAt: string;
         data: {
           contentId?: string;
+          welcomeMembershipId?: string;
+          creditMonths?: number;
           connectionId?: string;
           title: string;
           event?: {
@@ -97,6 +99,10 @@ export function NetworkNotifications() {
               key={i.id}
               className={`networkNewsItem ${!i.readAt ? "unread" : ""} ${i.data.event ? "networkNewsEvent" : ""}`}
               onClick={() => {
+                if (i.data.welcomeMembershipId && access) {
+                  setOpen(false); router.push(`/portal/netzwerk/${access.slug}/mitglieder?profil=${encodeURIComponent(i.data.welcomeMembershipId)}` as never); return;
+                }
+                if(i.data.creditMonths !== undefined){setOpen(false);router.push("/portal/konto");return;}
                 if (i.data.contentId) {
                   if (i.data.event && access) {
                     setOpen(false);

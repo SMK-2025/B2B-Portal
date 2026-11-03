@@ -1,4 +1,5 @@
 "use client";
+import { NetworkReferralButton } from "./network-referral-button";
 import { NetworkNotifications } from "./network-notifications";
 import { NetworkSystemMessages } from "./network-system-messages";
 import Link from "next/link";
@@ -218,7 +219,7 @@ function NetworkFrame({
       const token = getPortalSession();
       if (!token) {
         router.replace(
-          `/anmelden?network=${encodeURIComponent(slug)}` as never,
+          `/anmelden?network=${encodeURIComponent(slug)}&redirect=${encodeURIComponent(window.location.pathname+window.location.search)}` as never,
         );
         return;
       }
@@ -489,13 +490,14 @@ function NetworkFrame({
           <div id="network-horizontal-navigation" className={`networkHorizontalNavigation${mobileOpen ? " isOpen" : ""}`}>
             <nav aria-label="Netzwerkbereiche" className="networkPrimaryTabs">
               {visiblePrimary.map((item) => <span key={item.path} onClick={() => setNavPanel(null)}>{itemLink(item)}</span>)}
-              {visibleMore.length > 0 && <button type="button" aria-expanded={navPanel === "more"} onClick={() => setNavPanel(navPanel === "more" ? null : "more")}>Weitere Funktionen ▾</button>}
+              {(visibleMore.length > 0 || (!access.readOnly && access.role !== "platform_admin")) && <button type="button" aria-expanded={navPanel === "more"} onClick={() => setNavPanel(navPanel === "more" ? null : "more")}>Weitere Funktionen ▾</button>}
               {access.isInitiator && <button type="button" className={navPanel === "admin" ? "active" : ""} aria-expanded={navPanel === "admin"} onClick={() => setNavPanel(navPanel === "admin" ? null : "admin")}>Netzwerkverwaltung ▾</button>}
             </nav>
             {navPanel && (navPanel !== "admin" || access.isInitiator) && <nav className="networkSecondaryTabs" aria-label={navPanel === "admin" ? "Netzwerkverwaltung" : "Weitere Funktionen"}>
               {(navPanel === "admin" ? visibleAdmin : visibleMore).map(itemLink)}
               {navPanel === "admin" && slug === "unternehmerfreunde" && <Link href={`${base}/veroeffentlichungen` as never} className={isActive("veroeffentlichungen") ? "active" : ""}>Homepage-Freigaben</Link>}
               <a href="mailto:service@b2b-matching.de">Hilfe & Kontakt</a>
+              {navPanel === "more" && !access.readOnly && access.role !== "platform_admin" && <NetworkReferralButton key={access.networkId} networkId={access.networkId}/>}
             </nav>}
           </div>
           <div

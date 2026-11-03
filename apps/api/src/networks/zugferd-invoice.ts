@@ -32,7 +32,7 @@ export function invoiceXml(d: InvoiceData): string {
     vat = o.vatCents!,
     gross = o.grossCents!;
   if (
-    net !== o.monthlyNetCents * o.minimumTermMonths ||
+    net !== o.monthlyNetCents * (o.minimumTermMonths - (d.referralMonths || 0)) ||
     vat !== Math.round(net * 0.19) ||
     gross !== net + vat
   )
@@ -56,9 +56,9 @@ export function invoiceXml(d: InvoiceData): string {
 <rsm:ExchangedDocument><ram:ID>${xml(d.number)}</ram:ID><ram:TypeCode>380</ram:TypeCode><ram:IssueDateTime><udt:DateTimeString format="102">${date(d.issuedOn)}</udt:DateTimeString></ram:IssueDateTime></rsm:ExchangedDocument>
 <rsm:SupplyChainTradeTransaction><ram:IncludedSupplyChainTradeLineItem>
 <ram:AssociatedDocumentLineDocument><ram:LineID>1</ram:LineID></ram:AssociatedDocumentLineDocument>
-<ram:SpecifiedTradeProduct><ram:Name>Mitgliedszugang B2B Matching</ram:Name><ram:Description>Portalnutzung und Vernetzung</ram:Description></ram:SpecifiedTradeProduct>
+<ram:SpecifiedTradeProduct><ram:Name>Mitgliedszugang B2B Matching</ram:Name><ram:Description>Portalnutzung und Vernetzung${d.referralMonths ? ` · ${d.referralMonths} Freimonat(e) aus Empfehlung` : ""}</ram:Description></ram:SpecifiedTradeProduct>
 <ram:SpecifiedLineTradeAgreement><ram:NetPriceProductTradePrice><ram:ChargeAmount>${amount(o.monthlyNetCents)}</ram:ChargeAmount></ram:NetPriceProductTradePrice></ram:SpecifiedLineTradeAgreement>
-<ram:SpecifiedLineTradeDelivery><ram:BilledQuantity unitCode="MON">${o.minimumTermMonths}</ram:BilledQuantity></ram:SpecifiedLineTradeDelivery>
+<ram:SpecifiedLineTradeDelivery><ram:BilledQuantity unitCode="MON">${o.minimumTermMonths - (d.referralMonths || 0)}</ram:BilledQuantity></ram:SpecifiedLineTradeDelivery>
 <ram:SpecifiedLineTradeSettlement><ram:ApplicableTradeTax><ram:TypeCode>VAT</ram:TypeCode><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>19.00</ram:RateApplicablePercent></ram:ApplicableTradeTax><ram:SpecifiedTradeSettlementLineMonetarySummation><ram:LineTotalAmount>${amount(net)}</ram:LineTotalAmount></ram:SpecifiedTradeSettlementLineMonetarySummation></ram:SpecifiedLineTradeSettlement>
 </ram:IncludedSupplyChainTradeLineItem>
 <ram:ApplicableHeaderTradeAgreement><ram:SellerTradeParty><ram:ID>B2B-MATCHING-MOIG</ram:ID><ram:Name>Media Online Innovations Group, Inhaber: Martin Kelm</ram:Name><ram:PostalTradeAddress><ram:PostcodeCode>51371</ram:PostcodeCode><ram:LineOne>Im Weidenblech 25</ram:LineOne><ram:CityName>Leverkusen</ram:CityName><ram:CountryID>DE</ram:CountryID></ram:PostalTradeAddress><ram:SpecifiedTaxRegistration><ram:ID schemeID="FC">230/5176/2697</ram:ID></ram:SpecifiedTaxRegistration></ram:SellerTradeParty>

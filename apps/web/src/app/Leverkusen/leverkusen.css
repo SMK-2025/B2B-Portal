@@ -1,0 +1,23 @@
+.levLanding{max-width:1240px;margin:auto;padding:32px clamp(16px,4vw,52px) 64px;color:#182d40}
+.levHero,.levExample,.levJoin{box-sizing:border-box}
+.levHero{display:grid;grid-template-columns:1.12fr .88fr;background:#152638;color:white;border-radius:22px;overflow:hidden}
+.levHeroText{padding:clamp(26px,5vw,66px)}
+.levLanding .levLabel{display:block;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.levLanding h1,.levLanding h2{color:inherit;line-height:1.1;letter-spacing:-.035em;text-wrap:balance;margin:14px 0}
+.levLanding h1{font-size:clamp(2.3rem,4.6vw,4.4rem)}
+.levLanding h2{font-size:clamp(1.7rem,3vw,2.55rem)}
+.levLanding p{color:inherit;line-height:1.6;font-size:1.04rem;margin:12px 0 20px}
+.levLanding small{display:block;line-height:1.5}
+.levHero small{margin-top:10px;color:#d8e1ee}
+.levActions{display:flex;align-items:center;flex-wrap:wrap;gap:12px 22px}.levActions .levLogin{color:white;text-decoration:underline;text-underline-offset:4px}
+.levPhoto{background:linear-gradient(90deg,#15263833,transparent 45%),url('/images/network-meeting-economy.webp') center/cover}
+.levLanding .levButton{display:inline-flex;gap:16px;align-items:center;justify-content:center;min-height:46px;text-decoration:none;background:#fff;color:#243255;font-weight:650;border-radius:10px;padding:0 18px}
+.levLanding .levButton:hover{text-decoration:underline}
+.levExample,.levJoin{display:grid;align-items:start;gap:clamp(24px,5vw,66px);padding:clamp(28px,5vw,64px) 0}
+.levExample{grid-template-columns:1fr 1fr}.levExample ol{counter-reset:steps;list-style:none;padding:0;margin:0}
+.levExample li{counter-increment:steps;border-top:1px solid #dce2eb;position:relative;padding:14px 0 0 38px}
+.levExample li:before{content:"0" counter(steps);position:absolute;left:0;color:#4658a9;font-weight:650}
+.levExample li p{margin:5px 0 16px}
+.levJoin{grid-template-columns:1fr auto;align-items:center;padding:clamp(20px,4vw,42px);background:#edf0fb;border-radius:18px}
+.levJoin .levButton{background:#34449c;color:#fff}.levJoin small{color:#455467}
+@media(max-width:720px){.levHero,.levExample,.levJoin{grid-template-columns:1fr}.levPhoto{min-height:160px}.levJoin .levButton{justify-self:start}}

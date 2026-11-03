@@ -164,10 +164,10 @@ describe("personal annual membership billing", () => {
     await f.networks.waiveService(f.owner,id,userId,async()=>{});
     expect(f.store.users.get(userId)?.serviceSetup).toMatchObject({orderId:null,complimentaryAccess:true});
   });
-  it("keeps participation requests locked until owner approval and normal booking", async () => {
+  it.each(["bayer04leverkusen", "unternehmernetzwerk-leverkusen"])("keeps %s participation requests locked until owner approval and normal booking", async (slug) => {
     const f = await fixture();
     f.store.networkBySlug.delete(f.network.slug);
-    f.network.slug = "bayer04leverkusen";
+    f.network.slug = slug;
     f.store.networkBySlug.set(f.network.slug, f.network.id);
     const request = {
       network: f.network.slug,
@@ -176,7 +176,7 @@ describe("personal annual membership billing", () => {
       firstName: "Robin",
       lastName: "Anfrage",
       company: "Anfrage GmbH",
-      affiliation: "Hospitality-/VIP-Gast",
+      affiliation: slug === "bayer04leverkusen" ? "Hospitality-/VIP-Gast" : "Unternehmenssitz in Leverkusen",
       accurate: true,
       offerVersion: f.networks.participationQuote(f.network.slug).version,
       costsAccepted: true,

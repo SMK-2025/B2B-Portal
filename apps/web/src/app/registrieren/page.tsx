@@ -37,6 +37,7 @@ export default function RegistrationPage() {
     [emailLocked, setEmailLocked] = useState(false),
     [networkInviteToken, setNetworkInviteToken] = useState(""),
     [ready, setReady] = useState(false);
+  const acceptsRequests = ["bayer04leverkusen","unternehmernetzwerk-leverkusen"].includes(networkSlug);
   const networkRegistration = Boolean(networkSlug && networkInviteToken),
     networkBrand = useNetworkBrand(networkSlug);
   useEffect(() => {
@@ -214,7 +215,7 @@ export default function RegistrationPage() {
               </small>
             </div>
           </Link>
-          {networkSlug === "bayer04leverkusen" ? (
+          {acceptsRequests ? (
             <button
               type="button"
               className="portalSecondary"
@@ -362,8 +363,8 @@ export default function RegistrationPage() {
                 window.history.replaceState(null, "", url);
               }}
             />
-          ) : !networkRegistration && networkSlug === "bayer04leverkusen" ? (
-            <NetworkParticipationRequest />
+          ) : !networkRegistration && acceptsRequests ? (
+            <NetworkParticipationRequest key={networkSlug} network={networkSlug} />
           ) : !networkRegistration ? (
             <>
               <h1>Persönliche Einladung erforderlich</h1>

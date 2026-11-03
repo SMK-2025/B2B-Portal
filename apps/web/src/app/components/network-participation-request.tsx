@@ -28,7 +28,8 @@ const money = (cents: number) =>
   );
 const date = (value?: string) =>
   value ? value.split("-").reverse().join(".") : "–";
-export function NetworkParticipationRequest() {
+export function NetworkParticipationRequest({network}:{network:string}) {
+  const local = network === "unternehmernetzwerk-leverkusen";
   const [step, setStep] = useState(1),
     [busy, setBusy] = useState(false),
     [sent, setSent] = useState(false),
@@ -61,7 +62,7 @@ export function NetworkParticipationRequest() {
     try {
       setOffer(
         await portalRequest<Offer>(
-          "/networks/participation/quote/bayer04leverkusen",
+          `/networks/participation/quote/${encodeURIComponent(network)}`,
         ),
       );
     } catch (e) {
@@ -97,7 +98,7 @@ export function NetworkParticipationRequest() {
           ...fields,
           accurate,
           ...consents,
-          network: "bayer04leverkusen",
+          network,
           offerVersion: offer.version,
           referral: new URLSearchParams(window.location.search).get("ref"),
         },
@@ -187,14 +188,14 @@ export function NetworkParticipationRequest() {
               />
             </label>
             <label className="full">
-              Dein Bezug zum Business-Bereich
+              {local ? "Firmensitz" : "Dein Bezug zum Business-Bereich"}
               <select {...field("affiliation")} required>
                 <option value="" disabled>
                   Bitte auswählen
                 </option>
-                <option>Hospitality-/VIP-Gast</option>
+                {local ? <option>Unternehmenssitz in Leverkusen</option> : <><option>Hospitality-/VIP-Gast</option>
                 <option>Unternehmenspartner/Sponsor</option>
-                <option>Sonstiger Bezug</option>
+                <option>Sonstiger Bezug</option></>}
               </select>
             </label>
             <label className="full legalConsent">

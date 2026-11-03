@@ -1021,7 +1021,7 @@ export class NetworksService {
     const key="ref:"+m.id, now=new Date().toISOString();
     let r=this.store.networkContents.get(key);
     if(!r || !r.endsAt || Date.parse(r.endsAt)<=Date.now()){
-      const token=opaqueToken(), isRequest=n.slug==="bayer04leverkusen";
+      const token=opaqueToken(), isRequest=["bayer04leverkusen","unternehmernetzwerk-leverkusen"].includes(n.slug);
       r={id:key,networkId:id,type:"announcement",title:"Persönlicher Empfehlungslink",description:"",status:"active",
         visibility:"administrators",createdByUserId:actor.id,assignedToUserId:null,startsAt:null,
         endsAt:new Date(Date.now()+90*86400000).toISOString(),createdAt:now,updatedAt:now,
@@ -1029,7 +1029,7 @@ export class NetworksService {
           sharedToken:token,inviteTokenHash:tokenHash(token),usedAt:null}};
       this.store.networkContents.set(key,r);
     }
-    const path="/registrieren?network="+encodeURIComponent(n.slug)+"&"+(n.slug==="bayer04leverkusen"?"ref":"invite")+"="+encodeURIComponent(String(r.data.sharedToken));
+    const path="/registrieren?network="+encodeURIComponent(n.slug)+"&"+(["bayer04leverkusen","unternehmernetzwerk-leverkusen"].includes(n.slug)?"ref":"invite")+"="+encodeURIComponent(String(r.data.sharedToken));
     if(input.email){
       const email=emailAddress(input.email);
       if(input.permission!==true || email===actor.email) throw new BadRequestException("Bitte bestätige die vorherige Einwilligung des Empfängers.");
@@ -1100,7 +1100,7 @@ export class NetworksService {
     const network = [...this.store.networks.values()].find(
       (n) => n.slug === slug && n.status === "active",
     );
-    if (slug !== "bayer04leverkusen" || !network)
+    if (!["bayer04leverkusen","unternehmernetzwerk-leverkusen"].includes(slug) || !network)
       throw new BadRequestException(
         "Teilnahmeanfragen sind derzeit nicht verfügbar.",
       );
@@ -1121,7 +1121,7 @@ export class NetworksService {
     return { ...offer, version: tokenHash(JSON.stringify(offer)) };
   }
   async requestParticipation(input: Record<string, unknown>) {
-    if (input.network !== "bayer04leverkusen")
+    if (!["bayer04leverkusen","unternehmernetzwerk-leverkusen"].includes(String(input.network)))
       throw new ForbiddenException(
         "Teilnahmeanfragen sind für dieses Netzwerk nicht verfügbar.",
       );
@@ -1154,11 +1154,11 @@ export class NetworksService {
       100,
     );
     if (
-      ![
+      !(network.slug === "unternehmernetzwerk-leverkusen" ? ["Unternehmenssitz in Leverkusen"] : [
         "Hospitality-/VIP-Gast",
         "Unternehmenspartner/Sponsor",
         "Sonstiger Bezug",
-      ].includes(affiliation) ||
+      ]).includes(affiliation) ||
       input.accurate !== true
     )
       throw new BadRequestException(

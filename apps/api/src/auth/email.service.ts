@@ -475,7 +475,7 @@ export class EmailService {
             <td align="center" style="padding:24px 22px 0;color:#6b808c;font-size:11px;line-height:18px;">
               <p style="margin:0 0 7px;">Diese Nachricht wurde automatisch durch B2B Matching versendet.</p>
               <p style="margin:0;">Media Online Innovations Group · Inhaber Martin Kelm<br>Im Weidenblech 25 · 51371 Leverkusen</p>
-              <p style="margin:9px 0 0;"><a href="${this.escape(webUrl)}/impressum" style="color:#5158bf;">Impressum</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="${this.escape(webUrl)}/datenschutz" style="color:#5158bf;">Datenschutz</a></p>
+              <p style="margin:9px 0 0;"><a href="${this.escape(webUrl)}/impressum" style="color:#5158bf;">Impressum</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="${this.escape(webUrl)}/datenschutz/unternehmen" style="color:#5158bf;">Datenschutz</a></p>
             </td>
           </tr>
         </table>

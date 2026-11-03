@@ -192,7 +192,7 @@ export function annualOrder(
           },
         }
       : {}),
-    termsVersion: "member-annual-2026-10-19",
+    termsVersion: "agb-2026-11-03",
     pricingVersion: "member-flat-annual-2026-10-19",
     // The operator's documented mandate is not a member's online acceptance.
     authorityConfirmed: !operatorMandate,

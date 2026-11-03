@@ -1084,8 +1084,8 @@ export class NetworksService {
         quote.billing?.autoRenew && quote.billing.paidThrough
           ? addCalendarDays(quote.billing.paidThrough, -15)
           : null,
-      termsVersion: "member-annual-2026-10-19",
-      privacyVersion: "participation-2026-11-01",
+      termsVersion: "agb-2026-11-03",
+      privacyVersion: "datenschutz-2026-11-03",
     };
     return { ...offer, version: tokenHash(JSON.stringify(offer)) };
   }
@@ -3664,7 +3664,7 @@ export class NetworksService {
       monthlyNetCents,
       setupNetCents: 0,
       minimumTermMonths: 12,
-      termsVersion: "2026-10-08",
+      termsVersion: "agb-2026-11-03",
       pricingVersion: "network-user-modules-2026-10",
       authorityConfirmed: true,
       termsAccepted: true,

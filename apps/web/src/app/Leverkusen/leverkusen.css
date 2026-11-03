@@ -10,7 +10,7 @@
 .levLanding small{display:block;line-height:1.5}
 .levHero small{margin-top:10px;color:#d8e1ee}
 .levActions{display:flex;align-items:center;flex-wrap:wrap;gap:12px 22px}.levActions .levLogin{color:white;text-decoration:underline;text-underline-offset:4px}
-.levPhoto{background:linear-gradient(90deg,#15263833,transparent 45%),url('/images/network-meeting-economy.webp') center/cover}
+.levPhoto{background:linear-gradient(90deg,#15263833,transparent 45%),url('/images/leverkusen-skyline.webp') 80% center/cover}
 .levLanding .levButton{display:inline-flex;gap:16px;align-items:center;justify-content:center;min-height:46px;text-decoration:none;background:#fff;color:#243255;font-weight:650;border-radius:10px;padding:0 18px}
 .levLanding .levButton:hover{text-decoration:underline}
 .levExample,.levJoin{display:grid;align-items:start;gap:clamp(24px,5vw,66px);padding:clamp(28px,5vw,64px) 0}

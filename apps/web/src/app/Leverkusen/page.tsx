@@ -6,7 +6,7 @@ const title = "B2B-Netzwerk für Unternehmen in Leverkusen";
 const description = "Das unabhängige Online-Netzwerk für Firmen mit Sitz in Leverkusen. Lokale Geschäftspartner finden, Gesuche teilen und direkt miteinander sprechen.";
 export const metadata: Metadata = {
   title, description, alternates: { canonical: "/Leverkusen" },
-  openGraph: { title, description, url: "/Leverkusen", images: ["/images/network-meeting-economy.webp"] },
+  openGraph: { title, description, url: "/Leverkusen", images: ["/images/leverkusen-skyline.webp"] },
 };
 const request = "/registrieren?network=unternehmernetzwerk-leverkusen";
 const login = request + "&mode=login";

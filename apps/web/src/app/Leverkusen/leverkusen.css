@@ -227,12 +227,9 @@
   color: #ffffffb8;
 }
 .levGuide {
-  position: sticky;
-  top: 76px;
-  z-index: 50;
-  background: #ffffffed;
+  position: relative;
+  background: #fff;
   border-bottom: 1px solid var(--lev-line);
-  backdrop-filter: blur(14px);
 }
 .levGuide > .levWrap {
   display: flex;
@@ -910,9 +907,6 @@
   }
   .levHero .levHeroLead {
     max-width: 550px;
-  }
-  .levGuide {
-    top: 70px;
   }
   .levGuide > .levWrap {
     gap: 27px;

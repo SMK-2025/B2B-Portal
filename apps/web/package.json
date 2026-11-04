@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/partner-vcard.test.mjs tests/network-copy-cache.test.mjs"
+    "test": "node --experimental-strip-types --test tests/partner-vcard.test.mjs tests/network-copy-cache.test.mjs tests/network-page-label.test.mjs"
   },
   "dependencies": {
     "next": "^15.5.28",

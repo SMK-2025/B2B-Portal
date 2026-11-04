@@ -1,5 +1,6 @@
 "use client";
 import { NetworkText } from "./network-text-editor";
+import { networkPageLabel } from "../lib/network-page-label";
 import { NetworkReferralButton } from "./network-referral-button";
 import { NetworkNotifications } from "./network-notifications";
 import { NetworkSystemMessages } from "./network-system-messages";
@@ -201,7 +202,11 @@ export function NetworkShell(props: {
       {pathname.replace(/\/$/, "") !== `/portal/netzwerk/${props.slug}` && (
         <header className="networkWelcome">
           <div>
-            <span>{access.networkName.toUpperCase()}</span>
+            <span>
+              <NetworkText id="ui.page.network-label">
+                {networkPageLabel(access.slug, access.networkName)}
+              </NetworkText>
+            </span>
             <h1>
               <NetworkText id={`ui.heading.${section}`}>
                 {props.title}
@@ -678,9 +683,13 @@ function NetworkFrame({
               <header className="networkWelcome">
                 <div>
                   <span>
-                    {pathname.replace(/\/$/, "") === base
-                      ? "SCHÖN, DASS DU DA BIST"
-                      : shownName.toUpperCase()}
+                    {pathname.replace(/\/$/, "") === base ? (
+                      "SCHÖN, DASS DU DA BIST"
+                    ) : (
+                      <NetworkText id="ui.page.network-label">
+                        {networkPageLabel(slug, shownName)}
+                      </NetworkText>
+                    )}
                   </span>
                   <h1>
                     {pathname.replace(/\/$/, "") === `/portal/netzwerk/${slug}`

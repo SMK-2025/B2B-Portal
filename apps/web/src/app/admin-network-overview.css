@@ -1,0 +1,399 @@
+.adminNetworkWorkspace .adminNetworkCompactGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  align-items: stretch;
+}
+.adminNetworkSearch {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 20px;
+  color: #596b7e;
+  font-size: 14px;
+}
+.adminNetworkSearch input {
+  width: min(480px, 100%);
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #d4dfe8;
+  border-radius: 12px;
+  background: #fff;
+  color: #193244;
+  font: inherit;
+}
+.adminNetworkCard.adminNetworkCompactCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: visible;
+  border-top: 4px solid var(--card-accent);
+  box-shadow: 0 8px 28px #1b33400b;
+  border-radius: 18px;
+  background: #fff;
+}
+.adminNetworkCard.adminNetworkCompactCard > header {
+  align-items: flex-start;
+  gap: 12px;
+  padding: 22px 20px 16px;
+  border-radius: 14px 14px 0 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--card-accent) 12%, white),
+    white
+  );
+}
+.adminNetworkCompactCard .adminNetworkIdentity {
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.adminNetworkCompactCard .adminNetworkIdentity > div {
+  min-width: 0;
+}
+.adminNetworkCompactCard .adminNetworkIdentity h2 {
+  font:
+    700 19px/1.35 Arial,
+    sans-serif;
+  color: #163043;
+  margin: 4px 0 6px;
+  overflow-wrap: anywhere;
+}
+.adminNetworkCompactCard .adminNetworkIdentity small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  color: #6a7b89;
+  overflow-wrap: anywhere;
+}
+.adminNetworkCompactCard .adminNetworkIdentity a {
+  display: block;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #65788c;
+}
+.adminNetworkCompactCard .adminNetworkLogo {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  border: 1px solid #dce4ea;
+  background: #fff;
+  color: var(--card-accent);
+  font-size: 16px;
+  box-shadow: 0 3px 10px #142b3b08;
+}
+.adminNetworkLogo img {
+  display: block;
+  max-width: 44px;
+  max-height: 42px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.adminNetworkCompactStatus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0 20px 16px;
+  color: #65788c;
+  font-size: 13px;
+}
+.adminNetworkCompactFacts {
+  display: grid;
+  gap: 13px;
+  padding: 16px 20px 20px;
+  border-top: 1px solid #edf0f4;
+}
+.adminNetworkCompactFacts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.adminNetworkCompactFacts span {
+  color: #697d8c;
+}
+.adminNetworkCompactFacts strong {
+  font-weight: 600;
+  text-align: right;
+  max-width: 65%;
+  color: #1b3546;
+}
+.adminNetworkPending {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: #fff4e5;
+  color: #82500f;
+  font-size: 13px;
+}
+.adminNetworkBell {
+  flex: none;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #dce4eb;
+  border-radius: 11px;
+  background: #fff;
+  color: #687f90;
+  cursor: pointer;
+}
+.adminNetworkBell.hasUpdates {
+  color: var(--card-accent);
+  border-color: color-mix(in srgb, var(--card-accent) 25%, white);
+}
+.adminNetworkBell > span {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 3px;
+  border: 2px solid white;
+  border-radius: 12px;
+  background: var(--card-accent);
+  color: #fff;
+  font: 700 10px Arial;
+}
+.adminNetworkActionMenu {
+  position: relative;
+  margin: auto 20px 20px;
+}
+.adminNetworkActionMenu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--card-dark);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.adminNetworkActionMenu > summary::-webkit-details-marker {
+  display: none;
+}
+.adminNetworkActionMenu > summary > span {
+  font-size: 22px;
+  line-height: 1;
+}
+.adminNetworkActionMenu[open] > summary {
+  border-radius: 10px 10px 0 0;
+}
+.adminNetworkActionMenu .adminNetworkActions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  margin: 0;
+  padding: 9px;
+  border: 1px solid #d5dfe7;
+  border-radius: 0 0 12px 12px;
+  background: white;
+  box-shadow: 0 12px 24px #132c3e25;
+}
+.adminNetworkActionMenu .adminNetworkActions > button,
+.adminNetworkActionMenu .adminNetworkActions > a,
+.adminNetworkActionMenu .adminNetworkActions .adminShareLink > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: #f7f9fb;
+  color: #1b3548;
+  font: 14px/1.4 Arial;
+  box-shadow: none;
+  text-align: left;
+}
+.adminNetworkActionMenu .adminNetworkActions > button:hover,
+.adminNetworkActionMenu .adminNetworkActions > a:hover {
+  background: #eaf0f5;
+}
+.adminNetworkActionMenu .adminNetworkActions .portalReject {
+  color: #a02d35;
+}
+.adminNetworkActionMenu .adminShareLink {
+  display: block;
+  width: 100%;
+}
+.adminNetworkActivityDialog {
+  width: min(600px, calc(100vw - 28px));
+  max-height: 85dvh;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid #d9e2e9;
+  border-radius: 18px;
+  color: #1b3546;
+  box-shadow: 0 24px 100px #11283c33;
+}
+.adminNetworkActivityDialog::backdrop {
+  background: #142b4266;
+  backdrop-filter: blur(3px);
+}
+.adminNetworkActivityDialog > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 22px 24px;
+  background: #f7f9fb;
+  border-bottom: 1px solid #e3e9ed;
+}
+.adminNetworkActivityDialog h2 {
+  font-size: 22px;
+  line-height: 1.35;
+  margin: 5px 0 0;
+}
+.adminNetworkActivityDialog header small {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  color: #718797;
+}
+.adminNetworkActivityDialog button {
+  border: 1px solid #d4dfe7;
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: #fff;
+  color: #244256;
+  cursor: pointer;
+  font: 14px/1.4 Arial;
+}
+.adminNetworkActivityDialog button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.adminNetworkActivityDialog > header > button {
+  font-size: 22px;
+  padding: 1px 10px;
+}
+.adminNetworkActivityTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 24px;
+}
+.adminNetworkActivityWarning {
+  margin: 0 24px 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff4e5;
+  color: #82500f;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.adminNetworkActivityDialog > [role="alert"],
+.adminNetworkActivityDialog > [role="status"] {
+  padding: 0 24px;
+  color: #a02d35;
+}
+.adminNetworkActivityItems {
+  padding: 0 24px;
+  max-height: 48dvh;
+  overflow: auto;
+}
+.adminNetworkActivityItems article {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e9eef2;
+}
+.adminNetworkActivityItems article.unread strong {
+  font-weight: 750;
+}
+.adminNetworkActivityItems article.pending strong {
+  color: #895719;
+}
+.adminNetworkActivityItems article > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.adminNetworkActivityItems strong {
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  font-weight: 550;
+}
+.adminNetworkActivityItems time,
+.adminNetworkActivityItems small {
+  font-size: 12px;
+  color: #728697;
+}
+.adminNetworkActivityItems a {
+  font-size: 13px;
+  color: #335774;
+  text-decoration: underline;
+}
+.adminNetworkActivityIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #edf3f7;
+  color: #496878;
+  font-weight: 700;
+}
+.adminNetworkActivityDialog > footer {
+  padding: 18px 24px;
+  background: #f7f9fb;
+}
+.adminNetworkActivityDialog > footer > p {
+  font-size: 12px;
+  color: #738797;
+  margin: 12px 0 0;
+}
+.adminNetworkCompactCard .adminNetworkOrderNotice {
+  display: block;
+  margin: 0 20px 15px;
+  padding: 12px;
+  font-size: 13px;
+}
+.adminNetworkCompactCard .adminNetworkOrderNotice > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1250px) {
+  .adminNetworkWorkspace .adminNetworkCompactGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .adminNetworkWorkspace .adminNetworkCompactGrid {
+    grid-template-columns: 1fr;
+  }
+  .adminNetworkCard.adminNetworkCompactCard > header {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .adminNetworkSearch {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .adminNetworkSearch input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

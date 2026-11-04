@@ -29,6 +29,7 @@ export type ReviewStatus =
   | "suspended";
 
 export interface UserRecord {
+  operatorNetworkSeenAt?: Record<string, string>;
   serviceSetup?: {
     networkId: string;
     organizationId: string;

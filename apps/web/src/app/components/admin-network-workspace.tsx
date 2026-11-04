@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { Status } from "./portal-shell";
 import { AdminNetworkUsers } from "./admin-network-users";
 import { AdminNetworkShare } from "./admin-network-share";
 import { AdminNetworkBilling } from "./admin-network-billing";
+import { AdminNetworkActivity } from "./admin-network-activity";
 
 type NetworkStatus = "draft" | "trial" | "active" | "suspended";
 type Network = {
@@ -16,6 +17,11 @@ type Network = {
   websiteUrl: string | null;
   status: NetworkStatus;
   trialEndsAt: string | null;
+  logoUrl?: string | null;
+  primaryColor?: string;
+  secondaryColor?: string;
+  memberCount?: number;
+  activitySummary?: { pendingCount: number; unreadCount: number };
   settings: {
     selfRegistration: boolean;
     billingMode?: "standard" | "cooperation_free";
@@ -58,15 +64,33 @@ export function AdminNetworkWorkspace() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [testAccess, setTestAccess] = useState<Network | null>(null);
+  const [query, setQuery] = useState("");
+
+  async function refreshNetworks() {
+    const token = getPortalSession();
+    if (!token) return;
+    try {
+      setNetworks(await portalRequest<Network[]>("/networks/admin", { token }));
+    } catch (error) {
+      showError(error);
+    }
+  }
 
   useEffect(() => {
     const token = getPortalSession();
     if (!token) return;
-    portalRequest<Network[]>("/networks/admin", { token })
-      .then((items) => {
-        setNetworks(items);
-      })
-      .catch(showError);
+    void refreshNetworks();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void refreshNetworks();
+    }, 45000);
+    const onFocus = () => {
+      void refreshNetworks();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
   function showError(error: unknown) {
     setNotice(
@@ -331,218 +355,277 @@ export function AdminNetworkWorkspace() {
           + Netzwerk anlegen
         </button>
       </div>
-      <div className="adminNetworkList">
-        {networks.map((network) => {
-          const tone =
-            network.status === "active"
-              ? "teal"
-              : network.status === "suspended"
-                ? "red"
-                : network.status === "trial"
-                  ? "amber"
-                  : "gray";
-          const trialEnd = network.trialEndsAt
-            ? new Date(network.trialEndsAt).toLocaleDateString("de-DE")
-            : null;
-          return (
-            <section className="adminNetworkCard" key={network.id}>
-              <header>
-                <div className="adminNetworkIdentity">
-                  <span>
-                    {network.name
-                      .split(/\s+/)
-                      .slice(0, 2)
-                      .map((word) => word[0])
-                      .join("")
-                      .toUpperCase()}
-                  </span>
-                  <div>
-                    <small>NETZWERKPARTNER · {network.slug}</small>
-                    <h2>{network.name}</h2>
-                    {network.websiteUrl && (
-                      <a
-                        href={network.websiteUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {network.websiteUrl
-                          .replace(/^https?:\/\/(www\.)?/, "")
-                          .replace(/\/$/, "")}
-                      </a>
-                    )}
-                  </div>
-                </div>
-                <Status tone={tone}>{labels[network.status]}</Status>
-              </header>
-              <div className="adminNetworkFacts">
-                <article>
-                  <small>Zugangsstatus</small>
-                  <b>{labels[network.status]}</b>
-                  <span>
-                    {trialEnd
-                      ? `Testzugang bis ${trialEnd}`
-                      : network.status === "active"
-                        ? network.settings.memberPaymentModel === "network"
-                          ? "Initiator kostenlos · Netzwerk übernimmt die Mitgliedskosten"
-                          : "Initiator kostenlos · Mitglieder buchen ihren Zugang selbst"
-                        : "Nicht öffentlich nutzbar"}
-                  </span>
-                </article>
-                <article>
-                  <small>Netzwerkadministrator</small>
-                  <b>{adminName(network)}</b>
-                  <span>Vergabe ausschließlich durch Sie</span>
-                </article>
-                <article>
-                  <small>Mitgliederregistrierung</small>
-                  <b>Nur per Einladung</b>
-                  <span>
-                    {network.settings.memberPaymentModel === "network"
-                      ? `Netzwerk zahlt zentral · ${network.centrallyFundedMembers || 0} aktive Mitglieder`
-                      : "Mitglieder zahlen selbst"}
-                  </span>
-                  <span>
-                    Keine freie Anmeldung oder öffentliche Auffindbarkeit
-                  </span>
-                </article>
-                <article>
-                  <small>Mandant</small>
-                  <b>Getrennt geführt</b>
-                  <span>Eigene Mitglieder, Inhalte und Rollen</span>
-                </article>
-              </div>
-              {network.latestOrder?.status === "submitted" && (
-                <section className="adminNetworkOrderNotice">
-                  <div>
-                    <small>VERBINDLICHE MODULBUCHUNG EINGEGANGEN</small>
-                    <b>{network.latestOrder.invoiceCompany}</b>
-                    <span>
-                      {network.latestOrder.participantCount} Nutzer ·{" "}
-                      {network.latestOrder.selectedModules.length}{" "}
-                      kostenpflichtige Module ·{" "}
-                      {(
-                        network.latestOrder.monthlyNetCents / 100
-                      ).toLocaleString("de-DE", {
-                        style: "currency",
-                        currency: "EUR",
-                      })}{" "}
-                      netto / Monat
+      <label className="adminNetworkSearch">
+        <span>Netzwerk finden</span>
+        <input
+          type="search"
+          placeholder="Name oder Netzwerkkennung suchen …"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </label>
+      <div className="adminNetworkList adminNetworkCompactGrid">
+        {networks
+          .filter((network) =>
+            `${network.name} ${network.slug}`
+              .toLocaleLowerCase("de-DE")
+              .includes(query.toLocaleLowerCase("de-DE")),
+          )
+          .map((network) => {
+            const tone =
+              network.status === "active"
+                ? "teal"
+                : network.status === "suspended"
+                  ? "red"
+                  : network.status === "trial"
+                    ? "amber"
+                    : "gray";
+            const trialEnd = network.trialEndsAt
+              ? new Date(network.trialEndsAt).toLocaleDateString("de-DE")
+              : null;
+            return (
+              <section
+                className="adminNetworkCard adminNetworkCompactCard"
+                key={network.id}
+                style={
+                  {
+                    "--card-accent": /^#[0-9a-f]{6}$/i.test(
+                      network.primaryColor || "",
+                    )
+                      ? network.primaryColor
+                      : "#5364d9",
+                    "--card-dark": /^#[0-9a-f]{6}$/i.test(
+                      network.secondaryColor || "",
+                    )
+                      ? network.secondaryColor
+                      : "#173143",
+                  } as CSSProperties
+                }
+              >
+                <header>
+                  <div className="adminNetworkIdentity">
+                    <span className="adminNetworkLogo">
+                      {network.logoUrl ? (
+                        <img
+                          src={network.logoUrl}
+                          alt={`${network.name} Logo`}
+                        />
+                      ) : (
+                        network.name
+                          .split(/\s+/)
+                          .slice(0, 2)
+                          .map((word) => word[0])
+                          .join("")
+                          .toUpperCase()
+                      )}
                     </span>
-                    <span>
-                      {new Date(network.latestOrder.submittedAt).toLocaleString(
-                        "de-DE",
-                      )}{" "}
-                      · zwölf Monate im Voraus
-                    </span>
-                  </div>
-                  <div>
-                    <span>Bestellnummer</span>
-                    <code>{network.latestOrder.id}</code>
-                    <div className="adminNetworkOrderActions">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void decideOrder(network, "accepted")}
-                      >
-                        Annehmen &amp; aktivieren
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void decideOrder(network, "rejected")}
-                      >
-                        Ablehnen
-                      </button>
+                    <div>
+                      <small>{network.slug}</small>
+                      <h2>{network.name}</h2>
+                      {network.websiteUrl && (
+                        <a
+                          href={network.websiteUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {network.websiteUrl
+                            .replace(/^https?:\/\/(www\.)?/, "")
+                            .replace(/\/$/, "")}
+                        </a>
+                      )}
                     </div>
                   </div>
-                </section>
-              )}
-              <footer className="adminNetworkActions">
-                <AdminNetworkBilling
-                  id={network.id}
-                  name={network.name}
-                  onSaved={() => {
-                    void portalRequest<Network[]>("/networks/admin", {
-                      token: getPortalSession() || "",
-                    })
-                      .then(setNetworks)
-                      .catch(showError);
+                  <AdminNetworkActivity
+                    id={network.id}
+                    name={network.name}
+                    slug={network.slug}
+                    summary={network.activitySummary}
+                    onChanged={() => void refreshNetworks()}
+                  />
+                </header>
+                <div className="adminNetworkCompactStatus">
+                  <Status tone={tone}>{labels[network.status]}</Status>
+                  <span>{network.memberCount || 0} Mitglieder</span>
+                  {trialEnd && <span>Test bis {trialEnd}</span>}
+                </div>
+                <div className="adminNetworkCompactFacts">
+                  <div>
+                    <span>Administration</span>
+                    <strong>{adminName(network)}</strong>
+                  </div>
+                  <div>
+                    <span>Abrechnung</span>
+                    <strong>
+                      {network.settings.memberPaymentModel === "network"
+                        ? "Netzwerk zahlt zentral"
+                        : "Mitglieder zahlen selbst"}
+                    </strong>
+                  </div>
+                  {!!network.activitySummary?.pendingCount && (
+                    <p className="adminNetworkPending">
+                      {network.activitySummary.pendingCount}{" "}
+                      {network.activitySummary.pendingCount === 1
+                        ? "Aufnahme wartet"
+                        : "Aufnahmen warten"}{" "}
+                      auf Prüfung
+                    </p>
+                  )}
+                </div>
+                {network.latestOrder?.status === "submitted" && (
+                  <section className="adminNetworkOrderNotice">
+                    <div>
+                      <small>VERBINDLICHE MODULBUCHUNG EINGEGANGEN</small>
+                      <b>{network.latestOrder.invoiceCompany}</b>
+                      <span>
+                        {network.latestOrder.participantCount} Nutzer ·{" "}
+                        {network.latestOrder.selectedModules.length}{" "}
+                        kostenpflichtige Module ·{" "}
+                        {(
+                          network.latestOrder.monthlyNetCents / 100
+                        ).toLocaleString("de-DE", {
+                          style: "currency",
+                          currency: "EUR",
+                        })}{" "}
+                        netto / Monat
+                      </span>
+                      <span>
+                        {new Date(
+                          network.latestOrder.submittedAt,
+                        ).toLocaleString("de-DE")}{" "}
+                        · zwölf Monate im Voraus
+                      </span>
+                    </div>
+                    <div>
+                      <span>Bestellnummer</span>
+                      <code>{network.latestOrder.id}</code>
+                      <div className="adminNetworkOrderActions">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void decideOrder(network, "accepted")}
+                        >
+                          Annehmen &amp; aktivieren
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void decideOrder(network, "rejected")}
+                        >
+                          Ablehnen
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+                )}
+                <details
+                  className="adminNetworkActionMenu"
+                  name="network-actions"
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.currentTarget.open = false;
+                      event.currentTarget.querySelector("summary")?.focus();
+                    }
                   }}
-                />
-                <AdminNetworkShare id={network.id} name={network.name} />
-                <AdminNetworkUsers id={network.id} name={network.name} />
-                {
-                  <Link
-                    className="adminNetworkTestLogin"
-                    href={`/portal/netzwerk/${network.slug}` as never}
-                    onClick={async (event) => {
-                      event.preventDefault();
-                      try {
-                        await portalRequest(
-                          `/networks/${network.id}/operator-access`,
-                          { token: getPortalSession() || "", body: {} },
-                        );
-                        window.location.href = `/portal/netzwerk/${network.slug}`;
-                      } catch (error) {
-                        showError(error);
-                      }
-                    }}
-                  >
-                    <span aria-hidden="true">→</span>
-                    Betreiberzugang öffnen
-                  </Link>
-                }
-                <button
-                  className="portalSecondary"
-                  type="button"
-                  onClick={() => open("trial", network.id)}
                 >
-                  Testzugang
-                </button>
-                <button
-                  className="portalSecondary"
-                  type="button"
-                  onClick={() => open("admin", network.id)}
-                >
-                  Administrator bestimmen
-                </button>
-                {network.status !== "active" ? (
-                  <button
-                    disabled={busy}
-                    className="portalPrimary"
-                    type="button"
-                    onClick={() => void updateAccessFor(network.id, "active")}
-                  >
-                    Partnerportal aktivieren
-                  </button>
-                ) : null}
-                {network.status === "active" ? (
-                  <button
-                    disabled={busy}
-                    className="portalReject adminNetworkBlock"
-                    type="button"
-                    onClick={() => {
-                      setSelected(network.id);
-                      void updateAccessFor(network.id, "suspended");
-                    }}
-                  >
-                    Sperren
-                  </button>
-                ) : null}
-                <button
-                  disabled={busy}
-                  className="portalReject"
-                  type="button"
-                  title="Netzwerk vollständig löschen"
-                  aria-label={`${network.name} vollständig löschen`}
-                  onClick={() => void deleteNetwork(network)}
-                >
-                  ⌫
-                </button>
-              </footer>
-            </section>
-          );
-        })}
+                  <summary>
+                    Netzwerk verwalten <span aria-hidden="true">⋯</span>
+                  </summary>
+                  <div className="adminNetworkActions">
+                    <AdminNetworkBilling
+                      id={network.id}
+                      name={network.name}
+                      onSaved={() => {
+                        void portalRequest<Network[]>("/networks/admin", {
+                          token: getPortalSession() || "",
+                        })
+                          .then(setNetworks)
+                          .catch(showError);
+                      }}
+                    />
+                    <AdminNetworkShare id={network.id} name={network.name} />
+                    <AdminNetworkUsers id={network.id} name={network.name} />
+                    <a
+                      href={`/registrieren?network=${encodeURIComponent(network.slug)}&mode=login`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Netzwerk-Login öffnen ↗
+                    </a>
+                    {
+                      <Link
+                        className="adminNetworkTestLogin"
+                        href={`/portal/netzwerk/${network.slug}` as never}
+                        onClick={async (event) => {
+                          event.preventDefault();
+                          try {
+                            await portalRequest(
+                              `/networks/${network.id}/operator-access`,
+                              { token: getPortalSession() || "", body: {} },
+                            );
+                            window.location.href = `/portal/netzwerk/${network.slug}`;
+                          } catch (error) {
+                            showError(error);
+                          }
+                        }}
+                      >
+                        <span aria-hidden="true">→</span>
+                        Betreiberzugang öffnen
+                      </Link>
+                    }
+                    <button
+                      className="portalSecondary"
+                      type="button"
+                      onClick={() => open("trial", network.id)}
+                    >
+                      Testzugang
+                    </button>
+                    <button
+                      className="portalSecondary"
+                      type="button"
+                      onClick={() => open("admin", network.id)}
+                    >
+                      Administrator bestimmen
+                    </button>
+                    {network.status !== "active" ? (
+                      <button
+                        disabled={busy}
+                        className="portalPrimary"
+                        type="button"
+                        onClick={() =>
+                          void updateAccessFor(network.id, "active")
+                        }
+                      >
+                        Partnerportal aktivieren
+                      </button>
+                    ) : null}
+                    {network.status === "active" ? (
+                      <button
+                        disabled={busy}
+                        className="portalReject adminNetworkBlock"
+                        type="button"
+                        onClick={() => {
+                          setSelected(network.id);
+                          void updateAccessFor(network.id, "suspended");
+                        }}
+                      >
+                        Sperren
+                      </button>
+                    ) : null}
+                    <button
+                      disabled={busy}
+                      className="portalReject"
+                      type="button"
+                      title="Netzwerk vollständig löschen"
+                      aria-label={`${network.name} vollständig löschen`}
+                      onClick={() => void deleteNetwork(network)}
+                    >
+                      ⌫
+                    </button>
+                  </div>
+                </details>
+              </section>
+            );
+          })}
       </div>
       {dialog && (
         <div
@@ -644,8 +727,14 @@ export function AdminNetworkWorkspace() {
                   />
                 </label>
                 <details>
-                  <summary>Abrechnungszeitraum und Rechnungsversand (optional)</summary>
-                  <p>Ohne feste Datumsangaben beginnt die Laufzeit bei der Buchung. Ein fester Zeitraum gilt nur, wenn du ihn ausdrücklich festlegst.</p>
+                  <summary>
+                    Abrechnungszeitraum und Rechnungsversand (optional)
+                  </summary>
+                  <p>
+                    Ohne feste Datumsangaben beginnt die Laufzeit bei der
+                    Buchung. Ein fester Zeitraum gilt nur, wenn du ihn
+                    ausdrücklich festlegst.
+                  </p>
                   <label>
                     Kostenlos bis einschließlich
                     <input type="date" name="billingFreeUntil" />

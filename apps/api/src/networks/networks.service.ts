@@ -578,6 +578,127 @@ export class NetworksService {
     return network;
   }
 
+  private operatorActivityItems(networkId: string, seenAt: string | undefined) {
+    const items: Array<{
+      id: string;
+      title: string;
+      createdAt: string;
+      kind: string;
+      pending: boolean;
+      unread: boolean;
+      area: string;
+    }> = [];
+    const pendingUsers = new Set<string>();
+    for (const content of this.store.networkContents.values()) {
+      if (content.networkId !== networkId) continue;
+      if (content.data.admissionStatus === "pending") {
+        pendingUsers.add(content.createdByUserId);
+        items.push({
+          id: `request:${content.id}`,
+          title: `Teilnahmeanfrage: ${String(content.data.company || content.title).slice(0, 200)}`,
+          createdAt: content.createdAt,
+          kind: "request",
+          pending: true,
+          unread: !seenAt || content.createdAt > seenAt,
+          area: "users",
+        });
+      } else if (
+        ["event", "topic", "announcement"].includes(content.type) &&
+        ["draft", "published", "active", "completed"].includes(
+          content.status,
+        ) &&
+        !["network_invitation", "participation_referral"].includes(
+          String(content.data.kind || ""),
+        ) &&
+        !content.data.admissionStatus
+      ) {
+        const changed =
+          Date.parse(content.updatedAt) > Date.parse(content.createdAt) + 1000;
+        const date = changed ? content.updatedAt : content.createdAt;
+        items.push({
+          id: `content:${content.id}`,
+          title: `${content.type === "event" ? (changed ? "Veranstaltung aktualisiert" : "Neue Veranstaltung") : "Neuer Beitrag"}${content.status === "draft" ? " (Entwurf)" : ""}: ${content.title}`,
+          createdAt: date,
+          kind: content.type === "event" ? "event" : "post",
+          pending: false,
+          unread: !seenAt || date > seenAt,
+          area: content.type === "event" ? "veranstaltungen" : "themen",
+        });
+      }
+    }
+    for (const member of this.store.networkMemberships) {
+      if (member.networkId !== networkId || member.role === "visitor") continue;
+      const user = this.store.users.get(member.userId);
+      if (!user || user.accountRole === "platform_admin") continue;
+      const organization = this.store.organizations.get(member.organizationId);
+      const name =
+        organization?.displayName || `${user.firstName} ${user.lastName}`;
+      if (member.status === "pending" && !pendingUsers.has(member.userId)) {
+        items.push({
+          id: `member:${member.id}`,
+          title: `Aufnahme prüfen: ${name}`,
+          createdAt: member.createdAt,
+          kind: "request",
+          pending: true,
+          unread: !seenAt || member.createdAt > seenAt,
+          area: "users",
+        });
+      } else if (member.status === "active") {
+        items.push({
+          id: `member:${member.id}`,
+          title: `Mitglied im Netzwerk: ${name}`,
+          createdAt: member.createdAt,
+          kind: "member",
+          pending: false,
+          unread: !seenAt || member.createdAt > seenAt,
+          area: "users",
+        });
+      }
+    }
+    return items.sort(
+      (a, b) =>
+        Number(b.pending) - Number(a.pending) ||
+        b.createdAt.localeCompare(a.createdAt),
+    );
+  }
+
+  operatorNetworkActivity(authorization: string | undefined, id: string) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    this.raw(id);
+    const items = this.operatorActivityItems(
+      id,
+      actor.operatorNetworkSeenAt?.[id],
+    );
+    return {
+      items: items.slice(0, 100),
+      pendingCount: items.filter((item) => item.pending).length,
+      unreadCount: items.filter((item) => item.pending || item.unread).length,
+      asOf: new Date().toISOString(),
+    };
+  }
+
+  markOperatorNetworkActivitySeen(
+    authorization: string | undefined,
+    id: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    this.raw(id);
+    const asOf = typeof input.asOf === "string" ? Date.parse(input.asOf) : NaN;
+    if (!Number.isFinite(asOf) || asOf > Date.now())
+      throw new BadRequestException("Ungültiger Zeitpunkt.");
+    const previous = actor.operatorNetworkSeenAt?.[id];
+    actor.operatorNetworkSeenAt = {
+      ...actor.operatorNetworkSeenAt,
+      [id]: new Date(
+        Math.max(asOf, previous ? Date.parse(previous) : 0),
+      ).toISOString(),
+    };
+    return this.operatorNetworkActivity(authorization, id);
+  }
+
   adminList(authorization: string | undefined) {
     const user = this.auth.authenticate(authorization);
     this.requirePlatformAdmin(user.id);
@@ -594,6 +715,23 @@ export class NetworksService {
           .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
       return {
         ...network,
+        activitySummary: (() => {
+          const items = this.operatorActivityItems(
+            network.id,
+            user.operatorNetworkSeenAt?.[network.id],
+          );
+          return {
+            pendingCount: items.filter((item) => item.pending).length,
+            unreadCount: items.filter((item) => item.pending || item.unread)
+              .length,
+          };
+        })(),
+        memberCount: this.store.networkMemberships.filter(
+          (item) =>
+            item.networkId === network.id &&
+            item.status === "active" &&
+            item.role !== "visitor",
+        ).length,
         memberPrice: pricing(network),
         centrallyFundedMembers: this.store.networkMemberships.filter(
           (m) =>

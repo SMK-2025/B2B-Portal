@@ -12,6 +12,7 @@ import "./network-lounge.css";
 import "./public-brand.css";
 import "./public-card-system.css";
 import "./network-text-editor.css";
+import "./admin-network-overview.css";
 import { NetworkTextProvider } from "./components/network-text-editor";
 import { PwaRegister } from "./pwa-register";
 import { CookieConsent } from "./components/cookie-consent";

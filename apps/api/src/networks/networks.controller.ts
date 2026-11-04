@@ -17,6 +17,23 @@ export class NetworksController {
     private readonly networks: NetworksService,
     private readonly billing: AutomaticBillingService,
   ) {}
+  @Get("admin/:id/activity") operatorActivity(
+    @Headers("authorization") authorization: string | undefined,
+    @Param("id") id: string,
+  ) {
+    return this.networks.operatorNetworkActivity(authorization, id);
+  }
+  @Post("admin/:id/activity/seen") operatorActivitySeen(
+    @Headers("authorization") authorization: string | undefined,
+    @Param("id") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.markOperatorNetworkActivitySeen(
+      authorization,
+      id,
+      body,
+    );
+  }
   @Get("branding/:slug/texts") publicTexts(@Param("slug") slug: string) {
     return this.networks.interfaceTexts(slug);
   }

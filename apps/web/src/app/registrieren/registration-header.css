@@ -1,0 +1,26 @@
+.networkAuthHeader.networkAuthHeaderSimple > a {
+  width: 100%;
+  min-width: 0;
+  justify-content: space-between;
+  gap: 20px;
+}
+.networkAuthHeader.networkAuthHeaderSimple > a > div {
+  min-width: 0;
+  text-align: right;
+}
+.networkAuthHeader.networkAuthHeaderSimple > a > img {
+  flex-shrink: 0;
+  width: 110px;
+  object-fit: contain;
+}
+.networkAuthHeader.networkAuthHeaderSimple b {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .networkAuthHeader.networkAuthHeaderSimple > a {
+    gap: 16px;
+  }
+  .networkAuthHeader.networkAuthHeaderSimple > a > img {
+    width: 80px;
+  }
+}

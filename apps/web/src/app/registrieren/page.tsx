@@ -1,4 +1,5 @@
 "use client";
+import "./registration-header.css";
 import { NetworkText } from "../components/network-text-editor";
 import { authorizedMailingToken } from "../lib/mailing-token";
 import { FormEvent, useEffect, useState, type CSSProperties } from "react";
@@ -207,7 +208,7 @@ export default function RegistrationPage() {
       }
     >
       {networkBrand ? (
-        <header className="networkAuthHeader">
+        <header className={`networkAuthHeader${acceptsRequests ? " networkAuthHeaderSimple" : ""}`}>
           <Link
             href={
               `/anmelden?network=${encodeURIComponent(networkBrand.slug)}` as never
@@ -238,25 +239,7 @@ export default function RegistrationPage() {
               </small>
             </div>
           </Link>
-          {acceptsRequests ? (
-            <button
-              type="button"
-              className="portalSecondary"
-              onClick={() => {
-                setLoginMode(false);
-                setNetworkInviteToken("");
-                window.history.replaceState(
-                  null,
-                  "",
-                  `/registrieren?network=${networkSlug}`,
-                );
-              }}
-            >
-              <NetworkText id="ui.page.21a12d684526d958">
-                Teilnahme anfragen
-              </NetworkText>
-            </button>
-          ) : (
+          {!acceptsRequests && (
             <em>
               <NetworkText id="ui.page.7cc1fa36f7c99b7e">
                 Persönliche Einladung

@@ -21,6 +21,7 @@ const groups: Record<Role, MenuGroup[]> = {
         ["Alle Netzwerke", "/portal/admin/netzwerke"],
         ["Anmeldungen & Mitgliedsjahre", "/portal/admin/anmeldungen"],
         ["Mein Konto & Sicherheit", "/portal/konto"],
+        ["Mailings & Leads", "/portal/admin/mailings"],
       ],
     },
   ],

@@ -57,7 +57,17 @@ export async function createPortalApp() {
     },
   );
   // dürfen sechs Bilder enthalten; Base64-Overhead wird hier berücksichtigt.
-  app.useBodyParser("json", { limit: "16mb" });
+  app.useBodyParser("json", {
+    limit: "16mb",
+    verify: (
+      req: IncomingMessage & { rawBody?: Buffer },
+      _res: unknown,
+      body: Buffer,
+    ) => {
+      if (req.url?.split("?")[0] === "/api/mailings/public/webhook")
+        req.rawBody = Buffer.from(body);
+    },
+  });
   app.useBodyParser("urlencoded", { limit: "16mb", extended: true });
   const originConfiguration =
     process.env.WEB_ORIGINS ??

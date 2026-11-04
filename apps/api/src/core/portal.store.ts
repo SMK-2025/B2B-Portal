@@ -41,6 +41,7 @@ import {
   retireLegacyInitiator,
   resetTestMember,
 } from "./retire-legacy-initiator";
+import type { MailingCampaign, MailingLead } from "../mailings/mailing.types";
 
 @Injectable()
 export class PortalStore implements OnModuleInit, OnApplicationShutdown {
@@ -55,6 +56,12 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   }
   private writeQueue: Promise<void> = Promise.resolve();
   readonly users = new Map<string, UserRecord>();
+  readonly mailingLeads = new Map<string, MailingLead>();
+  readonly mailingCampaigns = new Map<string, MailingCampaign>();
+  readonly mailingSuppressions = new Map<
+    string,
+    { at: string; reason: string }
+  >();
   readonly userByEmail = new Map<string, string>();
   readonly organizations = new Map<string, OrganizationRecord>();
   readonly memberships: MembershipRecord[] = [];
@@ -153,6 +160,9 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   snapshot(): string {
     return JSON.stringify({
       users: [...this.users],
+      mailingLeads: [...this.mailingLeads],
+      mailingCampaigns: [...this.mailingCampaigns],
+      mailingSuppressions: [...this.mailingSuppressions],
       userByEmail: [...this.userByEmail],
       organizations: [...this.organizations],
       memberships: this.memberships,
@@ -238,6 +248,9 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     const array = <T>(target: T[], values: unknown) =>
       target.push(...(Array.isArray(values) ? (values as T[]) : []));
     map(this.users, state.users);
+    map(this.mailingLeads, state.mailingLeads);
+    map(this.mailingCampaigns, state.mailingCampaigns);
+    map(this.mailingSuppressions, state.mailingSuppressions);
     map(this.userByEmail, state.userByEmail);
     map(this.organizations, state.organizations);
     array(this.memberships, state.memberships);
@@ -301,6 +314,9 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   }
 
   private clear(): void {
+    this.mailingLeads.clear();
+    this.mailingCampaigns.clear();
+    this.mailingSuppressions.clear();
     this.users.clear();
     this.userByEmail.clear();
     this.organizations.clear();

@@ -1,5 +1,6 @@
 "use client";
 import { NetworkText } from "../components/network-text-editor";
+import { authorizedMailingToken } from "../lib/mailing-token";
 import { FormEvent, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -92,6 +93,7 @@ export default function RegistrationPage() {
           email: form.get("email"),
           password: form.get("password"),
           networkInviteToken: invite,
+          mailingToken: authorizedMailingToken(),
         },
       });
       if (result.token && !result.verificationRequired) {

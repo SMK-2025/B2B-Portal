@@ -20,6 +20,10 @@ import {
 } from "./password";
 import { EmailService } from "./email.service";
 import { enqueueOperatorMail } from "../core/operator-mail";
+import {
+  attributeMailingVerification,
+  attributeMailingRegistration,
+} from "../mailings/mailing-attribution";
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -297,6 +301,14 @@ export class AuthService implements OnModuleInit {
         `Netzwerk: ${network?.name || "Partnernetzwerk"}\nNutzer: ${user.firstName} ${user.lastName}\nE-Mail: ${user.email}\nDer Zugang wurde registriert. E-Mail-Bestätigung und Firmabuchung sind noch offen; dies ist noch keine abrechenbare Jahresbuchung.`,
       );
     }
+    if (networkInvitation)
+      attributeMailingRegistration(
+        this.store,
+        input.mailingToken,
+        email,
+        networkInvitation.networkId,
+        user.id,
+      );
     return {
       user: this.publicUser(user),
       verificationRequired: true,
@@ -323,6 +335,7 @@ export class AuthService implements OnModuleInit {
     }
     user.emailVerifiedAt = new Date().toISOString();
     record.usedAt = user.emailVerifiedAt;
+    attributeMailingVerification(this.store, user.id);
     return { verified: true };
   }
 
@@ -411,10 +424,12 @@ export class AuthService implements OnModuleInit {
     return { changed: true };
   }
 
-  welcomeMail(auth:string|undefined, enabled:unknown) {
-    const u=this.authenticate(auth);
-    if(typeof enabled!=="boolean") throw new BadRequestException("Ungültige Auswahl.");
-    if(enabled) u.welcomeMailOptInAt=new Date().toISOString(); else delete u.welcomeMailOptInAt;
+  welcomeMail(auth: string | undefined, enabled: unknown) {
+    const u = this.authenticate(auth);
+    if (typeof enabled !== "boolean")
+      throw new BadRequestException("Ungültige Auswahl.");
+    if (enabled) u.welcomeMailOptInAt = new Date().toISOString();
+    else delete u.welcomeMailOptInAt;
     return this.account(auth);
   }
   account(authorization: string | undefined) {

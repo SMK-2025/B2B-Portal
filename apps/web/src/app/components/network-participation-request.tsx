@@ -3,6 +3,7 @@ import { NetworkText } from "./network-text-editor";
 import { useEffect, useState, type FormEvent, type ChangeEvent } from "react";
 import Link from "next/link";
 import { portalRequest } from "../lib/portal-api";
+import { authorizedMailingToken } from "../lib/mailing-token";
 import "./network-participation-request.css";
 type Offer = {
   version: string;
@@ -102,6 +103,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
           network,
           offerVersion: offer.version,
           referral: new URLSearchParams(window.location.search).get("ref"),
+        mailingToken: authorizedMailingToken(),
         },
       });
       setSent(true);

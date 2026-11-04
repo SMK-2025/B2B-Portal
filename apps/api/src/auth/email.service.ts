@@ -39,10 +39,27 @@ export class EmailService {
       ],
     });
   }
-  async sendNetworkNote(to:string,network:string,subject:string,body:string,cta:string,path:string) {
-    const link=this.webUrl()+path;
-    await this.send({to,subject:subject+" · "+network,text:body+"\n\n"+link,
-      html:this.template(this.escape(subject),this.escape(body),this.escape(cta),link,"Dein Netzwerkpartner-Portal")});
+  async sendNetworkNote(
+    to: string,
+    network: string,
+    subject: string,
+    body: string,
+    cta: string,
+    path: string,
+  ) {
+    const link = this.webUrl() + path;
+    await this.send({
+      to,
+      subject: subject + " · " + network,
+      text: body + "\n\n" + link,
+      html: this.template(
+        this.escape(subject),
+        this.escape(body),
+        this.escape(cta),
+        link,
+        "Dein Netzwerkpartner-Portal",
+      ),
+    });
   }
   async sendOperatorInformation(subject: string, text: string) {
     if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
@@ -308,6 +325,20 @@ export class EmailService {
       html: "<p>" + text + "</p>",
     });
   }
+  async sendCampaignMail(message: {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+    customArgs?: Record<string, string>;
+    unsubscribe?: string;
+  }) {
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
+      throw new ServiceUnavailableException(
+        "Mailversand ist noch nicht eingerichtet.",
+      );
+    await this.send(message);
+  }
   private async send(message: {
     to: string;
     subject: string;
@@ -320,6 +351,8 @@ export class EmailService {
       disposition: string;
     }[];
     bcc?: string;
+    customArgs?: Record<string, string>;
+    unsubscribe?: string;
   }): Promise<void> {
     const apiKey = process.env.SENDGRID_API_KEY;
     const fromEmail = process.env.MAIL_FROM_EMAIL;
@@ -349,6 +382,7 @@ export class EmailService {
         personalizations: [
           {
             to: [{ email: message.to }],
+            ...(message.customArgs ? { custom_args: message.customArgs } : {}),
             ...(message.bcc &&
             message.bcc.toLowerCase() !== message.to.toLowerCase()
               ? { bcc: [{ email: message.bcc }] }
@@ -357,6 +391,14 @@ export class EmailService {
         ],
         from: { email: fromEmail, name: fromName },
         subject: message.subject,
+        ...(message.unsubscribe
+          ? {
+              headers: {
+                "List-Unsubscribe": `<${message.unsubscribe}>`,
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+              },
+            }
+          : {}),
         ...(message.attachments ? { attachments: message.attachments } : {}),
         content: [
           { type: "text/plain", value: message.text },

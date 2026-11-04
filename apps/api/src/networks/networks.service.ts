@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import { attributeMailingRegistration } from "../mailings/mailing-attribution";
 import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
 import {
@@ -1395,6 +1396,13 @@ export class NetworksService {
       throw error;
     }
     record.createdByUserId = this.store.userByEmail.get(email)!;
+    attributeMailingRegistration(
+      this.store,
+      input.mailingToken,
+      email,
+      network.id,
+      record.createdByUserId,
+    );
     enqueueOperatorMail(
       this.store,
       `participation:${record.id}`,

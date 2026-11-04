@@ -131,6 +131,16 @@ export class MailingsController {
     await this.store.persist();
     res.redirect(302, target);
   }
+  @Get("public/brand/:id") brandLogo(
+    @Param("id") id: string,
+    @Res() res: Response,
+  ) {
+    this.limit("brand:" + id);
+    const image = this.service.brandLogo(id);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    return res.type(image.type).send(image.bytes);
+  }
   @Get("public/image/:token.gif") async image(
     @Param("token") token: string,
     @Req() req: Request,

@@ -83,6 +83,88 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("owner mailing system", () => {
+  it.each([
+    [
+      "Unternehmernetzwerk-Leverkusen",
+      "unternehmernetzwerkleverkusen",
+      "#0723f2",
+      "Leverkusen",
+      "/Leverkusen",
+    ],
+    [
+      "Unternehmernetzwerk Köln",
+      "unternehmernetzwerkkoeln",
+      "#c8102e",
+      "Köln",
+      "/Koeln",
+    ],
+    [
+      "Unternehmernetzwerk Bonn",
+      "unternehmernetzwerkbonn",
+      "#008040",
+      "Bonn",
+      "/Bonn",
+    ],
+  ])(
+    "personalizes the shared story and branding for %s",
+    (name, slug, color, city, path) => {
+      const s = setup();
+      Object.assign(s.a, {
+        name,
+        slug,
+        primaryColor: color,
+        websiteUrl: "https://b2b-matching.de" + path,
+      });
+      const defaults = s.service.list("owner", s.a.id).defaults;
+      const id = s.service.saveCampaign("owner", s.a.id, {
+        name: "Lokales Storytelling",
+        ...defaults,
+      }).id;
+      const preview = s.service.preview("owner", id);
+      expect(preview.html).toContain(name);
+      expect(preview.html).toContain(`bgcolor="${color}"`);
+      expect(preview.html).toContain(`href="https://b2b-matching.de${path}"`);
+      expect(preview.html).toContain(`network=${slug}`);
+      expect(preview.html).toContain("Ein Getränk in der Hand");
+      expect(preview.html).not.toContain("<h1");
+      expect(preview.html).not.toContain("{{");
+      expect(preview.text).toContain("Guten Tag,");
+      expect(preview.text).not.toContain("**");
+      expect(preview.text).toContain("\n\n");
+      expect(preview.html).not.toContain(
+        "Datenschutz zu Mailings und Auswertung",
+      );
+      const customized = s.service.saveCampaign("owner", s.a.id, {
+        name: "Ortsbezug",
+        subject: "Neue Kontakte in {{city}}",
+        body: "Guten Tag {{firstName}} {{lastName}},\n\nWillkommen in {{city}} bei {{networkName}}.",
+      }).id;
+      expect(s.service.preview("owner", customized).subject).toBe(
+        "Neue Kontakte in " + city,
+      );
+      expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+    },
+  );
+  it("ignores external or private landing targets and exposes only public raster logos", () => {
+    const s = setup();
+    s.a.websiteUrl = "https://foreign.example/Phishing";
+    const id = s.campaign();
+    expect(s.service.preview("owner", id).html).not.toContain(
+      "foreign.example",
+    );
+    s.a.websiteUrl = "https://b2b-matching.de/portal";
+    expect(s.service.preview("owner", id).html).toContain(
+      "https://b2b-matching.de/Leverkusen",
+    );
+    s.a.logoUrl =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jC1kAAAAASUVORK5CYII=";
+    expect(s.service.brandLogo(s.a.id).type).toBe("image/png");
+    expect(s.service.preview("owner", id).html).toContain(
+      "/api/mailings/public/brand/" + s.a.id,
+    );
+    s.a.status = "draft";
+    expect(() => s.service.brandLogo(s.a.id)).toThrow();
+  });
   it("enforces owner-only access", () => {
     const s = setup();
     s.actor.accountRole = "user";

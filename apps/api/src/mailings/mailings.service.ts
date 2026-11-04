@@ -13,6 +13,15 @@ import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
 import { opaqueToken, tokenHash } from "../auth/password";
 import { PortalStore } from "../core/portal.store";
+import { decodePublicImage } from "../networks/homepage-media";
+import {
+  STORY_BODY,
+  STORY_SUBJECT,
+  cityFromNetwork,
+  personalizeMail,
+  plainMail,
+  renderMailingTemplate,
+} from "./mailing-template";
 import { emailAddress, requiredText } from "../core/validation";
 import type {
   MailingCampaign,
@@ -21,22 +30,6 @@ import type {
   MailingEvent,
   MailingLead,
 } from "./mailing.types";
-
-const DEFAULT_BODY = `Guten Tag {{firstName}},
-
-der nächste passende Geschäftskontakt sitzt vielleicht nur wenige Straßen weiter. Mit dem Unternehmernetzwerk Leverkusen auf B2B Matching bringen wir Unternehmen aus unserer Stadt online zusammen – branchenübergreifend, persönlich und an einem zentralen Ort.
-
-Stellen Sie Ihr Unternehmen mit einer eigenen Partnerseite vor, entdecken Sie Angebote und Leistungen aus Leverkusen und finden Sie passende Kontakte für Ihre Vorhaben. Über den PartnerChat kommen Sie direkt ins Gespräch. Vernetzungsanfragen, Veranstaltungen und das schwarze Brett helfen dabei, aus einem ersten Kontakt eine dauerhafte Verbindung zu machen.
-
-So wird lokales Netzwerken auch zwischen persönlichen Treffen einfach nutzbar: neue Unternehmen kennenlernen, Ideen teilen und gemeinsam Möglichkeiten entdecken.
-
-Lernen Sie die Initiative auf unserer Leverkusen-Seite kennen oder stellen Sie direkt Ihre Teilnahmeanfrage. Die aktuellen Konditionen werden Ihnen vor Abschluss der Anmeldung transparent angezeigt. Das Angebot ist ein eigenständig betriebenes Unternehmensnetzwerk und kein Angebot der Stadtverwaltung.
-
-Ich freue mich darauf, Sie und Ihr Unternehmen im Netzwerk kennenzulernen.
-
-Viele Grüße
-Martin Kelm
-Media Online Innovations Group`;
 
 @Injectable()
 export class MailingsService implements OnModuleInit, OnModuleDestroy {
@@ -159,16 +152,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
           locked: Object.keys(c.deliveries).length > 0,
           ...this.reportData(c),
         })),
-      defaults: {
-        subject:
-          this.network(networkId).slug === "unternehmernetzwerkleverkusen"
-            ? "Leverkusener Unternehmen kennenlernen – vernetzen Sie sich vor Ort"
-            : `${this.network(networkId).name} – neue Kontakte entdecken`,
-        body:
-          this.network(networkId).slug === "unternehmernetzwerkleverkusen"
-            ? DEFAULT_BODY
-            : `Guten Tag {{firstName}},\n\nlernen Sie ${this.network(networkId).name} auf B2B Matching kennen. Entdecken Sie Unternehmen, Angebote und Leistungen und kommen Sie über den PartnerChat direkt ins Gespräch. Eine eigene Partnerseite, Vernetzungsanfragen, Veranstaltungen und das schwarze Brett erleichtern die Zusammenarbeit.\n\nDie aktuellen Konditionen sehen Sie vor Abschluss Ihrer Teilnahmeanfrage.\n\nViele Grüße\nMartin Kelm\nMedia Online Innovations Group`,
-      },
+      defaults: { subject: STORY_SUBJECT, body: STORY_BODY },
       readiness: {
         mail: !!(process.env.SENDGRID_API_KEY && process.env.MAIL_FROM_EMAIL),
         tracking: !!(
@@ -325,15 +309,30 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
   private targets(c: MailingCampaign) {
     const n = this.network(c.networkId),
       web = this.web();
+    let landing: string | undefined;
+    try {
+      const url = new URL(n.websiteUrl || "");
+      if (
+        url.origin === new URL(web).origin &&
+        /^\/[a-zA-Z0-9ÄÖÜäöüß_-]+\/?$/.test(url.pathname) &&
+        !url.search &&
+        !url.hash &&
+        !/^\/(portal|registrieren|anmelden|passwort)/i.test(url.pathname)
+      )
+        landing = url.href;
+    } catch {
+      /* Without an own landing page, retain the network registration link. */
+    }
     return {
       homepage: web + "/",
       landing:
+        landing ||
         web +
-        (n.slug === "unternehmernetzwerkleverkusen"
-          ? "/Leverkusen"
-          : n.slug === "unternehmernetzwerkkoeln"
-            ? "/Koeln"
-            : `/registrieren?network=${encodeURIComponent(n.slug)}`),
+          (n.slug === "unternehmernetzwerkleverkusen"
+            ? "/Leverkusen"
+            : n.slug === "unternehmernetzwerkkoeln"
+              ? "/Koeln"
+              : `/registrieren?network=${encodeURIComponent(n.slug)}`),
       register: web + `/registrieren?network=${encodeURIComponent(n.slug)}`,
     };
   }
@@ -365,35 +364,63 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     const unsubscribe = delivery
       ? `${api}/api/mailings/public/unsubscribe/${delivery.token}`
       : this.web() + "/datenschutz/unternehmen";
-    const body = c.body
-      .replace(
-        /\{\{(firstName|lastName|company)\}\}/g,
-        (_, key: "firstName" | "lastName" | "company") =>
-          lead[key] || (key === "firstName" ? "" : ""),
-      )
-      .replace(/Guten Tag\s*,/g, "Guten Tag,");
-    const escape = (text: string) =>
-      text.replace(
-        /[&<>"']/g,
-        (ch) =>
-          ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;",
-          })[ch]!,
-      );
-    const color = /^#[0-9a-f]{6}$/i.test(n.primaryColor)
-      ? n.primaryColor
-      : "#5364d9";
-    const buttons = `<p><a style="display:inline-block;background:${color};color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold" href="${escape(links.landing)}">${n.slug === "unternehmernetzwerkleverkusen" ? "Leverkusener Netzwerk entdecken" : "Netzwerk entdecken"}</a></p><p><a href="${escape(links.register)}">Teilnahme anfragen →</a></p><p><a href="${escape(links.homepage)}">Mehr über B2B Matching erfahren</a></p>`;
-    const html = `<!doctype html><html lang="de"><body style="margin:0;background:#f4f6fb;font-family:Arial,sans-serif;color:#24384c"><table role="presentation" width="100%"><tr><td style="padding:28px 12px" align="center"><table role="presentation" width="620" style="max-width:620px;width:100%;background:#fff;border-radius:16px"><tr><td style="padding:30px"><img src="${this.web()}/images/b2b-matching-logo-brand.png" width="200" alt="B2B Matching"><p style="font-size:13px;color:#667">${escape(n.name)}</p><h1 style="font-size:25px;line-height:1.35">${escape(c.subject)}</h1><div style="font-size:16px;line-height:1.7">${escape(body).replace(/\n/g, "<br>")}</div>${buttons}<hr style="border:0;border-top:1px solid #e0e5ee"><p style="font-size:12px;line-height:1.6">Media Online Innovations Group · Inhaber Martin Kelm<br>Im Weidenblech 25 · 51371 Leverkusen<br><a href="${this.web()}/impressum">Impressum</a> · <a href="${this.web()}/datenschutz/unternehmen">Datenschutz</a> · <a href="${escape(unsubscribe)}">Keine weiteren Werbe-E-Mails erhalten</a></p>${lead.tracking && delivery ? `<p style="font-size:11px;color:#667">Bei dieser Nachricht werden Bildabrufe, Linkaufrufe und die daraus zugeordnete Registrierung entsprechend Ihrer dokumentierten Freigabe ausgewertet.</p><img width="1" height="1" alt="" src="${api}/api/mailings/public/image/${delivery.token}.gif">` : ""}</td></tr></table></td></tr></table></body></html>`;
-    return {
-      subject: c.subject,
-      html,
-      text: `${body}\n\nNetzwerk entdecken: ${links.landing}\nTeilnahme anfragen: ${links.register}\nB2B Matching: ${links.homepage}\n\nMedia Online Innovations Group, Inhaber Martin Kelm\nIm Weidenblech 25, 51371 Leverkusen\nAbmelden: ${unsubscribe}\nDatenschutz: ${this.web()}/datenschutz/unternehmen`,
+    const values = {
+      firstName: lead.firstName || "",
+      lastName: lead.lastName || "",
+      company: lead.company || "",
+      networkName: n.name,
+      city: cityFromNetwork(n.name),
     };
+    const body = personalizeMail(c.body, values);
+    let logo = this.web() + "/images/b2b-matching-logo-brand.png";
+    if (decodePublicImage(n.logoUrl))
+      logo =
+        this.api() + "/api/mailings/public/brand/" + encodeURIComponent(n.id);
+    else if (n.logoUrl === "/images/unternehmernetzwerk-koeln.svg")
+      logo = this.web() + "/images/unternehmernetzwerk-koeln-mail.png";
+    else if (
+      n.logoUrl &&
+      /^\/images\/[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp)$/i.test(n.logoUrl) &&
+      !n.logoUrl.includes("..")
+    )
+      logo = this.web() + n.logoUrl;
+    const html = renderMailingTemplate({
+      body,
+      networkName: n.name,
+      color: n.primaryColor,
+      logo,
+      web: this.web(),
+      links,
+      unsubscribe,
+      pixel:
+        lead.tracking && delivery
+          ? api + "/api/mailings/public/image/" + delivery.token + ".gif"
+          : undefined,
+    });
+    return {
+      subject: personalizeMail(c.subject, values).replace(/[\r\n]/g, " "),
+      html,
+      text:
+        plainMail(body) +
+        "\n\nNetzwerk kennenlernen: " +
+        links.landing +
+        "\nDirekt zur Teilnahmeanfrage: " +
+        links.register +
+        "\nB2B Matching: " +
+        links.homepage +
+        "\n\nMedia Online Innovations Group, Inhaber Martin Kelm\nIm Weidenblech 25, 51371 Leverkusen\nAbmelden: " +
+        unsubscribe +
+        "\nDatenschutz: " +
+        this.web() +
+        "/datenschutz/unternehmen",
+    };
+  }
+  brandLogo(id: string) {
+    const network = this.network(id);
+    const image =
+      network.status === "active" ? decodePublicImage(network.logoUrl) : null;
+    if (!image) throw new NotFoundException("Netzwerklogo nicht gefunden.");
+    return image;
   }
   preview(authorization: string | undefined, id: string) {
     const actor = this.owner(authorization),

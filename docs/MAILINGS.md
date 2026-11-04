@@ -1,6 +1,16 @@
 # Betreiber-Mailings
 
-Der Bereich `/portal/admin/mailings` ist ausschließlich für `platform_admin` zugänglich. Alle Kampagnen und Kontakte sind netzwerkbezogen. Der Entwurf für Leverkusen ist vorbereitet; weder ein Deployment noch ein Import startet einen Versand.
+Der Bereich `/portal/admin/mailings` ist ausschließlich für `platform_admin` zugänglich. Alle Kampagnen und Kontakte sind netzwerkbezogen. Die gemeinsame persönliche Storytelling-Vorlage wird für jedes Netzwerk angeboten; weder ein Deployment noch ein Import startet einen Versand.
+
+## Gemeinsame Briefvorlage
+
+Ruhige, tabellenbasierte Mailgestaltung ohne große Werbeüberschrift: kleines Netzwerklogo (sonst Betreiberlogo), Netzwerkname, Absätze, ein Hauptbutton zur Landingpage und ein Textlink zur Teilnahme. Der Betreff bleibt im Betrefffeld. Netzwerknamen und Farben werden bei der Vorschau und beim Versand aus dem jeweiligen Netzwerk gelesen. Für das Kölner SVG-Logo steht eine Mail-kompatible PNG-Variante bereit. Bereits öffentliche hochgeladene Rasterlogos werden über einen generischen, nicht empfängerbezogenen Logo-Endpunkt ausgeliefert. Bei blockierten Bildern bleiben Netzwerkname, Text und Links nutzbar.
+
+Platzhalter: `{{firstName}}`, `{{lastName}}`, `{{company}}`, `{{networkName}}`, `{{city}}`. Ortsnamen werden aus Präfixen wie „Unternehmernetzwerk Köln“, „Unternehmernetzwerk-Leverkusen“ und „B2B-Netzwerk Bonn“ erkannt; für nicht ortsbezogene Namen bleibt `city` leer. Die Standardgeschichte benötigt diesen optionalen Platzhalter nicht. Fehlende Namen ergeben eine neutrale Anrede. `**Text**` erlaubt sichere Fetthervorhebung; HTML-Eingaben werden maskiert.
+
+Eigene Landingpages werden aus einer gleichursprünglichen öffentlichen Einzelroute in der Netzwerk-Websiteadresse übernommen. Externe Ziele und Portal-/Loginrouten sind dafür ausgeschlossen. Ohne eigene Landingpage führt der Button zur zugehörigen Registrierung; Leverkusen und Köln behalten ihre bekannten Landingpages.
+
+Bestehende Entwürfe und versendete Kampagnen werden nicht überschrieben. Im Editor kann die gemeinsame Vorlage ausdrücklich übernommen und nach Prüfung gespeichert werden. Abmeldung, Impressum, Datenschutzhinweis im Footer und die bei Trackingfreigabe eingeblendete Erläuterung bleiben erhalten.
 
 ## Versand und Auswertung
 

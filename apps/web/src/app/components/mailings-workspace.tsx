@@ -587,11 +587,31 @@ export function MailingsWorkspace() {
                   />
                 </label>
                 <p>
-                  Platzhalter: {"{{firstName}}, {{lastName}}, {{company}}"}.
-                  Netzwerk-, Anmelde- und Homepage-Buttons sowie Abmeldung
-                  werden automatisch ergänzt.
+                  Platzhalter:{" "}
+                  {
+                    "{{firstName}}, {{lastName}}, {{company}}, {{networkName}}, {{city}}"
+                  }
+                  . Der Ort wird aus Namen wie „Unternehmernetzwerk Köln“
+                  erkannt. Mit **Text** kannst du einzelne Aussagen hervorheben.
+                  Netzwerkname, Logo, Farben, Links und Abmeldung werden
+                  automatisch ergänzt.
                 </p>
                 <div className="mailingActions">
+                  {!campaign?.locked && (
+                    <button
+                      type="button"
+                      disabled={busy || !data}
+                      onClick={() => {
+                        if (!data) return;
+                        setDraft({ ...draft, ...data.defaults });
+                        setNotice(
+                          "Storytelling-Vorlage übernommen. Bitte prüfen und als Entwurf speichern.",
+                        );
+                      }}
+                    >
+                      Storytelling-Vorlage übernehmen
+                    </button>
+                  )}
                   {!campaign?.locked && (
                     <button className="mailingPrimary" disabled={busy}>
                       Entwurf speichern

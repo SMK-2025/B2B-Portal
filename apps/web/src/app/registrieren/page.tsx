@@ -208,7 +208,9 @@ export default function RegistrationPage() {
       }
     >
       {networkBrand ? (
-        <header className={`networkAuthHeader${acceptsRequests ? " networkAuthHeaderSimple" : ""}`}>
+        <header
+          className={`networkAuthHeader${acceptsRequests ? " networkAuthHeaderSimple" : ""}`}
+        >
           <Link
             href={
               `/anmelden?network=${encodeURIComponent(networkBrand.slug)}` as never
@@ -273,16 +275,43 @@ export default function RegistrationPage() {
                 </NetworkText>
               </span>
               <h2>
-                <NetworkText id="ui.page.bbdf4d619209c904">
-                  Gemeinsam mehr erreichen.
+                <NetworkText
+                  id={
+                    networkBrand?.slug === "unternehmernetzwerkleverkusen"
+                      ? "ui.auth.leverkusen.story-title-first"
+                      : "ui.page.bbdf4d619209c904"
+                  }
+                >
+                  {networkBrand?.slug === "unternehmernetzwerkleverkusen"
+                    ? "Eine Stadt voller Unternehmen."
+                    : "Gemeinsam mehr erreichen."}
                 </NetworkText>
                 <br />
-                <NetworkText id="ui.page.640b8e17ea4832d0">
-                  Persönlich verbunden.
+                <NetworkText
+                  id={
+                    networkBrand?.slug === "unternehmernetzwerkleverkusen"
+                      ? "ui.auth.leverkusen.story-title-second"
+                      : "ui.page.640b8e17ea4832d0"
+                  }
+                >
+                  {networkBrand?.slug === "unternehmernetzwerkleverkusen"
+                    ? "Und du bist mittendrin!"
+                    : "Persönlich verbunden."}
                 </NetworkText>
               </h2>
               <p>
-                {networkBrand?.slug === "bayer04leverkusen" ? (
+                {networkBrand?.slug === "unternehmernetzwerkleverkusen" ? (
+                  <NetworkText id="ui.auth.leverkusen.story-intro">
+                    <strong>
+                      Das Unternehmernetzwerk Leverkusen ist dein
+                      Online-Treffpunkt für geschäftliche Kontakte vor Ort.
+                    </strong>{" "}
+                    Ein unabhängiges B2B-Netzwerk, in dem du dein Unternehmen
+                    vorstellst, passende Leistungen findest und neue
+                    Verbindungen aufbaust. So einfach war das Netzwerken noch
+                    nie.
+                  </NetworkText>
+                ) : networkBrand?.slug === "bayer04leverkusen" ? (
                   <NetworkText id="ui.auth.story-intro">
                     Lerne Menschen und Unternehmen aus deinem Business-Netzwerk
                     kennen, entdecke Angebote und Leistungen und komm direkt ins
@@ -300,65 +329,77 @@ export default function RegistrationPage() {
                   </>
                 )}
               </p>
-              <div className="authBenefits">
-                <article>
-                  <b>01</b>
-                  <div>
-                    <strong>
-                      <NetworkText id="ui.page.94ddedde22fbc5f4">
-                        {centralPayment
-                          ? "Netzwerk kennenlernen"
-                          : "Mitgliedschaft kennenlernen"}
-                      </NetworkText>
-                    </strong>
-                    <p>
-                      <NetworkText id="ui.page.002a2e08b02edfbd">
-                        {centralPayment
-                          ? "Deinen persönlichen Zugang erstellen und die Partner im Netzwerk entdecken."
-                          : "Preis und Leistungen prüfen und Ihren persönlichen Zugang erstellen."}
-                      </NetworkText>
-                    </p>
+              {networkBrand?.slug === "unternehmernetzwerkleverkusen" ? (
+                <p>
+                  <NetworkText id="ui.auth.leverkusen.story-action">
+                    Registriere dich und erstelle deine persönliche
+                    Unternehmens-Seite.
+                  </NetworkText>
+                </p>
+              ) : (
+                <>
+                  <div className="authBenefits">
+                    <article>
+                      <b>01</b>
+                      <div>
+                        <strong>
+                          <NetworkText id="ui.page.94ddedde22fbc5f4">
+                            {centralPayment
+                              ? "Netzwerk kennenlernen"
+                              : "Mitgliedschaft kennenlernen"}
+                          </NetworkText>
+                        </strong>
+                        <p>
+                          <NetworkText id="ui.page.002a2e08b02edfbd">
+                            {centralPayment
+                              ? "Deinen persönlichen Zugang erstellen und die Partner im Netzwerk entdecken."
+                              : "Preis und Leistungen prüfen und Ihren persönlichen Zugang erstellen."}
+                          </NetworkText>
+                        </p>
+                      </div>
+                    </article>
+                    <article>
+                      <b>02</b>
+                      <div>
+                        <strong>
+                          <NetworkText id="ui.page.b122adc74576f92f">
+                            Persönlich verbunden bleiben
+                          </NetworkText>
+                        </strong>
+                        <p>
+                          <NetworkText id="ui.page.e42183dfdd0e9f49">
+                            Kontakte vertiefen, Nachrichten austauschen und
+                            gemeinsame Treffen planen.
+                          </NetworkText>
+                        </p>
+                      </div>
+                    </article>
+                    <article>
+                      <b>03</b>
+                      <div>
+                        <strong>
+                          <NetworkText id="ui.page.4a8470d2e1097b5e">
+                            Gemeinsam Chancen nutzen
+                          </NetworkText>
+                        </strong>
+                        <p>
+                          <NetworkText id="ui.page.e78a0ef6793d58ab">
+                            Kompetenzen entdecken, Angebote abstimmen und aus
+                            Begegnungen nachhaltige Geschäftsbeziehungen
+                            entwickeln.
+                          </NetworkText>
+                        </p>
+                      </div>
+                    </article>
                   </div>
-                </article>
-                <article>
-                  <b>02</b>
-                  <div>
-                    <strong>
-                      <NetworkText id="ui.page.b122adc74576f92f">
-                        Persönlich verbunden bleiben
-                      </NetworkText>
-                    </strong>
-                    <p>
-                      <NetworkText id="ui.page.e42183dfdd0e9f49">
-                        Kontakte vertiefen, Nachrichten austauschen und
-                        gemeinsame Treffen planen.
-                      </NetworkText>
-                    </p>
-                  </div>
-                </article>
-                <article>
-                  <b>03</b>
-                  <div>
-                    <strong>
-                      <NetworkText id="ui.page.4a8470d2e1097b5e">
-                        Gemeinsam Chancen nutzen
-                      </NetworkText>
-                    </strong>
-                    <p>
-                      <NetworkText id="ui.page.e78a0ef6793d58ab">
-                        Kompetenzen entdecken, Angebote abstimmen und aus
-                        Begegnungen nachhaltige Geschäftsbeziehungen entwickeln.
-                      </NetworkText>
-                    </p>
-                  </div>
-                </article>
-              </div>
-              <small>
-                <NetworkText id="ui.page.215f1992e92e4077">
-                  ✓ Keine offene Registrierung &nbsp; ✓ Keine öffentliche
-                  Partnerseite &nbsp; ✓ Strikt getrennter Netzwerkbereich
-                </NetworkText>
-              </small>
+                  <small>
+                    <NetworkText id="ui.page.215f1992e92e4077">
+                      ✓ Keine offene Registrierung &nbsp; ✓ Keine öffentliche
+                      Partnerseite &nbsp; ✓ Strikt getrennter Netzwerkbereich
+                    </NetworkText>
+                  </small>
+                </>
+              )}
             </>
           )}
         </aside>

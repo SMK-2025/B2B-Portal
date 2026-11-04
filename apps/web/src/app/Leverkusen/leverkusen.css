@@ -1,8 +1,12 @@
 .levPublic {
-  --lev-purple: #6578f5;
-  --lev-ink: #17203d;
-  --lev-copy: #586581;
-  --lev-line: #dfe5f2;
+  --lev-brand: #0723f2;
+  --lev-dark: #000000;
+  --lev-on-brand: #fff;
+  --lev-on-dark: #fff;
+  --lev-purple: color-mix(in srgb, var(--lev-brand) 42%, white);
+  --lev-ink: color-mix(in srgb, var(--lev-dark) 92%, white);
+  --lev-copy: #50545f;
+  --lev-line: color-mix(in srgb, var(--lev-brand) 5%, white);
   --lev-page: #f7f9ff;
 }
 .levPublic .v2Header {
@@ -37,7 +41,7 @@
 }
 .levLanding h1 em {
   display: block;
-  color: #c8c8ff;
+  color: color-mix(in srgb, var(--lev-brand) 6%, white);
   font-style: normal;
 }
 .levLanding h2 {
@@ -46,7 +50,7 @@
 }
 .levLanding h2 em {
   font-style: normal;
-  color: #6570d9;
+  color: var(--lev-brand);
 }
 .levLanding h3 {
   font-size: 24px;
@@ -64,12 +68,12 @@
 }
 .levLanding a:focus-visible,
 .levLanding summary:focus-visible {
-  outline: 3px solid #67b7ff;
+  outline: 3px solid color-mix(in srgb, var(--lev-brand) 39%, white);
   outline-offset: 5px;
 }
 .levEyebrow {
   display: block;
-  color: #5364d3;
+  color: var(--lev-brand);
   font-size: 11px;
   font-weight: 750;
   letter-spacing: 0.13em;
@@ -83,7 +87,7 @@
   scroll-margin-top: 150px;
 }
 .levAccess {
-  background: #f0f2ff;
+  background: color-mix(in srgb, var(--lev-brand) 3%, white);
   border-bottom: 1px solid var(--lev-line);
 }
 .levAccess > .levWrap {
@@ -101,7 +105,7 @@
 .levAccess a {
   font-size: 13px;
   font-weight: 600;
-  color: #4654b5;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
 }
 .levAccess a span {
   font-size: 17px;
@@ -113,7 +117,7 @@
   min-height: 590px;
   display: flex;
   align-items: center;
-  background: #111a3a;
+  background: var(--lev-dark);
   color: #fff;
 }
 .levHeroImage {
@@ -133,18 +137,22 @@
   background:
     linear-gradient(
       90deg,
-      #111a3af0 0%,
-      #111a3ad9 30%,
-      #111a3a5c 60%,
-      #111a3a12 100%
+      color-mix(in srgb, var(--lev-dark) 94%, transparent) 0%,
+      color-mix(in srgb, var(--lev-dark) 85%, transparent) 30%,
+      color-mix(in srgb, var(--lev-dark) 36%, transparent) 60%,
+      color-mix(in srgb, var(--lev-dark) 7%, transparent) 100%
     ),
-    linear-gradient(0deg, #111a3a5c, transparent 50%);
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--lev-dark) 36%, transparent),
+      transparent 50%
+    );
 }
 .levHeroInner {
   padding-block: 60px;
 }
 .levHero .levEyebrow {
-  color: #d4d9ff;
+  color: color-mix(in srgb, var(--lev-brand) 5%, white);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -153,13 +161,18 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #b8a8ff;
-  box-shadow: 0 0 0 5px #b8a8ff20;
+  background: color-mix(in srgb, var(--lev-brand) 10%, white);
+  box-shadow: 0 0 0 5px
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--lev-brand) 10%, white) 13%,
+      transparent
+    );
 }
 .levHero .levHeroLead {
   font-size: 18px;
   line-height: 1.75;
-  color: #e1e7f8;
+  color: color-mix(in srgb, var(--lev-brand) 4%, white);
   max-width: 590px;
   margin-top: 25px;
 }
@@ -171,26 +184,45 @@
   margin-top: 30px;
 }
 .levLanding .levPrimary {
-  background: linear-gradient(125deg, #5b70ef, #856de8);
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--lev-brand) 46%, white),
+    color-mix(in srgb, var(--lev-brand) 43%, white)
+  );
   color: white;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: 22px;
   padding: 16px 22px;
-  border: 1px solid #9a96ff66;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--lev-brand) 12%, white) 40%,
+      transparent
+    );
   border-radius: 11px;
   font-size: 15px;
   font-weight: 650;
   line-height: 1.4;
-  box-shadow: 0 10px 30px #3249b526;
+  box-shadow: 0 10px 30px
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark)) 15%,
+      transparent
+    );
   transition:
     transform 0.2s,
     box-shadow 0.2s;
 }
 .levLanding .levPrimary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px #5660c840;
+  box-shadow: 0 14px 30px
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--lev-brand) 57%, white) 25%,
+      transparent
+    );
 }
 .levPrimary > span {
   font-size: 20px;
@@ -212,11 +244,11 @@
   margin: 35px 0 0;
   padding: 0;
   font-size: 12px;
-  color: #d0d7ed;
+  color: color-mix(in srgb, var(--lev-brand) 8%, white);
 }
 .levHeroChecks li:before {
   content: "✓";
-  color: #c3b9ff;
+  color: color-mix(in srgb, var(--lev-brand) 8%, white);
   margin-right: 8px;
 }
 .levImageNote {
@@ -246,8 +278,8 @@
   border-bottom: 2px solid transparent;
 }
 .levGuide a:hover {
-  color: #5364d3;
-  border-color: #6578f5;
+  color: color-mix(in srgb, var(--lev-brand) 55%, white);
+  border-color: color-mix(in srgb, var(--lev-brand) 42%, white);
 }
 .levIntro {
   display: grid;
@@ -258,7 +290,7 @@
 .levIntro .levLead {
   margin-top: 0;
   font-size: 18px;
-  color: #31415e;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
 }
 .levIntro .levLead strong {
   font-weight: 550;
@@ -285,15 +317,19 @@
 }
 .levProfileFeature {
   padding: 34px;
-  background: linear-gradient(145deg, #ecf0ff, #f2edff);
-  border: 1px solid #deddf7;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--lev-brand) 3%, white),
+    color-mix(in srgb, var(--lev-brand) 3%, white)
+  );
+  border: 1px solid color-mix(in srgb, var(--lev-brand) 5%, white);
   border-radius: 23px;
   overflow: hidden;
 }
 .levFeatureKicker {
   font-size: 10px;
   letter-spacing: 0.13em;
-  color: #5661bb;
+  color: color-mix(in srgb, var(--lev-brand) 60%, white);
   font-weight: 750;
   display: block;
   margin-bottom: 20px;
@@ -309,9 +345,14 @@
   background: #fff;
   border-radius: 13px;
   overflow: hidden;
-  box-shadow: 0 15px 30px #2d3c6b18;
+  box-shadow: 0 15px 30px
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark)) 9%,
+      transparent
+    );
   transform: rotate(-2deg);
-  border: 1px solid #d4ddee;
+  border: 1px solid color-mix(in srgb, var(--lev-brand) 7%, white);
 }
 .levMiniNav {
   display: flex;
@@ -320,22 +361,26 @@
   justify-content: space-between;
   padding: 18px 16px;
   font-size: 9px;
-  color: #596581;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
 }
 .levMiniNav > span:first-child {
   font-weight: 800;
-  color: #5464d2;
+  color: color-mix(in srgb, var(--lev-brand) 55%, white);
   letter-spacing: 0.05em;
 }
 .levMiniHero {
   padding: 25px 20px 30px;
-  background: radial-gradient(ellipse at 100% 0%, #6451a9, #1b254b 70%);
+  background: radial-gradient(
+    ellipse at 100% 0%,
+    color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark)),
+    color-mix(in srgb, var(--lev-dark) 92%, white) 70%
+  );
   color: #fff;
 }
 .levMiniHero > span {
   font-size: 8px;
   letter-spacing: 0.12em;
-  color: #bfc7ff;
+  color: color-mix(in srgb, var(--lev-brand) 8%, white);
 }
 .levMiniHero strong {
   display: block;
@@ -352,7 +397,7 @@
 }
 .levMiniHero > div > span {
   background: #ffffffeb;
-  color: #243459;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
   border-radius: 5px;
   font-size: 9px;
   padding: 9px 10px;
@@ -367,7 +412,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 14px;
-  color: #53617e;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
   font-size: 9px;
 }
 .levMiniFoot span {
@@ -379,12 +424,12 @@
   height: 18px;
   width: 18px;
   border-radius: 50%;
-  background: #dfe5fa;
+  background: color-mix(in srgb, var(--lev-brand) 4%, white);
 }
 .levProfileFeature > small {
   display: block;
   font-size: 10px;
-  color: #6e7896;
+  color: color-mix(in srgb, var(--lev-brand) 64%, white);
   margin-top: 18px;
   text-align: center;
 }
@@ -392,7 +437,7 @@
   font-size: 13px;
   line-height: 1.7;
   padding-top: 20px;
-  border-top: 1px solid #d4d9ef;
+  border-top: 1px solid color-mix(in srgb, var(--lev-brand) 7%, white);
   margin-top: 22px;
 }
 .levFeatureGrid {
@@ -409,8 +454,12 @@
 .levIcon {
   width: 46px;
   height: 46px;
-  background: linear-gradient(135deg, #eaf3ff, #eee9ff);
-  color: #5b69cb;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--lev-brand) 3%, white),
+    color-mix(in srgb, var(--lev-brand) 3%, white)
+  );
+  color: color-mix(in srgb, var(--lev-brand) 55%, white);
   border-radius: 13px;
   display: grid;
   place-items: center;
@@ -419,7 +468,7 @@
 .levFeatureTag {
   display: block;
   font-size: 11px;
-  color: #6c7593;
+  color: color-mix(in srgb, var(--lev-brand) 65%, white);
   margin-bottom: 9px;
 }
 .levFeatureCard h3 {
@@ -454,7 +503,7 @@
   margin-top: 10px;
 }
 .levLocal {
-  background: #17203d;
+  background: color-mix(in srgb, var(--lev-dark) 92%, white);
   color: #fff;
   position: relative;
   overflow: hidden;
@@ -464,14 +513,29 @@
   position: absolute;
   width: 500px;
   height: 500px;
-  border: 1px solid #a78bfa24;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--lev-brand) 31%, white) 14%,
+      transparent
+    );
   border-radius: 50%;
   right: -150px;
   top: -260px;
   pointer-events: none;
   box-shadow:
-    0 0 0 90px #a78bfa06,
-    0 0 0 180px #a78bfa04;
+    0 0 0 90px
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--lev-brand) 31%, white) 2%,
+        transparent
+      ),
+    0 0 0 180px
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--lev-brand) 31%, white) 2%,
+        transparent
+      );
 }
 .levLocalHeader {
   display: grid;
@@ -481,13 +545,13 @@
   z-index: 1;
 }
 .levLocal .levEyebrow {
-  color: #b9b5ff;
+  color: color-mix(in srgb, var(--lev-brand) 9%, white);
 }
 .levLocal h2 em {
-  color: #b8b6ff;
+  color: color-mix(in srgb, var(--lev-brand) 9%, white);
 }
 .levLocal p {
-  color: #d5dcef;
+  color: color-mix(in srgb, var(--lev-brand) 7%, white);
 }
 .levLocalHeader > p {
   font-size: 18px;
@@ -506,7 +570,7 @@
   border-radius: 30px;
   padding: 11px 18px;
   font-size: 14px;
-  color: #e9edff;
+  color: color-mix(in srgb, var(--lev-brand) 3%, white);
 }
 .levLocalBottom {
   display: flex;
@@ -525,8 +589,13 @@
 }
 .levLocalBottom a {
   font-size: 14px;
-  color: #e0d8ff;
-  border-bottom: 1px solid #b8b6ff77;
+  color: color-mix(in srgb, var(--lev-brand) 5%, white);
+  border-bottom: 1px solid
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--lev-brand) 9%, white) 47%,
+      transparent
+    );
   padding: 12px 0;
 }
 .levLocalBottom a span {
@@ -551,7 +620,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.07em;
-  color: #626d9b;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
   padding-bottom: 20px;
   border-bottom: 1px solid var(--lev-line);
   width: 100%;
@@ -566,7 +635,7 @@
 }
 .levCaseResult {
   margin-top: auto;
-  color: #5364d3;
+  color: color-mix(in srgb, var(--lev-brand) 55%, white);
   font-size: 12px;
   font-weight: 650;
   display: flex;
@@ -575,9 +644,9 @@
   width: 100%;
 }
 .levClarity {
-  background: #eceffd;
-  border-top: 1px solid #e0e5f4;
-  border-bottom: 1px solid #e0e5f4;
+  background: color-mix(in srgb, var(--lev-brand) 3%, white);
+  border-top: 1px solid color-mix(in srgb, var(--lev-brand) 5%, white);
+  border-bottom: 1px solid color-mix(in srgb, var(--lev-brand) 5%, white);
 }
 .levClarityInner {
   display: grid;
@@ -587,8 +656,8 @@
 .levClarityInner a {
   display: inline-block;
   font-size: 14px;
-  color: #4d5dbd;
-  border-bottom: 1px solid #9cabe7;
+  color: color-mix(in srgb, var(--lev-brand) 62%, white);
+  border-bottom: 1px solid color-mix(in srgb, var(--lev-brand) 31%, white);
   padding-bottom: 7px;
   margin-top: 25px;
 }
@@ -600,12 +669,12 @@
   flex-direction: column;
   gap: 9px;
   padding: 0 0 22px 23px;
-  border-left: 2px solid #a7a3e8;
+  border-left: 2px solid color-mix(in srgb, var(--lev-brand) 14%, white);
   margin: 0 0 23px;
 }
 .levClarityPoints strong {
   font-size: 18px;
-  color: #273758;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
   font-weight: 600;
 }
 .levClarityPoints span {
@@ -636,10 +705,10 @@
   place-items: center;
   flex: 0 0 43px;
   height: 43px;
-  background: #e9ecfc;
-  border: 1px solid #d5dcf3;
+  background: color-mix(in srgb, var(--lev-brand) 3%, white);
+  border: 1px solid color-mix(in srgb, var(--lev-brand) 6%, white);
   border-radius: 12px;
-  color: #5563c5;
+  color: color-mix(in srgb, var(--lev-brand) 58%, white);
   font-size: 14px;
   font-weight: 650;
 }
@@ -654,10 +723,15 @@
 .levOffer {
   padding: 32px;
   background: #fff;
-  border: 1px solid #d9dff1;
-  border-top: 4px solid #7d79e9;
+  border: 1px solid color-mix(in srgb, var(--lev-brand) 6%, white);
+  border-top: 4px solid color-mix(in srgb, var(--lev-brand) 40%, white);
   border-radius: 20px;
-  box-shadow: 0 20px 55px #2435630c;
+  box-shadow: 0 20px 55px
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark)) 5%,
+      transparent
+    );
 }
 .levOffer h3 {
   font-size: 28px;
@@ -669,7 +743,7 @@
   display: block;
   font-size: 52px;
   font-weight: 650;
-  color: #27345f;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
   letter-spacing: -0.05em;
   line-height: 1.3;
 }
@@ -694,7 +768,7 @@
   font-weight: 600;
 }
 .levOffer dt {
-  color: #606d86;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
 }
 .levOffer .levOfferTotal {
   border-top: 1px solid var(--lev-line);
@@ -718,7 +792,7 @@
 }
 .levOffer li:before {
   content: "✓";
-  color: #6672d5;
+  color: color-mix(in srgb, var(--lev-brand) 50%, white);
   margin-right: 9px;
 }
 .levOffer .levPrimary {
@@ -728,7 +802,7 @@
   display: block;
   font-size: 11px;
   line-height: 1.7;
-  color: #6a7590;
+  color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
   margin-top: 16px;
 }
 .levFaq {
@@ -769,7 +843,7 @@
   display: none;
 }
 .levFaq summary > span {
-  color: #7783c5;
+  color: color-mix(in srgb, var(--lev-brand) 49%, white);
   font-size: 19px;
   flex-shrink: 0;
   transition: transform 0.2s;
@@ -784,7 +858,7 @@
 .levOperator {
   padding: 23px;
   background: #f4f6fc;
-  border: 1px solid #e6e9f3;
+  border: 1px solid color-mix(in srgb, var(--lev-brand) 4%, white);
   border-radius: 14px;
   margin-top: 32px;
 }
@@ -792,7 +866,7 @@
   display: block;
   font-size: 9px;
   letter-spacing: 0.09em;
-  color: #747f98;
+  color: color-mix(in srgb, var(--lev-brand) 62%, white);
   margin-bottom: 12px;
 }
 .levOperator > strong {
@@ -805,7 +879,7 @@
 .levOperator > small {
   display: block;
   font-size: 11px;
-  color: #778198;
+  color: color-mix(in srgb, var(--lev-brand) 61%, white);
   line-height: 1.7;
   margin-top: 14px;
 }
@@ -824,7 +898,7 @@
 }
 .levFinal .levActions > a:not(.levPrimary) {
   font-size: 14px;
-  color: #5463b1;
+  color: color-mix(in srgb, var(--lev-brand) 63%, white);
 }
 .levMobileCta {
   display: none;
@@ -900,7 +974,12 @@
     min-height: 620px;
   }
   .levHero:after {
-    background: linear-gradient(90deg, #111a3af0, #111a3ac9 45%, #111a3a50);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--lev-dark) 94%, transparent),
+      color-mix(in srgb, var(--lev-dark) 79%, transparent) 45%,
+      color-mix(in srgb, var(--lev-dark) 31%, transparent)
+    );
   }
   .levHeroInner {
     padding-block: 55px;
@@ -1022,9 +1101,9 @@
   .levHero:after {
     background: linear-gradient(
       180deg,
-      #111a3ac9 0%,
-      #111a3ab8 36%,
-      #111a3ad9 100%
+      color-mix(in srgb, var(--lev-dark) 79%, transparent) 0%,
+      color-mix(in srgb, var(--lev-dark) 72%, transparent) 36%,
+      color-mix(in srgb, var(--lev-dark) 85%, transparent) 100%
     );
   }
   .levImageNote {
@@ -1033,7 +1112,7 @@
     bottom: 8px;
     padding: 4px 7px;
     border-radius: 4px;
-    background: #111a3acc;
+    background: color-mix(in srgb, var(--lev-dark) 80%, transparent);
   }
   .levLanding h1 {
     font-size: clamp(37px, 9.5vw, 50px);
@@ -1222,21 +1301,26 @@
     z-index: 100;
     background: #fffffff5;
     backdrop-filter: blur(16px);
-    border-top: 1px solid #d8deed;
+    border-top: 1px solid color-mix(in srgb, var(--lev-brand) 7%, white);
     padding: 10px 15px calc(10px + env(safe-area-inset-bottom));
     gap: 15px;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 -8px 30px #2331500d;
+    box-shadow: 0 -8px 30px
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark)) 5%,
+        transparent
+      );
   }
   .levMobileCta > span {
     font-size: 10px;
     line-height: 1.6;
-    color: #63718c;
+    color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
   }
   .levMobileCta > span strong {
     font-size: 12px;
-    color: #263550;
+    color: color-mix(in srgb, var(--lev-brand) 65%, var(--lev-dark));
   }
   .levMobileCta .levPrimary {
     min-height: 45px;
@@ -1258,4 +1342,23 @@
   .levLanding .levPrimary:hover {
     transform: none;
   }
+}
+/* Keep network accents scoped to this landing page. */
+.levPublic .v2Button,
+.levLanding .levPrimary {
+  background: var(--lev-brand);
+  color: var(--lev-on-brand);
+  border-color: var(--lev-brand);
+}
+.levPublic .v2Button:hover,
+.levLanding .levPrimary:hover {
+  background: color-mix(in srgb, var(--lev-brand) 86%, black);
+}
+.levLocal {
+  background: var(--lev-dark);
+  color: var(--lev-on-dark);
+}
+.levPublic .networkPitch {
+  background: var(--lev-dark);
+  border-color: var(--lev-brand);
 }

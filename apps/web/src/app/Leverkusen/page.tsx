@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader, SiteFooter } from "../components/site-chrome";
 import { LeverkusenOffer } from "../components/leverkusen-offer";
+import { LeverkusenBrand } from "../components/leverkusen-brand";
 import "./leverkusen.css";
 
 const title = "Unternehmernetzwerk Leverkusen | Unternehmen finden & vernetzen";
@@ -245,7 +246,7 @@ const structured = {
 };
 export default function Leverkusen() {
   return (
-    <div className="v2 levPublic">
+    <LeverkusenBrand>
       <SiteHeader />
       <main className="levLanding">
         <div className="levAccess">
@@ -692,6 +693,6 @@ export default function Leverkusen() {
         />
       </main>
       <SiteFooter />
-    </div>
+    </LeverkusenBrand>
   );
 }

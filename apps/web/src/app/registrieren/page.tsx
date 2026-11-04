@@ -41,6 +41,7 @@ export default function RegistrationPage() {
     [networkInviteToken, setNetworkInviteToken] = useState(""),
     [ready, setReady] = useState(false);
   const acceptsRequests = [
+    "unternehmerfreunde",
     "bayer04leverkusen",
     "unternehmernetzwerkleverkusen",
     "unternehmernetzwerkkoeln",

@@ -218,7 +218,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
             </label>
             <label className="full">
               <NetworkText id="ui.network-participation-request.0ad05980a9d1b011">
-                {local ? "Firmensitz" : "Dein Bezug zum Business-Bereich"}
+                {local ? "Firmensitz" : network === "unternehmerfreunde" ? "Dein Bezug zu den Unternehmerfreunden" : "Dein Bezug zum Business-Bereich"}
               </NetworkText>
               <select {...field("affiliation")} required>
                 <option value="" disabled>
@@ -226,6 +226,12 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
                 </option>
                 {local ? (
                   <option>Unternehmenssitz in {city}</option>
+                ) : network === "unternehmerfreunde" ? (
+                  <>
+                    <option>Mitglied der Unternehmerfreunde</option>
+                    <option>Interesse an einer Mitgliedschaft</option>
+                    <option>Sonstiger Bezug</option>
+                  </>
                 ) : (
                   <>
                     <option>Hospitality-/VIP-Gast</option>

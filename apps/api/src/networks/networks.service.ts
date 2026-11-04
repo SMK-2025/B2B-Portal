@@ -1128,6 +1128,7 @@ export class NetworksService {
     if (!r || !r.endsAt || Date.parse(r.endsAt) <= Date.now()) {
       const token = opaqueToken(),
         isRequest = [
+          "unternehmerfreunde",
           "bayer04leverkusen",
           "unternehmernetzwerkleverkusen",
           "unternehmernetzwerkkoeln",
@@ -1163,6 +1164,7 @@ export class NetworksService {
       encodeURIComponent(n.slug) +
       "&" +
       ([
+        "unternehmerfreunde",
         "bayer04leverkusen",
         "unternehmernetzwerkleverkusen",
         "unternehmernetzwerkkoeln",
@@ -1265,6 +1267,7 @@ export class NetworksService {
     );
     if (
       ![
+        "unternehmerfreunde",
         "bayer04leverkusen",
         "unternehmernetzwerkleverkusen",
         "unternehmernetzwerkkoeln",
@@ -1293,6 +1296,7 @@ export class NetworksService {
   async requestParticipation(input: Record<string, unknown>) {
     if (
       ![
+        "unternehmerfreunde",
         "bayer04leverkusen",
         "unternehmernetzwerkleverkusen",
         "unternehmernetzwerkkoeln",
@@ -1339,6 +1343,8 @@ export class NetworksService {
                 ? "Unternehmenssitz in Köln"
                 : "Unternehmenssitz in Leverkusen",
             ]
+          : network.slug === "unternehmerfreunde"
+            ? ["Mitglied der Unternehmerfreunde", "Interesse an einer Mitgliedschaft", "Sonstiger Bezug"]
           : [
               "Hospitality-/VIP-Gast",
               "Unternehmenspartner/Sponsor",

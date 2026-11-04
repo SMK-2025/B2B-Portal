@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
@@ -140,22 +141,32 @@ function BundesligaTable({ data }: { data: Schedule }) {
           <span>
             {data.competition} {data.season}
           </span>
-          <h2>Die Tabelle im Überblick</h2>
+          <h2>
+            <NetworkText id="ui.network-game-schedule-workspace.e2144817d37c7a51">
+              Die Tabelle im Überblick
+            </NetworkText>
+          </h2>
         </div>
         <a
           href={data.tableSourceUrl || data.sourceUrl}
           target="_blank"
           rel="noreferrer"
         >
-          Offizielle Tabelle ↗
+          <NetworkText id="ui.network-game-schedule-workspace.a56c57d99f01fc60">
+            Offizielle Tabelle ↗
+          </NetworkText>
         </a>
       </header>
       <p className="bundesligaSource">
-        Stand{" "}
+        <NetworkText id="ui.network-game-schedule-workspace.2de251e0c4e8f819">
+          Stand
+        </NetworkText>{" "}
         {data.asOf &&
           new Date(`${data.asOf}T12:00:00Z`).toLocaleDateString("de-DE")}
-        . Offizieller Tabellenstand; manuell gepflegte Spielergebnisse verändern
-        diese Tabelle nicht.
+        <NetworkText id="ui.network-game-schedule-workspace.11b0b4369087a4b2">
+          . Offizieller Tabellenstand; manuell gepflegte Spielergebnisse
+          verändern diese Tabelle nicht.
+        </NetworkText>
       </p>
       <div
         className="bundesligaTableScroll"
@@ -165,19 +176,47 @@ function BundesligaTable({ data }: { data: Schedule }) {
       >
         <table>
           <caption className="sr-only">
-            {data.competition}-Tabelle Saison {data.season}
+            {data.competition}
+            <NetworkText id="ui.network-game-schedule-workspace.f7d802ac557b2dc0">
+              -Tabelle Saison{" "}
+            </NetworkText>
+            {data.season}
           </caption>
           <thead>
             <tr>
-              <th>Platz</th>
-              <th>Verein</th>
-              <th>Sp.</th>
+              <th>
+                <NetworkText id="ui.network-game-schedule-workspace.9daead33c3e2331f">
+                  Platz
+                </NetworkText>
+              </th>
+              <th>
+                <NetworkText id="ui.network-game-schedule-workspace.5423c9b192908354">
+                  Verein
+                </NetworkText>
+              </th>
+              <th>
+                <NetworkText id="ui.network-game-schedule-workspace.84780e0aaa403d07">
+                  Sp.
+                </NetworkText>
+              </th>
               <th>S</th>
               {data.competition === "Bundesliga" && <th>U</th>}
               <th>N</th>
-              <th>{data.competition === "Bundesliga" ? "Tore" : "Körbe"}</th>
-              <th>Diff.</th>
-              <th>Punkte</th>
+              <th>
+                <NetworkText id="ui.network-game-schedule-workspace.26e903d8edba9632">
+                  {data.competition === "Bundesliga" ? "Tore" : "Körbe"}
+                </NetworkText>
+              </th>
+              <th>
+                <NetworkText id="ui.network-game-schedule-workspace.b48e2553e4e36740">
+                  Diff.
+                </NetworkText>
+              </th>
+              <th>
+                <NetworkText id="ui.network-game-schedule-workspace.867ecbb11273a0c4">
+                  Punkte
+                </NetworkText>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -422,21 +461,31 @@ export function NetworkGameScheduleWorkspace() {
       <section className="gameScheduleIntro">
         <div>
           <span>
-            {data.competition} · SAISON {data.season}
+            {data.competition}
+            <NetworkText id="ui.network-game-schedule-workspace.c84610282e1fb9b4">
+              · SAISON{" "}
+            </NetworkText>
+            {data.season}
           </span>
           <h2>
-            {football
-              ? "Der Bundesliga-Spieltag im Überblick"
-              : "Gemeinsam mit den Giants durch die Saison"}
+            <NetworkText id="ui.network-game-schedule-workspace.47c53b27b0f3dd5d">
+              {football
+                ? "Der Bundesliga-Spieltag im Überblick"
+                : "Gemeinsam mit den Giants durch die Saison"}
+            </NetworkText>
           </h2>
           <p>
-            Spiele, Ergebnisse und Austausch im geschlossenen Partnernetzwerk.
-            Teile deine Eindrücke und bleibe auch zwischen den Spieltagen in
-            Kontakt.
+            <NetworkText id="ui.network-game-schedule-workspace.9aa9ee414de93f6c">
+              Spiele, Ergebnisse und Austausch im geschlossenen Partnernetzwerk.
+              Teile deine Eindrücke und bleibe auch zwischen den Spieltagen in
+              Kontakt.
+            </NetworkText>
           </p>
         </div>
         <a href={data.sourceUrl} target="_blank" rel="noreferrer">
-          Offizieller Spielplan ↗
+          <NetworkText id="ui.network-game-schedule-workspace.74a7703d5b0cd4fd">
+            Offizieller Spielplan ↗
+          </NetworkText>
         </a>
       </section>
       {football ? (
@@ -444,7 +493,12 @@ export function NetworkGameScheduleWorkspace() {
           <section className="networkCard bundesligaRoundCard">
             <header>
               <div>
-                <span>Bundesliga · {data.season}</span>
+                <span>
+                  <NetworkText id="ui.network-game-schedule-workspace.b43973380ed8e0d4">
+                    Bundesliga ·{" "}
+                  </NetworkText>
+                  {data.season}
+                </span>
                 <h2>
                   {data.round
                     ? `${data.round.day}. Spieltag`
@@ -453,14 +507,18 @@ export function NetworkGameScheduleWorkspace() {
               </div>
               {data.round && (
                 <a href={data.round.url} target="_blank" rel="noreferrer">
-                  Offizieller Spieltag ↗
+                  <NetworkText id="ui.network-game-schedule-workspace.18d7bddbe2a53972">
+                    Offizieller Spieltag ↗
+                  </NetworkText>
                 </a>
               )}
             </header>
             {data.round ? (
               <>
                 <p className="bundesligaSource">
-                  Alle Begegnungen · Stand{" "}
+                  <NetworkText id="ui.network-game-schedule-workspace.37325eebb7e934a5">
+                    Alle Begegnungen · Stand
+                  </NetworkText>{" "}
                   {new Date(data.round.asOf + "T12:00:00Z").toLocaleDateString(
                     "de-DE",
                   )}
@@ -493,7 +551,9 @@ export function NetworkGameScheduleWorkspace() {
               </>
             ) : (
               <p className="bundesligaSource">
-                Noch keine Spieltagsdaten verfügbar.
+                <NetworkText id="ui.network-game-schedule-workspace.3fd55ea47d5ef949">
+                  Noch keine Spieltagsdaten verfügbar.
+                </NetworkText>
               </p>
             )}
           </section>
@@ -507,19 +567,25 @@ export function NetworkGameScheduleWorkspace() {
           className={filter === "upcoming" ? "active" : ""}
           onClick={() => setFilter("upcoming")}
         >
-          Bevorstehende Spiele
+          <NetworkText id="ui.network-game-schedule-workspace.04f6ec89c4a4b979">
+            Bevorstehende Spiele
+          </NetworkText>
         </button>
         <button
           className={filter === "results" ? "active" : ""}
           onClick={() => setFilter("results")}
         >
-          Ergebnisse
+          <NetworkText id="ui.network-game-schedule-workspace.12ba6ae54b689292">
+            Ergebnisse
+          </NetworkText>
         </button>
         <button
           className={filter === "all" ? "active" : ""}
           onClick={() => setFilter("all")}
         >
-          Gesamter Spielplan
+          <NetworkText id="ui.network-game-schedule-workspace.ce10369f0764805f">
+            Gesamter Spielplan
+          </NetworkText>
         </button>
       </nav>
       <section className="gameScheduleList">
@@ -557,13 +623,22 @@ export function NetworkGameScheduleWorkspace() {
               </div>
               <div className="gameMatch">
                 <small>
-                  {game.matchday}. SPIELTAG ·{" "}
-                  {game.home ? "HEIMSPIEL" : "AUSWÄRTSSPIEL"}
+                  {game.matchday}
+                  <NetworkText id="ui.network-game-schedule-workspace.9161c53fef831475">
+                    . SPIELTAG ·
+                  </NetworkText>{" "}
+                  <NetworkText id="ui.network-game-schedule-workspace.8dc390e8800ccea2">
+                    {game.home ? "HEIMSPIEL" : "AUSWÄRTSSPIEL"}
+                  </NetworkText>
                   {game.dateWindowEnd && " · NOCH NICHT EXAKT TERMINIERT"}
                 </small>
                 <p>
                   <Team name={game.homeTeam} logos={data.logos} />
-                  <span className="gameVersus">vs.</span>
+                  <span className="gameVersus">
+                    <NetworkText id="ui.network-game-schedule-workspace.dbe6a873d506526f">
+                      vs.
+                    </NetworkText>
+                  </span>
                   <Team name={game.awayTeam} logos={data.logos} />
                 </p>
               </div>
@@ -573,12 +648,20 @@ export function NetworkGameScheduleWorkspace() {
                     <strong>
                       {game.homeScore}:{game.awayScore}
                     </strong>
-                    <small>Endstand</small>
+                    <small>
+                      <NetworkText id="ui.network-game-schedule-workspace.8f4026e4b9b4f408">
+                        Endstand
+                      </NetworkText>
+                    </small>
                   </>
                 ) : (
                   <>
                     <strong>– : –</strong>
-                    <small>noch offen</small>
+                    <small>
+                      <NetworkText id="ui.network-game-schedule-workspace.280216d3508df87a">
+                        noch offen
+                      </NetworkText>
+                    </small>
                   </>
                 )}
               </div>
@@ -589,7 +672,9 @@ export function NetworkGameScheduleWorkspace() {
                       setEditResult(editResult === game.id ? null : game.id)
                     }
                   >
-                    Ergebnis pflegen
+                    <NetworkText id="ui.network-game-schedule-workspace.4ebaf30f974254e6">
+                      Ergebnis pflegen
+                    </NetworkText>
                   </button>
                 )}
                 {data.canManage && hasResult && (
@@ -598,7 +683,9 @@ export function NetworkGameScheduleWorkspace() {
                     disabled={busy}
                     onClick={() => void clearResult(game)}
                   >
-                    Ergebnis löschen
+                    <NetworkText id="ui.network-game-schedule-workspace.13a09ce50dabf839">
+                      Ergebnis löschen
+                    </NetworkText>
                   </button>
                 )}
                 {game.discussionOpen ? (
@@ -606,7 +693,10 @@ export function NetworkGameScheduleWorkspace() {
                     className="discussion"
                     onClick={() => setSelected(isOpen ? null : game.id)}
                   >
-                    Diskussion · {game.comments.length}
+                    <NetworkText id="ui.network-game-schedule-workspace.7198889e6b724165">
+                      Diskussion ·{" "}
+                    </NetworkText>
+                    {game.comments.length}
                   </button>
                 ) : (
                   data.canManage && (
@@ -614,7 +704,9 @@ export function NetworkGameScheduleWorkspace() {
                       className="discussion"
                       onClick={() => setDiscussionGame(game)}
                     >
-                      Diskussion eröffnen
+                      <NetworkText id="ui.network-game-schedule-workspace.7c8ca124586f148f">
+                        Diskussion eröffnen
+                      </NetworkText>
                     </button>
                   )
                 )}
@@ -647,7 +739,11 @@ export function NetworkGameScheduleWorkspace() {
                       required
                     />
                   </label>
-                  <button disabled={busy}>Ergebnis speichern</button>
+                  <button disabled={busy}>
+                    <NetworkText id="ui.network-game-schedule-workspace.4a588183ebf1d043">
+                      Ergebnis speichern
+                    </NetworkText>
+                  </button>
                 </form>
               )}
               {game.discussionOpen && isOpen && (
@@ -657,9 +753,15 @@ export function NetworkGameScheduleWorkspace() {
                 >
                   <header>
                     <div>
-                      <span>OFFENE RUNDE IM GESCHLOSSENEN NETZWERK</span>
+                      <span>
+                        <NetworkText id="ui.network-game-schedule-workspace.e17c19f5b646cf89">
+                          OFFENE RUNDE IM GESCHLOSSENEN NETZWERK
+                        </NetworkText>
+                      </span>
                       <h3>
-                        Gemeinsam über das Spiel und das Netzwerk sprechen
+                        <NetworkText id="ui.network-game-schedule-workspace.a5ca5efc754440e9">
+                          Gemeinsam über das Spiel und das Netzwerk sprechen
+                        </NetworkText>
                       </h3>
                     </div>
                     {data.canManage && (
@@ -668,7 +770,9 @@ export function NetworkGameScheduleWorkspace() {
                         disabled={busy}
                         onClick={() => void closeDiscussion(game)}
                       >
-                        Diskussion schließen
+                        <NetworkText id="ui.network-game-schedule-workspace.88e25147e232345a">
+                          Diskussion schließen
+                        </NetworkText>
                       </button>
                     )}
                   </header>
@@ -687,12 +791,18 @@ export function NetworkGameScheduleWorkspace() {
                       </article>
                     ))}
                     {!game.comments.length && (
-                      <p>Noch keine Beiträge. Beginnen Sie den Austausch.</p>
+                      <p>
+                        <NetworkText id="ui.network-game-schedule-workspace.d371f14271f61b0a">
+                          Noch keine Beiträge. Beginnen Sie den Austausch.
+                        </NetworkText>
+                      </p>
                     )}
                   </div>
                   <form onSubmit={(event) => void addComment(event, game)}>
                     <label>
-                      Ihr Beitrag
+                      <NetworkText id="ui.network-game-schedule-workspace.a2682adf81a10f18">
+                        Ihr Beitrag
+                      </NetworkText>
                       <textarea
                         name="body"
                         required
@@ -703,7 +813,9 @@ export function NetworkGameScheduleWorkspace() {
                       />
                     </label>
                     <button className="networkPrimary" disabled={busy}>
-                      Beitrag veröffentlichen
+                      <NetworkText id="ui.network-game-schedule-workspace.e297d07afffd3d57">
+                        Beitrag veröffentlichen
+                      </NetworkText>
                     </button>
                   </form>
                 </section>
@@ -713,7 +825,11 @@ export function NetworkGameScheduleWorkspace() {
         })}
         {!games.length && (
           <div className="networkEmpty">
-            <b>In dieser Ansicht sind keine Spiele vorhanden.</b>
+            <b>
+              <NetworkText id="ui.network-game-schedule-workspace.6082507c02dee4d5">
+                In dieser Ansicht sind keine Spiele vorhanden.
+              </NetworkText>
+            </b>
           </div>
         )}
       </section>
@@ -726,8 +842,16 @@ export function NetworkGameScheduleWorkspace() {
           >
             <header>
               <div>
-                <span>PARTNERRUNDE</span>
-                <h2>Diskussion für alle öffnen</h2>
+                <span>
+                  <NetworkText id="ui.network-game-schedule-workspace.92c39e888544227a">
+                    PARTNERRUNDE
+                  </NetworkText>
+                </span>
+                <h2>
+                  <NetworkText id="ui.network-game-schedule-workspace.fe20351b2d07cef6">
+                    Diskussion für alle öffnen
+                  </NetworkText>
+                </h2>
               </div>
               <button onClick={() => setDiscussionGame(null)}>×</button>
             </header>
@@ -737,11 +861,15 @@ export function NetworkGameScheduleWorkspace() {
               }
             >
               <p>
-                Alle eingetragenen Netzwerkpartner können die Beiträge sehen und
-                sich beteiligen.
+                <NetworkText id="ui.network-game-schedule-workspace.a56d63dec48ce831">
+                  Alle eingetragenen Netzwerkpartner können die Beiträge sehen
+                  und sich beteiligen.
+                </NetworkText>
               </p>
               <label>
-                Gesprächsimpuls
+                <NetworkText id="ui.network-game-schedule-workspace.bdf9e8d31ec657a2">
+                  Gesprächsimpuls
+                </NetworkText>
                 <textarea
                   name="prompt"
                   rows={6}
@@ -750,19 +878,47 @@ export function NetworkGameScheduleWorkspace() {
                 />
               </label>
               <div className="gamePromptIdeas">
-                <b>Mögliche Themen</b>
-                <span>Sportliche Eindrücke</span>
-                <span>Gemeinsames Beisammensein</span>
-                <span>Entstandene Kontakte und Gespräche</span>
-                <span>Verbesserungsideen</span>
-                <span>Bekanntmachung der Partner im Netzwerk</span>
+                <b>
+                  <NetworkText id="ui.network-game-schedule-workspace.3467f69af11b20fa">
+                    Mögliche Themen
+                  </NetworkText>
+                </b>
+                <span>
+                  <NetworkText id="ui.network-game-schedule-workspace.91bd242b4ae74bae">
+                    Sportliche Eindrücke
+                  </NetworkText>
+                </span>
+                <span>
+                  <NetworkText id="ui.network-game-schedule-workspace.7e9ac72247786508">
+                    Gemeinsames Beisammensein
+                  </NetworkText>
+                </span>
+                <span>
+                  <NetworkText id="ui.network-game-schedule-workspace.ab24a0ee9fecc069">
+                    Entstandene Kontakte und Gespräche
+                  </NetworkText>
+                </span>
+                <span>
+                  <NetworkText id="ui.network-game-schedule-workspace.515d260c1711de4e">
+                    Verbesserungsideen
+                  </NetworkText>
+                </span>
+                <span>
+                  <NetworkText id="ui.network-game-schedule-workspace.175efbdf29d7ced0">
+                    Bekanntmachung der Partner im Netzwerk
+                  </NetworkText>
+                </span>
               </div>
               <div className="adminNetworkDialogActions">
                 <button type="button" onClick={() => setDiscussionGame(null)}>
-                  Abbrechen
+                  <NetworkText id="ui.network-game-schedule-workspace.f7ff1178af202f6f">
+                    Abbrechen
+                  </NetworkText>
                 </button>
                 <button className="networkPrimary" disabled={busy}>
-                  Für alle Netzwerkpartner öffnen
+                  <NetworkText id="ui.network-game-schedule-workspace.46913c413fd787a1">
+                    Für alle Netzwerkpartner öffnen
+                  </NetworkText>
                 </button>
               </div>
             </form>

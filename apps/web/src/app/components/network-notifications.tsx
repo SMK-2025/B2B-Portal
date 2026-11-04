@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { NetworkConnectionInbox } from "./network-connections";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -89,7 +90,11 @@ export function NetworkNotifications() {
           aria-label="Benachrichtigungen"
         >
           <header>
-            <b>Neuigkeiten im Netzwerk</b>
+            <b>
+              <NetworkText id="ui.network-notifications.e46d83a49849667d">
+                Neuigkeiten im Netzwerk
+              </NetworkText>
+            </b>
             <button onClick={() => setOpen(false)} aria-label="Schließen">
               ×
             </button>
@@ -100,9 +105,17 @@ export function NetworkNotifications() {
               className={`networkNewsItem ${!i.readAt ? "unread" : ""} ${i.data.event ? "networkNewsEvent" : ""}`}
               onClick={() => {
                 if (i.data.welcomeMembershipId && access) {
-                  setOpen(false); router.push(`/portal/netzwerk/${access.slug}/mitglieder?profil=${encodeURIComponent(i.data.welcomeMembershipId)}` as never); return;
+                  setOpen(false);
+                  router.push(
+                    `/portal/netzwerk/${access.slug}/mitglieder?profil=${encodeURIComponent(i.data.welcomeMembershipId)}` as never,
+                  );
+                  return;
                 }
-                if(i.data.creditMonths !== undefined){setOpen(false);router.push("/portal/konto");return;}
+                if (i.data.creditMonths !== undefined) {
+                  setOpen(false);
+                  router.push("/portal/konto");
+                  return;
+                }
                 if (i.data.contentId) {
                   if (i.data.event && access) {
                     setOpen(false);
@@ -120,7 +133,11 @@ export function NetworkNotifications() {
                 <img src={i.data.event.imageUrl} alt="" />
               )}
               <span className="networkNewsCopy">
-                <small>{i.data.event ? "VERANSTALTUNG" : "NEUIGKEIT"}</small>
+                <small>
+                  <NetworkText id="ui.network-notifications.dfd2cd9b641075d5">
+                    {i.data.event ? "VERANSTALTUNG" : "NEUIGKEIT"}
+                  </NetworkText>
+                </small>
                 <strong>{i.data.event?.title || i.data.title}</strong>
                 {i.data.event && <span>{i.data.event.description}</span>}
                 <small>
@@ -134,13 +151,21 @@ export function NetworkNotifications() {
                 </small>
                 {i.data.event && (
                   <span className="networkNewsCta">
-                    Veranstaltung ansehen →
+                    <NetworkText id="ui.network-notifications.c42a2f627fc7f18d">
+                      Veranstaltung ansehen →
+                    </NetworkText>
                   </span>
                 )}
               </span>
             </button>
           ))}
-          {!items.length && <p>Noch keine neuen Hinweise.</p>}
+          {!items.length && (
+            <p>
+              <NetworkText id="ui.network-notifications.76eaf7d6f1c54346">
+                Noch keine neuen Hinweise.
+              </NetworkText>
+            </p>
+          )}
           <NetworkConnectionInbox />
         </section>
       )}

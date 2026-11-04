@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { useEffect, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
@@ -324,18 +325,32 @@ export function NetworkThreadDialog({
                 {(thread.data.boardImageUrl || thread.data.imageUrl) && (
                   <img
                     className="networkArticlePhoto"
-                    src={thread.data.boardImageUrl || thread.data.imageUrl || undefined}
-                    style={thread.data.boardImageIsLogo ? {objectFit:"contain",background:"white"} : undefined}
+                    src={
+                      thread.data.boardImageUrl ||
+                      thread.data.imageUrl ||
+                      undefined
+                    }
+                    style={
+                      thread.data.boardImageIsLogo
+                        ? { objectFit: "contain", background: "white" }
+                        : undefined
+                    }
                     alt="Beitragsfoto"
                   />
                 )}
                 <p>{thread.description}</p>
                 {thread.data.options && (
                   <section className="networkExchangeAction">
-                    <b>Abstimmung</b>
+                    <b>
+                      <NetworkText id="ui.network-exchange-workspace.a519115d1cc9eaa1">
+                        Abstimmung
+                      </NetworkText>
+                    </b>
                     <small>
-                      Nicht anonym. Sie können Ihre Auswahl bis zum Abschluss
-                      ändern.
+                      <NetworkText id="ui.network-exchange-workspace.3b90c1d3711226c3">
+                        Nicht anonym. Sie können Ihre Auswahl bis zum Abschluss
+                        ändern.
+                      </NetworkText>
                     </small>
                     {thread.data.options
                       .split(/\r?\n/)
@@ -360,7 +375,9 @@ export function NetworkThreadDialog({
                               (v) => v === index,
                             ).length
                           }{" "}
-                          Stimmen
+                          <NetworkText id="ui.network-exchange-workspace.538a77a7c4211734">
+                            Stimmen
+                          </NetworkText>
                         </button>
                       ))}
                   </section>
@@ -384,17 +401,25 @@ export function NetworkThreadDialog({
                       key={f.id}
                       onClick={() => downloadPartnerFile(f)}
                     >
-                      ↓ {f.name} · {(f.size / 1024).toFixed(0)} KB
+                      ↓ {f.name} · {(f.size / 1024).toFixed(0)}
+                      <NetworkText id="ui.network-exchange-workspace.59281a6b29351cfa">
+                        KB
+                      </NetworkText>
                     </button>
                   ))}
                   {m.kind === "meeting" && (
                     <div className="networkExchangeAction">
                       <b>
-                        Terminvorschlag ·{" "}
+                        <NetworkText id="ui.network-exchange-workspace.388415536f5fb561">
+                          Terminvorschlag ·
+                        </NetworkText>{" "}
                         {new Date(m.startsAt!).toLocaleString("de-DE")}
                       </b>
                       <span>
-                        {m.durationMinutes} Minuten ·{" "}
+                        {m.durationMinutes}
+                        <NetworkText id="ui.network-exchange-workspace.2493706ce5d68f94">
+                          Minuten ·
+                        </NetworkText>{" "}
                         {m.location || "Ort noch abstimmen"}
                       </span>
                       <span>
@@ -407,7 +432,10 @@ export function NetworkThreadDialog({
                         <small key={id}>
                           {people.find((p) => p.userId === id)?.name ||
                             "Partner"}
-                          : {status === "accepted" ? "Zugesagt" : "Abgesagt"}
+                          :{" "}
+                          <NetworkText id="ui.network-exchange-workspace.3b1c0704b0b22148">
+                            {status === "accepted" ? "Zugesagt" : "Abgesagt"}
+                          </NetworkText>
                         </small>
                       ))}
                       {m.status !== "cancelled" && (
@@ -416,23 +444,31 @@ export function NetworkThreadDialog({
                             disabled={busy}
                             onClick={() => void respond(m.id, "accepted")}
                           >
-                            Zusagen
+                            <NetworkText id="ui.network-exchange-workspace.844fc50dd71cce7d">
+                              Zusagen
+                            </NetworkText>
                           </button>
                           <button
                             disabled={busy}
                             onClick={() => void respond(m.id, "declined")}
                           >
-                            Absagen
+                            <NetworkText id="ui.network-exchange-workspace.9fc0b61d3421a25f">
+                              Absagen
+                            </NetworkText>
                           </button>
                           <button onClick={() => calendar(m, thread.title)}>
-                            Im Kalender speichern
+                            <NetworkText id="ui.network-exchange-workspace.eb4952516e2c87d2">
+                              Im Kalender speichern
+                            </NetworkText>
                           </button>
                           {m.userId === thread.currentUserId && (
                             <button
                               disabled={busy}
                               onClick={() => void respond(m.id, "cancelled")}
                             >
-                              Termin absagen
+                              <NetworkText id="ui.network-exchange-workspace.3480278c51a67174">
+                                Termin absagen
+                              </NetworkText>
                             </button>
                           )}
                         </div>
@@ -442,11 +478,17 @@ export function NetworkThreadDialog({
                   {m.kind === "action" && (
                     <div className="networkExchangeAction">
                       <b>
-                        Nächster Schritt ·{" "}
-                        {m.status === "completed" ? "Erledigt" : "Offen"}
+                        <NetworkText id="ui.network-exchange-workspace.1da274787a535f18">
+                          Nächster Schritt ·
+                        </NetworkText>{" "}
+                        <NetworkText id="ui.network-exchange-workspace.ec1896d1efed2bf5">
+                          {m.status === "completed" ? "Erledigt" : "Offen"}
+                        </NetworkText>
                       </b>
                       <span>
-                        Verantwortlich:{" "}
+                        <NetworkText id="ui.network-exchange-workspace.98ecf0c757464a79">
+                          Verantwortlich:
+                        </NetworkText>{" "}
                         {people.find((p) => p.userId === m.assignedToUserId)
                           ?.name || "Partner"}
                         {m.deadline
@@ -466,9 +508,11 @@ export function NetworkThreadDialog({
                             )
                           }
                         >
-                          {m.status === "completed"
-                            ? "Wieder öffnen"
-                            : "Als erledigt markieren"}
+                          <NetworkText id="ui.network-exchange-workspace.40352717d61301de">
+                            {m.status === "completed"
+                              ? "Wieder öffnen"
+                              : "Als erledigt markieren"}
+                          </NetworkText>
                         </button>
                       )}
                     </div>
@@ -483,7 +527,9 @@ export function NetworkThreadDialog({
                             void respond(m.id, "deleted");
                         }}
                       >
-                        Beitrag entfernen
+                        <NetworkText id="ui.network-exchange-workspace.ddc2005cc7d38115">
+                          Beitrag entfernen
+                        </NetworkText>
                       </button>
                     )}
                 </article>
@@ -491,8 +537,10 @@ export function NetworkThreadDialog({
             </div>
             {thread.data.discussionOpen === false && (
               <p className="networkDiscussionClosed">
-                Dieser Beitrag dient zur Information. Die Diskussion ist
-                geschlossen.
+                <NetworkText id="ui.network-exchange-workspace.5ce09fd7333f4582">
+                  Dieser Beitrag dient zur Information. Die Diskussion ist
+                  geschlossen.
+                </NetworkText>
               </p>
             )}
             {!access?.readOnly &&
@@ -500,7 +548,9 @@ export function NetworkThreadDialog({
               !["draft", "archived"].includes(thread.status) && (
                 <form onSubmit={send} className="networkExchangeComposer">
                   <label>
-                    Was möchten Sie tun?
+                    <NetworkText id="ui.network-exchange-workspace.921d17138777546b">
+                      Was möchten Sie tun?
+                    </NetworkText>
                     <select
                       value={kind}
                       onChange={(e) => setKind(e.target.value)}
@@ -513,11 +563,13 @@ export function NetworkThreadDialog({
                     </select>
                   </label>
                   <label>
-                    {kind === "meeting"
-                      ? "Anlass und Ziel"
-                      : kind === "action"
-                        ? "Was ist zu tun?"
-                        : "Ihre Nachricht"}
+                    <NetworkText id="ui.network-exchange-workspace.2780f877bad54c82">
+                      {kind === "meeting"
+                        ? "Anlass und Ziel"
+                        : kind === "action"
+                          ? "Was ist zu tun?"
+                          : "Ihre Nachricht"}
+                    </NetworkText>
                     <textarea
                       name="body"
                       rows={3}
@@ -528,11 +580,15 @@ export function NetworkThreadDialog({
                   {kind === "meeting" && (
                     <div className="networkExchangeFields">
                       <label>
-                        Beginn
+                        <NetworkText id="ui.network-exchange-workspace.0d95fd6a769f3f68">
+                          Beginn
+                        </NetworkText>
                         <input name="startsAt" type="datetime-local" required />
                       </label>
                       <label>
-                        Dauer in Minuten
+                        <NetworkText id="ui.network-exchange-workspace.56483823cc348ccb">
+                          Dauer in Minuten
+                        </NetworkText>
                         <input
                           name="durationMinutes"
                           type="number"
@@ -542,7 +598,9 @@ export function NetworkThreadDialog({
                         />
                       </label>
                       <label>
-                        Ort oder Einwahllink
+                        <NetworkText id="ui.network-exchange-workspace.c5585dbb47e1f8a9">
+                          Ort oder Einwahllink
+                        </NetworkText>
                         <input name="location" maxLength={500} />
                       </label>
                     </div>
@@ -550,7 +608,9 @@ export function NetworkThreadDialog({
                   {kind === "action" && (
                     <div className="networkExchangeFields">
                       <label>
-                        Verantwortlich
+                        <NetworkText id="ui.network-exchange-workspace.5c008fc563aa8d86">
+                          Verantwortlich
+                        </NetworkText>
                         <select
                           name="assignedToUserId"
                           defaultValue={thread.currentUserId}
@@ -563,25 +623,33 @@ export function NetworkThreadDialog({
                         </select>
                       </label>
                       <label>
-                        Fällig am
+                        <NetworkText id="ui.network-exchange-workspace.d1540c9a6c9e74d9">
+                          Fällig am
+                        </NetworkText>
                         <input name="deadline" type="datetime-local" />
                       </label>
                     </div>
                   )}
                   <label>
-                    Datei / Leistungsportfolio
+                    <NetworkText id="ui.network-exchange-workspace.53a8a2391a505c9a">
+                      Datei / Leistungsportfolio
+                    </NetworkText>
                     <input
                       type="file"
                       name="file"
                       accept="application/pdf,image/jpeg,image/png,image/webp"
                     />
                     <small>
-                      PDF, JPG, PNG oder WebP · bis 1,5 MB. Nur im berechtigten
-                      Teilnehmerkreis sichtbar.
+                      <NetworkText id="ui.network-exchange-workspace.a46a1c06e348ce46">
+                        PDF, JPG, PNG oder WebP · bis 1,5 MB. Nur im
+                        berechtigten Teilnehmerkreis sichtbar.
+                      </NetworkText>
                     </small>
                   </label>
                   <button className="networkPrimary" disabled={busy}>
-                    {busy ? "Wird gesendet …" : "Senden"}
+                    <NetworkText id="ui.network-exchange-workspace.7e3c1dad9aee77a8">
+                      {busy ? "Wird gesendet …" : "Senden"}
+                    </NetworkText>
                   </button>
                 </form>
               )}

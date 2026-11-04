@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
@@ -56,7 +57,13 @@ function useConnections() {
   }
   return { access, items, error, busy, act };
 }
-export function NetworkConnectionButton({ userId, label = "Vernetzung anfragen" }: { userId: string; label?:string }) {
+export function NetworkConnectionButton({
+  userId,
+  label = "Vernetzung anfragen",
+}: {
+  userId: string;
+  label?: string;
+}) {
   const { access, items, error, busy, act } = useConnections();
   if (
     !access ||
@@ -102,14 +109,20 @@ export function NetworkConnectionInbox() {
       className="networkConnectionInbox"
       aria-label="Vernetzungsanfragen"
     >
-      <h3>Vernetzungsanfragen</h3>
+      <h3>
+        <NetworkText id="ui.network-connections.3cebba1c8bdabe06">
+          Vernetzungsanfragen
+        </NetworkText>
+      </h3>
       {received.length ? (
         received.map((i) => (
           <div key={i.id}>
             <strong>{i.peerName}</strong>
             <p>
-              Interessiert sich für deine Leistungen und möchte sich mit dir
-              vernetzen.
+              <NetworkText id="ui.network-connections.b89d4aa4cf9392ad">
+                Interessiert sich für deine Leistungen und möchte sich mit dir
+                vernetzen.
+              </NetworkText>
             </p>
             <button
               disabled={busy}
@@ -117,7 +130,9 @@ export function NetworkConnectionInbox() {
                 void act(`/${i.id}/decision`, { status: "accepted" })
               }
             >
-              Annehmen
+              <NetworkText id="ui.network-connections.3d9ac3f1c8e75b99">
+                Annehmen
+              </NetworkText>
             </button>
             <button
               disabled={busy}
@@ -125,12 +140,18 @@ export function NetworkConnectionInbox() {
                 void act(`/${i.id}/decision`, { status: "declined" })
               }
             >
-              Ablehnen
+              <NetworkText id="ui.network-connections.7be75ced71620109">
+                Ablehnen
+              </NetworkText>
             </button>
           </div>
         ))
       ) : (
-        <p>Keine offenen Anfragen.</p>
+        <p>
+          <NetworkText id="ui.network-connections.d44ed7e38aed3a19">
+            Keine offenen Anfragen.
+          </NetworkText>
+        </p>
       )}
       {error && <p role="alert">{error}</p>}
     </section>

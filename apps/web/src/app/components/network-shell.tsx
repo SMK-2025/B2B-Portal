@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { NetworkReferralButton } from "./network-referral-button";
 import { NetworkNotifications } from "./network-notifications";
 import { NetworkSystemMessages } from "./network-system-messages";
@@ -183,11 +184,41 @@ const adminItems = [
     module: "revenue",
   },
 ];
-export function NetworkShell(props: { title: string; intro: string; children: ReactNode; action?: ReactNode; slug: string; networkName?: string }) {
+export function NetworkShell(props: {
+  title: string;
+  intro: string;
+  children: ReactNode;
+  action?: ReactNode;
+  slug: string;
+  networkName?: string;
+}) {
   const access = useNetworkAccess();
   const pathname = usePathname();
   if (!access) return <NetworkFrame {...props} />;
-  return <>{pathname.replace(/\/$/, "") !== `/portal/netzwerk/${props.slug}` && <header className="networkWelcome"><div><span>{access.networkName.toUpperCase()}</span><h1>{props.title}</h1><p>{props.intro}</p></div>{props.action}</header>}{props.children}</>;
+  const section = pathname.split("/").filter(Boolean).pop() || "home";
+  return (
+    <>
+      {pathname.replace(/\/$/, "") !== `/portal/netzwerk/${props.slug}` && (
+        <header className="networkWelcome">
+          <div>
+            <span>{access.networkName.toUpperCase()}</span>
+            <h1>
+              <NetworkText id={`ui.heading.${section}`}>
+                {props.title}
+              </NetworkText>
+            </h1>
+            <p>
+              <NetworkText id={`ui.intro.${section}`}>
+                {props.intro}
+              </NetworkText>
+            </p>
+          </div>
+          {props.action}
+        </header>
+      )}
+      {props.children}
+    </>
+  );
 }
 function NetworkFrame({
   title,
@@ -219,7 +250,7 @@ function NetworkFrame({
       const token = getPortalSession();
       if (!token) {
         router.replace(
-          `/anmelden?network=${encodeURIComponent(slug)}&redirect=${encodeURIComponent(window.location.pathname+window.location.search)}` as never,
+          `/anmelden?network=${encodeURIComponent(slug)}&redirect=${encodeURIComponent(window.location.pathname + window.location.search)}` as never,
         );
         return;
       }
@@ -309,8 +340,17 @@ function NetworkFrame({
     setMobileOpen(false);
     setAccount(false);
     const section = pathname.split("/").pop();
-    if (["einstellungen", "auswertungen", "umsaetze", "veroeffentlichungen"].includes(section || "")) setNavPanel("admin");
-    else if (morePartnerItems.some(item => item.path === section)) setNavPanel("more");
+    if (
+      [
+        "einstellungen",
+        "auswertungen",
+        "umsaetze",
+        "veroeffentlichungen",
+      ].includes(section || "")
+    )
+      setNavPanel("admin");
+    else if (morePartnerItems.some((item) => item.path === section))
+      setNavPanel("more");
   }, [pathname]);
   useEffect(() => {
     if (!access) return;
@@ -327,8 +367,16 @@ function NetworkFrame({
     return (
       <main className="networkAccessState">
         <section>
-          <span>ZUGRIFF GESCHÜTZT</span>
-          <h1>Dieser Netzwerkbereich ist nicht verfügbar.</h1>
+          <span>
+            <NetworkText id="ui.network-shell.3aa6b050d2ff56be">
+              ZUGRIFF GESCHÜTZT
+            </NetworkText>
+          </span>
+          <h1>
+            <NetworkText id="ui.network-shell.42e5424f527d03c2">
+              Dieser Netzwerkbereich ist nicht verfügbar.
+            </NetworkText>
+          </h1>
           <p>{error}</p>
         </section>
       </main>
@@ -337,8 +385,16 @@ function NetworkFrame({
     return (
       <main className="networkAccessState">
         <section>
-          <span>SICHERER ZUGANG</span>
-          <h1>Netzwerkzugang wird geprüft.</h1>
+          <span>
+            <NetworkText id="ui.network-shell.9de93d4b2332d9a9">
+              SICHERER ZUGANG
+            </NetworkText>
+          </span>
+          <h1>
+            <NetworkText id="ui.network-shell.8183b2c31f34aae9">
+              Netzwerkzugang wird geprüft.
+            </NetworkText>
+          </h1>
         </section>
       </main>
     );
@@ -353,7 +409,8 @@ function NetworkFrame({
         ["bayer-giants", "bayer04leverkusen"].includes(slug)),
     visiblePrimary = primaryPartnerItems.filter(
       (item) =>
-        moduleVisible(item) && item.path !== "profil" &&
+        moduleVisible(item) &&
+        item.path !== "profil" &&
         !(
           (access.isInitiator || access.role === "visitor") &&
           item.path === "profil"
@@ -379,7 +436,10 @@ function NetworkFrame({
       key={item.path || "home"}
       className={isActive(item.path) ? "active" : ""}
       aria-current={isActive(item.path) ? "page" : undefined}
-      onClick={() => { setMobileOpen(false); setAccount(false); }}
+      onClick={() => {
+        setMobileOpen(false);
+        setAccount(false);
+      }}
       href={href(item.path) as never}
       title={
         item.path === "spielplan" && slug === "bayer04leverkusen"
@@ -390,9 +450,11 @@ function NetworkFrame({
       <span>
         <NetworkNavigationIcon path={item.path} />
       </span>
-      {item.path === "spielplan" && slug === "bayer04leverkusen"
-        ? "Bundesliga"
-        : item.label}
+      <NetworkText id={`ui.nav.${item.path || "home"}`}>
+        {item.path === "spielplan" && slug === "bayer04leverkusen"
+          ? "Bundesliga"
+          : item.label}
+      </NetworkText>
     </Link>
   );
   const acknowledgeTrial = () => {
@@ -407,7 +469,16 @@ function NetworkFrame({
       <main className="networkPortal networkHorizontal" style={style}>
         <section className="networkMain">
           <header className="networkTop">
-            <button className="networkMenuToggle" type="button" aria-label="Netzwerkmenü" aria-expanded={mobileOpen} aria-controls="network-horizontal-navigation" onClick={() => setMobileOpen(!mobileOpen)}>☰</button>
+            <button
+              className="networkMenuToggle"
+              type="button"
+              aria-label="Netzwerkmenü"
+              aria-expanded={mobileOpen}
+              aria-controls="network-horizontal-navigation"
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              ☰
+            </button>
             <div className="networkContext">
               {access.logoUrl ? (
                 <img src={access.logoUrl} alt="" />
@@ -418,8 +489,16 @@ function NetworkFrame({
                 </span>
               )}
               <p>
-                <b>Das Netzwerkpartner-Portal!</b>
-                <small>Geschlossenes Partnernetzwerk</small>
+                <b>
+                  <NetworkText id="ui.portal.name">
+                    Das Netzwerkpartner-Portal!
+                  </NetworkText>
+                </b>
+                <small>
+                  <NetworkText id="ui.portal.subtitle">
+                    Geschlossenes Partnernetzwerk
+                  </NetworkText>
+                </small>
               </p>
             </div>
             <div className="networkTopActions">
@@ -463,42 +542,119 @@ function NetworkFrame({
                           ? "Initiator"
                           : "Netzwerkpartner")}
                   </b>
-                  <small>Mein Zugang</small>
+                  <small>
+                    <NetworkText id="ui.network-shell.d1a9e0c3f0c2c273">
+                      Mein Zugang
+                    </NetworkText>
+                  </small>
                 </p>
               </button>
               {account && (
                 <div className="networkAccountMenu">
                   <Link href={`${base}/konto` as never}>
-                    Mein Konto & Sicherheit
+                    <NetworkText id="ui.network-shell.43c0137e4397f2b1">
+                      Mein Konto & Sicherheit
+                    </NetworkText>
                   </Link>
                   {access.isInitiator ? (
                     <Link href={`${base}/einstellungen` as never}>
-                      Netzwerk-Verwaltung
+                      <NetworkText id="ui.network-shell.9c119d7d91c5b647">
+                        Netzwerk-Verwaltung
+                      </NetworkText>
                     </Link>
-                  ) : access.role !== "visitor" && access.enabledModules.includes("profiles") ? (
+                  ) : access.role !== "visitor" &&
+                    access.enabledModules.includes("profiles") ? (
                     <Link href={`${base}/profil` as never}>
-                      Meine Partnerseite
+                      <NetworkText id="ui.network-shell.890fd7c24aa9279c">
+                        Meine Partnerseite
+                      </NetworkText>
                     </Link>
                   ) : null}
                   <button type="button" onClick={logout}>
-                    Abmelden
+                    <NetworkText id="ui.network-shell.545f8be33bf06a1c">
+                      Abmelden
+                    </NetworkText>
                   </button>
                 </div>
               )}
             </div>
           </header>
-          <div id="network-horizontal-navigation" className={`networkHorizontalNavigation${mobileOpen ? " isOpen" : ""}`}>
+          <div
+            id="network-horizontal-navigation"
+            className={`networkHorizontalNavigation${mobileOpen ? " isOpen" : ""}`}
+          >
             <nav aria-label="Netzwerkbereiche" className="networkPrimaryTabs">
-              {visiblePrimary.map((item) => <span key={item.path} onClick={() => setNavPanel(null)}>{itemLink(item)}</span>)}
-              {(visibleMore.length > 0 || (!access.readOnly && access.role !== "platform_admin")) && <button type="button" aria-expanded={navPanel === "more"} onClick={() => setNavPanel(navPanel === "more" ? null : "more")}>Weitere Funktionen ▾</button>}
-              {access.isInitiator && <button type="button" className={navPanel === "admin" ? "active" : ""} aria-expanded={navPanel === "admin"} onClick={() => setNavPanel(navPanel === "admin" ? null : "admin")}>Netzwerkverwaltung ▾</button>}
+              {visiblePrimary.map((item) => (
+                <span key={item.path} onClick={() => setNavPanel(null)}>
+                  {itemLink(item)}
+                </span>
+              ))}
+              {(visibleMore.length > 0 ||
+                (!access.readOnly && access.role !== "platform_admin")) && (
+                <button
+                  type="button"
+                  aria-expanded={navPanel === "more"}
+                  onClick={() =>
+                    setNavPanel(navPanel === "more" ? null : "more")
+                  }
+                >
+                  <NetworkText id="ui.network-shell.f28a82cfc95336f9">
+                    Weitere Funktionen ▾
+                  </NetworkText>
+                </button>
+              )}
+              {access.isInitiator && (
+                <button
+                  type="button"
+                  className={navPanel === "admin" ? "active" : ""}
+                  aria-expanded={navPanel === "admin"}
+                  onClick={() =>
+                    setNavPanel(navPanel === "admin" ? null : "admin")
+                  }
+                >
+                  <NetworkText id="ui.network-shell.38f4e49c6fed5db1">
+                    Netzwerkverwaltung ▾
+                  </NetworkText>
+                </button>
+              )}
             </nav>
-            {navPanel && (navPanel !== "admin" || access.isInitiator) && <nav className="networkSecondaryTabs" aria-label={navPanel === "admin" ? "Netzwerkverwaltung" : "Weitere Funktionen"}>
-              {(navPanel === "admin" ? visibleAdmin : visibleMore).map(itemLink)}
-              {navPanel === "admin" && slug === "unternehmerfreunde" && <Link href={`${base}/veroeffentlichungen` as never} className={isActive("veroeffentlichungen") ? "active" : ""}>Homepage-Freigaben</Link>}
-              <a href="mailto:service@b2b-matching.de">Hilfe & Kontakt</a>
-              {navPanel === "more" && !access.readOnly && access.role !== "platform_admin" && <NetworkReferralButton key={access.networkId} networkId={access.networkId}/>}
-            </nav>}
+            {navPanel && (navPanel !== "admin" || access.isInitiator) && (
+              <nav
+                className="networkSecondaryTabs"
+                aria-label={
+                  navPanel === "admin"
+                    ? "Netzwerkverwaltung"
+                    : "Weitere Funktionen"
+                }
+              >
+                {(navPanel === "admin" ? visibleAdmin : visibleMore).map(
+                  itemLink,
+                )}
+                {navPanel === "admin" && slug === "unternehmerfreunde" && (
+                  <Link
+                    href={`${base}/veroeffentlichungen` as never}
+                    className={isActive("veroeffentlichungen") ? "active" : ""}
+                  >
+                    <NetworkText id="ui.network-shell.8c5501654aed9fee">
+                      Homepage-Freigaben
+                    </NetworkText>
+                  </Link>
+                )}
+                <a href="mailto:service@b2b-matching.de">
+                  <NetworkText id="ui.network-shell.5109b38afaef193f">
+                    Hilfe & Kontakt
+                  </NetworkText>
+                </a>
+                {navPanel === "more" &&
+                  !access.readOnly &&
+                  access.role !== "platform_admin" && (
+                    <NetworkReferralButton
+                      key={access.networkId}
+                      networkId={access.networkId}
+                    />
+                  )}
+              </nav>
+            )}
           </div>
           <div
             className="networkContent"
@@ -511,9 +667,11 @@ function NetworkFrame({
           >
             {access.readOnly && (
               <div className="networkReadOnlyNotice">
-                {access.role === "visitor"
-                  ? "Besucheransicht · Nur lesen. Keine Änderungen, Buchungen, Nachrichten oder Kommentare möglich. Private Gespräche bleiben geschützt."
-                  : "Testansicht: Änderungen und Einladungen sind bis zur Aktivierung eingeschränkt."}
+                <NetworkText id="ui.network-shell.145eccb9a624567b">
+                  {access.role === "visitor"
+                    ? "Besucheransicht · Nur lesen. Keine Änderungen, Buchungen, Nachrichten oder Kommentare möglich. Private Gespräche bleiben geschützt."
+                    : "Testansicht: Änderungen und Einladungen sind bis zur Aktivierung eingeschränkt."}
+                </NetworkText>
               </div>
             )}
             {title && pathname.replace(/\/$/, "") !== base && (
@@ -546,21 +704,31 @@ function NetworkFrame({
                       className="loungeProfileLink"
                       href={`${base}/profil` as never}
                     >
-                      Meine Partnerseite →
+                      <NetworkText id="ui.network-shell.15adb2e6d8ea2179">
+                        Meine Partnerseite →
+                      </NetworkText>
                     </Link>
                   ) : null)}
               </header>
             )}
             {access.membershipYear?.endingSoon && (
               <div className="memberBillingEnding" role="status">
-                <strong>Mitgliedschaft endet</strong>
+                <strong>
+                  <NetworkText id="ui.network-shell.4d4bc5891e7d2077">
+                    Mitgliedschaft endet
+                  </NetworkText>
+                </strong>
                 <p>
-                  Ihre Jahresmitgliedschaft läuft bis{" "}
+                  <NetworkText id="ui.network-shell.6ec5fa532a5a1cca">
+                    Ihre Jahresmitgliedschaft läuft bis
+                  </NetworkText>{" "}
                   {new Date(
                     Date.parse(access.membershipYear.endsAt) - 1,
                   ).toLocaleDateString("de-DE")}
-                  . Bitte wenden Sie sich rechtzeitig zur Verlängerung an den
-                  Plattformbetreiber.
+                  <NetworkText id="ui.network-shell.dcf204e7534d1dbd">
+                    . Bitte wenden Sie sich rechtzeitig zur Verlängerung an den
+                    Plattformbetreiber.
+                  </NetworkText>
                 </p>
               </div>
             )}
@@ -578,14 +746,28 @@ function NetworkFrame({
       {access.readOnly && access.role !== "visitor" && !trialAcknowledged && (
         <div className="networkTrialGate">
           <section role="dialog" aria-modal="true">
-            <span>TESTANSICHT</span>
-            <h2>Willkommen bei {shownName}</h2>
+            <span>
+              <NetworkText id="ui.network-shell.83131b6ea6750a64">
+                TESTANSICHT
+              </NetworkText>
+            </span>
+            <h2>
+              <NetworkText id="ui.network-shell.18d4ee1f322ff03d">
+                Willkommen bei{" "}
+              </NetworkText>
+              {shownName}
+            </h2>
             <p>
-              Sie können Aufbau und Funktionen ansehen. Produktive Einladungen
-              und Veröffentlichungen werden nach der Aktivierung freigeschaltet.
+              <NetworkText id="ui.network-shell.355dcbbe846b7bee">
+                Sie können Aufbau und Funktionen ansehen. Produktive Einladungen
+                und Veröffentlichungen werden nach der Aktivierung
+                freigeschaltet.
+              </NetworkText>
             </p>
             <button type="button" onClick={acknowledgeTrial}>
-              Verstanden – Netzwerk öffnen
+              <NetworkText id="ui.network-shell.de8174a036c929cf">
+                Verstanden – Netzwerk öffnen
+              </NetworkText>
             </button>
           </section>
         </div>

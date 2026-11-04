@@ -177,6 +177,8 @@ export interface NetworkRecord {
     crossNetworkMatching: boolean;
     admissionRules: string | null;
     welcomeTitle?: string | null;
+    textOverrides?: Record<string, string>;
+    textRevision?: number;
     welcomeIntro?: string | null;
     bannerTitle?: string | null;
     bannerDescription?: string | null;

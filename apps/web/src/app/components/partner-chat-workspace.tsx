@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
@@ -312,8 +313,16 @@ export function PartnerChatWorkspace() {
     >
       <aside className="partnerChatSidebar">
         <header>
-          <h2>PartnerChat</h2>
-          <p>Persönlich. Direkt. Im Netzwerk.</p>
+          <h2>
+            <NetworkText id="ui.partner-chat-workspace.d6163d6685bdad2a">
+              PartnerChat
+            </NetworkText>
+          </h2>
+          <p>
+            <NetworkText id="ui.partner-chat-workspace.8d26bdf52ad1867b">
+              Persönlich. Direkt. Im Netzwerk.
+            </NetworkText>
+          </p>
         </header>
         <input
           className="partnerChatSearch"
@@ -323,7 +332,11 @@ export function PartnerChatWorkspace() {
           onChange={(e) => setQuery(e.target.value)}
         />
         <div className="partnerChatContacts">
-          <h3>Deine Gespräche</h3>
+          <h3>
+            <NetworkText id="ui.partner-chat-workspace.c0625e93b068cfb0">
+              Deine Gespräche
+            </NetworkText>
+          </h3>
           {conversations.map((item) => {
             const participantIds = ids(item),
               other = people.find(
@@ -376,8 +389,18 @@ export function PartnerChatWorkspace() {
               </button>
             );
           })}
-          {!conversations.length && <p>Noch keine passenden Gespräche.</p>}
-          <h3>Partner anschreiben</h3>
+          {!conversations.length && (
+            <p>
+              <NetworkText id="ui.partner-chat-workspace.ad3c94208b7b18cc">
+                Noch keine passenden Gespräche.
+              </NetworkText>
+            </p>
+          )}
+          <h3>
+            <NetworkText id="ui.partner-chat-workspace.a44de4fb1b1413ef">
+              Partner anschreiben
+            </NetworkText>
+          </h3>
           {people
             .filter(
               (p) =>
@@ -434,8 +457,10 @@ export function PartnerChatWorkspace() {
               <div>
                 <h2>{person?.name || thread?.title || "PartnerChat"}</h2>
                 <p>
-                  {person?.company || "Geschlossener Teilnehmerkreis"} ·
-                  Vertraulicher Austausch
+                  {person?.company || "Geschlossener Teilnehmerkreis"}
+                  <NetworkText id="ui.partner-chat-workspace.0ccdcc9c25c50330">
+                    · Vertraulicher Austausch
+                  </NetworkText>
                 </p>
               </div>
               {selected && (
@@ -444,7 +469,9 @@ export function PartnerChatWorkspace() {
                   className="partnerChatMore"
                   onClick={() => setAdvanced(true)}
                 >
-                  Termine & Aufgaben
+                  <NetworkText id="ui.partner-chat-workspace.27e8598febe3fd51">
+                    Termine & Aufgaben
+                  </NetworkText>
                 </button>
               )}
               {person?.logoUrl && (
@@ -463,23 +490,36 @@ export function PartnerChatWorkspace() {
               aria-live="polite"
             >
               <p className="partnerChatPrivacy">
-                Nur die Gesprächsteilnehmer können mitlesen. Die Netzwerkleitung
-                wird nicht automatisch hinzugefügt.
+                <NetworkText id="ui.partner-chat-workspace.807298e4d83a8a60">
+                  Nur die Gesprächsteilnehmer können mitlesen. Die
+                  Netzwerkleitung wird nicht automatisch hinzugefügt.
+                </NetworkText>
               </p>
               {thread && !thread.data.directChat && (
                 <article
                   className={`partnerChatBubble${thread.createdByUserId === access?.currentUserId ? " own" : ""}`}
                 >
-                  <small>Bisheriger Gesprächseinstieg · {thread.title}</small>
+                  <small>
+                    <NetworkText id="ui.partner-chat-workspace.9a5d286c9d1885c9">
+                      Bisheriger Gesprächseinstieg ·{" "}
+                    </NetworkText>
+                    {thread.title}
+                  </small>
                   <p>{thread.description}</p>
                 </article>
               )}
               {selected && !thread ? (
-                <p>Chat wird geladen …</p>
+                <p>
+                  <NetworkText id="ui.partner-chat-workspace.05ece1d7297abd77">
+                    Chat wird geladen …
+                  </NetworkText>
+                </p>
               ) : !thread?.data.messages?.length ? (
                 <div className="partnerChatWelcome">
                   <span className="partnerChatWelcomeKicker">
-                    DEIN DIREKTER DRAHT
+                    <NetworkText id="ui.partner-chat-workspace.021dd81847775891">
+                      DEIN DIREKTER DRAHT
+                    </NetworkText>
                   </span>
                   <h3>
                     {person
@@ -493,8 +533,10 @@ export function PartnerChatWorkspace() {
                         <br />
                       </strong>
                     )}
-                    Lernt euch kennen, teilt Ideen und macht aus einem Kontakt
-                    ein gutes Gespräch.
+                    <NetworkText id="ui.partner-chat-workspace.6489f42fdd22c119">
+                      Lernt euch kennen, teilt Ideen und macht aus einem Kontakt
+                      ein gutes Gespräch.
+                    </NetworkText>
                   </p>
                   <div className="partnerChatStarters">
                     {[
@@ -532,8 +574,10 @@ export function PartnerChatWorkspace() {
                     ))}
                   </div>
                   <small>
-                    Wähle einen Einstieg und passe ihn an. Gesendet wird erst
-                    mit dem Senden-Button.
+                    <NetworkText id="ui.partner-chat-workspace.2029e7e7c2fc0d54">
+                      Wähle einen Einstieg und passe ihn an. Gesendet wird erst
+                      mit dem Senden-Button.
+                    </NetworkText>
                   </small>
                 </div>
               ) : null}
@@ -560,9 +604,11 @@ export function PartnerChatWorkspace() {
                       )}
                       {message.kind !== "message" && (
                         <small>
-                          {message.kind === "meeting"
-                            ? "Termin"
-                            : "Nächster Schritt"}
+                          <NetworkText id="ui.partner-chat-workspace.82da31d7cc72f30f">
+                            {message.kind === "meeting"
+                              ? "Termin"
+                              : "Nächster Schritt"}
+                          </NetworkText>
                         </small>
                       )}
                       {message.body && <p>{message.body}</p>}
@@ -582,7 +628,10 @@ export function PartnerChatWorkspace() {
                           )}
                           <span>
                             ↓ {attachment.name} ·{" "}
-                            {(attachment.size / 1024).toFixed(0)} KB
+                            {(attachment.size / 1024).toFixed(0)}
+                            <NetworkText id="ui.partner-chat-workspace.59281a6b29351cfa">
+                              KB
+                            </NetworkText>
                           </span>
                         </button>
                       ))}
@@ -604,11 +653,15 @@ export function PartnerChatWorkspace() {
             )}
             {closed ? (
               <p className="partnerChatError">
-                Dieses Gespräch ist archiviert oder noch nicht geöffnet.
+                <NetworkText id="ui.partner-chat-workspace.ede306eeef4d72d3">
+                  Dieses Gespräch ist archiviert oder noch nicht geöffnet.
+                </NetworkText>
               </p>
             ) : access?.readOnly ? (
               <p className="partnerChatError">
-                Dein Zugang ist derzeit schreibgeschützt.
+                <NetworkText id="ui.partner-chat-workspace.3ee6998c8696b289">
+                  Dein Zugang ist derzeit schreibgeschützt.
+                </NetworkText>
               </p>
             ) : (
               <form className="partnerChatComposer" onSubmit={send}>
@@ -736,9 +789,11 @@ export function PartnerChatWorkspace() {
                   </button>
                 </div>
                 <small>
-                  {uploading
-                    ? "Datei wird vorbereitet …"
-                    : "Enter zum Senden · Shift + Enter für einen Absatz · Bilder / PDF bis 1,5 MB"}
+                  <NetworkText id="ui.partner-chat-workspace.2d5dbe565069794a">
+                    {uploading
+                      ? "Datei wird vorbereitet …"
+                      : "Enter zum Senden · Shift + Enter für einen Absatz · Bilder / PDF bis 1,5 MB"}
+                  </NetworkText>
                 </small>
               </form>
             )}
@@ -746,10 +801,16 @@ export function PartnerChatWorkspace() {
         ) : (
           <div className="partnerChatEmpty">
             <span aria-hidden="true">↔</span>
-            <h2>Gute Kontakte beginnen mit einem Gespräch.</h2>
+            <h2>
+              <NetworkText id="ui.partner-chat-workspace.da03b3d770e1563f">
+                Gute Kontakte beginnen mit einem Gespräch.
+              </NetworkText>
+            </h2>
             <p>
-              Wähle einen Partner aus und schreib direkt los – ohne Betreff und
-              ohne Umwege.
+              <NetworkText id="ui.partner-chat-workspace.6e7f31218bf31ab3">
+                Wähle einen Partner aus und schreib direkt los – ohne Betreff
+                und ohne Umwege.
+              </NetworkText>
             </p>
             {notice && <p role="alert">{notice}</p>}
           </div>

@@ -11,6 +11,8 @@ import "./partner-business-card.css";
 import "./network-lounge.css";
 import "./public-brand.css";
 import "./public-card-system.css";
+import "./network-text-editor.css";
+import { NetworkTextProvider } from "./components/network-text-editor";
 import { PwaRegister } from "./pwa-register";
 import { CookieConsent } from "./components/cookie-consent";
 import { AccessibilityRuntime } from "./components/accessibility-runtime";
@@ -105,7 +107,7 @@ export default function RootLayout({
         <PwaRegister />
         <AccessibilityRuntime />
         <div id="main-content" tabIndex={-1}>
-          {children}
+          <NetworkTextProvider>{children}</NetworkTextProvider>
         </div>
         <PublicCardArtwork />
         <PublicNavigation />

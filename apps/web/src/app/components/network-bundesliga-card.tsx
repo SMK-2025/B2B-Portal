@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
@@ -57,14 +58,24 @@ export function NetworkMatchdayCard() {
             {data?.competition || (football ? "Bundesliga" : "ProB Süd")} ·{" "}
             {data?.season || "2026/27"}
           </span>
-          <h2>Nach dem Spiel ist vor dem Austausch</h2>
+          <h2>
+            <NetworkText id="ui.network-bundesliga-card.380aed153b0ad93a">
+              Nach dem Spiel ist vor dem Austausch
+            </NetworkText>
+          </h2>
         </div>
       </header>
       <div className="bundesligaHomeBody">
         {latest ? (
           <>
             <p className="bundesligaLastLabel">
-              Letztes Ergebnis · {latest.matchday}. Spieltag ·{" "}
+              <NetworkText id="ui.network-bundesliga-card.e92cf2fc7055db59">
+                Letztes Ergebnis ·{" "}
+              </NetworkText>
+              {latest.matchday}
+              <NetworkText id="ui.network-bundesliga-card.725c3b7dfe2e070b">
+                . Spieltag ·
+              </NetworkText>{" "}
               {new Date(latest.startsAt).toLocaleDateString("de-DE")}
             </p>
             <div className="bundesligaLastResult">
@@ -75,8 +86,10 @@ export function NetworkMatchdayCard() {
               <Team name={latest.awayTeam} logos={data?.logos} />
             </div>
             <p>
-              Wie hast du das Spiel erlebt? Teile deine Eindrücke mit den
-              anderen Partnern.
+              <NetworkText id="ui.network-bundesliga-card.5c64694dda92c3b3">
+                Wie hast du das Spiel erlebt? Teile deine Eindrücke mit den
+                anderen Partnern.
+              </NetworkText>
             </p>
           </>
         ) : (
@@ -95,23 +108,36 @@ export function NetworkMatchdayCard() {
                 `${base}#${latest.discussionOpen ? "diskussion" : "spiel"}-${latest.id}` as never
               }
             >
-              {latest.discussionOpen
-                ? "Zur offenen Diskussionsrunde"
-                : "Zum Spiel und Austausch"}
+              <NetworkText id="ui.network-bundesliga-card.b6f9bd98ec5c002c">
+                {latest.discussionOpen
+                  ? "Zur offenen Diskussionsrunde"
+                  : "Zum Spiel und Austausch"}
+              </NetworkText>
             </Link>
           )}
           {(football || Boolean(data?.table.length)) && (
-            <Link href={`${base}#tabelle` as never}>Zur Tabelle</Link>
+            <Link href={`${base}#tabelle` as never}>
+              <NetworkText id="ui.network-bundesliga-card.0beb2a15c66a12c8">
+                Zur Tabelle
+              </NetworkText>
+            </Link>
           )}
           <Link href={`${base}${next ? `#spiel-${next.id}` : ""}` as never}>
-            Zum Spieltag{next ? ` · ${next.matchday}` : ""}
+            <NetworkText id="ui.network-bundesliga-card.6e13883273a7c6bd">
+              Zum Spieltag
+            </NetworkText>
+            {next ? ` · ${next.matchday}` : ""}
           </Link>
         </div>
         {data?.asOf && (
           <small>
-            Spielplandaten: Stand{" "}
-            {new Date(`${data.asOf}T12:00:00Z`).toLocaleDateString("de-DE")} ·
-            Ergebnisse durch die Netzwerkverwaltung ergänzbar.
+            <NetworkText id="ui.network-bundesliga-card.411cfff20a6d42c2">
+              Spielplandaten: Stand
+            </NetworkText>{" "}
+            {new Date(`${data.asOf}T12:00:00Z`).toLocaleDateString("de-DE")}
+            <NetworkText id="ui.network-bundesliga-card.9a89dc2a9353af60">
+              · Ergebnisse durch die Netzwerkverwaltung ergänzbar.
+            </NetworkText>
           </small>
         )}
       </div>

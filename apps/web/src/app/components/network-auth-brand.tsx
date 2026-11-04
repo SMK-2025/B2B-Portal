@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { portalRequest } from "../lib/portal-api";
@@ -57,40 +58,89 @@ export function NetworkAuthFrame({
             <span>{brand.name.slice(0, 2).toUpperCase()}</span>
           )}
           <div>
-            <b>{brand.slug === "bayer04leverkusen" ? "Das Netzwerkpartner-Portal" : brand.name}</b>
-            <small>{brand.slug === "bayer04leverkusen" ? "der Media Online Innovations Group" : "Geschütztes Partnerportal"}</small>
+            <b>
+              <NetworkText id="ui.portal.name">
+                {brand.slug === "bayer04leverkusen"
+                  ? "Das Netzwerkpartner-Portal"
+                  : brand.name}
+              </NetworkText>
+            </b>
+            <small>
+              <NetworkText id="ui.portal.auth-subtitle">
+                {brand.slug === "bayer04leverkusen"
+                  ? "der Media Online Innovations Group"
+                  : "Geschütztes Partnerportal"}
+              </NetworkText>
+            </small>
           </div>
         </Link>
-        <em>Sicherer Netzwerkzugang</em>
+        <em>
+          <NetworkText id="ui.network-auth-brand.205e3f1b301d05a9">
+            Sicherer Netzwerkzugang
+          </NetworkText>
+        </em>
       </header>
       <section>
         <aside>
           <span>
-            {brand.slug === "bayer04leverkusen" ? "UNABHÄNGIG. INHABERGEFÜHRT. PERSÖNLICH." : kind === "login" ? "WILLKOMMEN ZURÜCK" : "PERSÖNLICHE EINLADUNG"}
+            <NetworkText id="ui.network-auth-brand.991237e087602f5f">
+              {brand.slug === "bayer04leverkusen"
+                ? "UNABHÄNGIG. INHABERGEFÜHRT. PERSÖNLICH."
+                : kind === "login"
+                  ? "WILLKOMMEN ZURÜCK"
+                  : "PERSÖNLICHE EINLADUNG"}
+            </NetworkText>
           </span>
           <h1>
-            {brand.slug === "bayer04leverkusen" ? "Gemeinsam mehr erreichen. Persönlich verbunden." : kind === "login"
-              ? `Willkommen bei ${brand.name}.`
-              : `Ihr Zugang zu ${brand.name}.`}
+            <NetworkText id="ui.auth.story-title">
+              {brand.slug === "bayer04leverkusen"
+                ? "Gemeinsam mehr erreichen. Persönlich verbunden."
+                : kind === "login"
+                  ? `Willkommen bei ${brand.name}.`
+                  : `Ihr Zugang zu ${brand.name}.`}
+            </NetworkText>
           </h1>
           <p>
-            {brand.slug === "bayer04leverkusen" ? "Lerne Menschen und Unternehmen aus deinem Business-Netzwerk kennen, entdecke Angebote und Leistungen und komm direkt ins Gespräch – auch zwischen den gemeinsamen Treffen." : kind === "login"
-              ? "Informationen, Kontakte, Veranstaltungen und Zusammenarbeit in Ihrem geschlossenen Partnernetzwerk."
-              : "Richten Sie Ihren persönlichen Zugang ein. Ihre Daten und Unternehmensseite bleiben ausschließlich innerhalb dieses Netzwerks sichtbar."}
+            <NetworkText id="ui.network-auth-brand.55e0aed50678fa96">
+              {brand.slug === "bayer04leverkusen"
+                ? "Lerne Menschen und Unternehmen aus deinem Business-Netzwerk kennen, entdecke Angebote und Leistungen und komm direkt ins Gespräch – auch zwischen den gemeinsamen Treffen."
+                : kind === "login"
+                  ? "Informationen, Kontakte, Veranstaltungen und Zusammenarbeit in Ihrem geschlossenen Partnernetzwerk."
+                  : "Richten Sie Ihren persönlichen Zugang ein. Ihre Daten und Unternehmensseite bleiben ausschließlich innerhalb dieses Netzwerks sichtbar."}
+            </NetworkText>
           </p>
           <ul>
-            <li>Geschlossener, mandantengetrennter Bereich</li>
-            <li>Zugang ausschließlich für eingeladene Partner</li>
-            <li>Branding und Inhalte durch die Netzwerkleitung</li>
+            <li>
+              <NetworkText id="ui.network-auth-brand.18829b80e14f8eb8">
+                Geschlossener, mandantengetrennter Bereich
+              </NetworkText>
+            </li>
+            <li>
+              <NetworkText id="ui.network-auth-brand.8bbb4e6a4aea6a68">
+                Zugang ausschließlich für eingeladene Partner
+              </NetworkText>
+            </li>
+            <li>
+              <NetworkText id="ui.network-auth-brand.bc9e2d089b60d276">
+                Branding und Inhalte durch die Netzwerkleitung
+              </NetworkText>
+            </li>
           </ul>
         </aside>
         <div>{children}</div>
       </section>
       <footer>
         <span>
-          © {new Date().getFullYear()} Media Online Innovations Group
+          © {new Date().getFullYear()}
+          <NetworkText id="ui.network-auth-brand.30249e90338cc672">
+            Media Online Innovations Group
+          </NetworkText>
         </span>
-        <span>Technisch bereitgestellt durch B2B Matching</span>
+        <span>
+          <NetworkText id="ui.network-auth-brand.e1c55cbbdf944382">
+            Technisch bereitgestellt durch B2B Matching
+          </NetworkText>
+        </span>
       </footer>
     </main>
   );

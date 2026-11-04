@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "../components/network-text-editor";
 import { FormEvent, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -37,14 +38,21 @@ export default function RegistrationPage() {
     [emailLocked, setEmailLocked] = useState(false),
     [networkInviteToken, setNetworkInviteToken] = useState(""),
     [ready, setReady] = useState(false);
-  const acceptsRequests = ["bayer04leverkusen","unternehmernetzwerkleverkusen"].includes(networkSlug);
+  const acceptsRequests = [
+    "bayer04leverkusen",
+    "unternehmernetzwerkleverkusen",
+  ].includes(networkSlug);
   const networkRegistration = Boolean(networkSlug && networkInviteToken),
     networkBrand = useNetworkBrand(networkSlug);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setLoginMode(params.get("mode") === "login");
     const requestedNetwork = params.get("network") || "";
-    setNetworkSlug(requestedNetwork === "unternehmernetzwerk-leverkusen" ? "unternehmernetzwerkleverkusen" : requestedNetwork);
+    setNetworkSlug(
+      requestedNetwork === "unternehmernetzwerk-leverkusen"
+        ? "unternehmernetzwerkleverkusen"
+        : requestedNetwork,
+    );
     setInvitedEmail(params.get("email") || "");
     setEmailLocked(Boolean(params.get("email")));
     setNetworkInviteToken(params.get("invite") || "");
@@ -165,8 +173,16 @@ export default function RegistrationPage() {
     return (
       <main className="networkAccessState">
         <section>
-          <span>GESCHÜTZTER ZUGANG</span>
-          <h1>Einladung wird geprüft.</h1>
+          <span>
+            <NetworkText id="ui.page.5afcbdd28f60c743">
+              GESCHÜTZTER ZUGANG
+            </NetworkText>
+          </span>
+          <h1>
+            <NetworkText id="ui.page.67600f4b82400b9a">
+              Einladung wird geprüft.
+            </NetworkText>
+          </h1>
         </section>
       </main>
     );
@@ -205,14 +221,18 @@ export default function RegistrationPage() {
             )}
             <div>
               <b>
-                {networkBrand.slug === "bayer04leverkusen"
-                  ? "Das Netzwerkpartner-Portal"
-                  : networkBrand.name}
+                <NetworkText id="ui.portal.name">
+                  {networkBrand.slug === "bayer04leverkusen"
+                    ? "Das Netzwerkpartner-Portal"
+                    : networkBrand.name}
+                </NetworkText>
               </b>
               <small>
-                {networkBrand.slug === "bayer04leverkusen"
-                  ? "der Media Online Innovations Group"
-                  : "Geschütztes Partnerportal"}
+                <NetworkText id="ui.portal.auth-subtitle">
+                  {networkBrand.slug === "bayer04leverkusen"
+                    ? "der Media Online Innovations Group"
+                    : "Geschütztes Partnerportal"}
+                </NetworkText>
               </small>
             </div>
           </Link>
@@ -230,10 +250,16 @@ export default function RegistrationPage() {
                 );
               }}
             >
-              Teilnahme anfragen
+              <NetworkText id="ui.page.21a12d684526d958">
+                Teilnahme anfragen
+              </NetworkText>
             </button>
           ) : (
-            <em>Persönliche Einladung</em>
+            <em>
+              <NetworkText id="ui.page.7cc1fa36f7c99b7e">
+                Persönliche Einladung
+              </NetworkText>
+            </em>
           )}
         </header>
       ) : (
@@ -253,26 +279,39 @@ export default function RegistrationPage() {
           ) : (
             <>
               <span>
-                {networkBrand?.slug === "bayer04leverkusen"
-                  ? "UNABHÄNGIG. INHABERGEFÜHRT. PERSÖNLICH."
-                  : networkBrand
-                    ? `IHR START BEI ${networkBrand.name.toUpperCase()}`
-                    : "IHR PARTNERPORTAL-ZUGANG"}
+                <NetworkText id="ui.auth.eyebrow">
+                  {networkBrand?.slug === "bayer04leverkusen"
+                    ? "UNABHÄNGIG. INHABERGEFÜHRT. PERSÖNLICH."
+                    : networkBrand
+                      ? `IHR START BEI ${networkBrand.name.toUpperCase()}`
+                      : "IHR PARTNERPORTAL-ZUGANG"}
+                </NetworkText>
               </span>
               <h2>
-                Gemeinsam mehr erreichen.
+                <NetworkText id="ui.page.bbdf4d619209c904">
+                  Gemeinsam mehr erreichen.
+                </NetworkText>
                 <br />
-                Persönlich verbunden.
+                <NetworkText id="ui.page.640b8e17ea4832d0">
+                  Persönlich verbunden.
+                </NetworkText>
               </h2>
               <p>
                 {networkBrand?.slug === "bayer04leverkusen" ? (
-                  "Lerne Menschen und Unternehmen aus deinem Business-Netzwerk kennen, entdecke Angebote und Leistungen und komm direkt ins Gespräch – auch zwischen den gemeinsamen Treffen."
+                  <NetworkText id="ui.auth.story-intro">
+                    Lerne Menschen und Unternehmen aus deinem Business-Netzwerk
+                    kennen, entdecke Angebote und Leistungen und komm direkt ins
+                    Gespräch – auch zwischen den gemeinsamen Treffen.
+                  </NetworkText>
                 ) : (
                   <>
-                    Lerne die Menschen hinter den Unternehmen kennen und bleib
-                    auch zwischen gemeinsamen Treffen im Gespräch. Teile Ideen,
-                    stell dein Angebot vor und finde neue Kontakte – persönlich
-                    und geschützt innerhalb unserer Partnergemeinschaft.
+                    <NetworkText id="ui.page.1055b48a5d6aeb77">
+                      Lerne die Menschen hinter den Unternehmen kennen und bleib
+                      auch zwischen gemeinsamen Treffen im Gespräch. Teile
+                      Ideen, stell dein Angebot vor und finde neue Kontakte –
+                      persönlich und geschützt innerhalb unserer
+                      Partnergemeinschaft.
+                    </NetworkText>
                   </>
                 )}
               </p>
@@ -281,41 +320,59 @@ export default function RegistrationPage() {
                   <b>01</b>
                   <div>
                     <strong>
-                      {centralPayment
-                        ? "Netzwerk kennenlernen"
-                        : "Mitgliedschaft kennenlernen"}
+                      <NetworkText id="ui.page.94ddedde22fbc5f4">
+                        {centralPayment
+                          ? "Netzwerk kennenlernen"
+                          : "Mitgliedschaft kennenlernen"}
+                      </NetworkText>
                     </strong>
                     <p>
-                      {centralPayment
-                        ? "Deinen persönlichen Zugang erstellen und die Partner im Netzwerk entdecken."
-                        : "Preis und Leistungen prüfen und Ihren persönlichen Zugang erstellen."}
+                      <NetworkText id="ui.page.002a2e08b02edfbd">
+                        {centralPayment
+                          ? "Deinen persönlichen Zugang erstellen und die Partner im Netzwerk entdecken."
+                          : "Preis und Leistungen prüfen und Ihren persönlichen Zugang erstellen."}
+                      </NetworkText>
                     </p>
                   </div>
                 </article>
                 <article>
                   <b>02</b>
                   <div>
-                    <strong>Persönlich verbunden bleiben</strong>
+                    <strong>
+                      <NetworkText id="ui.page.b122adc74576f92f">
+                        Persönlich verbunden bleiben
+                      </NetworkText>
+                    </strong>
                     <p>
-                      Kontakte vertiefen, Nachrichten austauschen und gemeinsame
-                      Treffen planen.
+                      <NetworkText id="ui.page.e42183dfdd0e9f49">
+                        Kontakte vertiefen, Nachrichten austauschen und
+                        gemeinsame Treffen planen.
+                      </NetworkText>
                     </p>
                   </div>
                 </article>
                 <article>
                   <b>03</b>
                   <div>
-                    <strong>Gemeinsam Chancen nutzen</strong>
+                    <strong>
+                      <NetworkText id="ui.page.4a8470d2e1097b5e">
+                        Gemeinsam Chancen nutzen
+                      </NetworkText>
+                    </strong>
                     <p>
-                      Kompetenzen entdecken, Angebote abstimmen und aus
-                      Begegnungen nachhaltige Geschäftsbeziehungen entwickeln.
+                      <NetworkText id="ui.page.e78a0ef6793d58ab">
+                        Kompetenzen entdecken, Angebote abstimmen und aus
+                        Begegnungen nachhaltige Geschäftsbeziehungen entwickeln.
+                      </NetworkText>
                     </p>
                   </div>
                 </article>
               </div>
               <small>
-                ✓ Keine offene Registrierung &nbsp; ✓ Keine öffentliche
-                Partnerseite &nbsp; ✓ Strikt getrennter Netzwerkbereich
+                <NetworkText id="ui.page.215f1992e92e4077">
+                  ✓ Keine offene Registrierung &nbsp; ✓ Keine öffentliche
+                  Partnerseite &nbsp; ✓ Strikt getrennter Netzwerkbereich
+                </NetworkText>
               </small>
             </>
           )}
@@ -332,7 +389,7 @@ export default function RegistrationPage() {
                 window.history.replaceState(null, "", url);
               }}
             >
-              Anmelden
+              <NetworkText id="ui.page.a329a32263a460ff">Anmelden</NetworkText>
             </button>
             <button
               type="button"
@@ -344,7 +401,9 @@ export default function RegistrationPage() {
                 window.history.replaceState(null, "", url);
               }}
             >
-              Registrieren
+              <NetworkText id="ui.page.3badc984343995c1">
+                Registrieren
+              </NetworkText>
             </button>
           </nav>
           {loginMode ? (
@@ -365,14 +424,23 @@ export default function RegistrationPage() {
               }}
             />
           ) : !networkRegistration && acceptsRequests ? (
-            <NetworkParticipationRequest key={networkSlug} network={networkSlug} />
+            <NetworkParticipationRequest
+              key={networkSlug}
+              network={networkSlug}
+            />
           ) : !networkRegistration ? (
             <>
-              <h1>Persönliche Einladung erforderlich</h1>
+              <h1>
+                <NetworkText id="ui.page.7008a37f2773cea4">
+                  Persönliche Einladung erforderlich
+                </NetworkText>
+              </h1>
               <p className="lead">
-                Öffne zur Registrierung den vollständigen Einladungslink aus
-                deiner E-Mail. Bestehende Zugänge können sich hier direkt
-                anmelden.
+                <NetworkText id="ui.page.5f2a467cedf8bf85">
+                  Öffne zur Registrierung den vollständigen Einladungslink aus
+                  deiner E-Mail. Bestehende Zugänge können sich hier direkt
+                  anmelden.
+                </NetworkText>
               </p>
             </>
           ) : (
@@ -386,11 +454,21 @@ export default function RegistrationPage() {
                 aria-label={`Schritt ${stepNumber} von 4`}
               >
                 <span style={{ width: `${stepNumber * 25}%` }} />
-                <small>SCHRITT {stepNumber} VON 4</small>
+                <small>
+                  <NetworkText id="ui.page.d464c756534a396a">
+                    SCHRITT{" "}
+                  </NetworkText>
+                  {stepNumber}
+                  <NetworkText id="ui.page.52b1ba331ccbeef1">VON 4</NetworkText>
+                </small>
               </div>
               {step === "pricing" && (
                 <>
-                  <h1>Deine Einladung. Dein Netzwerk.</h1>
+                  <h1>
+                    <NetworkText id="ui.page.375a1da993c371ec">
+                      Deine Einladung. Dein Netzwerk.
+                    </NetworkText>
+                  </h1>
                   <MemberAnnualRegistrationFields
                     invite={networkInviteToken}
                     loading={loading}
@@ -402,24 +480,34 @@ export default function RegistrationPage() {
               )}
               {step === "account" && (
                 <>
-                  <h1>Partnerportal-Zugang erstellen</h1>
+                  <h1>
+                    <NetworkText id="ui.page.8cc1f38d97cc7eec">
+                      Partnerportal-Zugang erstellen
+                    </NetworkText>
+                  </h1>
                   <button
                     type="button"
                     className="registrationBack"
                     onClick={() => setStep("pricing")}
                   >
-                    {centralPayment
-                      ? "← Einladung erneut ansehen"
-                      : "← Preisübersicht erneut ansehen"}
+                    <NetworkText id="ui.page.9ed1d16a1f6a379f">
+                      {centralPayment
+                        ? "← Einladung erneut ansehen"
+                        : "← Preisübersicht erneut ansehen"}
+                    </NetworkText>
                   </button>
                   <p className="lead">
-                    {emailLocked
-                      ? "Die eingeladene E-Mail-Adresse ist verbindlich vorgegeben."
-                      : "Gib deine geschäftliche E-Mail-Adresse für deinen persönlichen Zugang an."}
+                    <NetworkText id="ui.page.55bdd66c96f8b360">
+                      {emailLocked
+                        ? "Die eingeladene E-Mail-Adresse ist verbindlich vorgegeben."
+                        : "Gib deine geschäftliche E-Mail-Adresse für deinen persönlichen Zugang an."}
+                    </NetworkText>
                   </p>
                   <form onSubmit={register} className="formGrid">
                     <label>
-                      Vorname
+                      <NetworkText id="ui.page.d2d77b6ffa7084f7">
+                        Vorname
+                      </NetworkText>
                       <input
                         name="firstName"
                         required
@@ -428,7 +516,9 @@ export default function RegistrationPage() {
                       />
                     </label>
                     <label>
-                      Nachname
+                      <NetworkText id="ui.page.b25358edd497f128">
+                        Nachname
+                      </NetworkText>
                       <input
                         name="lastName"
                         required
@@ -437,7 +527,9 @@ export default function RegistrationPage() {
                       />
                     </label>
                     <label className="full">
-                      Geschäftliche E-Mail
+                      <NetworkText id="ui.page.57f639dbdaa8c1c6">
+                        Geschäftliche E-Mail
+                      </NetworkText>
                       <input
                         name="email"
                         type="email"
@@ -451,11 +543,15 @@ export default function RegistrationPage() {
                       />
                     </label>
                     <label className="full">
-                      Passwort
+                      <NetworkText id="ui.page.a36c101570cc4410">
+                        Passwort
+                      </NetworkText>
                       <small>
-                        Schon ein Konto? Verwende dein bestehendes Passwort –
-                        dieselbe E-Mail-Adresse ist in mehreren Netzwerken
-                        möglich.
+                        <NetworkText id="ui.page.fd868cd7e73bcd47">
+                          Schon ein Konto? Verwende dein bestehendes Passwort –
+                          dieselbe E-Mail-Adresse ist in mehreren Netzwerken
+                          möglich.
+                        </NetworkText>
                       </small>
                       <input
                         name="password"
@@ -467,8 +563,10 @@ export default function RegistrationPage() {
                         autoComplete="new-password"
                       />
                       <small>
-                        Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben,
-                        Zahl und Sonderzeichen
+                        <NetworkText id="ui.page.fded167ac3e6726c">
+                          Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben,
+                          Zahl und Sonderzeichen
+                        </NetworkText>
                       </small>
                     </label>
                     <label className="full legalConsent">
@@ -478,7 +576,9 @@ export default function RegistrationPage() {
                         <Link href="/agb" target="_blank">
                           AGB und Nutzungsregeln
                         </Link>{" "}
-                        sowie die{" "}
+                        <NetworkText id="ui.page.1248c7854f0011f5">
+                          sowie die
+                        </NetworkText>{" "}
                         <Link href="/datenschutz/unternehmen" target="_blank">
                           Datenschutzerklärung
                         </Link>
@@ -486,33 +586,51 @@ export default function RegistrationPage() {
                       </span>
                     </label>
                     <button className="primary full" disabled={loading}>
-                      {loading ? "Konto wird erstellt …" : "Konto erstellen"}
+                      <NetworkText id="ui.page.bdfe31d0bb3c2830">
+                        {loading ? "Konto wird erstellt …" : "Konto erstellen"}
+                      </NetworkText>
                     </button>
                   </form>
                   <p>
-                    Bereits ein Konto?{" "}
+                    <NetworkText id="ui.page.82b80f5e2f59bc49">
+                      Bereits ein Konto?
+                    </NetworkText>{" "}
                     <Link
                       href={
                         `/anmelden?network=${encodeURIComponent(networkSlug)}&invite=${encodeURIComponent(networkInviteToken)}` as never
                       }
                     >
-                      Mit bestehendem Zugang anmelden und Einladung fortsetzen
+                      <NetworkText id="ui.page.f7ac1da980c3e3b7">
+                        Mit bestehendem Zugang anmelden und Einladung fortsetzen
+                      </NetworkText>
                     </Link>
                   </p>
                 </>
               )}
               {step === "verify" && (
                 <>
-                  <h1>E-Mail bestätigen</h1>
+                  <h1>
+                    <NetworkText id="ui.page.7b3fe21df24bee13">
+                      E-Mail bestätigen
+                    </NetworkText>
+                  </h1>
                   <p className="lead">
-                    Wir haben einen persönlichen Bestätigungslink an Ihre
-                    geschäftliche E-Mail-Adresse gesendet.
+                    <NetworkText id="ui.page.6b95d242c3e55b37">
+                      Wir haben einen persönlichen Bestätigungslink an Ihre
+                      geschäftliche E-Mail-Adresse gesendet.
+                    </NetworkText>
                   </p>
                   <div className="verificationNotice">
-                    <b>Bitte prüfen Sie Ihr Postfach</b>
+                    <b>
+                      <NetworkText id="ui.page.730bab0535c25a5a">
+                        Bitte prüfen Sie Ihr Postfach
+                      </NetworkText>
+                    </b>
                     <p>
-                      Der Link ist 24 Stunden gültig. Schauen Sie bei Bedarf
-                      auch in Ihren Spam-Ordner.
+                      <NetworkText id="ui.page.6d10709491c2e3e8">
+                        Der Link ist 24 Stunden gültig. Schauen Sie bei Bedarf
+                        auch in Ihren Spam-Ordner.
+                      </NetworkText>
                     </p>
                     <p>
                       {centralPayment ? (
@@ -533,9 +651,11 @@ export default function RegistrationPage() {
                       onClick={verify}
                       disabled={loading}
                     >
-                      {loading
-                        ? "E-Mail wird bestätigt …"
-                        : "Testbestätigung ausführen"}
+                      <NetworkText id="ui.page.d5f55d2276026131">
+                        {loading
+                          ? "E-Mail wird bestätigt …"
+                          : "Testbestätigung ausführen"}
+                      </NetworkText>
                     </button>
                   ) : (
                     <Link
@@ -544,7 +664,9 @@ export default function RegistrationPage() {
                         `/anmelden?network=${encodeURIComponent(networkSlug)}&invite=${encodeURIComponent(networkInviteToken)}` as never
                       }
                     >
-                      Zur Anmeldung
+                      <NetworkText id="ui.page.7977d98eb1119660">
+                        Zur Anmeldung
+                      </NetworkText>
                     </Link>
                   )}
                 </>
@@ -552,9 +674,11 @@ export default function RegistrationPage() {
               {step === "organization" && (
                 <>
                   <h1>
-                    {centralPayment
-                      ? "Dein Unternehmen"
-                      : "Unternehmen & Jahresmitgliedschaft"}
+                    <NetworkText id="ui.page.344eae7f3aee013b">
+                      {centralPayment
+                        ? "Dein Unternehmen"
+                        : "Unternehmen & Jahresmitgliedschaft"}
+                    </NetworkText>
                   </h1>
                   <p className="lead">
                     {centralPayment ? (
@@ -580,7 +704,14 @@ export default function RegistrationPage() {
                       />
                     </label>
                     <label className="full">
-                      Homepage <small>Optional</small>
+                      <NetworkText id="ui.page.9e3391e9bf072ad3">
+                        Homepage{" "}
+                      </NetworkText>
+                      <small>
+                        <NetworkText id="ui.page.59be71333c960fd0">
+                          Optional
+                        </NetworkText>
+                      </small>
                       <input
                         name="websiteUrl"
                         type="url"
@@ -599,15 +730,23 @@ export default function RegistrationPage() {
               {step === "submitted" && (
                 <div className="success">
                   <div className="check">✓</div>
-                  <h1>Ihr Zugang ist bereit</h1>
+                  <h1>
+                    <NetworkText id="ui.page.2d1b39746ad0b616">
+                      Ihr Zugang ist bereit
+                    </NetworkText>
+                  </h1>
                   <p className="lead">
-                    Willkommen in Ihrem geschlossenen Partnerportal.
+                    <NetworkText id="ui.page.021b8979ff9e5741">
+                      Willkommen in Ihrem geschlossenen Partnerportal.
+                    </NetworkText>
                   </p>
                   <Link
                     className="primary linkButton"
                     href={`/portal/netzwerk/${networkSlug}` as never}
                   >
-                    Zum Partnerportal
+                    <NetworkText id="ui.page.97cb6eaa05fc0f1d">
+                      Zum Partnerportal
+                    </NetworkText>
                   </Link>
                 </div>
               )}
@@ -623,11 +762,14 @@ export default function RegistrationPage() {
       {networkBrand ? (
         <footer className="networkAuthFooter">
           <span>
-            © {new Date().getFullYear()} Media Online Innovations Group
+            © {new Date().getFullYear()}
+            <NetworkText id="ui.page.30249e90338cc672">
+              Media Online Innovations Group
+            </NetworkText>
           </span>
           <nav aria-label="Rechtliche Informationen">
             <Link href="/impressum" target="_blank" rel="noopener noreferrer">
-              Impressum
+              <NetworkText id="ui.page.b8a6051923e6a649">Impressum</NetworkText>
             </Link>
             <Link
               href="/datenschutz/unternehmen"

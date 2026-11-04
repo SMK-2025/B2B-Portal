@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
@@ -131,8 +132,16 @@ export function NetworkEventRecapWorkspace() {
       <section className="networkCard">
         <header>
           <div>
-            <span>CHRONOLOGISCHES ARCHIV</span>
-            <h2>Vergangene Netzwerkveranstaltungen</h2>
+            <span>
+              <NetworkText id="ui.network-event-recap-workspace.2b4f44313ab73012">
+                CHRONOLOGISCHES ARCHIV
+              </NetworkText>
+            </span>
+            <h2>
+              <NetworkText id="ui.network-event-recap-workspace.be27b02c40bf4e76">
+                Vergangene Netzwerkveranstaltungen
+              </NetworkText>
+            </h2>
           </div>
         </header>
         <div className="networkRecapGrid">
@@ -151,16 +160,24 @@ export function NetworkEventRecapWorkspace() {
                 <p>{item.data.recapSummary}</p>
                 {item.data.recapResults && (
                   <aside>
-                    <b>Ergebnisse</b>
+                    <b>
+                      <NetworkText id="ui.network-event-recap-workspace.12ba6ae54b689292">
+                        Ergebnisse
+                      </NetworkText>
+                    </b>
                     <p>{item.data.recapResults}</p>
                   </aside>
                 )}
                 <button onClick={() => setThreadId(item.id)}>
-                  Austauschen & nächste Schritte →
+                  <NetworkText id="ui.network-event-recap-workspace.49f05515d506bd8e">
+                    Austauschen & nächste Schritte →
+                  </NetworkText>
                 </button>
                 {access?.isInitiator && (
                   <button type="button" onClick={() => edit(item)}>
-                    Rückblick bearbeiten
+                    <NetworkText id="ui.network-event-recap-workspace.b93dd4e7e800047a">
+                      Rückblick bearbeiten
+                    </NetworkText>
                   </button>
                 )}
               </div>
@@ -168,10 +185,16 @@ export function NetworkEventRecapWorkspace() {
           ))}
           {!published.length && (
             <div className="networkEmpty">
-              <b>Noch keine Rückblicke veröffentlicht</b>
+              <b>
+                <NetworkText id="ui.network-event-recap-workspace.675d8b19d4bd1bdc">
+                  Noch keine Rückblicke veröffentlicht
+                </NetworkText>
+              </b>
               <p>
-                Nach einer Veranstaltung kann der Initiator Bilder,
-                Zusammenfassung und Ergebnisse ergänzen.
+                <NetworkText id="ui.network-event-recap-workspace.b6714592ef3aa93c">
+                  Nach einer Veranstaltung kann der Initiator Bilder,
+                  Zusammenfassung und Ergebnisse ergänzen.
+                </NetworkText>
               </p>
             </div>
           )}
@@ -181,8 +204,16 @@ export function NetworkEventRecapWorkspace() {
         <section className="networkCard">
           <header>
             <div>
-              <span>FÜR DEN INITIATOR</span>
-              <h2>Rückblick zu einer Veranstaltung anlegen</h2>
+              <span>
+                <NetworkText id="ui.network-event-recap-workspace.c2fb1b71a3403acc">
+                  FÜR DEN INITIATOR
+                </NetworkText>
+              </span>
+              <h2>
+                <NetworkText id="ui.network-event-recap-workspace.4fb6f7b1e6f4d1c9">
+                  Rückblick zu einer Veranstaltung anlegen
+                </NetworkText>
+              </h2>
             </div>
           </header>
           <div className="networkRecapEventList">
@@ -195,9 +226,11 @@ export function NetworkEventRecapWorkspace() {
                 </span>
                 <b>{item.title}</b>
                 <small>
-                  {item.data.recapSummary
-                    ? "Rückblick vorhanden"
-                    : "Noch ohne Rückblick"}
+                  <NetworkText id="ui.network-event-recap-workspace.d09e6f994742baea">
+                    {item.data.recapSummary
+                      ? "Rückblick vorhanden"
+                      : "Noch ohne Rückblick"}
+                  </NetworkText>
                 </small>
               </button>
             ))}
@@ -224,14 +257,20 @@ export function NetworkEventRecapWorkspace() {
           >
             <header>
               <div>
-                <span>VERANSTALTUNGSRÜCKBLICK</span>
+                <span>
+                  <NetworkText id="ui.network-event-recap-workspace.903e829a4a18d5ff">
+                    VERANSTALTUNGSRÜCKBLICK
+                  </NetworkText>
+                </span>
                 <h2>{editing.title}</h2>
                 <p>
-                  Dieser Editor speichert den Rückblick zunächst im
-                  geschlossenen Portal. Die öffentliche Homepage-Freigabe
-                  erfolgt separat unter „Öffentliche Homepage-Freigaben“.
-                  Interne Ergebnisse und nächste Schritte werden nie öffentlich
-                  übertragen.
+                  <NetworkText id="ui.network-event-recap-workspace.c1785f3f82e6991a">
+                    Dieser Editor speichert den Rückblick zunächst im
+                    geschlossenen Portal. Die öffentliche Homepage-Freigabe
+                    erfolgt separat unter „Öffentliche Homepage-Freigaben“.
+                    Interne Ergebnisse und nächste Schritte werden nie
+                    öffentlich übertragen.
+                  </NetworkText>
                 </p>
               </div>
               <button type="button" onClick={() => setEditing(null)}>
@@ -240,7 +279,9 @@ export function NetworkEventRecapWorkspace() {
             </header>
             <form onSubmit={save}>
               <label>
-                Worum ging es?
+                <NetworkText id="ui.network-event-recap-workspace.c25dcee5da87f8ae">
+                  Worum ging es?
+                </NetworkText>
                 <textarea
                   name="recapSummary"
                   required
@@ -250,7 +291,9 @@ export function NetworkEventRecapWorkspace() {
                 />
               </label>
               <label>
-                Ergebnisse und nächste Schritte
+                <NetworkText id="ui.network-event-recap-workspace.23d17b68d35f7db1">
+                  Ergebnisse und nächste Schritte
+                </NetworkText>
                 <textarea
                   name="recapResults"
                   rows={4}
@@ -258,14 +301,20 @@ export function NetworkEventRecapWorkspace() {
                 />
               </label>
               <label>
-                Bilder
+                <NetworkText id="ui.network-event-recap-workspace.214feaf164d4b815">
+                  Bilder
+                </NetworkText>
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   multiple
                   onChange={addImages}
                 />
-                <small>Bis zu sechs Bilder, jeweils maximal 1,5 MB.</small>
+                <small>
+                  <NetworkText id="ui.network-event-recap-workspace.6fe7e49f5a14420b">
+                    Bis zu sechs Bilder, jeweils maximal 1,5 MB.
+                  </NetworkText>
+                </small>
               </label>
               {images.length > 0 && (
                 <div className="networkRecapImages">
@@ -280,17 +329,27 @@ export function NetworkEventRecapWorkspace() {
                       }
                     >
                       <img src={image} alt={`Rückblickbild ${index + 1}`} />
-                      <span>Entfernen</span>
+                      <span>
+                        <NetworkText id="ui.network-event-recap-workspace.3828375a2d45384b">
+                          Entfernen
+                        </NetworkText>
+                      </span>
                     </button>
                   ))}
                 </div>
               )}
               <footer className="adminNetworkDialogActions">
                 <button type="button" onClick={() => setEditing(null)}>
-                  Abbrechen
+                  <NetworkText id="ui.network-event-recap-workspace.f7ff1178af202f6f">
+                    Abbrechen
+                  </NetworkText>
                 </button>
                 <button className="portalPrimary" disabled={busy}>
-                  {busy ? "Wird veröffentlicht …" : "Rückblick veröffentlichen"}
+                  <NetworkText id="ui.network-event-recap-workspace.c4e79e2ffe4c7a39">
+                    {busy
+                      ? "Wird veröffentlicht …"
+                      : "Rückblick veröffentlichen"}
+                  </NetworkText>
                 </button>
               </footer>
             </form>

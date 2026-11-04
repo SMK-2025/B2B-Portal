@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -151,7 +152,11 @@ export function PartnerLoginForm({
   if (choices.length)
     return (
       <>
-        <h1>Dein Netzwerk auswählen</h1>
+        <h1>
+          <NetworkText id="ui.partner-login-form.5e7c9a72701d15f0">
+            Dein Netzwerk auswählen
+          </NetworkText>
+        </h1>
         {choices.map((n) => (
           <Link
             key={n.slug}
@@ -164,12 +169,22 @@ export function PartnerLoginForm({
     );
   return (
     <>
-      <h1>Willkommen zurück.</h1>
-      <p className="lead">Melde dich mit deinem persönlichen Zugang an.</p>
+      <h1>
+        <NetworkText id="ui.partner-login-form.6932a8b794d72980">
+          Willkommen zurück.
+        </NetworkText>
+      </h1>
+      <p className="lead">
+        <NetworkText id="ui.partner-login-form.73f829a230bc17cc">
+          Melde dich mit deinem persönlichen Zugang an.
+        </NetworkText>
+      </p>
       <form className="formGrid" onSubmit={login}>
         {challenge ? (
           <label className="full">
-            Sicherheitscode aus Ihrer E-Mail
+            <NetworkText id="ui.partner-login-form.dff6385d1faba35d">
+              Sicherheitscode aus Ihrer E-Mail
+            </NetworkText>
             <input
               key="code"
               autoFocus
@@ -181,13 +196,17 @@ export function PartnerLoginForm({
               required
             />{" "}
             <button type="button" onClick={() => setChallenge("")}>
-              Zurück zur Anmeldung
+              <NetworkText id="ui.partner-login-form.24e1219492b4bbd4">
+                Zurück zur Anmeldung
+              </NetworkText>
             </button>
           </label>
         ) : (
           <>
             <label className="full">
-              E-Mail-Adresse
+              <NetworkText id="ui.partner-login-form.c2f9765ad5cefe3a">
+                E-Mail-Adresse
+              </NetworkText>
               <input
                 key={email}
                 type="email"
@@ -198,7 +217,9 @@ export function PartnerLoginForm({
               />
             </label>
             <label className="full">
-              Passwort
+              <NetworkText id="ui.partner-login-form.a36c101570cc4410">
+                Passwort
+              </NetworkText>
               <input
                 type="password"
                 name="password"
@@ -210,18 +231,25 @@ export function PartnerLoginForm({
         )}
         <div className="loginOptions">
           <label>
-            <input type="checkbox" name="remember" /> Angemeldet bleiben
+            <input type="checkbox" name="remember" />
+            <NetworkText id="ui.partner-login-form.2d1ae386210bd011">
+              Angemeldet bleiben
+            </NetworkText>
           </label>
           <Link
             href={
               `/passwort-vergessen${networkSlug ? `?network=${encodeURIComponent(networkSlug)}` : ""}` as never
             }
           >
-            Passwort vergessen?
+            <NetworkText id="ui.partner-login-form.78ef93e2ec179872">
+              Passwort vergessen?
+            </NetworkText>
           </Link>
         </div>
         <button className="primary full" disabled={busy}>
-          {busy ? "Anmeldung wird geprüft …" : "Sicher anmelden"}
+          <NetworkText id="ui.partner-login-form.4e8367a63278ad64">
+            {busy ? "Anmeldung wird geprüft …" : "Sicher anmelden"}
+          </NetworkText>
         </button>
       </form>
       {error && (

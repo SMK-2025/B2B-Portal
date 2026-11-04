@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 
 import {
   useEffect,
@@ -265,7 +266,14 @@ export function NetworkProfileWorkspace({
       setBusy(false);
     }
   }
-  if (!data) return <p role="status">Partnerseite wird geladen …</p>;
+  if (!data)
+    return (
+      <p role="status">
+        <NetworkText id="ui.network-profile-workspace.27799630fcbecccf">
+          Partnerseite wird geladen …
+        </NetworkText>
+      </p>
+    );
   const p = { ...data.profile, ...preview };
   function openEditablePreview() {
     const fields = profileForm.current
@@ -334,10 +342,16 @@ export function NetworkProfileWorkspace({
       {data.canEdit && (
         <section className="partnerPreviewEntry">
           <div>
-            <h2>Deine Seite aus Sicht der Partner</h2>
+            <h2>
+              <NetworkText id="ui.network-profile-workspace.fabf96449c76483d">
+                Deine Seite aus Sicht der Partner
+              </NetworkText>
+            </h2>
             <p>
-              Öffne die Vorschau und bearbeite Texte, Bilder und Kontaktdaten
-              direkt am Stiftsymbol.
+              <NetworkText id="ui.network-profile-workspace.91fe4e1a8af28acd">
+                Öffne die Vorschau und bearbeite Texte, Bilder und Kontaktdaten
+                direkt am Stiftsymbol.
+              </NetworkText>
             </p>
           </div>
           <button
@@ -346,22 +360,32 @@ export function NetworkProfileWorkspace({
             disabled={busy}
             onClick={openEditablePreview}
           >
-            Vorschau öffnen & bearbeiten
+            <NetworkText id="ui.network-profile-workspace.63bdf8145020b810">
+              Vorschau öffnen & bearbeiten
+            </NetworkText>
           </button>
         </section>
       )}
       {data.canEdit && (
         <section className="partnerSetupEntry">
           <div>
-            <small>DEIN NETZWERKAUFTRITT</small>
+            <small>
+              <NetworkText id="ui.network-profile-workspace.173cd356890598a2">
+                DEIN NETZWERKAUFTRITT
+              </NetworkText>
+            </small>
             <h2>
-              {data.profile
-                ? "Deine Partnerseite gestalten"
-                : "Stell dein Unternehmen vor"}
+              <NetworkText id="ui.network-profile-workspace.ddb10ad58d642477">
+                {data.profile
+                  ? "Deine Partnerseite gestalten"
+                  : "Stell dein Unternehmen vor"}
+              </NetworkText>
             </h2>
             <p>
-              Vom ersten Kurzprofil bis zur fertigen Seite: Du kannst jederzeit
-              einen Entwurf speichern.
+              <NetworkText id="ui.network-profile-workspace.27d8fa195e93b721">
+                Vom ersten Kurzprofil bis zur fertigen Seite: Du kannst
+                jederzeit einen Entwurf speichern.
+              </NetworkText>
             </p>
           </div>
           <button
@@ -371,7 +395,10 @@ export function NetworkProfileWorkspace({
               dialog.current?.showModal();
             }}
           >
-            {data.profile ? "Einrichtung öffnen" : "Partnerseite einrichten"} →
+            <NetworkText id="ui.network-profile-workspace.e721fe556a3946d3">
+              {data.profile ? "Einrichtung öffnen" : "Partnerseite einrichten"}
+            </NetworkText>{" "}
+            →
           </button>
         </section>
       )}
@@ -383,7 +410,15 @@ export function NetworkProfileWorkspace({
         aria-labelledby="setup-title"
       >
         <header className="setupHead">
-          <small>PARTNERSEITE · SCHRITT {step + 1} VON 4</small>
+          <small>
+            <NetworkText id="ui.network-profile-workspace.d98049d4627d1949">
+              PARTNERSEITE · SCHRITT{" "}
+            </NetworkText>
+            {step + 1}
+            <NetworkText id="ui.network-profile-workspace.52b1ba331ccbeef1">
+              VON 4
+            </NetworkText>
+          </small>
           <h2 id="setup-title">{steps[step]}</h2>
           {data.canEdit && (
             <button
@@ -412,21 +447,31 @@ export function NetworkProfileWorkspace({
             className="networkCard networkCompanyImport"
             hidden={step !== 0}
           >
-            <summary>Optional: Entwurf mit PagePilot AI vorbereiten</summary>
+            <summary>
+              <NetworkText id="ui.network-profile-workspace.ddd220b09055c251">
+                Optional: Entwurf mit PagePilot AI vorbereiten
+              </NetworkText>
+            </summary>
             <header>
               <h2>
-                PagePilot AI · Aus deiner Homepage wird deine Partnerseite
+                <NetworkText id="ui.network-profile-workspace.ac32b98b4710f872">
+                  PagePilot AI · Aus deiner Homepage wird deine Partnerseite
+                </NetworkText>
               </h2>
             </header>
             <form onSubmit={importWebsite}>
               <p>
-                PagePilot AI erstellt aus deiner öffentlichen Firmenhomepage und
-                ihren Unterseiten einen Entwurf für deine Partnerseite. Du
-                prüfst die Texte, ergänzt Bilder und Angebote und entscheidest,
-                wann du die Seite veröffentlichst.
+                <NetworkText id="ui.network-profile-workspace.01f221c05f13332a">
+                  PagePilot AI erstellt aus deiner öffentlichen Firmenhomepage
+                  und ihren Unterseiten einen Entwurf für deine Partnerseite. Du
+                  prüfst die Texte, ergänzt Bilder und Angebote und
+                  entscheidest, wann du die Seite veröffentlichst.
+                </NetworkText>
               </p>
               <label>
-                Firmenhomepage
+                <NetworkText id="ui.network-profile-workspace.5c542a37edb01ebf">
+                  Firmenhomepage
+                </NetworkText>
                 <input
                   name="sourceWebsite"
                   type="url"
@@ -437,22 +482,32 @@ export function NetworkProfileWorkspace({
               </label>
               <label className="networkImportCheck">
                 <input name="consent" type="checkbox" required />
-                Ich möchte meine öffentliche Firmenhomepage mit PagePilot AI
-                auswerten lassen.
+                <NetworkText id="ui.network-profile-workspace.3ae4e3f412f3456e">
+                  Ich möchte meine öffentliche Firmenhomepage mit PagePilot AI
+                  auswerten lassen.
+                </NetworkText>
               </label>
               <label className="networkImportCheck">
                 <input name="replace" type="checkbox" />
-                Bereits ausgefüllte Textfelder ersetzen (standardmäßig bleiben
-                sie erhalten)
+                <NetworkText id="ui.network-profile-workspace.9da7d07e378bb730">
+                  Bereits ausgefüllte Textfelder ersetzen (standardmäßig bleiben
+                  sie erhalten)
+                </NetworkText>
               </label>
               <button className="networkPrimary" disabled={busy}>
-                {busy
-                  ? "PagePilot AI analysiert deine Homepage …"
-                  : "Partnerseite mit PagePilot AI vorbereiten"}
+                <NetworkText id="ui.network-profile-workspace.80e090dd9a8bccfb">
+                  {busy
+                    ? "PagePilot AI analysiert deine Homepage …"
+                    : "Partnerseite mit PagePilot AI vorbereiten"}
+                </NetworkText>
               </button>
               {sources.length > 0 && (
                 <details>
-                  <summary>Recherchequellen ansehen</summary>
+                  <summary>
+                    <NetworkText id="ui.network-profile-workspace.354cac51b38829cc">
+                      Recherchequellen ansehen
+                    </NetworkText>
+                  </summary>
                   {sources.map((url) => (
                     <p key={url}>
                       <a href={url} target="_blank" rel="noreferrer">
@@ -492,20 +547,32 @@ export function NetworkProfileWorkspace({
               >
                 <header>
                   <div>
-                    <h2>Gestalte deine Partnerseite</h2>
+                    <h2>
+                      <NetworkText id="ui.network-profile-workspace.b538240ac04b7791">
+                        Gestalte deine Partnerseite
+                      </NetworkText>
+                    </h2>
                     <p>
-                      Zeig, was dein Unternehmen ausmacht – mit einem starken
-                      Titelbild und persönlichen Inhalten.
+                      <NetworkText id="ui.network-profile-workspace.67fbc850bf92ae45">
+                        Zeig, was dein Unternehmen ausmacht – mit einem starken
+                        Titelbild und persönlichen Inhalten.
+                      </NetworkText>
                     </p>
                   </div>
                 </header>
                 <div className="partnerPageEditor">
                   <div className="partnerHeroEditor">
                     <div>
-                      <h3>Dein Titelbild</h3>
+                      <h3>
+                        <NetworkText id="ui.network-profile-workspace.795619adc9ecd918">
+                          Dein Titelbild
+                        </NetworkText>
+                      </h3>
                       <p>
-                        Dieses Bild begrüßt andere Partner ganz oben auf deiner
-                        Partnerseite.
+                        <NetworkText id="ui.network-profile-workspace.b4f01b941a1f774e">
+                          Dieses Bild begrüßt andere Partner ganz oben auf
+                          deiner Partnerseite.
+                        </NetworkText>
                       </p>
                     </div>
                     <label
@@ -530,14 +597,18 @@ export function NetworkProfileWorkspace({
                       )}
                       <span className="partnerHeroPickerCaption">
                         <strong>
-                          {hero
-                            ? "Titelbild ändern"
-                            : "Titelbild auswählen und hochladen"}
+                          <NetworkText id="ui.network-profile-workspace.c90087a1574ebbea">
+                            {hero
+                              ? "Titelbild ändern"
+                              : "Titelbild auswählen und hochladen"}
+                          </NetworkText>
                         </strong>
                         <span>
-                          {hero
-                            ? "Klicke hier, um ein anderes Bild auszuwählen"
-                            : "Klicke hier und wähle ein Bild deines Unternehmens"}
+                          <NetworkText id="ui.network-profile-workspace.28e54af25a7d6eb9">
+                            {hero
+                              ? "Klicke hier, um ein anderes Bild auszuwählen"
+                              : "Klicke hier und wähle ein Bild deines Unternehmens"}
+                          </NetworkText>
                         </span>
                       </span>
                       <input
@@ -553,8 +624,10 @@ export function NetworkProfileWorkspace({
                     </label>
                     <div className="partnerHeroHelp">
                       <small>
-                        Querformat empfohlen · z. B. 1.920 × 800 Pixel · PNG,
-                        JPG oder WebP · maximal 1,5 MB
+                        <NetworkText id="ui.network-profile-workspace.9287549ecf6f8e21">
+                          Querformat empfohlen · z. B. 1.920 × 800 Pixel · PNG,
+                          JPG oder WebP · maximal 1,5 MB
+                        </NetworkText>
                       </small>
                       {hero && (
                         <button
@@ -563,23 +636,38 @@ export function NetworkProfileWorkspace({
                           disabled={!data.canEdit || busy}
                           onClick={() => setHero(null)}
                         >
-                          Titelbild entfernen
+                          <NetworkText id="ui.network-profile-workspace.1523eb5190f7e9e9">
+                            Titelbild entfernen
+                          </NetworkText>
                         </button>
                       )}
                     </div>
                   </div>
                   <div className="partnerContentHeading">
-                    <h3>Mehr über dein Unternehmen</h3>
+                    <h3>
+                      <NetworkText id="ui.network-profile-workspace.3ecaa2137489709d">
+                        Mehr über dein Unternehmen
+                      </NetworkText>
+                    </h3>
                     <p>
-                      Ergänze zum Beispiel deine Arbeitsweise, Projekte oder
-                      das, was du im Netzwerk suchst.
+                      <NetworkText id="ui.network-profile-workspace.003eef8c69232a25">
+                        Ergänze zum Beispiel deine Arbeitsweise, Projekte oder
+                        das, was du im Netzwerk suchst.
+                      </NetworkText>
                     </p>
                   </div>
                   {sections.map((section, index) => (
                     <fieldset className="full partnerSectionEditor" key={index}>
-                      <legend>Inhaltsbereich {index + 1}</legend>
+                      <legend>
+                        <NetworkText id="ui.network-profile-workspace.e3b4011d14668478">
+                          Inhaltsbereich{" "}
+                        </NetworkText>
+                        {index + 1}
+                      </legend>
                       <label>
-                        Rubrik
+                        <NetworkText id="ui.network-profile-workspace.8f1bec7517e75c60">
+                          Rubrik
+                        </NetworkText>
                         <select
                           value={section.area || "about"}
                           disabled={!data.canEdit}
@@ -601,7 +689,9 @@ export function NetworkProfileWorkspace({
                         </select>
                       </label>
                       <label>
-                        Überschrift
+                        <NetworkText id="ui.network-profile-workspace.fb039458a3350cb1">
+                          Überschrift
+                        </NetworkText>
                         <input
                           placeholder="Zum Beispiel: Was uns besonders macht"
                           value={section.title}
@@ -619,7 +709,9 @@ export function NetworkProfileWorkspace({
                         />
                       </label>
                       <label>
-                        Inhalt
+                        <NetworkText id="ui.network-profile-workspace.3cc46559245da378">
+                          Inhalt
+                        </NetworkText>
                         <textarea
                           placeholder="Stell dein Unternehmen persönlich vor. Was sollten andere Partner über euch wissen?"
                           value={section.body}
@@ -652,7 +744,9 @@ export function NetworkProfileWorkspace({
                             })
                           }
                         >
-                          Nach oben
+                          <NetworkText id="ui.network-profile-workspace.ed16527abbf53609">
+                            Nach oben
+                          </NetworkText>
                         </button>
                         <button
                           type="button"
@@ -670,7 +764,9 @@ export function NetworkProfileWorkspace({
                             })
                           }
                         >
-                          Nach unten
+                          <NetworkText id="ui.network-profile-workspace.54245735eed0043a">
+                            Nach unten
+                          </NetworkText>
                         </button>
                         <button
                           type="button"
@@ -681,7 +777,9 @@ export function NetworkProfileWorkspace({
                             )
                           }
                         >
-                          Bereich entfernen
+                          <NetworkText id="ui.network-profile-workspace.7dd31affdd9a75b5">
+                            Bereich entfernen
+                          </NetworkText>
                         </button>
                       </div>
                     </fieldset>
@@ -697,7 +795,9 @@ export function NetworkProfileWorkspace({
                       ])
                     }
                   >
-                    + Weiteren Bereich hinzufügen
+                    <NetworkText id="ui.network-profile-workspace.81d0c1bc7298baf8">
+                      + Weiteren Bereich hinzufügen
+                    </NetworkText>
                   </button>
                 </div>
               </section>
@@ -708,17 +808,29 @@ export function NetworkProfileWorkspace({
               >
                 <header>
                   <div>
-                    <span>SCHRITT 1</span>
-                    <h2>Unternehmen und Auftritt</h2>
+                    <span>
+                      <NetworkText id="ui.network-profile-workspace.06f913bff2f11a2a">
+                        SCHRITT 1
+                      </NetworkText>
+                    </span>
+                    <h2>
+                      <NetworkText id="ui.network-profile-workspace.c3cea3134bbf8b6d">
+                        Unternehmen und Auftritt
+                      </NetworkText>
+                    </h2>
                     <p>
-                      So erkennen andere Mitglieder Ihr Unternehmen auf den
-                      ersten Blick.
+                      <NetworkText id="ui.network-profile-workspace.3bf92b2fed26e276">
+                        So erkennen andere Mitglieder Ihr Unternehmen auf den
+                        ersten Blick.
+                      </NetworkText>
                     </p>
                   </div>
                 </header>
                 <div className="networkProfileFields">
                   <label>
-                    Unternehmensfarbe
+                    <NetworkText id="ui.network-profile-workspace.1f9bbd6f11d8cd7c">
+                      Unternehmensfarbe
+                    </NetworkText>
                     <input
                       type="color"
                       name="primaryColor"
@@ -726,12 +838,16 @@ export function NetworkProfileWorkspace({
                       disabled={!data.canEdit}
                     />
                     <small>
-                      Für Ihre Partnerkachel und Ihre Unternehmensseite – nicht
-                      für das Netzwerkportal.
+                      <NetworkText id="ui.network-profile-workspace.48017b9b1889c1b1">
+                        Für Ihre Partnerkachel und Ihre Unternehmensseite –
+                        nicht für das Netzwerkportal.
+                      </NetworkText>
                     </small>
                   </label>
                   <label>
-                    Zweite Unternehmensfarbe
+                    <NetworkText id="ui.network-profile-workspace.4743a0e751c43f02">
+                      Zweite Unternehmensfarbe
+                    </NetworkText>
                     <input
                       type="color"
                       name="secondaryColor"
@@ -741,11 +857,17 @@ export function NetworkProfileWorkspace({
                       disabled={!data.canEdit}
                     />
                     <small>
-                      Ergänzende Farbe für Ihren Unternehmensauftritt.
+                      <NetworkText id="ui.network-profile-workspace.c1370ae2d7493014">
+                        Ergänzende Farbe für Ihren Unternehmensauftritt.
+                      </NetworkText>
                     </small>
                   </label>
                   <label className="networkLogoUpload">
-                    <span>Firmenlogo</span>
+                    <span>
+                      <NetworkText id="ui.network-profile-workspace.d89ef6ecaf32f5d9">
+                        Firmenlogo
+                      </NetworkText>
+                    </span>
                     <div>
                       {logo ? (
                         <img src={logo} alt="Logo-Vorschau" />
@@ -753,8 +875,16 @@ export function NetworkProfileWorkspace({
                         <b aria-hidden="true">＋</b>
                       )}
                       <p>
-                        <strong>Logo auswählen</strong>
-                        <small>PNG, JPG oder WebP · maximal 1,5 MB</small>
+                        <strong>
+                          <NetworkText id="ui.network-profile-workspace.5450471f841c24bc">
+                            Logo auswählen
+                          </NetworkText>
+                        </strong>
+                        <small>
+                          <NetworkText id="ui.network-profile-workspace.c225c868ff872ff1">
+                            PNG, JPG oder WebP · maximal 1,5 MB
+                          </NetworkText>
+                        </small>
                       </p>
                     </div>
                     <input
@@ -765,7 +895,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label>
-                    Unternehmensname
+                    <NetworkText id="ui.network-profile-workspace.65c49d007fa35219">
+                      Unternehmensname
+                    </NetworkText>
                     <input
                       name="companyName"
                       required
@@ -776,7 +908,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label>
-                    Kurzversprechen
+                    <NetworkText id="ui.network-profile-workspace.5d817df6ecaf2a57">
+                      Kurzversprechen
+                    </NetworkText>
                     <input
                       name="tagline"
                       required
@@ -787,7 +921,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label className="wide">
-                    Persönliche Unternehmensbeschreibung
+                    <NetworkText id="ui.network-profile-workspace.70b44587002772d4">
+                      Persönliche Unternehmensbeschreibung
+                    </NetworkText>
                     <textarea
                       name="description"
                       required
@@ -799,7 +935,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label>
-                    Straße und Hausnummer
+                    <NetworkText id="ui.network-profile-workspace.b805ebc3ac8db230">
+                      Straße und Hausnummer
+                    </NetworkText>
                     <input
                       name="street"
                       required
@@ -808,7 +946,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label>
-                    Postleitzahl
+                    <NetworkText id="ui.network-profile-workspace.3b48d17e95d1f0cd">
+                      Postleitzahl
+                    </NetworkText>
                     <input
                       name="postalCode"
                       required
@@ -817,7 +957,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label>
-                    Ort
+                    <NetworkText id="ui.network-profile-workspace.30fb259129e56944">
+                      Ort
+                    </NetworkText>
                     <input
                       name="city"
                       required
@@ -826,7 +968,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label>
-                    Land
+                    <NetworkText id="ui.network-profile-workspace.b6baff9358ddd8f7">
+                      Land
+                    </NetworkText>
                     <input
                       name="country"
                       required
@@ -835,7 +979,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label className="wide">
-                    Firmenhomepage
+                    <NetworkText id="ui.network-profile-workspace.5c542a37edb01ebf">
+                      Firmenhomepage
+                    </NetworkText>
                     <input
                       name="websiteUrl"
                       type="url"
@@ -855,17 +1001,29 @@ export function NetworkProfileWorkspace({
               >
                 <header>
                   <div>
-                    <span>SCHRITT 2</span>
-                    <h2>Leistungen und Erfahrung</h2>
+                    <span>
+                      <NetworkText id="ui.network-profile-workspace.f1355c5bc97cd173">
+                        SCHRITT 2
+                      </NetworkText>
+                    </span>
+                    <h2>
+                      <NetworkText id="ui.network-profile-workspace.8a45d97ff0394ce7">
+                        Leistungen und Erfahrung
+                      </NetworkText>
+                    </h2>
                     <p>
-                      Beschreiben Sie verständlich, wobei andere Partner Sie
-                      ansprechen können.
+                      <NetworkText id="ui.network-profile-workspace.e111857b7da58219">
+                        Beschreiben Sie verständlich, wobei andere Partner Sie
+                        ansprechen können.
+                      </NetworkText>
                     </p>
                   </div>
                 </header>
                 <div className="networkProfileFields">
                   <label className="wide">
-                    Leistungen und Kompetenzen
+                    <NetworkText id="ui.network-profile-workspace.c991fbca10ae6907">
+                      Leistungen und Kompetenzen
+                    </NetworkText>
                     <textarea
                       name="services"
                       required
@@ -877,7 +1035,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label className="wide">
-                    Branchen und Zielgruppen
+                    <NetworkText id="ui.network-profile-workspace.c4c5826fc1545399">
+                      Branchen und Zielgruppen
+                    </NetworkText>
                     <input
                       name="industries"
                       maxLength={800}
@@ -895,17 +1055,29 @@ export function NetworkProfileWorkspace({
               >
                 <header>
                   <div>
-                    <span>SCHRITT 4</span>
-                    <h2>Persönlicher Ansprechpartner</h2>
+                    <span>
+                      <NetworkText id="ui.network-profile-workspace.7d7414b48d6d5b13">
+                        SCHRITT 4
+                      </NetworkText>
+                    </span>
+                    <h2>
+                      <NetworkText id="ui.network-profile-workspace.ebdaccce46ec60f3">
+                        Persönlicher Ansprechpartner
+                      </NetworkText>
+                    </h2>
                     <p>
-                      Mitglieder können unmittelbar die richtige Person
-                      kontaktieren.
+                      <NetworkText id="ui.network-profile-workspace.c0929438e552f31d">
+                        Mitglieder können unmittelbar die richtige Person
+                        kontaktieren.
+                      </NetworkText>
                     </p>
                   </div>
                 </header>
                 <div className="networkProfileFields">
                   <label>
-                    Name
+                    <NetworkText id="ui.network-profile-workspace.dcd1d5223f73b3a9">
+                      Name
+                    </NetworkText>
                     <input
                       name="contactName"
                       required
@@ -914,7 +1086,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label>
-                    Position / Funktion
+                    <NetworkText id="ui.network-profile-workspace.a91c3335e552d5fc">
+                      Position / Funktion
+                    </NetworkText>
                     <input
                       name="contactPosition"
                       required
@@ -923,7 +1097,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label>
-                    E-Mail
+                    <NetworkText id="ui.network-profile-workspace.2fae6fb30b0d0077">
+                      E-Mail
+                    </NetworkText>
                     <input
                       name="contactEmail"
                       type="email"
@@ -933,7 +1109,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label>
-                    Telefon
+                    <NetworkText id="ui.network-profile-workspace.fa6906d76ee94d4e">
+                      Telefon
+                    </NetworkText>
                     <input
                       name="contactPhone"
                       type="tel"
@@ -951,18 +1129,30 @@ export function NetworkProfileWorkspace({
               >
                 <header>
                   <div>
-                    <span>OPTIONAL · PERSÖNLICH IM NETZWERK</span>
-                    <h2>Persönliches & Zusammenarbeit</h2>
+                    <span>
+                      <NetworkText id="ui.network-profile-workspace.18eec2681007d0ec">
+                        OPTIONAL · PERSÖNLICH IM NETZWERK
+                      </NetworkText>
+                    </span>
+                    <h2>
+                      <NetworkText id="ui.network-profile-workspace.14d429aeee4aeb79">
+                        Persönliches & Zusammenarbeit
+                      </NetworkText>
+                    </h2>
                     <p>
-                      Was möchten Sie mit anderen Partnern teilen? Zeigen Sie
-                      Angebote, Gesuche und Gesprächsanlässe aus Ihrer
-                      persönlichen Sicht.
+                      <NetworkText id="ui.network-profile-workspace.50a54b670610db64">
+                        Was möchten Sie mit anderen Partnern teilen? Zeigen Sie
+                        Angebote, Gesuche und Gesprächsanlässe aus Ihrer
+                        persönlichen Sicht.
+                      </NetworkText>
                     </p>
                   </div>
                 </header>
                 <div className="networkProfileFields">
                   <label className="wide">
-                    Meine Mitteilung an das Netzwerk
+                    <NetworkText id="ui.network-profile-workspace.4019af0cd41792ea">
+                      Meine Mitteilung an das Netzwerk
+                    </NetworkText>
                     <textarea
                       name="personalMessage"
                       rows={5}
@@ -973,7 +1163,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label className="wide">
-                    Das biete ich an
+                    <NetworkText id="ui.network-profile-workspace.0947baa797351e27">
+                      Das biete ich an
+                    </NetworkText>
                     <textarea
                       name="offers"
                       rows={4}
@@ -984,7 +1176,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label className="wide">
-                    Das suche ich
+                    <NetworkText id="ui.network-profile-workspace.d14d578f2c84342d">
+                      Das suche ich
+                    </NetworkText>
                     <textarea
                       name="lookingFor"
                       rows={4}
@@ -995,7 +1189,9 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                   <label className="wide">
-                    Link zur Online-Terminbuchung
+                    <NetworkText id="ui.network-profile-workspace.dd5846ce1eef368e">
+                      Link zur Online-Terminbuchung
+                    </NetworkText>
                     <input
                       name="meetingUrl"
                       type="url"
@@ -1005,15 +1201,21 @@ export function NetworkProfileWorkspace({
                       disabled={!data.canEdit}
                     />
                     <small>
-                      Besucher öffnen Ihre externe Buchungsseite und wählen dort
-                      einen Termin. Es wird nichts automatisch gebucht.
+                      <NetworkText id="ui.network-profile-workspace.e71d86d5ca7fc19c">
+                        Besucher öffnen Ihre externe Buchungsseite und wählen
+                        dort einen Termin. Es wird nichts automatisch gebucht.
+                      </NetworkText>
                     </small>
                   </label>
                 </div>
               </section>
             </div>
             <aside className="networkProfilePreview" style={partnerBranding(p)}>
-              <small>VORSCHAU IM PARTNERVERZEICHNIS</small>
+              <small>
+                <NetworkText id="ui.network-profile-workspace.92d2fe5a58cee12e">
+                  VORSCHAU IM PARTNERVERZEICHNIS
+                </NetworkText>
+              </small>
               <div className="networkProfileLogo">
                 {logo ? (
                   <img src={logo} alt="" />
@@ -1026,28 +1228,42 @@ export function NetworkProfileWorkspace({
               <span
                 className={`networkMemberStatus ${p?.status === "published" ? "active" : "pending"}`}
               >
-                {p?.status === "published" ? "Veröffentlicht" : "Entwurf"}
+                <NetworkText id="ui.network-profile-workspace.4d9b41655dcd1cf5">
+                  {p?.status === "published" ? "Veröffentlicht" : "Entwurf"}
+                </NetworkText>
               </span>
               <h2>{p?.companyName || data.organization.displayName}</h2>
               <p>{p?.tagline || "Ihr Kurzversprechen erscheint hier."}</p>
               <hr />
-              <b>Was wir anbieten</b>
+              <b>
+                <NetworkText id="ui.network-profile-workspace.d8d08e1939b1b6c8">
+                  Was wir anbieten
+                </NetworkText>
+              </b>
               <p>
                 {p?.services ||
                   "Beschreiben Sie Ihre wichtigsten Leistungen und Kompetenzen."}
               </p>
-              <small>Nur innerhalb dieses Netzwerks sichtbar</small>
+              <small>
+                <NetworkText id="ui.network-profile-workspace.ca797e54c2f852c8">
+                  Nur innerhalb dieses Netzwerks sichtbar
+                </NetworkText>
+              </small>
             </aside>
           </div>
           {data.canEdit && (
             <div className="networkProfileActions">
               {step > 0 && (
                 <button type="button" onClick={() => setStep(step - 1)}>
-                  Zurück
+                  <NetworkText id="ui.network-profile-workspace.548611ce58f71a17">
+                    Zurück
+                  </NetworkText>
                 </button>
               )}
               <button type="submit" disabled={busy}>
-                Entwurf speichern
+                <NetworkText id="ui.network-profile-workspace.955b417c326ed28c">
+                  Entwurf speichern
+                </NetworkText>
               </button>
               {step < 3 ? (
                 <button
@@ -1055,7 +1271,9 @@ export function NetworkProfileWorkspace({
                   className="networkPrimary"
                   onClick={() => setStep(step + 1)}
                 >
-                  Weiter →
+                  <NetworkText id="ui.network-profile-workspace.b3e3f54b2131b6dd">
+                    Weiter →
+                  </NetworkText>
                 </button>
               ) : (
                 <button
@@ -1083,11 +1301,13 @@ export function NetworkProfileWorkspace({
                     if (form?.reportValidity()) void save(form, !service);
                   }}
                 >
-                  {busy
-                    ? "Wird gespeichert …"
-                    : service
-                      ? "Für die Übergabe speichern"
-                      : "Partnerseite veröffentlichen"}
+                  <NetworkText id="ui.network-profile-workspace.9ab4c85de41db444">
+                    {busy
+                      ? "Wird gespeichert …"
+                      : service
+                        ? "Für die Übergabe speichern"
+                        : "Partnerseite veröffentlichen"}
+                  </NetworkText>
                 </button>
               )}
             </div>

@@ -41,11 +41,7 @@ import {
 import { partnerHero, partnerSections } from "./partner-onepager";
 import { homepageFields, projectHomepage } from "./homepage-publication";
 import { decodePublicImage, mediaOrigin } from "./homepage-media";
-import {
-
-  addCalendarDays,
-  invoiceSchedule,
-} from "./invoice-schedule";
+import { addCalendarDays, invoiceSchedule } from "./invoice-schedule";
 import { memberBillingSettings } from "./member-billing-settings";
 import {
   PROB_TABLE,
@@ -266,7 +262,10 @@ export class NetworksService {
       throw new BadRequestException("Ungültiges Zahlungsmodell.");
     const cents = validMemberPrice(input.monthlyNetCents);
     if (input.billing && typeof input.billing === "object") {
-      network.settings.memberBilling = memberBillingSettings(input.billing, network.slug);
+      network.settings.memberBilling = memberBillingSettings(
+        input.billing,
+        network.slug,
+      );
     }
     network.settings.memberMonthlyNetCents = cents;
     if (input.memberPaymentModel !== undefined)
@@ -309,7 +308,9 @@ export class NetworksService {
         expired: !!o.serviceEndsAt && Date.parse(o.serviceEndsAt) <= Date.now(),
       }));
   }
-  referralAccountId(auth:string|undefined) { return this.auth.authenticate(auth).id; }
+  referralAccountId(auth: string | undefined) {
+    return this.auth.authenticate(auth).id;
+  }
   myBillingNetworks(authorization: string | undefined) {
     const user = this.auth.authenticate(authorization);
     const ids = new Set(
@@ -348,7 +349,12 @@ export class NetworksService {
     const network = this.raw(networkId);
     return {
       networkName: network.name,
-      complimentaryAccess: this.store.networkMemberships.some(m => m.userId === user.id && m.networkId === networkId && m.complimentaryAccess),
+      complimentaryAccess: this.store.networkMemberships.some(
+        (m) =>
+          m.userId === user.id &&
+          m.networkId === networkId &&
+          m.complimentaryAccess,
+      ),
       ...pricing(network),
       centrallyFunded: network.settings.memberPaymentModel === "network",
     };
@@ -960,33 +966,98 @@ export class NetworksService {
     };
   }
 
-  async referral(auth: string | undefined, id: string, input: Record<string, unknown>) {
+  async referral(
+    auth: string | undefined,
+    id: string,
+    input: Record<string, unknown>,
+  ) {
     const actor = this.auth.authenticate(auth);
-    this.requireWritableNetwork(actor.id,id);
-    const n=this.raw(id), m=this.store.networkMemberships.find(m=>m.networkId===id && m.userId===actor.id && m.status==="active" && m.role!=="visitor");
-    if(!m || n.status!=="active") throw new ForbiddenException("Nur aktive Mitglieder können empfehlen.");
-    const key="ref:"+m.id, now=new Date().toISOString();
-    let r=this.store.networkContents.get(key);
-    if(!r || !r.endsAt || Date.parse(r.endsAt)<=Date.now()){
-      const token=opaqueToken(), isRequest=["bayer04leverkusen","unternehmernetzwerkleverkusen"].includes(n.slug);
-      r={id:key,networkId:id,type:"announcement",title:"Persönlicher Empfehlungslink",description:"",status:"active",
-        visibility:"administrators",createdByUserId:actor.id,assignedToUserId:null,startsAt:null,
-        endsAt:new Date(Date.now()+90*86400000).toISOString(),createdAt:now,updatedAt:now,
-        data:{kind:isRequest?"participation_referral":"network_invitation",shared:!isRequest,role:"member",referrer:actor.id,
-          sharedToken:token,inviteTokenHash:tokenHash(token),usedAt:null}};
-      this.store.networkContents.set(key,r);
+    this.requireWritableNetwork(actor.id, id);
+    const n = this.raw(id),
+      m = this.store.networkMemberships.find(
+        (m) =>
+          m.networkId === id &&
+          m.userId === actor.id &&
+          m.status === "active" &&
+          m.role !== "visitor",
+      );
+    if (!m || n.status !== "active")
+      throw new ForbiddenException("Nur aktive Mitglieder können empfehlen.");
+    const key = "ref:" + m.id,
+      now = new Date().toISOString();
+    let r = this.store.networkContents.get(key);
+    if (!r || !r.endsAt || Date.parse(r.endsAt) <= Date.now()) {
+      const token = opaqueToken(),
+        isRequest = [
+          "bayer04leverkusen",
+          "unternehmernetzwerkleverkusen",
+        ].includes(n.slug);
+      r = {
+        id: key,
+        networkId: id,
+        type: "announcement",
+        title: "Persönlicher Empfehlungslink",
+        description: "",
+        status: "active",
+        visibility: "administrators",
+        createdByUserId: actor.id,
+        assignedToUserId: null,
+        startsAt: null,
+        endsAt: new Date(Date.now() + 90 * 86400000).toISOString(),
+        createdAt: now,
+        updatedAt: now,
+        data: {
+          kind: isRequest ? "participation_referral" : "network_invitation",
+          shared: !isRequest,
+          role: "member",
+          referrer: actor.id,
+          sharedToken: token,
+          inviteTokenHash: tokenHash(token),
+          usedAt: null,
+        },
+      };
+      this.store.networkContents.set(key, r);
     }
-    const path="/registrieren?network="+encodeURIComponent(n.slug)+"&"+(["bayer04leverkusen","unternehmernetzwerkleverkusen"].includes(n.slug)?"ref":"invite")+"="+encodeURIComponent(String(r.data.sharedToken));
-    if(input.email){
-      const email=emailAddress(input.email);
-      if(input.permission!==true || email===actor.email) throw new BadRequestException("Bitte bestätige die vorherige Einwilligung des Empfängers.");
-      const history=Array.isArray(r.data.deliveries)?r.data.deliveries as {hash:string;at:number}[]:[];
-      const today=history.filter(d=>Date.now()-d.at<86400000), hash=tokenHash(email);
-      if(today.length>=10 || today.some(d=>d.hash===hash)) throw new ConflictException("Versandlimit erreicht oder heute bereits eingeladen.");
-      r.data.deliveries=[...today,{hash,at:Date.now()}];
-      await this.email.sendNetworkNote(email,n.name,"Persönliche Empfehlung",actor.firstName+" "+actor.lastName+" lädt dich ein, das Netzwerk "+n.name+" kennenzulernen.","Zur Registrierung",path);
+    const path =
+      "/registrieren?network=" +
+      encodeURIComponent(n.slug) +
+      "&" +
+      (["bayer04leverkusen", "unternehmernetzwerkleverkusen"].includes(n.slug)
+        ? "ref"
+        : "invite") +
+      "=" +
+      encodeURIComponent(String(r.data.sharedToken));
+    if (input.email) {
+      const email = emailAddress(input.email);
+      if (input.permission !== true || email === actor.email)
+        throw new BadRequestException(
+          "Bitte bestätige die vorherige Einwilligung des Empfängers.",
+        );
+      const history = Array.isArray(r.data.deliveries)
+        ? (r.data.deliveries as { hash: string; at: number }[])
+        : [];
+      const today = history.filter((d) => Date.now() - d.at < 86400000),
+        hash = tokenHash(email);
+      if (today.length >= 10 || today.some((d) => d.hash === hash))
+        throw new ConflictException(
+          "Versandlimit erreicht oder heute bereits eingeladen.",
+        );
+      r.data.deliveries = [...today, { hash, at: Date.now() }];
+      await this.email.sendNetworkNote(
+        email,
+        n.name,
+        "Persönliche Empfehlung",
+        actor.firstName +
+          " " +
+          actor.lastName +
+          " lädt dich ein, das Netzwerk " +
+          n.name +
+          " kennenzulernen.",
+        "Zur Registrierung",
+        path,
+      );
     }
-    return {path};
+    return { path };
   }
   sharedInvitation(
     authorization: string | undefined,
@@ -1006,7 +1077,8 @@ export class NetworksService {
     let record = [...this.store.networkContents.values()].find(
       (i) =>
         i.networkId === networkId &&
-        i.data.shared === true && !i.data.referrer &&
+        i.data.shared === true &&
+        !i.data.referrer &&
         i.endsAt &&
         Date.parse(i.endsAt) > Date.now(),
     );
@@ -1047,7 +1119,10 @@ export class NetworksService {
     const network = [...this.store.networks.values()].find(
       (n) => n.slug === slug && n.status === "active",
     );
-    if (!["bayer04leverkusen","unternehmernetzwerkleverkusen"].includes(slug) || !network)
+    if (
+      !["bayer04leverkusen", "unternehmernetzwerkleverkusen"].includes(slug) ||
+      !network
+    )
       throw new BadRequestException(
         "Teilnahmeanfragen sind derzeit nicht verfügbar.",
       );
@@ -1068,7 +1143,11 @@ export class NetworksService {
     return { ...offer, version: tokenHash(JSON.stringify(offer)) };
   }
   async requestParticipation(input: Record<string, unknown>) {
-    if (!["bayer04leverkusen","unternehmernetzwerkleverkusen"].includes(String(input.network)))
+    if (
+      !["bayer04leverkusen", "unternehmernetzwerkleverkusen"].includes(
+        String(input.network),
+      )
+    )
       throw new ForbiddenException(
         "Teilnahmeanfragen sind für dieses Netzwerk nicht verfügbar.",
       );
@@ -1101,11 +1180,15 @@ export class NetworksService {
       100,
     );
     if (
-      !(network.slug === "unternehmernetzwerkleverkusen" ? ["Unternehmenssitz in Leverkusen"] : [
-        "Hospitality-/VIP-Gast",
-        "Unternehmenspartner/Sponsor",
-        "Sonstiger Bezug",
-      ]).includes(affiliation) ||
+      !(
+        network.slug === "unternehmernetzwerkleverkusen"
+          ? ["Unternehmenssitz in Leverkusen"]
+          : [
+              "Hospitality-/VIP-Gast",
+              "Unternehmenspartner/Sponsor",
+              "Sonstiger Bezug",
+            ]
+      ).includes(affiliation) ||
       input.accurate !== true
     )
       throw new BadRequestException(
@@ -1151,7 +1234,15 @@ export class NetworksService {
           termsAccepted: true,
           privacyAcknowledged: true,
         },
-        referrer: [...this.store.networkContents.values()].find(r => r.networkId === network.id && r.data.kind === "participation_referral" && typeof input.referral === "string" && r.data.sharedToken === input.referral && r.endsAt && Date.parse(r.endsAt)>Date.now())?.createdByUserId,
+        referrer: [...this.store.networkContents.values()].find(
+          (r) =>
+            r.networkId === network.id &&
+            r.data.kind === "participation_referral" &&
+            typeof input.referral === "string" &&
+            r.data.sharedToken === input.referral &&
+            r.endsAt &&
+            Date.parse(r.endsAt) > Date.now(),
+        )?.createdByUserId,
         company,
         affiliation,
       },
@@ -1256,7 +1347,16 @@ export class NetworksService {
       throw new ForbiddenException(
         "Deine Teilnahme ist noch nicht freigegeben.",
       );
-    if (shared.data.referrer && !this.store.networkMemberships.some(m=>m.userId===shared.data.referrer && m.networkId===shared.networkId && m.status==="active" && m.role!=="visitor"))
+    if (
+      shared.data.referrer &&
+      !this.store.networkMemberships.some(
+        (m) =>
+          m.userId === shared.data.referrer &&
+          m.networkId === shared.networkId &&
+          m.status === "active" &&
+          m.role !== "visitor",
+      )
+    )
       throw new ForbiddenException("Diese Empfehlung ist nicht mehr aktiv.");
     if (shared.data.shared !== true) {
       if (shared.data.email !== email)
@@ -1416,6 +1516,72 @@ export class NetworksService {
       billingUnit: "active_network_user",
       includedModules: NETWORK_INCLUDED_MODULES,
     };
+  }
+
+  interfaceTexts(slug: string) {
+    this.branding(slug);
+    const network = this.bySlug(slug);
+    return {
+      texts: network.settings.textOverrides || {},
+      revision: network.settings.textRevision || 0,
+    };
+  }
+
+  ownerInterfaceTexts(authorization: string | undefined, id: string) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    const network = this.raw(id);
+    return {
+      networkId: network.id,
+      slug: network.slug,
+      texts: network.settings.textOverrides || {},
+      revision: network.settings.textRevision || 0,
+    };
+  }
+
+  saveInterfaceText(
+    authorization: string | undefined,
+    id: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    const network = this.raw(id);
+    if (
+      typeof input.key !== "string" ||
+      !/^ui\.[a-zA-Z0-9_.-]{1,120}$/.test(input.key)
+    )
+      throw new BadRequestException("Ungültiger Textschlüssel.");
+    if (
+      input.value !== null &&
+      (typeof input.value !== "string" ||
+        input.value.length > 4000 ||
+        !input.value.trim() ||
+        /[<>\u0000-\u0008]/.test(input.value))
+    )
+      throw new BadRequestException(
+        "Bitte einen Text ohne HTML mit maximal 4.000 Zeichen eingeben.",
+      );
+    const revision = network.settings.textRevision || 0;
+    if (input.revision !== revision)
+      throw new BadRequestException(
+        "Die Texte wurden zwischenzeitlich geändert. Bitte die Seite neu öffnen.",
+      );
+    const texts = { ...network.settings.textOverrides };
+    if (input.value === null) delete texts[input.key];
+    else texts[input.key] = (input.value as string).trim();
+    if (Object.keys(texts).length > 3000)
+      throw new BadRequestException(
+        "Maximale Anzahl an Textanpassungen erreicht.",
+      );
+    network.settings.textOverrides = texts;
+    network.settings.textRevision = revision + 1;
+    network.updatedAt = new Date().toISOString();
+    this.operatorAudit(actor.id, id, "operator.network.text.updated", {
+      key: input.key,
+      reset: input.value === null,
+    });
+    return { texts, revision: revision + 1 };
   }
 
   branding(slug: string) {
@@ -2068,22 +2234,27 @@ export class NetworksService {
       organizationId = randomUUID(),
       now = new Date().toISOString(),
       websiteUrl = safeUrl(input.websiteUrl);
-    if (input.complimentaryAccess !== undefined && typeof input.complimentaryAccess !== "boolean")
+    if (
+      input.complimentaryAccess !== undefined &&
+      typeof input.complimentaryAccess !== "boolean"
+    )
       throw new BadRequestException("Ungültige Auswahl für die Abrechnung.");
     const complimentary = input.complimentaryAccess === true;
-    const order = central || complimentary
-      ? null
-      : annualOrder(
-          n,
-          userId,
-          {
-            ...input,
-            invoiceContact: input.invoiceContact || firstName + " " + lastName,
-            invoiceEmail: input.invoiceEmail || email,
-            invoiceCountry: input.invoiceCountry || "Deutschland",
-          },
-          { reference },
-        );
+    const order =
+      central || complimentary
+        ? null
+        : annualOrder(
+            n,
+            userId,
+            {
+              ...input,
+              invoiceContact:
+                input.invoiceContact || firstName + " " + lastName,
+              invoiceEmail: input.invoiceEmail || email,
+              invoiceCountry: input.invoiceCountry || "Deutschland",
+            },
+            { reference },
+          );
     if (order) {
       order.organizationId = organizationId;
       order.decidedByUserId = actor.id;
@@ -2281,20 +2452,43 @@ export class NetworksService {
     await this.store.persist();
     return { claimed: true };
   }
-  async waiveService(auth: string | undefined, id: string, uid: string, reserve: (id: string) => Promise<void>) {
+  async waiveService(
+    auth: string | undefined,
+    id: string,
+    uid: string,
+    reserve: (id: string) => Promise<void>,
+  ) {
     const { setup, actor } = this.serviceTarget(auth, id, uid);
     if (setup.complimentaryAccess) return { complimentary: true };
     const o = this.store.networkOrders.get(setup.orderId || "");
-    if (!o?.manualServiceInvoice || o.orderedByUserId !== uid || o.networkId !== id || o.status !== "accepted" ||
-        o.invoiceSentAt || o.invoiceReference || o.paidAt || o.paymentStatus === "paid")
-      throw new ConflictException("Nur ein offener Serviceauftrag ohne Rechnung kann beitragsfrei gestellt werden.");
+    if (
+      !o?.manualServiceInvoice ||
+      o.orderedByUserId !== uid ||
+      o.networkId !== id ||
+      o.status !== "accepted" ||
+      o.invoiceSentAt ||
+      o.invoiceReference ||
+      o.paidAt ||
+      o.paymentStatus === "paid"
+    )
+      throw new ConflictException(
+        "Nur ein offener Serviceauftrag ohne Rechnung kann beitragsfrei gestellt werden.",
+      );
     await reserve(o.id);
     o.status = "cancelled";
     setup.orderId = null;
     setup.complimentaryAccess = true;
-    const m = this.store.networkMemberships.find(m => m.networkId === id && m.userId === uid);
-    if (m) { m.complimentaryAccess = true; m.centrallyFunded = false; }
-    this.operatorAudit(actor.id, id, "service.billing.waived", { userId: uid, orderId: o.id });
+    const m = this.store.networkMemberships.find(
+      (m) => m.networkId === id && m.userId === uid,
+    );
+    if (m) {
+      m.complimentaryAccess = true;
+      m.centrallyFunded = false;
+    }
+    this.operatorAudit(actor.id, id, "service.billing.waived", {
+      userId: uid,
+      orderId: o.id,
+    });
     await this.store.persist();
     return { complimentary: true };
   }
@@ -2384,21 +2578,39 @@ export class NetworksService {
     const wasPublished = organization.networkProfile?.status === "published";
     const profile = this.writePartnerProfile(organization, input);
     const key = "welcome:" + networkId + ":" + organization.id;
-    if (!wasPublished && profile.status === "published" && !this.store.networkContents.has(key)) {
+    if (
+      !wasPublished &&
+      profile.status === "published" &&
+      !this.store.networkContents.has(key)
+    ) {
       const now = new Date().toISOString();
       const post: NetworkContentRecord = {
-        id: key, networkId, type: "announcement", status: "published", visibility: "members",
+        id: key,
+        networkId,
+        type: "announcement",
+        status: "published",
+        visibility: "members",
         title: "Neu im Netzwerk: " + profile.companyName,
         description: `${user.firstName} ${user.lastName} ist mit ${profile.companyName} neu im Netzwerk. Lerne das Unternehmen auf seiner Partnerseite kennen.`,
-        createdByUserId: user.id, assignedToUserId: null, startsAt: null, endsAt: null,
-        data: { category: "Neuigkeit des Initiators", welcomeMembershipId: membership.id },
-        createdAt: now, updatedAt: now
+        createdByUserId: user.id,
+        assignedToUserId: null,
+        startsAt: null,
+        endsAt: null,
+        data: {
+          category: "Neuigkeit des Initiators",
+          welcomeMembershipId: membership.id,
+        },
+        createdAt: now,
+        updatedAt: now,
       };
       this.store.networkContents.set(key, post);
       this.notifyContent(post, user.id, "network.member.welcome");
-      for(const notification of this.store.notifications.filter(n=>n.data.contentId===key)){
-        notification.data.welcomeMembershipId=membership.id;
-        if(this.store.users.get(notification.userId)?.welcomeMailOptInAt) notification.data.welcomeMail="pending";
+      for (const notification of this.store.notifications.filter(
+        (n) => n.data.contentId === key,
+      )) {
+        notification.data.welcomeMembershipId = membership.id;
+        if (this.store.users.get(notification.userId)?.welcomeMailOptInAt)
+          notification.data.welcomeMail = "pending";
       }
     }
     return profile;
@@ -2749,15 +2961,37 @@ export class NetworksService {
   private boardPresentation(item: NetworkContentRecord): NetworkContentRecord {
     if (item.type !== "topic" && item.type !== "announcement") return item;
     const network = this.raw(item.networkId);
-    const membership = typeof item.data.welcomeMembershipId === "string"
-      ? this.store.networkMemberships.find(m => m.id === item.data.welcomeMembershipId && m.networkId === item.networkId && m.status === "active")
-      : undefined;
-    const profile = membership && this.store.organizations.get(membership.organizationId)?.networkProfile;
+    const membership =
+      typeof item.data.welcomeMembershipId === "string"
+        ? this.store.networkMemberships.find(
+            (m) =>
+              m.id === item.data.welcomeMembershipId &&
+              m.networkId === item.networkId &&
+              m.status === "active",
+          )
+        : undefined;
+    const profile =
+      membership &&
+      this.store.organizations.get(membership.organizationId)?.networkProfile;
     const logo = profile?.status === "published" && profile.logoUrl;
-    const image = logo || item.data.imageUrl || item.data.coverImageUrl || network.settings.bannerImageUrl ||
-      (network.slug === "unternehmernetzwerkleverkusen" ? "/images/leverkusen-skyline.webp" :
-        network.slug === "bayer-giants" ? "/images/network-meeting-sport.webp" : "/images/network-meeting-club.webp");
-    return { ...item, data: { ...item.data, boardImageUrl: image, boardImageIsLogo: Boolean(logo) } };
+    const image =
+      logo ||
+      item.data.imageUrl ||
+      item.data.coverImageUrl ||
+      network.settings.bannerImageUrl ||
+      (network.slug === "unternehmernetzwerkleverkusen"
+        ? "/images/leverkusen-skyline.webp"
+        : network.slug === "bayer-giants"
+          ? "/images/network-meeting-sport.webp"
+          : "/images/network-meeting-club.webp");
+    return {
+      ...item,
+      data: {
+        ...item.data,
+        boardImageUrl: image,
+        boardImageIsLogo: Boolean(logo),
+      },
+    };
   }
 
   listContent(
@@ -2773,7 +3007,12 @@ export class NetworksService {
       .filter(
         (item) =>
           item.networkId === networkId &&
-          (board ? item.type === "topic" || (item.type === "announcement" && item.visibility === "members" && ["published","active","completed"].includes(item.status)) : !type || item.type === type) &&
+          (board
+            ? item.type === "topic" ||
+              (item.type === "announcement" &&
+                item.visibility === "members" &&
+                ["published", "active", "completed"].includes(item.status))
+            : !type || item.type === type) &&
           this.canReadContent(user.id, item) &&
           this.contentModuleAvailable(user.id, item),
       )
@@ -2786,9 +3025,15 @@ export class NetworksService {
                 item.id,
               ),
             }
-          : board ? this.boardPresentation(item) : item,
+          : board
+            ? this.boardPresentation(item)
+            : item,
       )
-      .sort((a, b) => board ? b.createdAt.localeCompare(a.createdAt) : b.updatedAt.localeCompare(a.updatedAt));
+      .sort((a, b) =>
+        board
+          ? b.createdAt.localeCompare(a.createdAt)
+          : b.updatedAt.localeCompare(a.updatedAt),
+      );
   }
 
   createContent(
@@ -2819,8 +3064,13 @@ export class NetworksService {
         ? (input.data as Record<string, unknown>)
         : {}),
     };
-    if ((type === "topic" || type === "announcement") && !decodePublicImage(data.imageUrl))
-      throw new BadRequestException("Bitte ein Beitragsfoto als PNG, JPG oder WebP bis 1,5 MB hochladen.");
+    if (
+      (type === "topic" || type === "announcement") &&
+      !decodePublicImage(data.imageUrl)
+    )
+      throw new BadRequestException(
+        "Bitte ein Beitragsfoto als PNG, JPG oder WebP bis 1,5 MB hochladen.",
+      );
     this.validateContentData(type, data, true);
     for (const key of [
       "messages",
@@ -3011,9 +3261,15 @@ export class NetworksService {
       }
       record.data = { ...record.data, ...data };
     }
-    if ((record.type === "topic" || record.type === "announcement") &&
-        !stored.data.welcomeMembershipId && !decodePublicImage(record.data.imageUrl) && record.status !== "archived")
-      throw new BadRequestException("Bitte ein Beitragsfoto als PNG, JPG oder WebP bis 1,5 MB hochladen.");
+    if (
+      (record.type === "topic" || record.type === "announcement") &&
+      !stored.data.welcomeMembershipId &&
+      !decodePublicImage(record.data.imageUrl) &&
+      record.status !== "archived"
+    )
+      throw new BadRequestException(
+        "Bitte ein Beitragsfoto als PNG, JPG oder WebP bis 1,5 MB hochladen.",
+      );
     record.updatedAt = new Date().toISOString();
     this.applyEventHomepagePublication(
       user.id,
@@ -3556,7 +3812,8 @@ export class NetworksService {
               item.data.category === "Neuigkeit des Initiators"),
         )
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-        .slice(0, 6).map(item => this.boardPresentation(item)),
+        .slice(0, 6)
+        .map((item) => this.boardPresentation(item)),
     };
   }
 

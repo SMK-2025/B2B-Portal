@@ -1,7 +1,8 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
-import {useSearchParams} from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -110,8 +111,16 @@ export function NetworkMembersWorkspace() {
   useEffect(() => {
     const id = profileId;
     if (!id || openedFromLink.current === networkId + id) return;
-    const member = members.find(m => m.id === id && m.status === "active" && m.organization?.networkProfile?.status === "published");
-    if (member) { openedFromLink.current = networkId + id; setSelected(member); }
+    const member = members.find(
+      (m) =>
+        m.id === id &&
+        m.status === "active" &&
+        m.organization?.networkProfile?.status === "published",
+    );
+    if (member) {
+      openedFromLink.current = networkId + id;
+      setSelected(member);
+    }
   }, [members, networkId, profileId]);
   const visible = useMemo(
     () =>
@@ -216,18 +225,30 @@ export function NetworkMembersWorkspace() {
         </select>
         {canManage && (
           <button className="networkPrimary" onClick={() => setInvite(true)}>
-            ＋ Mitglied einladen
+            <NetworkText id="ui.network-members-workspace.073d3f7eac48c530">
+              ＋ Mitglied einladen
+            </NetworkText>
           </button>
         )}
       </div>
       <section className="networkCard">
         <header>
           <div>
-            <span>GESCHLOSSENES PARTNERVERZEICHNIS</span>
-            <h2>Unternehmen und Leistungen im Netzwerk</h2>
+            <span>
+              <NetworkText id="ui.network-members-workspace.b6dd381c58094fc8">
+                GESCHLOSSENES PARTNERVERZEICHNIS
+              </NetworkText>
+            </span>
+            <h2>
+              <NetworkText id="ui.network-members-workspace.340be26d29f40522">
+                Unternehmen und Leistungen im Netzwerk
+              </NetworkText>
+            </h2>
             <p>
-              Öffnen Sie eine Partnerseite, um Unternehmen, Kompetenzen und
-              Ansprechpartner kennenzulernen.
+              <NetworkText id="ui.network-members-workspace.b7c8f480c76082ca">
+                Öffnen Sie eine Partnerseite, um Unternehmen, Kompetenzen und
+                Ansprechpartner kennenzulernen.
+              </NetworkText>
             </p>
           </div>
         </header>
@@ -255,9 +276,11 @@ export function NetworkMembersWorkspace() {
                   </b>
                 </div>
                 <small>
-                  {profile?.status === "published"
-                    ? "PARTNERSEITE"
-                    : "PROFIL NOCH NICHT VERÖFFENTLICHT"}
+                  <NetworkText id="ui.network-members-workspace.04acaf57ccd7c188">
+                    {profile?.status === "published"
+                      ? "PARTNERSEITE"
+                      : "PROFIL NOCH NICHT VERÖFFENTLICHT"}
+                  </NetworkText>
                 </small>
                 <h3>
                   {member.organization?.displayName ||
@@ -285,7 +308,9 @@ export function NetworkMembersWorkspace() {
                     onClick={() => setSelected(member)}
                     disabled={!profile}
                   >
-                    Partnerseite besuchen
+                    <NetworkText id="ui.network-members-workspace.8566c8b587fe9e9b">
+                      Partnerseite besuchen
+                    </NetworkText>
                   </button>
                   {canManage && (
                     <div className="networkMemberActions">
@@ -320,12 +345,17 @@ export function NetworkMembersWorkspace() {
                 </div>
                 {member.billing && (
                   <small className="networkBillingHint">
-                    {member.billing.status === "paid"
-                      ? "Bezahlt"
-                      : member.billing.status === "overdue"
-                        ? "Überfällig"
-                        : "Offen"}{" "}
-                    · {member.billing.remainingDays} Tage Restlaufzeit
+                    <NetworkText id="ui.network-members-workspace.09648af336bf127f">
+                      {member.billing.status === "paid"
+                        ? "Bezahlt"
+                        : member.billing.status === "overdue"
+                          ? "Überfällig"
+                          : "Offen"}
+                    </NetworkText>{" "}
+                    · {member.billing.remainingDays}
+                    <NetworkText id="ui.network-members-workspace.ad49b3508fbe620f">
+                      Tage Restlaufzeit
+                    </NetworkText>
                   </small>
                 )}
               </article>
@@ -334,8 +364,16 @@ export function NetworkMembersWorkspace() {
         </div>
         {!visible.length && (
           <div className="networkEmpty">
-            <b>Keine passenden Partner gefunden</b>
-            <p>Ändern Sie Suche oder Filter.</p>
+            <b>
+              <NetworkText id="ui.network-members-workspace.2f0505572b63828b">
+                Keine passenden Partner gefunden
+              </NetworkText>
+            </b>
+            <p>
+              <NetworkText id="ui.network-members-workspace.baf5e9fc85e512b9">
+                Ändern Sie Suche oder Filter.
+              </NetworkText>
+            </p>
           </div>
         )}
       </section>
@@ -351,8 +389,16 @@ export function NetworkMembersWorkspace() {
           >
             <header>
               <div>
-                <span>MITGLIEDERVERWALTUNG</span>
-                <h2>Persönlich einladen</h2>
+                <span>
+                  <NetworkText id="ui.network-members-workspace.ae632b8a2eb45f22">
+                    MITGLIEDERVERWALTUNG
+                  </NetworkText>
+                </span>
+                <h2>
+                  <NetworkText id="ui.network-members-workspace.accc54dc353c6b20">
+                    Persönlich einladen
+                  </NetworkText>
+                </h2>
               </div>
               <button
                 onClick={() => setInvite(false)}
@@ -363,15 +409,21 @@ export function NetworkMembersWorkspace() {
             </header>
             <form onSubmit={submit}>
               <p>
-                Der persönliche Link ordnet das neue Unternehmenskonto
-                ausschließlich diesem Netzwerk zu.
+                <NetworkText id="ui.network-members-workspace.24d7299485041ddc">
+                  Der persönliche Link ordnet das neue Unternehmenskonto
+                  ausschließlich diesem Netzwerk zu.
+                </NetworkText>
               </p>
               <label>
-                Geschäftliche E-Mail
+                <NetworkText id="ui.network-members-workspace.57f639dbdaa8c1c6">
+                  Geschäftliche E-Mail
+                </NetworkText>
                 <input name="email" type="email" required />
               </label>
               <label>
-                Rolle
+                <NetworkText id="ui.network-members-workspace.0038a9cf86613cec">
+                  Rolle
+                </NetworkText>
                 <select name="role">
                   <option value="organization_admin">
                     Unternehmensadministrator
@@ -382,10 +434,14 @@ export function NetworkMembersWorkspace() {
               </label>
               <div className="adminNetworkDialogActions">
                 <button type="button" onClick={() => setInvite(false)}>
-                  Abbrechen
+                  <NetworkText id="ui.network-members-workspace.f7ff1178af202f6f">
+                    Abbrechen
+                  </NetworkText>
                 </button>
                 <button className="networkPrimary" disabled={busy}>
-                  {busy ? "Wird versendet …" : "Einladung versenden"}
+                  <NetworkText id="ui.network-members-workspace.10c38f8a522925fd">
+                    {busy ? "Wird versendet …" : "Einladung versenden"}
+                  </NetworkText>
                 </button>
               </div>
             </form>
@@ -419,9 +475,9 @@ export function ProfileDialog({
   const areas = [
     { id: "about", label: "Vorstellung" },
     { id: "services", label: "Leistungen" },
-    {id:"personal",label:"Persönlich"},
-    {id:"offers",label:"Angebote"},
-    {id:"looking",label:"Gesuche"},
+    { id: "personal", label: "Persönlich" },
+    { id: "offers", label: "Angebote" },
+    { id: "looking", label: "Gesuche" },
     { id: "contact", label: "Kontakt" },
   ];
   function showArea(id: string) {
@@ -548,7 +604,11 @@ export function ProfileDialog({
             <img className="partnerHeroPhoto" src={p.heroImageUrl} alt="" />
           )}
           <div>
-            <small>NETZWERKPARTNER</small>
+            <small>
+              <NetworkText id="ui.network-members-workspace.5d4245cc9873da9f">
+                NETZWERKPARTNER
+              </NetworkText>
+            </small>
             <h2 id="partner-profile-title">{p.companyName}</h2>
             <p>{p.tagline}</p>
             <div className="partnerHeroActions">
@@ -557,7 +617,9 @@ export function ProfileDialog({
                 className="partnerSiteHeroButton"
                 onClick={() => showArea("services")}
               >
-                Unsere Leistungen entdecken →
+                <NetworkText id="ui.network-members-workspace.f5081bc91010da7f">
+                  Unsere Leistungen entdecken →
+                </NetworkText>
               </button>
               {access?.enabledModules.includes("communication") &&
                 member.userId !== access.currentUserId && (
@@ -567,10 +629,17 @@ export function ProfileDialog({
                       `/portal/netzwerk/${access.slug}/kommunikation?partner=${member.userId}` as never
                     }
                   >
-                    Nachricht senden
+                    <NetworkText id="ui.network-members-workspace.8b83eeb8287ba472">
+                      Nachricht senden
+                    </NetworkText>
                   </Link>
                 )}
-              {!editControls && <NetworkConnectionButton userId={member.userId} label="Vernetzen" />}
+              {!editControls && (
+                <NetworkConnectionButton
+                  userId={member.userId}
+                  label="Vernetzen"
+                />
+              )}
               {p.meetingUrl && (
                 <a
                   className="networkSecondary"
@@ -578,7 +647,9 @@ export function ProfileDialog({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Kennenlernen vereinbaren ↗
+                  <NetworkText id="ui.network-members-workspace.fabfd7fc0b9ae704">
+                    Kennenlernen vereinbaren ↗
+                  </NetworkText>
                 </a>
               )}
             </div>
@@ -594,14 +665,30 @@ export function ProfileDialog({
           <main hidden={activeArea === "contact"}>
             <section id="partner-about" hidden={activeArea !== "about"}>
               {editControls?.("about")}
-              <small>ÜBER UNS</small>
-              <h3>Persönlich vorgestellt</h3>
+              <small>
+                <NetworkText id="ui.network-members-workspace.00e9b444ee88ade4">
+                  ÜBER UNS
+                </NetworkText>
+              </small>
+              <h3>
+                <NetworkText id="ui.network-members-workspace.80a9e2334189c983">
+                  Persönlich vorgestellt
+                </NetworkText>
+              </h3>
               <p>{p.description}</p>
             </section>
             <section id="partner-services" hidden={activeArea !== "services"}>
               {editControls?.("services")}
-              <small>LEISTUNGEN</small>
-              <h3>Damit unterstützen wir Netzwerkpartner</h3>
+              <small>
+                <NetworkText id="ui.network-members-workspace.3a5f8f13525cfcd6">
+                  LEISTUNGEN
+                </NetworkText>
+              </small>
+              <h3>
+                <NetworkText id="ui.network-members-workspace.b37ac8f1211d6826">
+                  Damit unterstützen wir Netzwerkpartner
+                </NetworkText>
+              </h3>
               <div className="networkCompanyServices">
                 {p.services
                   .split(/\n+/)
@@ -617,31 +704,60 @@ export function ProfileDialog({
               </div>
               {p.industries && (
                 <p>
-                  <b>Branchen und Zielgruppen:</b> {p.industries}
+                  <b>
+                    <NetworkText id="ui.network-members-workspace.8bae7d92c763e882">
+                      Branchen und Zielgruppen:
+                    </NetworkText>
+                  </b>{" "}
+                  {p.industries}
                 </p>
               )}
             </section>
             {(p.personalMessage || editControls) && (
               <section hidden={activeArea !== "personal"}>
                 {editControls?.("personalMessage")}
-                <small>PERSÖNLICH IM NETZWERK</small>
-                <h3>Meine Mitteilung an die Partner</h3>
+                <small>
+                  <NetworkText id="ui.network-members-workspace.6d952f96ed2eb85e">
+                    PERSÖNLICH IM NETZWERK
+                  </NetworkText>
+                </small>
+                <h3>
+                  <NetworkText id="ui.network-members-workspace.d74f07d40d726f3e">
+                    Meine Mitteilung an die Partner
+                  </NetworkText>
+                </h3>
                 <p>{p.personalMessage}</p>
               </section>
             )}
             {(p.offers || editControls) && (
               <section hidden={activeArea !== "offers"}>
                 {editControls?.("offers")}
-                <small>ANGEBOTE & UNTERSTÜTZUNG</small>
-                <h3>Das biete ich an</h3>
+                <small>
+                  <NetworkText id="ui.network-members-workspace.7897f9dd6bac2998">
+                    ANGEBOTE & UNTERSTÜTZUNG
+                  </NetworkText>
+                </small>
+                <h3>
+                  <NetworkText id="ui.network-members-workspace.0947baa797351e27">
+                    Das biete ich an
+                  </NetworkText>
+                </h3>
                 <p>{p.offers}</p>
               </section>
             )}
             {(p.lookingFor || editControls) && (
               <section hidden={activeArea !== "looking"}>
                 {editControls?.("lookingFor")}
-                <small>GESUCHE & KOOPERATIONEN</small>
-                <h3>Das suche ich</h3>
+                <small>
+                  <NetworkText id="ui.network-members-workspace.b90520012000e73c">
+                    GESUCHE & KOOPERATIONEN
+                  </NetworkText>
+                </small>
+                <h3>
+                  <NetworkText id="ui.network-members-workspace.d14d578f2c84342d">
+                    Das suche ich
+                  </NetworkText>
+                </h3>
                 <p>{p.lookingFor}</p>
               </section>
             )}
@@ -654,7 +770,7 @@ export function ProfileDialog({
               >
                 {editControls?.(`section-${index}`)}
                 <small>
-                  {areas.find(a=>a.id===(section.area||"about"))?.label}
+                  {areas.find((a) => a.id === (section.area || "about"))?.label}
                 </small>
                 <h3>{section.title}</h3>
                 {section.body
@@ -665,11 +781,25 @@ export function ProfileDialog({
                   ))}
               </section>
             ))}
-            {((activeArea==="personal"&&!p.personalMessage)||(activeArea==="offers"&&!p.offers)||(activeArea==="looking"&&!p.lookingFor)) && !editControls && !p.sections?.some(s=>s.area===activeArea) && <p>Hier sind noch keine Angaben hinterlegt.</p>}
+            {((activeArea === "personal" && !p.personalMessage) ||
+              (activeArea === "offers" && !p.offers) ||
+              (activeArea === "looking" && !p.lookingFor)) &&
+              !editControls &&
+              !p.sections?.some((s) => s.area === activeArea) && (
+                <p>
+                  <NetworkText id="ui.network-members-workspace.8c93950a7dffdc79">
+                    Hier sind noch keine Angaben hinterlegt.
+                  </NetworkText>
+                </p>
+              )}
           </main>
           <aside id="partner-contact" hidden={activeArea !== "contact"}>
             {editControls?.("contact")}
-            <h3>Digitale Visitenkarte</h3>
+            <h3>
+              <NetworkText id="ui.network-members-workspace.893dea27cfefb791">
+                Digitale Visitenkarte
+              </NetworkText>
+            </h3>
             <PartnerBusinessCard profile={p} />
             {access?.enabledModules.includes("communication") &&
               member.userId !== access.currentUserId && (
@@ -682,7 +812,9 @@ export function ProfileDialog({
                       member.userId) as never
                   }
                 >
-                  PartnerChat beginnen →
+                  <NetworkText id="ui.network-members-workspace.c03a0ec43f30f32b">
+                    PartnerChat beginnen →
+                  </NetworkText>
                 </Link>
               )}
             {p.meetingUrl && (
@@ -692,16 +824,24 @@ export function ProfileDialog({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Online-Termin vereinbaren ↗
+                <NetworkText id="ui.network-members-workspace.3bafbd9d6a1a78df">
+                  Online-Termin vereinbaren ↗
+                </NetworkText>
               </a>
             )}
           </aside>
         </div>
         <footer className="partnerSiteFooter">
           <strong>{p.companyName}</strong>
-          <span>Persönlich verbunden · Im geschlossenen Partnernetzwerk</span>
+          <span>
+            <NetworkText id="ui.network-members-workspace.d5720267bb4fcc9b">
+              Persönlich verbunden · Im geschlossenen Partnernetzwerk
+            </NetworkText>
+          </span>
           <button type="button" onClick={() => showArea("contact")}>
-            Kontakt aufnehmen →
+            <NetworkText id="ui.network-members-workspace.1cb6a3f8bb26d747">
+              Kontakt aufnehmen →
+            </NetworkText>
           </button>
         </footer>
       </section>

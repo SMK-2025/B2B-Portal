@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
@@ -646,10 +647,20 @@ export function NetworkModuleWorkspace({
 
   return (
     <div className="networkFunctionalWorkspace">
-      {!board && <section className="networkModulePurpose">
-        <strong>Gemeinsam mehr erreichen</strong>
-        <p>{config.purpose}</p>
-      </section>}
+      {!board && (
+        <section className="networkModulePurpose">
+          <strong>
+            <NetworkText id="ui.network-module-workspace.d7210663cfd95a64">
+              Gemeinsam mehr erreichen
+            </NetworkText>
+          </strong>
+          <p>
+            <NetworkText id={`ui.module.${module}.purpose`}>
+              {config.purpose}
+            </NetworkText>
+          </p>
+        </section>
+      )}
       <div className="networkMemberToolbar">
         <label>
           <span>⌕</span>
@@ -678,7 +689,10 @@ export function NetworkModuleWorkspace({
               setDialog(true);
             }}
           >
-            ＋ {config.singular} anlegen
+            ＋ {config.singular}
+            <NetworkText id="ui.network-module-workspace.5c1058aea6bf5633">
+              anlegen
+            </NetworkText>
           </button>
         )}
       </div>
@@ -688,239 +702,401 @@ export function NetworkModuleWorkspace({
           onClick={() => setFilter("Alle")}
         >
           <strong>{items.length}</strong>
-          <span>Gesamt</span>
+          <span>
+            <NetworkText id="ui.network-module-workspace.a36bce47fdac8f55">
+              Gesamt
+            </NetworkText>
+          </span>
         </button>
-        {(["published", "active", "completed"] as const).filter(value => !board || value === "published").map((value) => (
-          <button
-            key={value}
-            className={filter === labels[value] ? "active" : ""}
-            onClick={() => setFilter(labels[value])}
-          >
-            <strong>
-              {items.filter((item) => item.status === value).length}
-            </strong>
-            <span>{labels[value]}</span>
-          </button>
-        ))}
-      </div>
-      {board ? <NetworkBoardPager key={JSON.stringify([slug,query,filter])} empty={<p className="boardNoStories">{items.length ? "Keine passenden Beiträge. Ändere die Suche oder den Filter." : "Das Brett ist noch leer. Hier erscheinen die Neuigkeiten aus deinem Netzwerk."}</p>}>
-        {visible.map((item,index) => {
-          const image=item.data.boardImageUrl || item.data.imageUrl || item.data.coverImageUrl;
-          const welcome=typeof item.data.welcomeMembershipId === "string";
-          const date=new Date(item.createdAt || item.updatedAt);
-          return <article className={`loungeBoardNote loungeBoardNote${index%3} boardPaperStory`} key={item.id}>
-            <span className="loungeBoardPin" aria-hidden="true"/>
-            <button className="boardStoryOpen" type="button" onClick={()=>welcome ? router.push(`/portal/netzwerk/${slug}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never) : setThreadId(item.id)}>
-              {image && <img src={image} style={item.data.boardImageIsLogo ? {objectFit:"contain",background:"white",width:"66.6667%",marginInline:"auto",display:"block",maxHeight:"96px"} : undefined} alt="" loading="lazy"/>}
-              <div className="boardStoryText">
-                <div className="boardStoryMeta"><span>{welcome ? "Neues Mitglied" : item.data.category==="Neuigkeit des Initiators" ? "Netzwerkleitung" : item.data.category || "Netzwerkbeitrag"}</span><time dateTime={date.toISOString()}>{date.toLocaleDateString("de-DE",{day:"numeric",month:"short",year:"numeric"})}</time></div>
-                {item.status!=="published" && <small>{labels[item.status]}</small>}
-                <h2>{item.title}</h2><p>{item.description}</p>
-                <strong>{welcome ? "Unternehmensseite ansehen" : "Beitrag öffnen"} →</strong>
-              </div>
-            </button>
-            {!welcome && canEditItem(item) && <details className="boardStoryManage"><summary>Beitrag verwalten</summary>
-              <button onClick={()=>{setEditing(item);setDialog(true);}}>Bearbeiten</button>
-              {item.status!=="published" && <button disabled={busy} onClick={()=>void change(item,"published")}>Veröffentlichen</button>}
-              {item.status!=="completed" && <button disabled={busy} onClick={()=>void change(item,"completed")}>Erledigen</button>}
-              {item.status!=="archived" && <button disabled={busy} onClick={()=>void change(item,"archived")}>Archivieren</button>}
-              <button disabled={busy} onClick={()=>void remove(item)}>Löschen</button>
-            </details>}
-          </article>
-        })}
-      </NetworkBoardPager> : <section className="networkCard">
-        <header>
-          <div>
-            <h2>{config.plural}</h2>
-          </div>
-          <button type="button" onClick={exportCsv} disabled={!visible.length}>
-            CSV exportieren
-          </button>
-        </header>
-        <div className="networkContentRows">
-          {visible.map((item) => (
-            <article
-              key={item.id}
-              className={
-                ["veranstaltungen", "themen"].includes(module)
-                  ? "networkEventRow"
-                  : undefined
-              }
+        {(["published", "active", "completed"] as const)
+          .filter((value) => !board || value === "published")
+          .map((value) => (
+            <button
+              key={value}
+              className={filter === labels[value] ? "active" : ""}
+              onClick={() => setFilter(labels[value])}
             >
-              {["veranstaltungen", "themen"].includes(module) &&
-                (item.data.imageUrl || item.data.coverImageUrl) && (
-                  <img
-                    className="networkEventThumbnail"
-                    src={item.data.imageUrl || item.data.coverImageUrl}
-                    alt=""
-                  />
-                )}
-              <div>
-                <span className={`networkMemberStatus ${item.status}`}>
-                  {labels[item.status]}
-                </span>
-                {module === "veranstaltungen" && (
-                  <span className="networkContentCategory">
-                    {item.data.eventStatus === "cancelled"
-                      ? "Abgesagt"
-                      : item.startsAt &&
-                          Date.parse(item.endsAt || item.startsAt) < Date.now()
-                        ? "Bereits stattgefunden"
-                        : "Bevorstehend"}
-                  </span>
-                )}
-                {typeof item.data.category === "string" &&
-                  item.data.category && (
-                    <span className="networkContentCategory">
-                      {item.data.category}
-                    </span>
+              <strong>
+                {items.filter((item) => item.status === value).length}
+              </strong>
+              <span>{labels[value]}</span>
+            </button>
+          ))}
+      </div>
+      {board ? (
+        <NetworkBoardPager
+          key={JSON.stringify([slug, query, filter])}
+          empty={
+            <p className="boardNoStories">
+              <NetworkText id="ui.network-module-workspace.fe5d2dfb87217628">
+                {items.length
+                  ? "Keine passenden Beiträge. Ändere die Suche oder den Filter."
+                  : "Das Brett ist noch leer. Hier erscheinen die Neuigkeiten aus deinem Netzwerk."}
+              </NetworkText>
+            </p>
+          }
+        >
+          {visible.map((item, index) => {
+            const image =
+              item.data.boardImageUrl ||
+              item.data.imageUrl ||
+              item.data.coverImageUrl;
+            const welcome = typeof item.data.welcomeMembershipId === "string";
+            const date = new Date(item.createdAt || item.updatedAt);
+            return (
+              <article
+                className={`loungeBoardNote loungeBoardNote${index % 3} boardPaperStory`}
+                key={item.id}
+              >
+                <span className="loungeBoardPin" aria-hidden="true" />
+                <button
+                  className="boardStoryOpen"
+                  type="button"
+                  onClick={() =>
+                    welcome
+                      ? router.push(
+                          `/portal/netzwerk/${slug}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never,
+                        )
+                      : setThreadId(item.id)
+                  }
+                >
+                  {image && (
+                    <img
+                      src={image}
+                      style={
+                        item.data.boardImageIsLogo
+                          ? {
+                              objectFit: "contain",
+                              background: "white",
+                              width: "66.6667%",
+                              marginInline: "auto",
+                              display: "block",
+                              maxHeight: "96px",
+                            }
+                          : undefined
+                      }
+                      alt=""
+                      loading="lazy"
+                    />
                   )}
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-                <small>
-                  {item.startsAt
-                    ? new Date(item.startsAt).toLocaleString("de-DE")
-                    : module === "veranstaltungen"
-                      ? "Ohne Termin"
-                      : `Beitrag vom ${new Date(item.createdAt || item.updatedAt).toLocaleDateString("de-DE")}`}{" "}
-                  ·{" "}
-                  {item.visibility === "administrators"
-                    ? "Nur Verwaltung"
-                    : "Alle Partner"}
-                  {module === "veranstaltungen" && item.attendanceSummary
-                    ? ` · ${item.attendanceSummary.registrations} Zusagen · ${item.attendanceSummary.persons} Personen`
-                    : ""}
-                </small>
-              </div>
-              <div className="networkRowActions networkRowActionsStacked">
-                <div className="networkTextActions">
-                  <button
-                    onClick={() =>
-                      module === "veranstaltungen"
-                        ? void openAttendance(item)
-                        : setThreadId(item.id)
-                    }
-                    title="Austausch, Termine und nächste Schritte"
-                  >
-                    {module === "veranstaltungen"
-                      ? "Veranstaltung ansehen"
-                      : "Austausch"}
-                  </button>
-                  {module === "angebote" &&
-                    access?.enabledModules.includes("communication") &&
-                    item.createdByUserId !== access.currentUserId && (
-                      <a
-                        href={`/portal/netzwerk/${slug}/kommunikation?partner=${item.createdByUserId}`}
-                      >
-                        Vertraulich anfragen →
-                      </a>
+                  <div className="boardStoryText">
+                    <div className="boardStoryMeta">
+                      <span>
+                        {welcome
+                          ? "Neues Mitglied"
+                          : item.data.category === "Neuigkeit des Initiators"
+                            ? "Netzwerkleitung"
+                            : item.data.category || "Netzwerkbeitrag"}
+                      </span>
+                      <time dateTime={date.toISOString()}>
+                        {date.toLocaleDateString("de-DE", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </time>
+                    </div>
+                    {item.status !== "published" && (
+                      <small>{labels[item.status]}</small>
                     )}
-                  {(access?.canManage ||
-                    item.createdByUserId === access?.currentUserId) && (
+                    <h2>{item.title}</h2>
+                    <p>{item.description}</p>
+                    <strong>
+                      <NetworkText id="ui.network-module-workspace.c37d0b68574d5dc4">
+                        {welcome
+                          ? "Unternehmensseite ansehen"
+                          : "Beitrag öffnen"}
+                      </NetworkText>{" "}
+                      →
+                    </strong>
+                  </div>
+                </button>
+                {!welcome && canEditItem(item) && (
+                  <details className="boardStoryManage">
+                    <summary>
+                      <NetworkText id="ui.network-module-workspace.86d874722332a7e6">
+                        Beitrag verwalten
+                      </NetworkText>
+                    </summary>
                     <button
                       onClick={() => {
                         setEditing(item);
                         setDialog(true);
                       }}
-                      title="Inhalt bearbeiten"
                     >
-                      Bearbeiten
+                      <NetworkText id="ui.network-module-workspace.84e45ee7341134db">
+                        Bearbeiten
+                      </NetworkText>
                     </button>
-                  )}
-                </div>
-                <div className="networkIconActions">
-                  {module === "dokumente" && item.data.file && (
-                    <button
-                      onClick={() => openDocument(item)}
-                      title="Dokument öffnen"
-                      aria-label={`${item.title} öffnen`}
-                    >
-                      ↗
-                    </button>
-                  )}
-                  {module === "veranstaltungen" && (
-                    <button
-                      onClick={() => void openAttendance(item)}
-                      title="Teilnahme und Anwesenheit"
-                      aria-label="Teilnahme und Anwesenheit"
-                    >
-                      ♙
-                    </button>
-                  )}
-                  {(access?.canManage ||
-                    item.createdByUserId === access?.currentUserId) &&
-                    !(module === "veranstaltungen" && !access?.canManage) &&
-                    item.status !== "published" &&
-                    item.status !== "completed" && (
+                    {item.status !== "published" && (
                       <button
+                        disabled={busy}
                         onClick={() => void change(item, "published")}
-                        title="Veröffentlichen"
-                        aria-label="Veröffentlichen"
                       >
-                        ✓
+                        <NetworkText id="ui.network-module-workspace.1e7ae8483818ab1f">
+                          Veröffentlichen
+                        </NetworkText>
                       </button>
                     )}
-                  {(access?.canManage ||
-                    item.createdByUserId === access?.currentUserId) &&
-                    item.status !== "completed" && (
+                    {item.status !== "completed" && (
                       <button
+                        disabled={busy}
                         onClick={() => void change(item, "completed")}
-                        title="Erledigen"
-                        aria-label="Erledigen"
                       >
-                        ○
+                        <NetworkText id="ui.network-module-workspace.2618017f6e9a45eb">
+                          Erledigen
+                        </NetworkText>
                       </button>
                     )}
-                  {(access?.canManage ||
-                    item.createdByUserId === access?.currentUserId) &&
-                    item.status !== "archived" && (
+                    {item.status !== "archived" && (
                       <button
+                        disabled={busy}
                         onClick={() => void change(item, "archived")}
-                        title="Archivieren"
-                        aria-label="Archivieren"
                       >
-                        ⌑
+                        <NetworkText id="ui.network-module-workspace.a54c8debab88a289">
+                          Archivieren
+                        </NetworkText>
                       </button>
                     )}
-                  {(access?.canManage ||
-                    item.createdByUserId === access?.currentUserId) && (
-                    <button
-                      className="networkDeleteAction"
-                      disabled={busy}
-                      onClick={() => void remove(item)}
-                      title="Endgültig löschen"
-                      aria-label={`${item.title} endgültig löschen`}
-                    >
-                      🗑
+                    <button disabled={busy} onClick={() => void remove(item)}>
+                      <NetworkText id="ui.network-module-workspace.6c2d352161df5809">
+                        Löschen
+                      </NetworkText>
                     </button>
-                  )}
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-        {!visible.length && (
-          <div className="networkEmpty">
-            <b>{config.empty}</b>
-            <p>
-              {canCreate
-                ? "Legen Sie den ersten Eintrag an oder ändern Sie den Filter."
-                : "Sobald Inhalte freigegeben wurden, erscheinen sie hier."}
-            </p>
-            {canCreate && (
-              <button
-                className="networkPrimary"
-                onClick={() => {
-                  setEditing(null);
-                  setDialog(true);
-                }}
+                  </details>
+                )}
+              </article>
+            );
+          })}
+        </NetworkBoardPager>
+      ) : (
+        <section className="networkCard">
+          <header>
+            <div>
+              <h2>
+                <NetworkText id={`ui.module.${module}.title`}>
+                  {config.plural}
+                </NetworkText>
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={!visible.length}
+            >
+              <NetworkText id="ui.network-module-workspace.c859cc1c24cf0a40">
+                CSV exportieren
+              </NetworkText>
+            </button>
+          </header>
+          <div className="networkContentRows">
+            {visible.map((item) => (
+              <article
+                key={item.id}
+                className={
+                  ["veranstaltungen", "themen"].includes(module)
+                    ? "networkEventRow"
+                    : undefined
+                }
               >
-                ＋ Jetzt {config.singular.toLowerCase()} anlegen
-              </button>
-            )}
+                {["veranstaltungen", "themen"].includes(module) &&
+                  (item.data.imageUrl || item.data.coverImageUrl) && (
+                    <img
+                      className="networkEventThumbnail"
+                      src={item.data.imageUrl || item.data.coverImageUrl}
+                      alt=""
+                    />
+                  )}
+                <div>
+                  <span className={`networkMemberStatus ${item.status}`}>
+                    {labels[item.status]}
+                  </span>
+                  {module === "veranstaltungen" && (
+                    <span className="networkContentCategory">
+                      <NetworkText id="ui.network-module-workspace.480a2432a9fd2e22">
+                        {item.data.eventStatus === "cancelled"
+                          ? "Abgesagt"
+                          : item.startsAt &&
+                              Date.parse(item.endsAt || item.startsAt) <
+                                Date.now()
+                            ? "Bereits stattgefunden"
+                            : "Bevorstehend"}
+                      </NetworkText>
+                    </span>
+                  )}
+                  {typeof item.data.category === "string" &&
+                    item.data.category && (
+                      <span className="networkContentCategory">
+                        {item.data.category}
+                      </span>
+                    )}
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                  <small>
+                    {item.startsAt
+                      ? new Date(item.startsAt).toLocaleString("de-DE")
+                      : module === "veranstaltungen"
+                        ? "Ohne Termin"
+                        : `Beitrag vom ${new Date(item.createdAt || item.updatedAt).toLocaleDateString("de-DE")}`}{" "}
+                    ·{" "}
+                    <NetworkText id="ui.network-module-workspace.039534f5853ce467">
+                      {item.visibility === "administrators"
+                        ? "Nur Verwaltung"
+                        : "Alle Partner"}
+                    </NetworkText>
+                    {module === "veranstaltungen" && item.attendanceSummary
+                      ? ` · ${item.attendanceSummary.registrations} Zusagen · ${item.attendanceSummary.persons} Personen`
+                      : ""}
+                  </small>
+                </div>
+                <div className="networkRowActions networkRowActionsStacked">
+                  <div className="networkTextActions">
+                    <button
+                      onClick={() =>
+                        module === "veranstaltungen"
+                          ? void openAttendance(item)
+                          : setThreadId(item.id)
+                      }
+                      title="Austausch, Termine und nächste Schritte"
+                    >
+                      <NetworkText id="ui.network-module-workspace.dc0d6e75b9f1a81f">
+                        {module === "veranstaltungen"
+                          ? "Veranstaltung ansehen"
+                          : "Austausch"}
+                      </NetworkText>
+                    </button>
+                    {module === "angebote" &&
+                      access?.enabledModules.includes("communication") &&
+                      item.createdByUserId !== access.currentUserId && (
+                        <a
+                          href={`/portal/netzwerk/${slug}/kommunikation?partner=${item.createdByUserId}`}
+                        >
+                          <NetworkText id="ui.network-module-workspace.f0ff0f140f77668c">
+                            Vertraulich anfragen →
+                          </NetworkText>
+                        </a>
+                      )}
+                    {(access?.canManage ||
+                      item.createdByUserId === access?.currentUserId) && (
+                      <button
+                        onClick={() => {
+                          setEditing(item);
+                          setDialog(true);
+                        }}
+                        title="Inhalt bearbeiten"
+                      >
+                        <NetworkText id="ui.network-module-workspace.84e45ee7341134db">
+                          Bearbeiten
+                        </NetworkText>
+                      </button>
+                    )}
+                  </div>
+                  <div className="networkIconActions">
+                    {module === "dokumente" && item.data.file && (
+                      <button
+                        onClick={() => openDocument(item)}
+                        title="Dokument öffnen"
+                        aria-label={`${item.title} öffnen`}
+                      >
+                        ↗
+                      </button>
+                    )}
+                    {module === "veranstaltungen" && (
+                      <button
+                        onClick={() => void openAttendance(item)}
+                        title="Teilnahme und Anwesenheit"
+                        aria-label="Teilnahme und Anwesenheit"
+                      >
+                        ♙
+                      </button>
+                    )}
+                    {(access?.canManage ||
+                      item.createdByUserId === access?.currentUserId) &&
+                      !(module === "veranstaltungen" && !access?.canManage) &&
+                      item.status !== "published" &&
+                      item.status !== "completed" && (
+                        <button
+                          onClick={() => void change(item, "published")}
+                          title="Veröffentlichen"
+                          aria-label="Veröffentlichen"
+                        >
+                          ✓
+                        </button>
+                      )}
+                    {(access?.canManage ||
+                      item.createdByUserId === access?.currentUserId) &&
+                      item.status !== "completed" && (
+                        <button
+                          onClick={() => void change(item, "completed")}
+                          title="Erledigen"
+                          aria-label="Erledigen"
+                        >
+                          ○
+                        </button>
+                      )}
+                    {(access?.canManage ||
+                      item.createdByUserId === access?.currentUserId) &&
+                      item.status !== "archived" && (
+                        <button
+                          onClick={() => void change(item, "archived")}
+                          title="Archivieren"
+                          aria-label="Archivieren"
+                        >
+                          ⌑
+                        </button>
+                      )}
+                    {(access?.canManage ||
+                      item.createdByUserId === access?.currentUserId) && (
+                      <button
+                        className="networkDeleteAction"
+                        disabled={busy}
+                        onClick={() => void remove(item)}
+                        title="Endgültig löschen"
+                        aria-label={`${item.title} endgültig löschen`}
+                      >
+                        🗑
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
-        )}
-      </section>}
+          {!visible.length && (
+            <div className="networkEmpty">
+              <b>
+                <NetworkText id={`ui.module.${module}.empty`}>
+                  {config.empty}
+                </NetworkText>
+              </b>
+              <p>
+                <NetworkText id="ui.network-module-workspace.06cd477c660e04a4">
+                  {canCreate
+                    ? "Legen Sie den ersten Eintrag an oder ändern Sie den Filter."
+                    : "Sobald Inhalte freigegeben wurden, erscheinen sie hier."}
+                </NetworkText>
+              </p>
+              {canCreate && (
+                <button
+                  className="networkPrimary"
+                  onClick={() => {
+                    setEditing(null);
+                    setDialog(true);
+                  }}
+                >
+                  <NetworkText id="ui.network-module-workspace.eea4fb66e070f6b5">
+                    ＋ Jetzt{" "}
+                  </NetworkText>
+                  {config.singular.toLowerCase()}
+                  <NetworkText id="ui.network-module-workspace.5c1058aea6bf5633">
+                    anlegen
+                  </NetworkText>
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+      )}
       {canCreate && dialog && (
         <div
           className="networkModalBackdrop"
@@ -937,7 +1113,10 @@ export function NetworkModuleWorkspace({
               <div>
                 <span>{config.plural.toUpperCase()}</span>
                 <h2>
-                  {config.singular} {editing ? "bearbeiten" : "anlegen"}
+                  {config.singular}{" "}
+                  <NetworkText id="ui.network-module-workspace.ff9f442627a75802">
+                    {editing ? "bearbeiten" : "anlegen"}
+                  </NetworkText>
                 </h2>
               </div>
               <button
@@ -950,7 +1129,9 @@ export function NetworkModuleWorkspace({
             </header>
             <form onSubmit={submit}>
               <label>
-                {module === "veranstaltungen" ? "Thema / Titel *" : "Titel"}
+                <NetworkText id="ui.network-module-workspace.157416108139f94f">
+                  {module === "veranstaltungen" ? "Thema / Titel *" : "Titel"}
+                </NetworkText>
                 <input
                   name="title"
                   defaultValue={editing?.title || ""}
@@ -959,7 +1140,9 @@ export function NetworkModuleWorkspace({
                 />
               </label>
               <label>
-                Ausführliche Beschreibung
+                <NetworkText id="ui.network-module-workspace.a651c2d62aaaeb8d">
+                  Ausführliche Beschreibung
+                </NetworkText>
                 <textarea
                   name="description"
                   defaultValue={editing?.description || ""}
@@ -969,7 +1152,9 @@ export function NetworkModuleWorkspace({
               </label>
               <div>
                 <label>
-                  Kategorie
+                  <NetworkText id="ui.network-module-workspace.52f2a87a419c0666">
+                    Kategorie
+                  </NetworkText>
                   <select
                     name="category"
                     required
@@ -997,7 +1182,9 @@ export function NetworkModuleWorkspace({
                   </select>
                 </label>
                 <label>
-                  Sichtbarkeit
+                  <NetworkText id="ui.network-module-workspace.661f7149b21eaae8">
+                    Sichtbarkeit
+                  </NetworkText>
                   <select
                     name="visibility"
                     defaultValue={editing?.visibility || "members"}
@@ -1011,9 +1198,15 @@ export function NetworkModuleWorkspace({
                 <div className="networkEventFields">
                   {
                     <details className="networkEventExtras">
-                      <summary>Bild und zusätzliche Angaben (optional)</summary>
+                      <summary>
+                        <NetworkText id="ui.network-module-workspace.1ebb0aafa9508acf">
+                          Bild und zusätzliche Angaben (optional)
+                        </NetworkText>
+                      </summary>
                       <label>
-                        Veranstalter
+                        <NetworkText id="ui.network-module-workspace.075f152a4f4a19f6">
+                          Veranstalter
+                        </NetworkText>
                         <input
                           name="organizer"
                           defaultValue={String(
@@ -1025,7 +1218,9 @@ export function NetworkModuleWorkspace({
                       </label>
                       <div>
                         <label>
-                          Kosten (optional)
+                          <NetworkText id="ui.network-module-workspace.45676ecca0262ea7">
+                            Kosten (optional)
+                          </NetworkText>
                           <input
                             name="cost"
                             placeholder="z. B. Kostenfrei oder 15 € pro Person"
@@ -1033,7 +1228,9 @@ export function NetworkModuleWorkspace({
                           />
                         </label>
                         <label>
-                          Terminart
+                          <NetworkText id="ui.network-module-workspace.a79713883a9c9bd2">
+                            Terminart
+                          </NetworkText>
                           <select
                             name="publicEventKind"
                             defaultValue={String(
@@ -1048,7 +1245,9 @@ export function NetworkModuleWorkspace({
                         </label>
                       </div>
                       <label>
-                        Teilnahmebedingungen (optional)
+                        <NetworkText id="ui.network-module-workspace.bf01d554b57d3197">
+                          Teilnahmebedingungen (optional)
+                        </NetworkText>
                         <input
                           name="participationTerms"
                           placeholder="z. B. Anmeldung bis zum Vortag erforderlich"
@@ -1058,15 +1257,19 @@ export function NetworkModuleWorkspace({
                         />
                       </label>
                       <label>
-                        Veranstaltungsbild
+                        <NetworkText id="ui.network-module-workspace.6fe882d37230206b">
+                          Veranstaltungsbild
+                        </NetworkText>
                         <input
                           type="file"
                           name="homepageImage"
                           accept="image/png,image/jpeg,image/webp"
                         />
                         <small>
-                          PNG, JPEG oder WebP, maximal 1,5 MB. Verwende nur
-                          Bilder, die du veröffentlichen darfst.
+                          <NetworkText id="ui.network-module-workspace.df5e5af3d9b46a9d">
+                            PNG, JPEG oder WebP, maximal 1,5 MB. Verwende nur
+                            Bilder, die du veröffentlichen darfst.
+                          </NetworkText>
                         </small>
                       </label>
                       {editing?.data.imageUrl && (
@@ -1082,7 +1285,9 @@ export function NetworkModuleWorkspace({
                         />
                       )}
                       <label>
-                        Öffentlicher Anmeldelink (optional)
+                        <NetworkText id="ui.network-module-workspace.6e445c4ffcc5d010">
+                          Öffentlicher Anmeldelink (optional)
+                        </NetworkText>
                         <input
                           name="registrationUrl"
                           type="url"
@@ -1093,7 +1298,9 @@ export function NetworkModuleWorkspace({
                         />
                       </label>
                       <label>
-                        Terminstatus
+                        <NetworkText id="ui.network-module-workspace.4de918838dcb4538">
+                          Terminstatus
+                        </NetworkText>
                         <select
                           name="eventStatus"
                           defaultValue={String(
@@ -1107,7 +1314,9 @@ export function NetworkModuleWorkspace({
                       </label>
                       <details>
                         <summary>
-                          Weitere Orts- und Terminangaben (optional)
+                          <NetworkText id="ui.network-module-workspace.2ec4c3136c5df295">
+                            Weitere Orts- und Terminangaben (optional)
+                          </NetworkText>
                         </summary>
                         {[
                           ["publicVenueName", "Name des Veranstaltungsorts"],
@@ -1149,7 +1358,9 @@ export function NetworkModuleWorkspace({
                   }
                   <div>
                     <label>
-                      Datum und Uhrzeit *
+                      <NetworkText id="ui.network-module-workspace.55b16320a0a78249">
+                        Datum und Uhrzeit *
+                      </NetworkText>
                       <input
                         name="startsAt"
                         defaultValue={
@@ -1170,7 +1381,9 @@ export function NetworkModuleWorkspace({
                       />
                     </label>
                     <label hidden style={{ display: "none" }}>
-                      Ende (automatisch aus der Dauer)
+                      <NetworkText id="ui.network-module-workspace.df05e812dd4836ab">
+                        Ende (automatisch aus der Dauer)
+                      </NetworkText>
                       <input
                         name="endsAt"
                         type="datetime-local"
@@ -1190,7 +1403,9 @@ export function NetworkModuleWorkspace({
                   </div>
                   <div>
                     <label>
-                      Dauer in Minuten (optional)
+                      <NetworkText id="ui.network-module-workspace.e9968f886577411d">
+                        Dauer in Minuten (optional)
+                      </NetworkText>
                       <input
                         type="number"
                         name="durationMinutes"
@@ -1214,7 +1429,9 @@ export function NetworkModuleWorkspace({
                   </div>
                   <div>
                     <label>
-                      Format
+                      <NetworkText id="ui.network-module-workspace.2f343666aaa88c44">
+                        Format
+                      </NetworkText>
                       <select
                         name="mode"
                         defaultValue={String(editing?.data.mode || "")}
@@ -1225,9 +1442,11 @@ export function NetworkModuleWorkspace({
                       </select>
                     </label>
                     <label>
-                      {slug === "unternehmerfreunde"
-                        ? "Adresse / Veranstaltungsort"
-                        : "Adresse / Veranstaltungsort"}
+                      <NetworkText id="ui.network-module-workspace.fd9659070e03dc6b">
+                        {slug === "unternehmerfreunde"
+                          ? "Adresse / Veranstaltungsort"
+                          : "Adresse / Veranstaltungsort"}
+                      </NetworkText>
                       <input
                         name={
                           slug === "unternehmerfreunde"
@@ -1246,7 +1465,9 @@ export function NetworkModuleWorkspace({
                   </div>
                   <div>
                     <label>
-                      Rhythmus (als Hinweis)
+                      <NetworkText id="ui.network-module-workspace.0770d5f989f3fd8b">
+                        Rhythmus (als Hinweis)
+                      </NetworkText>
                       <select
                         name="recurrence"
                         defaultValue={String(editing?.data.recurrence || "")}
@@ -1258,7 +1479,9 @@ export function NetworkModuleWorkspace({
                       </select>
                     </label>
                     <label>
-                      Maximale Personenanzahl (optional)
+                      <NetworkText id="ui.network-module-workspace.6eb5410122cbde30">
+                        Maximale Personenanzahl (optional)
+                      </NetworkText>
                       <input
                         name="capacity"
                         defaultValue={String(editing?.data.capacity || "")}
@@ -1268,7 +1491,9 @@ export function NetworkModuleWorkspace({
                     </label>
                   </div>
                   <label>
-                    Anmeldeschluss (optional)
+                    <NetworkText id="ui.network-module-workspace.13a0a8b5f63a3fc0">
+                      Anmeldeschluss (optional)
+                    </NetworkText>
                     <input
                       name="deadline"
                       defaultValue={String(editing?.data.deadline || "")}
@@ -1280,7 +1505,9 @@ export function NetworkModuleWorkspace({
               {module === "aufgaben" && (
                 <div>
                   <label>
-                    Priorität
+                    <NetworkText id="ui.network-module-workspace.787e02f4cc6510e0">
+                      Priorität
+                    </NetworkText>
                     <select
                       name="priority"
                       defaultValue={String(editing?.data.priority || "")}
@@ -1291,7 +1518,9 @@ export function NetworkModuleWorkspace({
                     </select>
                   </label>
                   <label>
-                    Verantwortlich
+                    <NetworkText id="ui.network-module-workspace.5c008fc563aa8d86">
+                      Verantwortlich
+                    </NetworkText>
                     <select
                       name="assignedToUserId"
                       defaultValue={String(
@@ -1311,7 +1540,9 @@ export function NetworkModuleWorkspace({
               )}
               {module === "dokumente" && (
                 <label>
-                  PDF oder Bild hochladen
+                  <NetworkText id="ui.network-module-workspace.aa9888308fdbf5ad">
+                    PDF oder Bild hochladen
+                  </NetworkText>
                   <input
                     name="file"
                     type="file"
@@ -1319,8 +1550,11 @@ export function NetworkModuleWorkspace({
                     required={!editing}
                   />
                   <small>
-                    Die Datei bleibt im geschlossenen Partnerportal und ist nur
-                    für die gewählte Sichtbarkeit zugänglich. Maximal 1,5 MB.
+                    <NetworkText id="ui.network-module-workspace.3ebcb8adaa1913e1">
+                      Die Datei bleibt im geschlossenen Partnerportal und ist
+                      nur für die gewählte Sichtbarkeit zugänglich. Maximal 1,5
+                      MB.
+                    </NetworkText>
                   </small>
                 </label>
               )}
@@ -1332,10 +1566,16 @@ export function NetworkModuleWorkspace({
                       name="discussionOpen"
                       defaultChecked={editing?.data.discussionOpen !== false}
                     />
-                    <span>Offene Diskussion für Mitglieder erlauben</span>
+                    <span>
+                      <NetworkText id="ui.network-module-workspace.f720f8c83e22fba0">
+                        Offene Diskussion für Mitglieder erlauben
+                      </NetworkText>
+                    </span>
                   </label>
                   <label>
-                    Beitragsfoto (Pflichtfeld)
+                    <NetworkText id="ui.network-module-workspace.59f27c5b19fa45f4">
+                      Beitragsfoto (Pflichtfeld)
+                    </NetworkText>
                     <input
                       name="articleImage"
                       required={!editing?.data.imageUrl}
@@ -1343,8 +1583,10 @@ export function NetworkModuleWorkspace({
                       accept="image/png,image/jpeg,image/webp"
                     />
                     <small>
-                      PNG, JPG oder WebP bis 1,5 MB. Das Foto erscheint im
-                      Beitrag und auf der Netzwerk-Startseite.
+                      <NetworkText id="ui.network-module-workspace.9f4200d1f343d1ee">
+                        PNG, JPG oder WebP bis 1,5 MB. Das Foto erscheint im
+                        Beitrag und auf der Netzwerk-Startseite.
+                      </NetworkText>
                     </small>
                   </label>
                   {editing?.data.imageUrl && (
@@ -1354,13 +1596,24 @@ export function NetworkModuleWorkspace({
                         src={String(editing.data.imageUrl)}
                         alt="Aktuelles Beitragsfoto"
                       />
-                      <small>Das vorhandene Foto bleibt erhalten. Zum Ersetzen ein neues Foto auswählen.</small>
+                      <small>
+                        <NetworkText id="ui.network-module-workspace.93c49b81d7be8b89">
+                          Das vorhandene Foto bleibt erhalten. Zum Ersetzen ein
+                          neues Foto auswählen.
+                        </NetworkText>
+                      </small>
                     </div>
                   )}
                   <details>
-                    <summary>Umfrage und Schlagworte (optional)</summary>
+                    <summary>
+                      <NetworkText id="ui.network-module-workspace.585011de4477bd0e">
+                        Umfrage und Schlagworte (optional)
+                      </NetworkText>
+                    </summary>
                     <label>
-                      Schlagworte
+                      <NetworkText id="ui.network-module-workspace.ec9bec76b22370c9">
+                        Schlagworte
+                      </NetworkText>
                       <input
                         name="keywords"
                         defaultValue={String(editing?.data.keywords || "")}
@@ -1368,7 +1621,9 @@ export function NetworkModuleWorkspace({
                       />
                     </label>
                     <label>
-                      Antwortoptionen bei einer Umfrage
+                      <NetworkText id="ui.network-module-workspace.f747cb3cce8a9a57">
+                        Antwortoptionen bei einer Umfrage
+                      </NetworkText>
                       <textarea
                         name="options"
                         defaultValue={String(editing?.data.options || "")}
@@ -1381,7 +1636,9 @@ export function NetworkModuleWorkspace({
               )}
               <div>
                 <label>
-                  Status
+                  <NetworkText id="ui.network-module-workspace.920e413c7d411b61">
+                    Status
+                  </NetworkText>
                   <select
                     name="status"
                     defaultValue={editing?.status || "published"}
@@ -1405,15 +1662,19 @@ export function NetworkModuleWorkspace({
                     />
                     <span>
                       <span className="networkEventPublishTitle">
-                        Auf der Homepage als Veranstaltung veröffentlichen
+                        <NetworkText id="ui.network-module-workspace.e037513cd314dcb3">
+                          Auf der Homepage als Veranstaltung veröffentlichen
+                        </NetworkText>
                       </span>
                       <span className="networkEventPublishHelp">
-                        Mit dem Häkchen gibst du diese Veranstaltungsangaben und
-                        das Bild öffentlich frei und bestätigst die
-                        Veröffentlichungsrechte. Ohne Häkchen bleibt die
-                        Veranstaltung nur im Portal. Zusätzliche Angaben und ein
-                        Bild sind freiwillig. Zum Veröffentlichen „Alle Partner“
-                        und „Veröffentlicht“ wählen.
+                        <NetworkText id="ui.network-module-workspace.fe3dd6f5d6a20acc">
+                          Mit dem Häkchen gibst du diese Veranstaltungsangaben
+                          und das Bild öffentlich frei und bestätigst die
+                          Veröffentlichungsrechte. Ohne Häkchen bleibt die
+                          Veranstaltung nur im Portal. Zusätzliche Angaben und
+                          ein Bild sind freiwillig. Zum Veröffentlichen „Alle
+                          Partner“ und „Veröffentlicht“ wählen.
+                        </NetworkText>
                       </span>
                     </span>
                   </label>
@@ -1425,10 +1686,14 @@ export function NetworkModuleWorkspace({
               )}
               <div className="adminNetworkDialogActions">
                 <button type="button" onClick={() => setDialog(false)}>
-                  Abbrechen
+                  <NetworkText id="ui.network-module-workspace.f7ff1178af202f6f">
+                    Abbrechen
+                  </NetworkText>
                 </button>
                 <button className="networkPrimary" disabled={busy}>
-                  {busy ? "Wird gespeichert …" : "Speichern"}
+                  <NetworkText id="ui.network-module-workspace.04864665df052c9c">
+                    {busy ? "Wird gespeichert …" : "Speichern"}
+                  </NetworkText>
                 </button>
               </div>
             </form>
@@ -1444,7 +1709,11 @@ export function NetworkModuleWorkspace({
           >
             <header>
               <div>
-                <span>VERANSTALTUNG</span>
+                <span>
+                  <NetworkText id="ui.network-module-workspace.3f878e7fe8a56985">
+                    VERANSTALTUNG
+                  </NetworkText>
+                </span>
                 <h2>{attendanceEvent.title}</h2>
               </div>
               <button onClick={() => setAttendanceEvent(null)}>×</button>
@@ -1464,7 +1733,11 @@ export function NetworkModuleWorkspace({
                 {attendanceEvent.description}
               </p>
               <dl>
-                <dt>Termin</dt>
+                <dt>
+                  <NetworkText id="ui.network-module-workspace.83f07dc6e90d3766">
+                    Termin
+                  </NetworkText>
+                </dt>
                 <dd>
                   {attendanceEvent.startsAt
                     ? new Date(attendanceEvent.startsAt).toLocaleString(
@@ -1499,11 +1772,19 @@ export function NetworkModuleWorkspace({
                 )}
               </dl>
               {attendanceEvent.data.eventStatus === "cancelled" ? (
-                <strong>Abgesagt</strong>
+                <strong>
+                  <NetworkText id="ui.network-module-workspace.6778e4edb7033a13">
+                    Abgesagt
+                  </NetworkText>
+                </strong>
               ) : attendanceEvent.startsAt &&
                 Date.parse(attendanceEvent.endsAt || attendanceEvent.startsAt) <
                   Date.now() ? (
-                <strong>Bereits stattgefunden</strong>
+                <strong>
+                  <NetworkText id="ui.network-module-workspace.a44568da6421b189">
+                    Bereits stattgefunden
+                  </NetworkText>
+                </strong>
               ) : null}
             </div>
             {!access?.readOnly &&
@@ -1518,7 +1799,9 @@ export function NetworkModuleWorkspace({
                 >
                   <div>
                     <label>
-                      Meine Rückmeldung
+                      <NetworkText id="ui.network-module-workspace.e692b7de6d70e53e">
+                        Meine Rückmeldung
+                      </NetworkText>
                       <select
                         name="response"
                         defaultValue={
@@ -1532,7 +1815,9 @@ export function NetworkModuleWorkspace({
                       </select>
                     </label>
                     <label>
-                      Begleitpersonen
+                      <NetworkText id="ui.network-module-workspace.39efe477f7f58fc4">
+                        Begleitpersonen
+                      </NetworkText>
                       <input
                         name="companionCount"
                         type="number"
@@ -1547,7 +1832,9 @@ export function NetworkModuleWorkspace({
                     </label>
                   </div>
                   <label>
-                    Gäste – ein Name pro Zeile
+                    <NetworkText id="ui.network-module-workspace.b1bcbad0306749f2">
+                      Gäste – ein Name pro Zeile
+                    </NetworkText>
                     <textarea
                       name="guestNames"
                       rows={2}
@@ -1561,7 +1848,9 @@ export function NetworkModuleWorkspace({
                     />
                   </label>
                   <label>
-                    Hinweis zur Teilnahme
+                    <NetworkText id="ui.network-module-workspace.4fe8281d3cdd1a92">
+                      Hinweis zur Teilnahme
+                    </NetworkText>
                     <textarea
                       name="note"
                       rows={2}
@@ -1574,7 +1863,9 @@ export function NetworkModuleWorkspace({
                   </label>
                   {!access?.readOnly && (
                     <button className="networkPrimary">
-                      Teilnahme bestätigen / Rückmeldung speichern
+                      <NetworkText id="ui.network-module-workspace.2764eb6b6b728ae1">
+                        Teilnahme bestätigen / Rückmeldung speichern
+                      </NetworkText>
                     </button>
                   )}
                 </form>
@@ -1583,13 +1874,27 @@ export function NetworkModuleWorkspace({
               <>
                 <header>
                   <div>
-                    <span>ANWESENHEITSLISTE</span>
-                    <h3>Tatsächliche Teilnahme dokumentieren</h3>
+                    <span>
+                      <NetworkText id="ui.network-module-workspace.885537a9b2344454">
+                        ANWESENHEITSLISTE
+                      </NetworkText>
+                    </span>
+                    <h3>
+                      <NetworkText id="ui.network-module-workspace.8bac3dfa393054db">
+                        Tatsächliche Teilnahme dokumentieren
+                      </NetworkText>
+                    </h3>
                   </div>
                   <div>
-                    <button onClick={() => exportAttendance("pdf")}>PDF</button>
+                    <button onClick={() => exportAttendance("pdf")}>
+                      <NetworkText id="ui.network-module-workspace.1d393b0081b632c5">
+                        PDF
+                      </NetworkText>
+                    </button>
                     <button onClick={() => exportAttendance("excel")}>
-                      Excel
+                      <NetworkText id="ui.network-module-workspace.48d53635551c8fd4">
+                        Excel
+                      </NetworkText>
                     </button>
                   </div>
                 </header>
@@ -1600,10 +1905,15 @@ export function NetworkModuleWorkspace({
                         <h3>{row.memberName}</h3>
                         <p>
                           {row.organizationName} ·{" "}
-                          {row.response === "registered"
-                            ? "Angemeldet"
-                            : "Abgemeldet"}{" "}
-                          · {row.companionCount} Begleitpersonen
+                          <NetworkText id="ui.network-module-workspace.faae58d4f46be298">
+                            {row.response === "registered"
+                              ? "Angemeldet"
+                              : "Abgemeldet"}
+                          </NetworkText>{" "}
+                          · {row.companionCount}
+                          <NetworkText id="ui.network-module-workspace.39efe477f7f58fc4">
+                            Begleitpersonen
+                          </NetworkText>
                         </p>
                         <small>
                           {row.guestNames.join(", ") || "Keine Gäste"}

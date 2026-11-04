@@ -17,6 +17,22 @@ export class NetworksController {
     private readonly networks: NetworksService,
     private readonly billing: AutomaticBillingService,
   ) {}
+  @Get("branding/:slug/texts") publicTexts(@Param("slug") slug: string) {
+    return this.networks.interfaceTexts(slug);
+  }
+  @Get("admin/:id/texts") ownerTexts(
+    @Headers("authorization") authorization: string | undefined,
+    @Param("id") id: string,
+  ) {
+    return this.networks.ownerInterfaceTexts(authorization, id);
+  }
+  @Post("admin/:id/texts") saveTexts(
+    @Headers("authorization") authorization: string | undefined,
+    @Param("id") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.networks.saveInterfaceText(authorization, id, body);
+  }
   @Post("admin/:n/service-members") createService(
     @Headers("authorization") a: string | undefined,
     @Param("n") n: string,
@@ -55,8 +71,14 @@ export class NetworksController {
     return this.networks.handoverService(a, n, u);
   }
   @Post("admin/:n/service-members/:u/complimentary") waiveService(
-    @Headers("authorization") a: string | undefined, @Param("n") n: string, @Param("u") u: string,
-  ) { return this.networks.waiveService(a, n, u, id => this.billing.reserveWaiver(id)); }
+    @Headers("authorization") a: string | undefined,
+    @Param("n") n: string,
+    @Param("u") u: string,
+  ) {
+    return this.networks.waiveService(a, n, u, (id) =>
+      this.billing.reserveWaiver(id),
+    );
+  }
   @Post("admin/:n/service-members/:u/invoice") invoiceService(
     @Headers("authorization") a: string | undefined,
     @Param("n") n: string,
@@ -314,9 +336,17 @@ export class NetworksController {
   ) {
     return this.networks.createVisitor(auth, id, body);
   }
-  @Get("account/referral-balance") balance(@Headers("authorization") a:string|undefined){ return this.billing.referralBalance(this.networks.referralAccountId(a)); }
-  @Post(":n/referral") refer(@Headers("authorization") a:string|undefined,@Param("n") n:string,@Body() b:Record<string,unknown>){
-    return this.networks.referral(a,n,b);
+  @Get("account/referral-balance") balance(
+    @Headers("authorization") a: string | undefined,
+  ) {
+    return this.billing.referralBalance(this.networks.referralAccountId(a));
+  }
+  @Post(":n/referral") refer(
+    @Headers("authorization") a: string | undefined,
+    @Param("n") n: string,
+    @Body() b: Record<string, unknown>,
+  ) {
+    return this.networks.referral(a, n, b);
   }
   @Post("admin/:networkId/shared-invitation") sharedInvitation(
     @Headers("authorization") auth: string | undefined,

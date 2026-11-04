@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
@@ -162,7 +163,11 @@ export function NetworkAdministrationWorkspace({
               <strong>{v}</strong>
               <span>
                 {l}
-                <small>Aktueller Datenstand</small>
+                <small>
+                  <NetworkText id="ui.network-administration-workspace.aeefb4574f4569d3">
+                    Aktueller Datenstand
+                  </NetworkText>
+                </small>
               </span>
             </article>
           ))}
@@ -170,10 +175,22 @@ export function NetworkAdministrationWorkspace({
         <section className="networkCard">
           <header>
             <div>
-              <span>AKTIVITÄT</span>
-              <h2>Letzte Netzwerkaktivitäten</h2>
+              <span>
+                <NetworkText id="ui.network-administration-workspace.43eac9ee84df3204">
+                  AKTIVITÄT
+                </NetworkText>
+              </span>
+              <h2>
+                <NetworkText id="ui.network-administration-workspace.4476f45baa2edacd">
+                  Letzte Netzwerkaktivitäten
+                </NetworkText>
+              </h2>
             </div>
-            <button onClick={() => window.print()}>Drucken</button>
+            <button onClick={() => window.print()}>
+              <NetworkText id="ui.network-administration-workspace.0052e8965a466048">
+                Drucken
+              </NetworkText>
+            </button>
           </header>
           <div className="networkActivity">
             {dashboard.recent.map((i) => (
@@ -187,7 +204,11 @@ export function NetworkAdministrationWorkspace({
             ))}
             {!dashboard.recent.length && (
               <div className="networkEmpty">
-                <b>Noch keine Aktivitäten</b>
+                <b>
+                  <NetworkText id="ui.network-administration-workspace.a7749b9b03602566">
+                    Noch keine Aktivitäten
+                  </NetworkText>
+                </b>
               </div>
             )}
           </div>
@@ -197,42 +218,68 @@ export function NetworkAdministrationWorkspace({
   if (!access?.isInitiator)
     return (
       <section className="networkCard networkLoading">
-        <p>Nur der Initiator darf den Netzwerkauftritt verwalten.</p>
+        <p>
+          <NetworkText id="ui.network-administration-workspace.36655c42c94c500b">
+            Nur der Initiator darf den Netzwerkauftritt verwalten.
+          </NetworkText>
+        </p>
       </section>
     );
   return (
     <form className="networkSettingsForm" onSubmit={save}>
       {!network.settings.setupCompletedAt && (
         <section className="networkSetupIntro">
-          <span>ERSTEINRICHTUNG</span>
+          <span>
+            <NetworkText id="ui.network-administration-workspace.b6c6a3edb3f9b1ca">
+              ERSTEINRICHTUNG
+            </NetworkText>
+          </span>
           <h2>
-            Gestalten Sie die gemeinsame Startseite Ihres Partnernetzwerks.
+            <NetworkText id="ui.network-administration-workspace.9e2da667da1c0357">
+              Gestalten Sie die gemeinsame Startseite Ihres Partnernetzwerks.
+            </NetworkText>
           </h2>
           <p>
-            Legen Sie Name, Logo, Farben und Netzwerkregeln fest. Alle
-            Funktionen sind enthalten; die Netzwerkverwaltung bleibt für
-            Initiatoren kostenlos.
+            <NetworkText id="ui.network-administration-workspace.10dc787cbd43b7dc">
+              Legen Sie Name, Logo, Farben und Netzwerkregeln fest. Alle
+              Funktionen sind enthalten; die Netzwerkverwaltung bleibt für
+              Initiatoren kostenlos.
+            </NetworkText>
           </p>
         </section>
       )}
       <section className="networkCard">
         <header>
           <div>
-            <span>KOSTENLOS INKLUSIVE</span>
-            <h2>Whitelabel und Stammdaten</h2>
+            <span>
+              <NetworkText id="ui.network-administration-workspace.d92677290c642919">
+                KOSTENLOS INKLUSIVE
+              </NetworkText>
+            </span>
+            <h2>
+              <NetworkText id="ui.network-administration-workspace.9cf9d6f16baa82f9">
+                Whitelabel und Stammdaten
+              </NetworkText>
+            </h2>
           </div>
         </header>
         <div className="networkSettingsFields">
           <label>
-            Netzwerkname
+            <NetworkText id="ui.network-administration-workspace.177da3226573b01b">
+              Netzwerkname
+            </NetworkText>
             <input name="name" required defaultValue={network.name} />
           </label>
           <label>
-            Rechtlicher Name
+            <NetworkText id="ui.network-administration-workspace.24e3a0843b8b5c99">
+              Rechtlicher Name
+            </NetworkText>
             <input name="legalName" defaultValue={network.legalName || ""} />
           </label>
           <label>
-            Website
+            <NetworkText id="ui.network-administration-workspace.b5a229ac8becc603">
+              Website
+            </NetworkText>
             <input
               name="websiteUrl"
               type="url"
@@ -240,24 +287,34 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <label className="networkLogoUpload">
-            Netzwerklogo
+            <NetworkText id="ui.network-administration-workspace.f773b51ce730c1cf">
+              Netzwerklogo
+            </NetworkText>
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp,image/svg+xml"
               onChange={uploadLogo}
             />
-            <small>PNG, JPG, WebP oder SVG · maximal 1,5 MB</small>
+            <small>
+              <NetworkText id="ui.network-administration-workspace.d6db3a77357954fe">
+                PNG, JPG, WebP oder SVG · maximal 1,5 MB
+              </NetworkText>
+            </small>
           </label>
           {logo && (
             <div className="networkLogoPreview">
               <img src={logo} alt="Vorschau des Netzwerklogos" />
               <button type="button" onClick={() => setLogo(null)}>
-                Logo entfernen
+                <NetworkText id="ui.network-administration-workspace.256f3d2e173567a3">
+                  Logo entfernen
+                </NetworkText>
               </button>
             </div>
           )}
           <label>
-            Primärfarbe
+            <NetworkText id="ui.network-administration-workspace.fe0a128a4d0c1138">
+              Primärfarbe
+            </NetworkText>
             <input
               name="primaryColor"
               type="color"
@@ -265,7 +322,9 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <label>
-            Sekundärfarbe
+            <NetworkText id="ui.network-administration-workspace.6fe84f7f5298c126">
+              Sekundärfarbe
+            </NetworkText>
             <input
               name="secondaryColor"
               type="color"
@@ -273,19 +332,32 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <p className="full">
-            Nur der Initiator kann Logo, Farben und Netzwerkauftritt verändern.
+            <NetworkText id="ui.network-administration-workspace.4eb14e7342bf072e">
+              Nur der Initiator kann Logo, Farben und Netzwerkauftritt
+              verändern.
+            </NetworkText>
           </p>
         </div>
       </section>
       <section className="networkCard">
         <header>
           <div>
-            <span>ALLE FUNKTIONEN INKLUSIVE</span>
-            <h2>Kostenlose Netzwerkverwaltung für Initiatoren</h2>
+            <span>
+              <NetworkText id="ui.network-administration-workspace.353fe9cfae8bb8b5">
+                ALLE FUNKTIONEN INKLUSIVE
+              </NetworkText>
+            </span>
+            <h2>
+              <NetworkText id="ui.network-administration-workspace.33b57b1bb6194bd3">
+                Kostenlose Netzwerkverwaltung für Initiatoren
+              </NetworkText>
+            </h2>
             <p>
-              Partnermitglieder buchen ihren eigenen vollständigen Zugang bei
-              der Registrierung für zwölf Monate im Voraus. Den individuellen
-              Mitgliedspreis bestimmt ausschließlich der Plattforminhaber.
+              <NetworkText id="ui.network-administration-workspace.b777408d12943703">
+                Partnermitglieder buchen ihren eigenen vollständigen Zugang bei
+                der Registrierung für zwölf Monate im Voraus. Den individuellen
+                Mitgliedspreis bestimmt ausschließlich der Plattforminhaber.
+              </NetworkText>
             </p>
           </div>
         </header>
@@ -297,16 +369,24 @@ export function NetworkAdministrationWorkspace({
       <section className="networkCard">
         <header>
           <div>
-            <h2>Texte Ihrer Partnerportal-Startseite</h2>
+            <h2>
+              <NetworkText id="ui.network-administration-workspace.8e708612ef76f6a2">
+                Texte Ihrer Partnerportal-Startseite
+              </NetworkText>
+            </h2>
           </div>
         </header>
         <div className="networkSettingsFields">
           <p className="full">
-            Diese Texte sehen alle Partner dieses Netzwerks. Leere Felder
-            verwenden wieder den Standardtext.
+            <NetworkText id="ui.network-administration-workspace.7554f451997ea743">
+              Diese Texte sehen alle Partner dieses Netzwerks. Leere Felder
+              verwenden wieder den Standardtext.
+            </NetworkText>
           </p>
           <label className="full">
-            Willkommensüberschrift
+            <NetworkText id="ui.network-administration-workspace.2b539a69bc2bbdeb">
+              Willkommensüberschrift
+            </NetworkText>
             <input
               name="welcomeTitle"
               maxLength={160}
@@ -315,7 +395,9 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <label className="full">
-            Einleitung unter der Überschrift
+            <NetworkText id="ui.network-administration-workspace.7cb79c746a59728d">
+              Einleitung unter der Überschrift
+            </NetworkText>
             <textarea
               name="welcomeIntro"
               maxLength={600}
@@ -325,7 +407,9 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <label className="full">
-            Titel im Bildbanner
+            <NetworkText id="ui.network-administration-workspace.bbb3595e96362225">
+              Titel im Bildbanner
+            </NetworkText>
             <input
               name="bannerTitle"
               maxLength={160}
@@ -334,7 +418,9 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <label className="full">
-            Beschreibung im Bildbanner
+            <NetworkText id="ui.network-administration-workspace.665b5269f18ff0e8">
+              Beschreibung im Bildbanner
+            </NetworkText>
             <textarea
               name="bannerDescription"
               maxLength={600}
@@ -344,7 +430,11 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <div className="full networkBannerUpload">
-            <strong>Titelbild der Netzwerk-Startseite</strong>
+            <strong>
+              <NetworkText id="ui.network-administration-workspace.bbe8757c87f77529">
+                Titelbild der Netzwerk-Startseite
+              </NetworkText>
+            </strong>
             <label className="networkBannerUploadTarget">
               <img
                 src={
@@ -355,7 +445,11 @@ export function NetworkAdministrationWorkspace({
                 }
                 alt="Vorschau des Netzwerk-Titelbilds"
               />
-              <span>Bild auswählen oder wechseln</span>
+              <span>
+                <NetworkText id="ui.network-administration-workspace.58a90e7a1ea7bf85">
+                  Bild auswählen oder wechseln
+                </NetworkText>
+              </span>
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
@@ -363,8 +457,10 @@ export function NetworkAdministrationWorkspace({
               />
             </label>
             <p>
-              Breites Querformat empfohlen · PNG, JPG oder WebP · maximal 1,5
-              MB. Das Bild wird beim Speichern für dieses Netzwerk übernommen.
+              <NetworkText id="ui.network-administration-workspace.c043a2900daa89de">
+                Breites Querformat empfohlen · PNG, JPG oder WebP · maximal 1,5
+                MB. Das Bild wird beim Speichern für dieses Netzwerk übernommen.
+              </NetworkText>
             </p>
             {bannerImage && (
               <button
@@ -372,7 +468,9 @@ export function NetworkAdministrationWorkspace({
                 className="networkSecondary"
                 onClick={() => setBannerImage(null)}
               >
-                Standardbild verwenden
+                <NetworkText id="ui.network-administration-workspace.4090ef16852c9d78">
+                  Standardbild verwenden
+                </NetworkText>
               </button>
             )}
           </div>
@@ -381,13 +479,23 @@ export function NetworkAdministrationWorkspace({
       <section className="networkCard">
         <header>
           <div>
-            <span>REGELN</span>
-            <h2>Aufnahmebedingungen</h2>
+            <span>
+              <NetworkText id="ui.network-administration-workspace.428c9f62700675af">
+                REGELN
+              </NetworkText>
+            </span>
+            <h2>
+              <NetworkText id="ui.network-administration-workspace.d67f5259852d7d89">
+                Aufnahmebedingungen
+              </NetworkText>
+            </h2>
           </div>
         </header>
         <div className="networkSettingsFields">
           <label className="full">
-            Netzwerkregeln
+            <NetworkText id="ui.network-administration-workspace.9e5e27673f99022c">
+              Netzwerkregeln
+            </NetworkText>
             <textarea
               name="admissionRules"
               rows={6}
@@ -395,18 +503,22 @@ export function NetworkAdministrationWorkspace({
             />
           </label>
           <p className="full">
-            Selbstregistrierung und netzwerkübergreifendes Matching bleiben
-            deaktiviert.
+            <NetworkText id="ui.network-administration-workspace.136ce5141c37f92b">
+              Selbstregistrierung und netzwerkübergreifendes Matching bleiben
+              deaktiviert.
+            </NetworkText>
           </p>
         </div>
       </section>
       <div className="networkSettingsActions">
         <button className="networkPrimary" disabled={busy}>
-          {busy
-            ? "Wird gespeichert …"
-            : network.settings.setupCompletedAt
-              ? "Änderungen speichern"
-              : "Netzwerk einrichten und zur Übersicht"}
+          <NetworkText id="ui.network-administration-workspace.12a6625a680d5202">
+            {busy
+              ? "Wird gespeichert …"
+              : network.settings.setupCompletedAt
+                ? "Änderungen speichern"
+                : "Netzwerk einrichten und zur Übersicht"}
+          </NetworkText>
         </button>
       </div>
       {notice && (

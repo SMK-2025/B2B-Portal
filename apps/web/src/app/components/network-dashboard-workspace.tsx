@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { useRouter } from "next/navigation";
 import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
@@ -61,10 +62,23 @@ function itemImage(item?: Item) {
   ) as string | undefined;
 }
 export type LockedDashboardBrand = {
-  slug:string; name:string; logoUrl:string|null; primaryColor:string;secondaryColor:string;modules:string[];
-  bannerImageUrl:string|null;bannerTitle:string|null;bannerDescription:string|null;
+  slug: string;
+  name: string;
+  logoUrl: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+  modules: string[];
+  bannerImageUrl: string | null;
+  bannerTitle: string | null;
+  bannerDescription: string | null;
 };
-export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; preview?:LockedDashboardBrand }) {
+export function NetworkDashboardWorkspace({
+  slug,
+  preview,
+}: {
+  slug: string;
+  preview?: LockedDashboardBrand;
+}) {
   const access = useNetworkAccess(),
     [loaded, setData] = useState<Dashboard | null>(null),
     [partners, setPartners] = useState<Partner[]>([]),
@@ -73,7 +87,7 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
   const router = useRouter();
   const base = `/portal/netzwerk/${slug}`;
   useEffect(() => {
-    if(preview)return;
+    if (preview) return;
     let active = true;
     const token = getPortalSession();
     if (!token) {
@@ -113,15 +127,29 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
     return () => {
       active = false;
     };
-  }, [slug, access?.currentUserId,preview]);
-  const data:Dashboard|null=preview?{network:{id:"",name:preview.name,status:"active",settings:preview},recentMembers:[],upcomingEvents:[],eventRecaps:[],announcements:[]}:loaded;
+  }, [slug, access?.currentUserId, preview]);
+  const data: Dashboard | null = preview
+    ? {
+        network: {
+          id: "",
+          name: preview.name,
+          status: "active",
+          settings: preview,
+        },
+        recentMembers: [],
+        upcomingEvents: [],
+        eventRecaps: [],
+        announcements: [],
+      }
+    : loaded;
   if (!data)
     return (
       <section className="networkCard networkLoading">
         <p role="status">{message || "Dein Netzwerk wird geladen …"}</p>
       </section>
     );
-  const enabled = (module: string) => (preview?.modules || access?.enabledModules)?.includes(module),
+  const enabled = (module: string) =>
+      (preview?.modules || access?.enabledModules)?.includes(module),
     event = data.upcomingEvents[0] || data.recentEvents?.[0],
     recap = data.eventRecaps[0],
     eventImage = itemImage(event),
@@ -159,13 +187,21 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
         !access?.isInitiator &&
         !enabled("profiles") && (
           <section className="networkReadOnlyNotice">
-            <strong>Deinen Zugang vervollständigen</strong>
+            <strong>
+              <NetworkText id="ui.network-dashboard-workspace.76f6cf1882e6dc6d">
+                Deinen Zugang vervollständigen
+              </NetworkText>
+            </strong>
             <p>
-              Für die vollständige Nutzung prüfe bitte deine
-              Jahresmitgliedschaft.
+              <NetworkText id="ui.network-dashboard-workspace.9d61026e47990f27">
+                Für die vollständige Nutzung prüfe bitte deine
+                Jahresmitgliedschaft.
+              </NetworkText>
             </p>
             <Link href={`${base}/buchen` as never}>
-              Informationen zur Mitgliedschaft →
+              <NetworkText id="ui.network-dashboard-workspace.db3e2a15d1f960b6">
+                Informationen zur Mitgliedschaft →
+              </NetworkText>
             </Link>
           </section>
         )}
@@ -176,37 +212,55 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
             (slug === "unternehmernetzwerkleverkusen"
               ? "/images/leverkusen-skyline.webp"
               : slug === "bayer-giants"
-              ? "/images/network-meeting-sport.webp"
-              : "/images/network-meeting-club.webp")
+                ? "/images/network-meeting-sport.webp"
+                : "/images/network-meeting-club.webp")
           }
           alt=""
         />
         <div>
-          <span>SCHÖN, DASS DU DA BIST</span>
+          <span>
+            <NetworkText id="ui.network-dashboard-workspace.bd558538b31ec0f8">
+              SCHÖN, DASS DU DA BIST
+            </NetworkText>
+          </span>
           <h1>
-            {access?.homeTexts?.welcomeTitle ||
-              data.network.settings?.bannerTitle ||
-              `Willkommen${access?.firstName ? `, ${access.firstName}` : ""} in deinem Business-Netzwerk.`}
+            <NetworkText id="ui.home.title">
+              {access?.homeTexts?.welcomeTitle ||
+                data.network.settings?.bannerTitle ||
+                `Willkommen${access?.firstName ? `, ${access.firstName}` : ""} in deinem Business-Netzwerk.`}
+            </NetworkText>
           </h1>
           <p>
-            {access?.homeTexts?.welcomeIntro ||
-              data.network.settings?.bannerDescription ||
-              "Bleib im Gespräch. Entdecke Menschen, Ideen und gemeinsame Chancen – auch zwischen unseren Treffen."}
+            <NetworkText id="ui.home.intro">
+              {access?.homeTexts?.welcomeIntro ||
+                data.network.settings?.bannerDescription ||
+                "Bleib im Gespräch. Entdecke Menschen, Ideen und gemeinsame Chancen – auch zwischen unseren Treffen."}
+            </NetworkText>
           </p>
           {enabled("profiles") && (
             <div className="loungeHeroActions">
               <Link href={`${base}/mitglieder` as never}>
-                Partner entdecken →
+                <NetworkText id="ui.network-dashboard-workspace.cd5868c8b1bdae7a">
+                  Partner entdecken →
+                </NetworkText>
               </Link>
               {!access?.isInitiator && access?.role !== "visitor" && (
                 <Link href={`${base}/profil` as never}>
-                  Meine Partnerseite ↗
+                  <NetworkText id="ui.network-dashboard-workspace.762130b9921be98b">
+                    Meine Partnerseite ↗
+                  </NetworkText>
                 </Link>
               )}
             </div>
           )}
         </div>
-        {!data.network.settings?.bannerImageUrl && <small>Symbolbild</small>}
+        {!data.network.settings?.bannerImageUrl && (
+          <small>
+            <NetworkText id="ui.network-dashboard-workspace.4ac20bf8f99a0af1">
+              Symbolbild
+            </NetworkText>
+          </small>
+        )}
       </section>
       {access && (
         <NetworkSystemMessages
@@ -219,16 +273,47 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
         className={`loungeGrid${["bayer04leverkusen", "bayer-giants"].includes(slug) && enabled("events") ? " loungeGridWithMatchday" : ""}`}
       >
         {["bayer04leverkusen", "bayer-giants"].includes(slug) &&
-          enabled("events") && (preview?<section className="networkCard loungeCard" style={{background:preview.secondaryColor,color:"white",padding:24,textAlign:"center"}}><small>{slug==="bayer04leverkusen"?"Bundesliga":"Bayer Giants"}</small><h2>Spieltag</h2><p>Ergebnisse und Tabelle</p></section>:<NetworkMatchdayCard />)}
+          enabled("events") &&
+          (preview ? (
+            <section
+              className="networkCard loungeCard"
+              style={{
+                background: preview.secondaryColor,
+                color: "white",
+                padding: 24,
+                textAlign: "center",
+              }}
+            >
+              <small>
+                <NetworkText id="ui.network-dashboard-workspace.0ac26d78bd69d1c8">
+                  {slug === "bayer04leverkusen" ? "Bundesliga" : "Bayer Giants"}
+                </NetworkText>
+              </small>
+              <h2>
+                <NetworkText id="ui.network-dashboard-workspace.b86b1055dbb9eb8a">
+                  Spieltag
+                </NetworkText>
+              </h2>
+              <p>
+                <NetworkText id="ui.network-dashboard-workspace.36f4f1f120ee8266">
+                  Ergebnisse und Tabelle
+                </NetworkText>
+              </p>
+            </section>
+          ) : (
+            <NetworkMatchdayCard />
+          ))}
         {enabled("events") && event && (
           <section className="networkCard loungeCard loungeNextEvent">
             <header>
               <h2>
-                {data.upcomingEvents.length
-                  ? "Unser nächstes Treffen"
-                  : event
-                    ? "Letzte Veranstaltung"
-                    : "Unser nächstes Treffen"}
+                <NetworkText id="ui.network-dashboard-workspace.8117f4536ce13e04">
+                  {data.upcomingEvents.length
+                    ? "Unser nächstes Treffen"
+                    : event
+                      ? "Letzte Veranstaltung"
+                      : "Unser nächstes Treffen"}
+                </NetworkText>
               </h2>
               <Link
                 href={`${base}/veranstaltungen` as never}
@@ -253,14 +338,26 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                       <img src={eventImage} alt="" />
                     ) : (
                       <div className="loungeEventPlaceholder">
-                        <span>RAUM FÜR BEGEGNUNGEN</span>
-                        <strong>Persönlich verbunden.</strong>
+                        <span>
+                          <NetworkText id="ui.network-dashboard-workspace.fc89fa716675dce3">
+                            RAUM FÜR BEGEGNUNGEN
+                          </NetworkText>
+                        </span>
+                        <strong>
+                          <NetworkText id="ui.network-dashboard-workspace.640b8e17ea4832d0">
+                            Persönlich verbunden.
+                          </NetworkText>
+                        </strong>
                       </div>
                     )}
                   </div>
                   <h3>{event.title}</h3>
                   {!data.upcomingEvents.length && (
-                    <strong>Bereits stattgefunden</strong>
+                    <strong>
+                      <NetworkText id="ui.network-dashboard-workspace.a44568da6421b189">
+                        Bereits stattgefunden
+                      </NetworkText>
+                    </strong>
                   )}
                   <p className="loungeDate">
                     {new Date(event.startsAt!).toLocaleDateString("de-DE", {
@@ -274,7 +371,9 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                       minute: "2-digit",
                       timeZone: "Europe/Berlin",
                     })}{" "}
-                    Uhr
+                    <NetworkText id="ui.network-dashboard-workspace.4221b9b808159cb2">
+                      Uhr
+                    </NetworkText>
                   </p>
                   <p className="loungeExcerpt">{event.description}</p>
                   <Link
@@ -283,18 +382,28 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                       `${base}/veranstaltungen?event=${encodeURIComponent(event.id)}` as never
                     }
                   >
-                    Treffen ansehen →
+                    <NetworkText id="ui.network-dashboard-workspace.4fbb81d772589609">
+                      Treffen ansehen →
+                    </NetworkText>
                   </Link>
                 </>
               ) : (
                 <div className="loungeEmpty">
-                  <h3>Der nächste Austausch kommt.</h3>
+                  <h3>
+                    <NetworkText id="ui.network-dashboard-workspace.190cd970f22a8494">
+                      Der nächste Austausch kommt.
+                    </NetworkText>
+                  </h3>
                   <p>
-                    Neue Termine findest du hier. Bis dahin kannst du deine
-                    Partner schon persönlich kennenlernen.
+                    <NetworkText id="ui.network-dashboard-workspace.cb2f474e18275309">
+                      Neue Termine findest du hier. Bis dahin kannst du deine
+                      Partner schon persönlich kennenlernen.
+                    </NetworkText>
                   </p>
                   <Link href={`${base}/veranstaltungen` as never}>
-                    Kalender öffnen →
+                    <NetworkText id="ui.network-dashboard-workspace.3c581c67563a2e65">
+                      Kalender öffnen →
+                    </NetworkText>
                   </Link>
                 </div>
               )}
@@ -305,8 +414,16 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
           <section className="networkCard loungeCard loungeMemberHighlight">
             <header>
               <div>
-                <h2>Netzwerk-Mitglieder</h2>
-                <p>Entdecke, wer zu deinem Netzwerk gehört.</p>
+                <h2>
+                  <NetworkText id="ui.network-dashboard-workspace.001b224fb9b1593b">
+                    Netzwerk-Mitglieder
+                  </NetworkText>
+                </h2>
+                <p>
+                  <NetworkText id="ui.network-dashboard-workspace.add127b41119abde">
+                    Entdecke, wer zu deinem Netzwerk gehört.
+                  </NetworkText>
+                </p>
               </div>
               <Link
                 href={`${base}/mitglieder` as never}
@@ -346,10 +463,16 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                   ))
                 ) : (
                   <div className="loungeEmpty">
-                    <h3>Hier beginnt dein Netzwerk.</h3>
+                    <h3>
+                      <NetworkText id="ui.network-dashboard-workspace.f1d54a324f2ff6a2">
+                        Hier beginnt dein Netzwerk.
+                      </NetworkText>
+                    </h3>
                     <p>
-                      Sobald Partner ihre Unternehmensseite eingerichtet haben,
-                      kannst du sie hier entdecken.
+                      <NetworkText id="ui.network-dashboard-workspace.bc28911527b40506">
+                        Sobald Partner ihre Unternehmensseite eingerichtet
+                        haben, kannst du sie hier entdecken.
+                      </NetworkText>
                     </p>
                   </div>
                 )}
@@ -358,7 +481,9 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                 className="loungeOutlineButton"
                 href={`${base}/mitglieder` as never}
               >
-                Alle Partner entdecken →
+                <NetworkText id="ui.network-dashboard-workspace.9866dbd37e9587a8">
+                  Alle Partner entdecken →
+                </NetworkText>
               </Link>
             </div>
           </section>
@@ -370,18 +495,30 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
           >
             <header className="loungeBoardHeading">
               <div>
-                <span>DEIN NETZWERK LEBT</span>
-                <h2 id="noticeboard-title">Das schwarze Brett</h2>
+                <span>
+                  <NetworkText id="ui.network-dashboard-workspace.fc58d6b4f8bbab36">
+                    DEIN NETZWERK LEBT
+                  </NetworkText>
+                </span>
+                <h2 id="noticeboard-title">
+                  <NetworkText id="ui.network-dashboard-workspace.d456e70d0528b350">
+                    Das schwarze Brett
+                  </NetworkText>
+                </h2>
                 <p>
-                  Neuigkeiten, Ideen und Gesprächsstoff – hier bleibt ihr
-                  verbunden.
+                  <NetworkText id="ui.network-dashboard-workspace.2ec9dd8ae7607c0c">
+                    Neuigkeiten, Ideen und Gesprächsstoff – hier bleibt ihr
+                    verbunden.
+                  </NetworkText>
                 </p>
               </div>
               <Link
                 className="loungeOutlineButton"
                 href={`${base}/themen` as never}
               >
-                Alle Beiträge →
+                <NetworkText id="ui.network-dashboard-workspace.c7a09c5d018e3b86">
+                  Alle Beiträge →
+                </NetworkText>
               </Link>
             </header>
             <div className="loungeBoardSurface">
@@ -390,17 +527,55 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                   <button
                     type="button"
                     className={`loungeBoardNote loungeBoardNote${index % 3}`}
-                    onClick={() => typeof item.data.welcomeMembershipId === "string" ? router.push(`${base}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never) : setThreadId(item.id)}
+                    onClick={() =>
+                      typeof item.data.welcomeMembershipId === "string"
+                        ? router.push(
+                            `${base}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never,
+                          )
+                        : setThreadId(item.id)
+                    }
                     key={item.id}
                   >
                     <span className="loungeBoardPin" aria-hidden="true" />
                     <div className="loungeNoteMeta">
-                      <span>{typeof item.data.welcomeMembershipId === "string" ? "Neu im Netzwerk" : "Netzwerkleitung · Angepinnt"}</span>
+                      <span>
+                        <NetworkText id="ui.network-dashboard-workspace.1b9564380e33fad5">
+                          {typeof item.data.welcomeMembershipId === "string"
+                            ? "Neu im Netzwerk"
+                            : "Netzwerkleitung · Angepinnt"}
+                        </NetworkText>
+                      </span>
                       {Date.now() -
                         Date.parse(item.createdAt || item.updatedAt) <
-                        7 * 86400000 && <b>Neu</b>}
+                        7 * 86400000 && (
+                        <b>
+                          <NetworkText id="ui.network-dashboard-workspace.d9b1e13f3b97c8b0">
+                            Neu
+                          </NetworkText>
+                        </b>
+                      )}
                     </div>
-                    <img src={String(item.data.boardImageUrl || itemImage(item) || data.network.settings?.bannerImageUrl || "/images/network-meeting-club.webp")} style={item.data.boardImageIsLogo ? {objectFit:"contain",background:"white",width:"66.6667%",marginInline:"auto",display:"block",maxHeight:"96px"} : undefined} alt="" />
+                    <img
+                      src={String(
+                        item.data.boardImageUrl ||
+                          itemImage(item) ||
+                          data.network.settings?.bannerImageUrl ||
+                          "/images/network-meeting-club.webp",
+                      )}
+                      style={
+                        item.data.boardImageIsLogo
+                          ? {
+                              objectFit: "contain",
+                              background: "white",
+                              width: "66.6667%",
+                              marginInline: "auto",
+                              display: "block",
+                              maxHeight: "96px",
+                            }
+                          : undefined
+                      }
+                      alt=""
+                    />
                     <h3>{item.title}</h3>
                     <p>{item.description}</p>
                     <div className="loungeNoteBottom">
@@ -411,16 +586,26 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                           timeZone: "Europe/Berlin",
                         })}
                       </time>
-                      <span>Beitrag öffnen ↗</span>
+                      <span>
+                        <NetworkText id="ui.network-dashboard-workspace.54e043bdabb639ef">
+                          Beitrag öffnen ↗
+                        </NetworkText>
+                      </span>
                     </div>
                   </button>
                 ))
               ) : (
                 <div className="loungeBoardEmpty">
-                  <strong>Platz für neue Impulse.</strong>
+                  <strong>
+                    <NetworkText id="ui.network-dashboard-workspace.006f6cebf5393796">
+                      Platz für neue Impulse.
+                    </NetworkText>
+                  </strong>
                   <p>
-                    Sobald die Netzwerkleitung einen Beitrag veröffentlicht,
-                    findest du ihn hier am Brett.
+                    <NetworkText id="ui.network-dashboard-workspace.6c1a94ffa41d4f8a">
+                      Sobald die Netzwerkleitung einen Beitrag veröffentlicht,
+                      findest du ihn hier am Brett.
+                    </NetworkText>
                   </p>
                 </div>
               )}
@@ -430,7 +615,11 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
         {enabled("events") && recap && (
           <section className="networkCard loungeCard loungeRecapCard">
             <header>
-              <h2>Gemeinsam erlebt</h2>
+              <h2>
+                <NetworkText id="ui.network-dashboard-workspace.103a665f83dfa37a">
+                  Gemeinsam erlebt
+                </NetworkText>
+              </h2>
               <Link
                 href={`${base}/rueckblicke` as never}
                 aria-label="Alle Rückblicke"
@@ -456,10 +645,16 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                 </>
               ) : (
                 <div className="loungeEmpty">
-                  <h3>Begegnungen, die bleiben.</h3>
+                  <h3>
+                    <NetworkText id="ui.network-dashboard-workspace.b9d05c9b268d4bfb">
+                      Begegnungen, die bleiben.
+                    </NetworkText>
+                  </h3>
                   <p>
-                    Nach gemeinsamen Treffen findest du hier Bilder, Eindrücke
-                    und Rückblicke aus deinem Netzwerk.
+                    <NetworkText id="ui.network-dashboard-workspace.cd5d0c6cfe1ba77a">
+                      Nach gemeinsamen Treffen findest du hier Bilder, Eindrücke
+                      und Rückblicke aus deinem Netzwerk.
+                    </NetworkText>
                   </p>
                 </div>
               )}
@@ -467,7 +662,9 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
                 className="loungeOutlineButton"
                 href={`${base}/rueckblicke` as never}
               >
-                Rückblicke entdecken →
+                <NetworkText id="ui.network-dashboard-workspace.6101c10cb75b2396">
+                  Rückblicke entdecken →
+                </NetworkText>
               </Link>
             </div>
           </section>
@@ -492,7 +689,10 @@ export function NetworkDashboardWorkspace({ slug, preview }: { slug: string; pre
           ))}
         {access?.isInitiator && (
           <Link href={`${base}/einstellungen` as never}>
-            Netzwerk verwalten <span>→</span>
+            <NetworkText id="ui.network-dashboard-workspace.75c7ce68919cf91c">
+              Netzwerk verwalten{" "}
+            </NetworkText>
+            <span>→</span>
           </Link>
         )}
       </nav>

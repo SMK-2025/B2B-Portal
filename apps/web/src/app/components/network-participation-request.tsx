@@ -31,7 +31,11 @@ const money = (cents: number) =>
 const date = (value?: string) =>
   value ? value.split("-").reverse().join(".") : "–";
 export function NetworkParticipationRequest({ network }: { network: string }) {
-  const local = network === "unternehmernetzwerkleverkusen";
+  const local = [
+    "unternehmernetzwerkleverkusen",
+    "unternehmernetzwerkkoeln",
+  ].includes(network);
+  const city = network === "unternehmernetzwerkkoeln" ? "Köln" : "Leverkusen";
   const [step, setStep] = useState(1),
     [busy, setBusy] = useState(false),
     [sent, setSent] = useState(false),
@@ -103,7 +107,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
           network,
           offerVersion: offer.version,
           referral: new URLSearchParams(window.location.search).get("ref"),
-        mailingToken: authorizedMailingToken(),
+          mailingToken: authorizedMailingToken(),
         },
       });
       setSent(true);
@@ -221,7 +225,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
                   Bitte auswählen
                 </option>
                 {local ? (
-                  <option>Unternehmenssitz in Leverkusen</option>
+                  <option>Unternehmenssitz in {city}</option>
                 ) : (
                   <>
                     <option>Hospitality-/VIP-Gast</option>

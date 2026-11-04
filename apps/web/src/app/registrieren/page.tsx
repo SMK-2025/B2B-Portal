@@ -43,7 +43,14 @@ export default function RegistrationPage() {
   const acceptsRequests = [
     "bayer04leverkusen",
     "unternehmernetzwerkleverkusen",
+    "unternehmernetzwerkkoeln",
   ].includes(networkSlug);
+  const cityNetwork = [
+    "unternehmernetzwerkleverkusen",
+    "unternehmernetzwerkkoeln",
+  ].includes(networkSlug);
+  const cityName =
+    networkSlug === "unternehmernetzwerkkoeln" ? "Köln" : "Leverkusen";
   const networkRegistration = Boolean(networkSlug && networkInviteToken),
     networkBrand = useNetworkBrand(networkSlug);
   useEffect(() => {
@@ -277,33 +284,33 @@ export default function RegistrationPage() {
               <h2>
                 <NetworkText
                   id={
-                    networkBrand?.slug === "unternehmernetzwerkleverkusen"
+                    cityNetwork
                       ? "ui.auth.leverkusen.story-title-first"
                       : "ui.page.bbdf4d619209c904"
                   }
                 >
-                  {networkBrand?.slug === "unternehmernetzwerkleverkusen"
+                  {cityNetwork
                     ? "Eine Stadt voller Unternehmen."
                     : "Gemeinsam mehr erreichen."}
                 </NetworkText>
                 <br />
                 <NetworkText
                   id={
-                    networkBrand?.slug === "unternehmernetzwerkleverkusen"
+                    cityNetwork
                       ? "ui.auth.leverkusen.story-title-second"
                       : "ui.page.640b8e17ea4832d0"
                   }
                 >
-                  {networkBrand?.slug === "unternehmernetzwerkleverkusen"
+                  {cityNetwork
                     ? "Und du bist mittendrin!"
                     : "Persönlich verbunden."}
                 </NetworkText>
               </h2>
               <p>
-                {networkBrand?.slug === "unternehmernetzwerkleverkusen" ? (
+                {cityNetwork ? (
                   <NetworkText id="ui.auth.leverkusen.story-intro">
                     <strong>
-                      Das Unternehmernetzwerk Leverkusen ist dein
+                      Das Unternehmernetzwerk {cityName} ist dein
                       Online-Treffpunkt für geschäftliche Kontakte vor Ort.
                     </strong>{" "}
                     Ein unabhängiges B2B-Netzwerk, in dem du dein Unternehmen
@@ -329,7 +336,7 @@ export default function RegistrationPage() {
                   </>
                 )}
               </p>
-              {networkBrand?.slug === "unternehmernetzwerkleverkusen" ? (
+              {cityNetwork ? (
                 <p>
                   <NetworkText id="ui.auth.leverkusen.story-action">
                     Registriere dich und erstelle deine persönliche

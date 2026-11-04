@@ -19,12 +19,25 @@ function contrast(hex: string) {
     : "#ffffff";
 }
 
-export function LeverkusenBrand({ children }: { children: ReactNode }) {
-  const [brand, setBrand] = useState({ primary: "#0723f2", dark: "#000000" });
+export function LeverkusenBrand({
+  children,
+  networkSlug = "unternehmernetzwerkleverkusen",
+  primaryColor = "#0723f2",
+  secondaryColor = "#000000",
+}: {
+  children: ReactNode;
+  networkSlug?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+}) {
+  const [brand, setBrand] = useState({
+    primary: primaryColor,
+    dark: secondaryColor,
+  });
   useEffect(() => {
     let active = true;
     void portalRequest<Brand>(
-      "/networks/branding/unternehmernetzwerkleverkusen",
+      `/networks/branding/${encodeURIComponent(networkSlug)}`,
     )
       .then((data) => {
         if (active)
@@ -43,7 +56,7 @@ export function LeverkusenBrand({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [networkSlug]);
   const style = {
     "--lev-brand": brand.primary,
     "--lev-dark": brand.dark,

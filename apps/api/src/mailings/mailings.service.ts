@@ -331,7 +331,9 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         web +
         (n.slug === "unternehmernetzwerkleverkusen"
           ? "/Leverkusen"
-          : `/registrieren?network=${encodeURIComponent(n.slug)}`),
+          : n.slug === "unternehmernetzwerkkoeln"
+            ? "/Koeln"
+            : `/registrieren?network=${encodeURIComponent(n.slug)}`),
       register: web + `/registrieren?network=${encodeURIComponent(n.slug)}`,
     };
   }

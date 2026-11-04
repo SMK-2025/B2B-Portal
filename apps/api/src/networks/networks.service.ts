@@ -1130,6 +1130,7 @@ export class NetworksService {
         isRequest = [
           "bayer04leverkusen",
           "unternehmernetzwerkleverkusen",
+          "unternehmernetzwerkkoeln",
         ].includes(n.slug);
       r = {
         id: key,
@@ -1161,7 +1162,11 @@ export class NetworksService {
       "/registrieren?network=" +
       encodeURIComponent(n.slug) +
       "&" +
-      (["bayer04leverkusen", "unternehmernetzwerkleverkusen"].includes(n.slug)
+      ([
+        "bayer04leverkusen",
+        "unternehmernetzwerkleverkusen",
+        "unternehmernetzwerkkoeln",
+      ].includes(n.slug)
         ? "ref"
         : "invite") +
       "=" +
@@ -1259,7 +1264,11 @@ export class NetworksService {
       (n) => n.slug === slug && n.status === "active",
     );
     if (
-      !["bayer04leverkusen", "unternehmernetzwerkleverkusen"].includes(slug) ||
+      ![
+        "bayer04leverkusen",
+        "unternehmernetzwerkleverkusen",
+        "unternehmernetzwerkkoeln",
+      ].includes(slug) ||
       !network
     )
       throw new BadRequestException(
@@ -1283,9 +1292,11 @@ export class NetworksService {
   }
   async requestParticipation(input: Record<string, unknown>) {
     if (
-      !["bayer04leverkusen", "unternehmernetzwerkleverkusen"].includes(
-        String(input.network),
-      )
+      ![
+        "bayer04leverkusen",
+        "unternehmernetzwerkleverkusen",
+        "unternehmernetzwerkkoeln",
+      ].includes(String(input.network))
     )
       throw new ForbiddenException(
         "Teilnahmeanfragen sind für dieses Netzwerk nicht verfügbar.",
@@ -1320,8 +1331,14 @@ export class NetworksService {
     );
     if (
       !(
-        network.slug === "unternehmernetzwerkleverkusen"
-          ? ["Unternehmenssitz in Leverkusen"]
+        ["unternehmernetzwerkleverkusen", "unternehmernetzwerkkoeln"].includes(
+          network.slug,
+        )
+          ? [
+              network.slug === "unternehmernetzwerkkoeln"
+                ? "Unternehmenssitz in Köln"
+                : "Unternehmenssitz in Leverkusen",
+            ]
           : [
               "Hospitality-/VIP-Gast",
               "Unternehmenspartner/Sponsor",

@@ -42,6 +42,7 @@ import {
   resetTestMember,
 } from "./retire-legacy-initiator";
 import type { MailingCampaign, MailingLead } from "../mailings/mailing.types";
+import { provisionKoeln } from "./provision-koeln";
 
 @Injectable()
 export class PortalStore implements OnModuleInit, OnApplicationShutdown {
@@ -119,6 +120,9 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     });
     await this.runMigrations();
     await this.restore();
+    if (process.env.NODE_ENV === "production" && provisionKoeln(this)) {
+      await this.persist();
+    }
     const billingUpdate = "bayer04-season-january-2027-v1";
     if (!this.maintenanceReceipts.has(billingUpdate)) {
       const network = [...this.networks.values()].find(

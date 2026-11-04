@@ -22,13 +22,19 @@ const money = (c: number) =>
   );
 const date = (d: string) =>
   new Date(d + "T12:00:00").toLocaleDateString("de-DE");
-export function LeverkusenOffer({ requestHref }: { requestHref: string }) {
+export function LeverkusenOffer({
+  requestHref,
+  networkSlug = "unternehmernetzwerkleverkusen",
+}: {
+  requestHref: string;
+  networkSlug?: string;
+}) {
   const [offer, setOffer] = useState<Offer | null>(null),
     [error, setError] = useState(false);
   useEffect(() => {
     let current = true;
     void portalRequest<Offer>(
-      "/networks/participation/quote/unternehmernetzwerkleverkusen",
+      `/networks/participation/quote/${encodeURIComponent(networkSlug)}`,
     )
       .then((o) => {
         if (current) setOffer(o);
@@ -39,7 +45,7 @@ export function LeverkusenOffer({ requestHref }: { requestHref: string }) {
     return () => {
       current = false;
     };
-  }, []);
+  }, [networkSlug]);
   return (
     <aside className="levOffer" aria-label="Aktuelle Teilnahmebedingungen">
       <span className="levEyebrow">DEINE NETZWERKTEILNAHME</span>

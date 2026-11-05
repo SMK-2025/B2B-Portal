@@ -1,4 +1,5 @@
 "use client";
+import { NetworkText } from "./network-text-editor";
 import { useEffect, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
@@ -79,7 +80,7 @@ export function MemberBillingAccount({historyNetwork}: {historyNetwork?:{id:stri
   }
   if(!networkId&&networks.length)return <div className="accountBillingList">{networks.map(n=><MemberBillingAccount key={n.id} historyNetwork={n}/>)}</div>;
   return <section className="accountPanel">
-    <header className="accountPanelHeader"><span className="accountPanelIcon"><AccountIcon name="receipt"/></span><div><h3>{name||"Deine Mitgliedschaften"}</h3><p>Laufzeit und Abrechnung deines Zugangs.</p></div></header>
+    <header className="accountPanelHeader"><span className="accountPanelIcon"><AccountIcon name="receipt"/></span><div><h3><NetworkText id="ui.account.membership.network-name">{name||"Deine Mitgliedschaften"}</NetworkText></h3><p>Laufzeit und Abrechnung deines Zugangs.</p></div></header>
     {notice&&<div className="accountPanelBody"><p className="accountNotice" role="status">{notice}</p><button type="button" className="accountButton secondary" onClick={()=>void load()}>Erneut laden</button></div>}
     {loading?<div className="accountEmpty" role="status"><p>Mitgliedschaft wird geladen …</p></div>:orders.length?<>
       {orderCard(orders[0])}

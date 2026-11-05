@@ -1,4 +1,5 @@
 "use client";
+import { PartnerDocumentsEditor, type PartnerDocument } from "./partner-documents";
 import { NetworkText } from "./network-text-editor";
 
 import {
@@ -17,6 +18,7 @@ import { PartnerEditablePreview } from "./partner-editable-preview";
 import type { PartnerPageProfile } from "./network-members-workspace";
 
 type Profile = {
+  documents?: PartnerDocument[];
   heroImageUrl?: string | null;
   sections?: Array<{ title: string; body: string; area?: string }>;
   personalMessage?: string;
@@ -75,6 +77,8 @@ export function NetworkProfileWorkspace({
     [data, setData] = useState<Response | null>(null),
     [logo, setLogo] = useState<string | null>(null),
     [hero, setHero] = useState<string | null>(null),
+    [documents, setDocuments] = useState<PartnerDocument[]>([]),
+    [readingDocuments, setReadingDocuments] = useState(false),
     [sections, setSections] = useState<
       Array<{ title: string; body: string; area?: string }>
     >([]),
@@ -93,6 +97,7 @@ export function NetworkProfileWorkspace({
         setLogo(value.profile?.logoUrl || null);
         setHero(value.profile?.heroImageUrl || null);
         setSections(value.profile?.sections || []);
+        setDocuments(value.profile?.documents || []);
       })
       .catch((error) =>
         setNotice(
@@ -153,6 +158,7 @@ export function NetworkProfileWorkspace({
     reader.readAsDataURL(file);
   }
   async function save(formElement: HTMLFormElement, publish: boolean) {
+    if (readingDocuments || busy) return;
     const token = getPortalSession();
     if (!token || !networkId) return;
     const form = new FormData(formElement);
@@ -178,6 +184,7 @@ export function NetworkProfileWorkspace({
           logoUrl: logo,
           heroImageUrl: hero,
           sections,
+          documents,
           personalMessage: form.get("personalMessage"),
           offers: form.get("offers"),
           lookingFor: form.get("lookingFor"),
@@ -207,6 +214,7 @@ export function NetworkProfileWorkspace({
   }
   async function importWebsite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (readingDocuments) return;
     const input = new FormData(event.currentTarget),
       token = getPortalSession();
     if (!token || !networkId) return;
@@ -310,6 +318,7 @@ export function NetworkProfileWorkspace({
       websiteUrl: String(fields.websiteUrl || ""),
       logoUrl: logo,
       heroImageUrl: hero,
+      documents,
       sections,
     } as PartnerPageProfile);
   }
@@ -327,6 +336,7 @@ export function NetworkProfileWorkspace({
     setHero(saved.heroImageUrl || null);
     setLogo(saved.logoUrl);
     setSections(saved.sections || []);
+    setDocuments(saved.documents || []);
     for (const [key, value] of Object.entries(saved)) {
       const element = profileForm.current?.elements.namedItem(key);
       if (
@@ -1047,6 +1057,10 @@ export function NetworkProfileWorkspace({
                     />
                   </label>
                 </div>
+              </section>
+              <section className="networkCard" hidden={step !== 1}>
+                <header><div><h2>Präsentationen & Unterlagen</h2><p>Ergänze deine Leistungen mit PDF-Dokumenten auf deiner Unternehmensseite.</p></div></header>
+                <div className="networkCardBody"><PartnerDocumentsEditor value={documents} onChange={setDocuments} disabled={busy || !data.canEdit} onBusyChange={setReadingDocuments}/></div>
               </section>
               <section
                 className="networkCard"

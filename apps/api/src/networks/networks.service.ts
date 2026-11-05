@@ -2785,7 +2785,28 @@ export class NetworksService {
           notification.data.welcomeMail = "pending";
       }
     }
+    this.syncProfileOffer(networkId, membership.id, organization.id, user.id, profile);
     return profile;
+  }
+  private syncProfileOffer(networkId: string, membershipId: string, organizationId: string, userId: string, profile: NetworkPartnerProfile) {
+    const key = "profile-offer:" + networkId + ":" + organizationId;
+    const description = [profile.offers || "", ...(profile.sections || []).filter(s => s.area === "offers").map(s => s.title + "\n" + s.body)].filter(Boolean).join("\n\n");
+    const existing = this.store.networkContents.get(key);
+    if (profile.status !== "published" || !description.trim()) {
+      if (existing) { existing.status = "archived"; existing.updatedAt = new Date().toISOString(); }
+      return;
+    }
+    const title = "Angebot von " + profile.companyName;
+    if (existing?.status === "published" && existing.title === title && existing.description === description) return;
+    const now = new Date().toISOString();
+    const post: NetworkContentRecord = { id: key, networkId, type: "announcement", status: "published", visibility: "members", title, description, createdByUserId: userId, assignedToUserId: null, startsAt: null, endsAt: null,
+      data: { category: "Angebot eines Mitglieds", partnerMembershipId: membershipId, profileArea: "offers" }, createdAt: existing?.createdAt || now, updatedAt: now };
+    this.store.networkContents.set(key, post);
+    this.notifyContent(post, userId, "network.member.offer");
+    for (const notification of this.store.notifications.filter(n => n.data.contentId === key)) {
+      notification.data.partnerMembershipId = membershipId;
+      notification.data.profileArea = "offers";
+    }
   }
   private writePartnerProfile(
     organization: OrganizationRecord,
@@ -2820,7 +2841,19 @@ export class NetworksService {
         : typeof value === "string"
           ? value.trim().slice(0, max)
           : "";
+    const documents = input.documents === undefined ? previous?.documents || [] : (() => {
+      if (!Array.isArray(input.documents) || input.documents.length > 5)
+        throw new BadRequestException("Bitte höchstens fünf PDF-Dokumente hinterlegen.");
+      return input.documents.map((file) => {
+        if (!file || typeof file !== "object" || (file as Record<string, unknown>).mimeType !== "application/pdf")
+          throw new BadRequestException("Unternehmensunterlagen müssen PDF-Dateien sein.");
+        const checked = this.checkedAttachment(file);
+        const existing = previous?.documents?.find(d => d.dataUrl === checked.dataUrl && d.name === checked.name);
+        return { ...checked, id: existing?.id || checked.id };
+      });
+    })();
     const profile: NetworkPartnerProfile = {
+      documents,
       heroImageUrl:
         input.heroImageUrl === undefined
           ? previous?.heroImageUrl || null
@@ -3134,10 +3167,10 @@ export class NetworksService {
     if (item.type !== "topic" && item.type !== "announcement") return item;
     const network = this.raw(item.networkId);
     const membership =
-      typeof item.data.welcomeMembershipId === "string"
+      typeof (item.data.welcomeMembershipId || item.data.partnerMembershipId) === "string"
         ? this.store.networkMemberships.find(
             (m) =>
-              m.id === item.data.welcomeMembershipId &&
+              m.id === (item.data.welcomeMembershipId || item.data.partnerMembershipId) &&
               m.networkId === item.networkId &&
               m.status === "active",
           )

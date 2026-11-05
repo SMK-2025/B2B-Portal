@@ -6,6 +6,40 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("validates private partner PDF documents, preserves omitted uploads and rejects forged or excessive files", async () => {
+    const f=await fixture(); f.orgs.create(f.member,f.input,true);
+    const bytes=Buffer.from("%PDF-1.7\nTest document");
+    const pdf={name:"Präsentation.pdf",mimeType:"application/pdf",size:bytes.length,dataUrl:"data:application/pdf;base64,"+bytes.toString("base64")};
+    const saved=f.networks.updateOwnProfile(f.member,f.network.id,{publish:false,documents:[pdf]});
+    expect(saved.documents).toHaveLength(1);
+    const id=saved.documents![0].id;
+    expect(f.networks.updateOwnProfile(f.member,f.network.id,{publish:false}).documents![0].id).toBe(id);
+    expect(f.networks.updateOwnProfile(f.member,f.network.id,{publish:false,documents:[pdf]}).documents![0].id).toBe(id);
+    for(const documents of [[{...pdf,mimeType:"text/html"}],[{...pdf,size:1}],Array(6).fill(pdf),[{...pdf,dataUrl:"data:application/pdf;base64,YWJj",size:3}]])
+      expect(()=>f.networks.updateOwnProfile(f.member,f.network.id,{publish:false,documents})).toThrow();
+    expect(f.networks.ownProfile(f.member,f.network.id).profile!.documents![0].id).toBe(id);
+    expect(()=>f.networks.updateOwnProfile(f.owner,f.network.id,{documents:[]})).toThrow();
+    expect(f.networks.updateOwnProfile(f.member,f.network.id,{publish:false,documents:[]}).documents).toEqual([]);
+  });
+  it("announces published company offers once per change only inside their network with a partner-page target and logo", async () => {
+    const f=await fixture(); f.orgs.create(f.member,f.input,true);
+    const profile={publish:true,companyName:"Angebot GmbH",tagline:"Hallo Netzwerk",description:"Wir helfen Unternehmen vor Ort.",services:"Persönliche Beratung",
+      street:"Beispielweg 1",postalCode:"51371",city:"Leverkusen",country:"Deutschland",contactName:"Anna Beispiel",contactPosition:"Inhaberin",contactPhone:"02140000",contactEmail:"angebot@example.test",
+      logoUrl:"https://example.test/logo.png",offers:"Beratung zum Kennenlernen"};
+    f.networks.updateOwnProfile(f.member,f.network.id,{...profile,publish:false});
+    expect([...f.store.networkContents.values()].some(i=>i.data.partnerMembershipId)).toBe(false);
+    f.networks.updateOwnProfile(f.member,f.network.id,profile);
+    f.networks.updateOwnProfile(f.member,f.network.id,profile);
+    let posts=f.networks.listContent(f.member,f.network.id,"noticeboard").filter(i=>i.data.partnerMembershipId);
+    expect(posts).toHaveLength(1); expect(posts[0]).toMatchObject({networkId:f.network.id,visibility:"members",data:{profileArea:"offers",boardImageUrl:profile.logoUrl,boardImageIsLogo:true}});
+    const key=posts[0].id;
+    f.networks.updateOwnProfile(f.member,f.network.id,{...profile,offers:"Neues Angebot"});
+    posts=f.networks.listContent(f.member,f.network.id,"noticeboard").filter(i=>i.data.partnerMembershipId);
+    expect(posts).toHaveLength(1); expect(posts[0].id).toBe(key); expect(posts[0].description).toBe("Neues Angebot");
+    expect(f.store.notifications.filter(n=>n.type==="network.member.offer").every(n=>n.data.networkId===f.network.id&&!n.data.welcomeMail)).toBe(true);
+    f.networks.updateOwnProfile(f.member,f.network.id,{...profile,offers:""});
+    expect(f.networks.listContent(f.member,f.network.id,"noticeboard").some(i=>i.id===key)).toBe(false);
+  });
   it("does not create a personal invoice for centrally funded service members",async()=>{
     const f=await fixture();f.network.settings.memberPaymentModel="network";
     const input={firstName:"Test",lastName:"Zentral",legalName:"Zentrale GmbH",email:"central-test@example.test",reference:"Auftragsmail vom 01.11.",confirmed:true,central:true};

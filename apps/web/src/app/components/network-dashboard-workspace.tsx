@@ -528,9 +528,9 @@ export function NetworkDashboardWorkspace({
                     type="button"
                     className={`loungeBoardNote loungeBoardNote${index % 3}`}
                     onClick={() =>
-                      typeof item.data.welcomeMembershipId === "string"
+                      typeof (item.data.welcomeMembershipId || item.data.partnerMembershipId) === "string"
                         ? router.push(
-                            `${base}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never,
+                            `${base}/mitglieder?profil=${encodeURIComponent(String(item.data.welcomeMembershipId || item.data.partnerMembershipId))}${item.data.partnerMembershipId ? "&rubrik=offers" : ""}` as never,
                           )
                         : setThreadId(item.id)
                     }
@@ -542,7 +542,7 @@ export function NetworkDashboardWorkspace({
                         <NetworkText id="ui.network-dashboard-workspace.1b9564380e33fad5">
                           {typeof item.data.welcomeMembershipId === "string"
                             ? "Neu im Netzwerk"
-                            : "Netzwerkleitung · Angepinnt"}
+                            : item.data.partnerMembershipId ? "Angebot eines Mitglieds" : "Netzwerkleitung · Angepinnt"}
                         </NetworkText>
                       </span>
                       {Date.now() -
@@ -679,7 +679,6 @@ export function NetworkDashboardWorkspace({
       <nav className="loungeQuickAccess" aria-label="Weitere Partnerbereiche">
         {[
           ["kommunikation", "PartnerChat", "communication"],
-          ["dokumente", "Dokumente", "documents"],
         ]
           .filter(([, , module]) => enabled(module))
           .map(([path, label]) => (

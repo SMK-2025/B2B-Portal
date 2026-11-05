@@ -1,4 +1,5 @@
 "use client";
+import { PartnerDocumentsEditor } from "./partner-documents";
 import { useState, type FormEvent } from "react";
 import {
   ProfileDialog,
@@ -67,6 +68,7 @@ const groups: Record<string, { title: string; fields: Field[] }> = {
       { key: "lookingFor", label: "Das suchst du", multiline: true, max: 2000 },
     ],
   },
+  documents: { title: "Präsentationen & Unterlagen bearbeiten", fields: [] },
   contact: {
     title: "Kontakt und Terminbuchung",
     fields: [
@@ -100,7 +102,8 @@ export function PartnerEditablePreview({
     [readingImage, setReadingImage] = useState(false),
     [message, setMessage] = useState("");
   const [hero, setHero] = useState(initial.heroImageUrl || null),
-    [logo, setLogo] = useState(initial.logoUrl);
+    [logo, setLogo] = useState(initial.logoUrl),
+    [documents, setDocuments] = useState(initial.documents || []);
   function close() {
     if (
       !busy &&
@@ -159,6 +162,7 @@ export function PartnerEditablePreview({
           fields.map((field) => [field.key, String(form.get(field.key) || "")]),
         ),
       };
+      if (area === "documents") next = { ...next, documents };
       if (area === "hero")
         next = { ...next, heroImageUrl: hero, logoUrl: logo };
     }
@@ -210,6 +214,7 @@ export function PartnerEditablePreview({
               return;
             setHero(draft.heroImageUrl || null);
             setLogo(draft.logoUrl);
+            setDocuments(draft.documents || []);
             setEditing(area);
             setMessage("");
           }}
@@ -261,6 +266,7 @@ export function PartnerEditablePreview({
                 )}
               </label>
             ))}
+            {area === "documents" && <div className="partnerEditWide"><PartnerDocumentsEditor value={documents} onChange={setDocuments} disabled={busy} onBusyChange={setReadingImage}/></div>}
             {area === "hero" && (
               <div className="partnerEditImages">
                 {[

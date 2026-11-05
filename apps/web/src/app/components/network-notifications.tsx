@@ -17,6 +17,7 @@ export function NetworkNotifications() {
         data: {
           contentId?: string;
           welcomeMembershipId?: string;
+          partnerMembershipId?: string;
           creditMonths?: number;
           connectionId?: string;
           title: string;
@@ -104,10 +105,10 @@ export function NetworkNotifications() {
               key={i.id}
               className={`networkNewsItem ${!i.readAt ? "unread" : ""} ${i.data.event ? "networkNewsEvent" : ""}`}
               onClick={() => {
-                if (i.data.welcomeMembershipId && access) {
+                if ((i.data.welcomeMembershipId || i.data.partnerMembershipId) && access) {
                   setOpen(false);
                   router.push(
-                    `/portal/netzwerk/${access.slug}/mitglieder?profil=${encodeURIComponent(i.data.welcomeMembershipId)}` as never,
+                    `/portal/netzwerk/${access.slug}/mitglieder?profil=${encodeURIComponent(String(i.data.welcomeMembershipId || i.data.partnerMembershipId))}${i.data.partnerMembershipId ? "&rubrik=offers" : ""}` as never,
                   );
                   return;
                 }

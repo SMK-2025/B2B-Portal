@@ -211,7 +211,7 @@ describe("homepage publication", () => {
     ).toBeNull();
   });
   it("projects an allowlist without private metadata", () => {
-    const result = projectHomepage("members", member, profile);
+    const result = projectHomepage("members", member, { ...profile, documents: [{id:"private-doc",name:"Internal-secret.pdf",mimeType:"application/pdf",size:4,dataUrl:"data:application/pdf;base64,c2VjcmV0"}] });
     expect(result?.title).toContain("TESTDATEN");
     expect(JSON.stringify(result)).not.toMatch(
       /secret|approvedBy|organizationId|userId|networkId/,

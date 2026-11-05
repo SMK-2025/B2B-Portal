@@ -742,6 +742,7 @@ export function NetworkModuleWorkspace({
               item.data.imageUrl ||
               item.data.coverImageUrl;
             const welcome = typeof item.data.welcomeMembershipId === "string";
+            const partner = item.data.welcomeMembershipId || item.data.partnerMembershipId;
             const date = new Date(item.createdAt || item.updatedAt);
             return (
               <article
@@ -753,9 +754,9 @@ export function NetworkModuleWorkspace({
                   className="boardStoryOpen"
                   type="button"
                   onClick={() =>
-                    welcome
+                    typeof partner === "string"
                       ? router.push(
-                          `/portal/netzwerk/${slug}/mitglieder?profil=${encodeURIComponent(item.data.welcomeMembershipId)}` as never,
+                          `/portal/netzwerk/${slug}/mitglieder?profil=${encodeURIComponent(String(partner))}${item.data.partnerMembershipId ? "&rubrik=offers" : ""}` as never,
                         )
                       : setThreadId(item.id)
                   }

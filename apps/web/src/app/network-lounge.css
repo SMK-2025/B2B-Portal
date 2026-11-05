@@ -71,11 +71,11 @@
 .networkHorizontalNavigation {background:#f4f6f8;box-shadow:0 4px 16px #1223380c;}
 .networkPrimaryTabs {gap:8px;padding-block:10px;}
 @media (min-width:901px) {
-  .networkPrimaryTabs {display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));align-items:stretch;}
+  .networkPrimaryTabs {display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));align-items:stretch;}
   .networkPrimaryTabs > span {display:flex;min-width:0;}
   .networkPrimaryTabs a,.networkPrimaryTabs button {width:100%;box-sizing:border-box;justify-content:center;text-align:center;}
 }
-.networkPrimaryTabs a,.networkPrimaryTabs button {border:1px solid #dbe2e8;border-radius:12px;background:#fff;color:#23394b;font-weight:600;box-shadow:0 1px 3px #14273909;}
+.networkPrimaryTabs a,.networkPrimaryTabs button {border:1px solid #dbe2e8;border-radius:10px;background:#fff;color:#23394b;font-weight:600;box-shadow:0 1px 3px #14273909;padding:9px 10px;font-size:14px;min-height:42px;}
 .networkPrimaryTabs a.active,.networkPrimaryTabs button[aria-expanded="true"] {background:#182c3c;color:white;border-color:#182c3c;box-shadow:inset 0 -3px var(--network-accent);}
 .networkPrimaryTabs a:focus-visible,.networkSecondaryTabs a:focus-visible {outline-offset:2px;}
 .networkSecondaryTabs {padding:8px 12px;margin-bottom:8px;background:white;border:1px solid #dbe2e8;border-radius:12px;}

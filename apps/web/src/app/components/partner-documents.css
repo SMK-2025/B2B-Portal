@@ -1,0 +1,10 @@
+.partnerDocumentList,.partnerDocumentEditor{display:grid;gap:12px;margin-top:20px}
+.partnerDocument{display:flex;align-items:center;gap:12px;text-align:left;width:100%;padding:14px;border:1px solid #dce3ed;border-radius:12px;background:#fff;color:#163047;min-width:0;font:inherit}
+.partnerDocument>span:nth-child(2){flex:1;min-width:0}.partnerDocument strong{display:block;overflow-wrap:anywhere;font-size:15px}.partnerDocument small{display:block;margin-top:4px;color:#60748b;font-size:13px}
+.partnerDocumentIcon{font-size:11px;font-weight:700;background:#f1f4f8;border-radius:8px;padding:12px 8px}
+.partnerDocumentEditor p{font-size:15px;line-height:1.6;margin:0}
+.partnerDocumentUpload{display:grid;gap:10px;padding:18px;border:1px dashed #a8b7c9;border-radius:12px;background:#f7f9fc;font-size:15px;cursor:pointer}
+.partnerDocumentUpload input{max-width:100%;font-size:14px}
+.partnerDocumentEditor button{border:1px solid #dce3ed;background:white;padding:8px;border-radius:8px;color:#163047;font:inherit;font-size:13px}
+.partnerDocument:focus-visible,.partnerDocumentEditor button:focus-visible{outline:3px solid #6674ef;outline-offset:2px}
+@media(max-width:480px){.partnerDocument{gap:8px;padding:10px}.partnerDocumentEditor button{font-size:12px}}

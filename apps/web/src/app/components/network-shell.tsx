@@ -129,28 +129,13 @@ const primaryPartnerItems = [
     icon: "✉",
     module: "communication",
   },
+  { path: "rueckblicke", label: "Rückblicke", icon: "◫", module: "events" },
   {
     path: "profil",
     label: "Meine Partnerseite",
     icon: "▣",
     module: "profiles",
   },
-];
-const morePartnerItems = [
-  {
-    path: "rueckblicke",
-    label: "Veranstaltungsrückblicke",
-    icon: "◫",
-    module: "events",
-  },
-  {
-    path: "angebote",
-    label: "Anfragen & Angebote",
-    icon: "◇",
-    module: "services",
-  },
-  { path: "aufgaben", label: "Aufgaben", icon: "✓", module: "tasks" },
-  { path: "dokumente", label: "Dokumente", icon: "▤", module: "documents" },
 ];
 const adminItems = [
   { path: "einstellungen", label: "Branding & Einstellungen", icon: "⚙" },
@@ -244,7 +229,7 @@ function NetworkFrame({
     router = useRouter(),
     [account, setAccount] = useState(false),
     [mobileOpen, setMobileOpen] = useState(false),
-    [navPanel, setNavPanel] = useState<"admin" | "more" | null>(null),
+    [navPanel, setNavPanel] = useState<"admin" | null>(null),
     [access, setAccess] = useState<Access | null>(null),
     [error, setError] = useState(""),
     [trialAcknowledged, setTrialAcknowledged] = useState(false),
@@ -354,8 +339,7 @@ function NetworkFrame({
       ].includes(section || "")
     )
       setNavPanel("admin");
-    else if (morePartnerItems.some((item) => item.path === section))
-      setNavPanel("more");
+    else setNavPanel(null);
   }, [pathname]);
   useEffect(() => {
     if (!access) return;
@@ -421,7 +405,6 @@ function NetworkFrame({
           item.path === "profil"
         ),
     ),
-    visibleMore = morePartnerItems.filter(moduleVisible),
     visibleAdmin = adminItems.filter(
       (item) => !item.module || access.enabledModules.includes(item.module),
     ),
@@ -575,6 +558,8 @@ function NetworkFrame({
                       </NetworkText>
                     </Link>
                   ) : null}
+                  <a href="mailto:service@b2b-matching.de"><NetworkText id="ui.network-shell.5109b38afaef193f">Hilfe & Kontakt</NetworkText></a>
+                  {!access.readOnly && access.role !== "platform_admin" && <NetworkReferralButton key={access.networkId} networkId={access.networkId}/>}
                   <button type="button" onClick={logout}>
                     <NetworkText id="ui.network-shell.545f8be33bf06a1c">
                       Abmelden
@@ -594,20 +579,6 @@ function NetworkFrame({
                   {itemLink(item)}
                 </span>
               ))}
-              {(visibleMore.length > 0 ||
-                (!access.readOnly && access.role !== "platform_admin")) && (
-                <button
-                  type="button"
-                  aria-expanded={navPanel === "more"}
-                  onClick={() =>
-                    setNavPanel(navPanel === "more" ? null : "more")
-                  }
-                >
-                  <NetworkText id="ui.network-shell.f28a82cfc95336f9">
-                    Weitere Funktionen ▾
-                  </NetworkText>
-                </button>
-              )}
               {access.isInitiator && (
                 <button
                   type="button"
@@ -623,18 +594,12 @@ function NetworkFrame({
                 </button>
               )}
             </nav>
-            {navPanel && (navPanel !== "admin" || access.isInitiator) && (
+            {navPanel === "admin" && access.isInitiator && (
               <nav
                 className="networkSecondaryTabs"
-                aria-label={
-                  navPanel === "admin"
-                    ? "Netzwerkverwaltung"
-                    : "Weitere Funktionen"
-                }
+                aria-label="Netzwerkverwaltung"
               >
-                {(navPanel === "admin" ? visibleAdmin : visibleMore).map(
-                  itemLink,
-                )}
+                {visibleAdmin.map(itemLink)}
                 {navPanel === "admin" && slug === "unternehmerfreunde" && (
                   <Link
                     href={`${base}/veroeffentlichungen` as never}
@@ -645,19 +610,7 @@ function NetworkFrame({
                     </NetworkText>
                   </Link>
                 )}
-                <a href="mailto:service@b2b-matching.de">
-                  <NetworkText id="ui.network-shell.5109b38afaef193f">
-                    Hilfe & Kontakt
-                  </NetworkText>
-                </a>
-                {navPanel === "more" &&
-                  !access.readOnly &&
-                  access.role !== "platform_admin" && (
-                    <NetworkReferralButton
-                      key={access.networkId}
-                      networkId={access.networkId}
-                    />
-                  )}
+
               </nav>
             )}
           </div>

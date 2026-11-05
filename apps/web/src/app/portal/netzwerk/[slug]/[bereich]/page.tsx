@@ -1,5 +1,5 @@
 import { HomepageProfileConsent } from "../../../../components/homepage-profile-consent";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { NetworkShell } from "../../../../components/network-shell";
 import { NetworkModuleWorkspace } from "../../../../components/network-module-workspace";
 import { NetworkMembersWorkspace } from "../../../../components/network-members-workspace";
@@ -73,7 +73,10 @@ export default async function Page({
 }: {
   params: Promise<{ slug: string; bereich: string }>;
 }) {
-  const { slug, bereich } = await params,
+  const { slug, bereich } = await params;
+  if (["angebote", "dokumente"].includes(bereich)) redirect(`/portal/netzwerk/${encodeURIComponent(slug)}/profil`);
+  if (bereich === "aufgaben") redirect(`/portal/netzwerk/${encodeURIComponent(slug)}`);
+  const
     page = pages[bereich];
   if (!page) notFound();
   const name = slug

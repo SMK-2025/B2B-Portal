@@ -1,4 +1,5 @@
 "use client";
+import { PartnerDocuments, type PartnerDocument } from "./partner-documents";
 import { NetworkText } from "./network-text-editor";
 import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
@@ -16,6 +17,7 @@ import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
 import { PartnerBusinessCard } from "./partner-business-card";
 export type PartnerPageProfile = {
+  documents?: PartnerDocument[];
   heroImageUrl?: string | null;
   sections?: Array<{ title: string; body: string; area?: string }>;
   personalMessage?: string;
@@ -470,7 +472,7 @@ export function ProfileDialog({
 }) {
   const access = useNetworkAccess();
   const p = member.organization!.networkProfile!;
-  const [activeArea, setActiveArea] = useState("about"),
+  const [activeArea, setActiveArea] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("rubrik") === "offers" ? "offers" : "about"),
     [menuOpen, setMenuOpen] = useState(false);
   const areas = [
     { id: "about", label: "Vorstellung" },
@@ -713,6 +715,11 @@ export function ProfileDialog({
                 </p>
               )}
             </section>
+            {((p.documents?.length || 0) > 0 || editControls) && <section hidden={activeArea !== "services"}>
+              {editControls?.("documents")}
+              <h3>Präsentationen & Unterlagen</h3>
+              <PartnerDocuments documents={p.documents || []}/>
+            </section>}
             {(p.personalMessage || editControls) && (
               <section hidden={activeArea !== "personal"}>
                 {editControls?.("personalMessage")}

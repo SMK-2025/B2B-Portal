@@ -96,6 +96,7 @@ export interface OrganizationRecord {
 }
 
 export interface NetworkPartnerProfile {
+  documents?: Array<{ id: string; name: string; mimeType: string; size: number; dataUrl: string }>;
   heroImageUrl?: string | null;
   sections?: Array<{ title: string; body: string; area?: string }>;
   personalMessage?: string;

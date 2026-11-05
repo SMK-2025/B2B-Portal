@@ -185,6 +185,7 @@ export class AutomaticBillingService
     if(ids.length && !this.sql) throw new ServiceUnavailableException("Guthaben ist derzeit nicht abrufbar.");
     const used=ids.length?(await this.sql!.unsafe("SELECT credit_id FROM b2b_referral_redemptions WHERE credit_id=ANY($1::text[])",[ids])) as {credit_id:string}[]:[];
     return [...new Set(credits.map(n=>String(n.data.networkId)))].map(networkId=>({
+      networkId,
       network:this.store.networks.get(networkId)?.name || "Netzwerk",
       available:credits.filter(n=>n.data.networkId===networkId && !used.some(r=>r.credit_id===n.id)).length,
       redeemed:credits.filter(n=>n.data.networkId===networkId && used.some(r=>r.credit_id===n.id)).length

@@ -116,7 +116,7 @@ export function PortalInteractions({role,children}:{role:Role;children:ReactNode
  function open(title:string,kind:string,context?:string){setDialog({title,kind,context})}
  function click(e:MouseEvent<HTMLDivElement>){
    const target=e.target as HTMLElement;const link=target.closest("a");const button=target.closest("button");
-   if(target.closest(".adminNetworkWorkspace"))return;
+   if(target.closest(".adminNetworkWorkspace,.accountWorkspace,.partnerEditingPreview,.partnerDocumentEditor"))return;
    if(target.closest(".needManageModal,.needModalBackdrop,.needIconAction"))return;
    if(target.closest(".portalSearch")){open("Portal durchsuchen","search");return}
   if(link){const href=link.getAttribute("href")||"";if(href.startsWith("#")){const label=(link.textContent||"").trim().replace(/\d+$/,"");const targetEl=document.querySelector(href);if(targetEl){targetEl.scrollIntoView({behavior:"smooth"});return}e.preventDefault();open(moduleCopy[label]?.[0]||label,label)}return}

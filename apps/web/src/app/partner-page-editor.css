@@ -483,3 +483,6 @@
     font-size: 16px;
   }
 }
+.partnerPreviewSaveBar{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:1600;display:flex;align-items:center;gap:12px;width:max-content;max-width:calc(100vw - 40px);box-sizing:border-box;padding:12px 16px;background:#fff;border:1px solid #dbe3ed;border-radius:14px;box-shadow:0 8px 32px #10243730;color:#162e40;}
+.partnerPreviewSaveBar span{font-size:.85rem;}.partnerPreviewSaveBar button{border:1px solid #dbe3ed;background:white;color:#162e40;border-radius:9px;padding:10px 14px;min-height:44px;cursor:pointer;}.partnerPreviewSaveBar button.networkPrimary{background:var(--network-accent,#5864dc);color:#fff;}
+@media(max-width:600px){.partnerPreviewSaveBar{bottom:10px;width:calc(100vw - 32px);flex-wrap:wrap;justify-content:center;gap:8px;padding:10px;}.partnerPreviewSaveBar span{width:100%;text-align:center;}.partnerPreviewSaveBar button{flex:1;font-size:.82rem;padding:10px;}}

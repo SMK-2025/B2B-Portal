@@ -100,9 +100,9 @@ export function NetworkDashboardWorkspace({
           portalRequest<Dashboard>(`/networks/${network.id}/dashboard`, {
             token,
           }),
-          portalRequest<Partner[]>(`/networks/${network.id}/memberships`, {
+          portalRequest<{items:Partner[]}>(`/networks/${network.id}/memberships/page?pageSize=6&status=active`, {
             token,
-          }).catch(() => []),
+          }).then(value=>value.items).catch(() => []),
         ]);
         if (active) {
           setData(dashboard);

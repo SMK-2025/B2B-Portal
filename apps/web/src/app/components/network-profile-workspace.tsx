@@ -60,7 +60,10 @@ export function NetworkProfileWorkspace({
   service,
 }: { service?: { networkId: string; userId: string } } = {}) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const returnToSetup=useRef(false);
   const [step, setStep] = useState(0);
+  const [aiResult,setAiResult]=useState<{fields:number;sections:number;missing:string[]}|null>(null);
+  const [aiWorking,setAiWorking]=useState(false);
   const steps = ["Unternehmen", "Leistungen", "Gestaltung", "Kontakt"];
   const autoOpen = useRef(false);
   const profileForm = useRef<HTMLFormElement>(null),
@@ -214,11 +217,12 @@ export function NetworkProfileWorkspace({
   }
   async function importWebsite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (readingDocuments) return;
+    if (readingDocuments || busy) return;
     const input = new FormData(event.currentTarget),
       token = getPortalSession();
     if (!token || !networkId) return;
     setBusy(true);
+    setAiWorking(true);
     setNotice(
       "Die öffentliche Homepage wird ausgewertet. Das kann etwa eine Minute dauern …",
     );
@@ -226,15 +230,19 @@ export function NetworkProfileWorkspace({
       const result = await portalRequest<{
         draft: Record<string, unknown>;
         sources: string[];
+        missing?:string[];
       }>(profilePath + "/import", {
         token,
-        timeoutMs: 120_000,
+        timeoutMs: 180_000,
         body: {
           websiteUrl: input.get("sourceWebsite"),
           consent: input.get("consent") === "on",
         },
       });
       const changes: Record<string, string> = {};
+      const replace=input.get('replace')==='on';
+      if(typeof result.draft.logoUrl==='string' && (!logo||replace))setLogo(result.draft.logoUrl);
+      if(typeof result.draft.heroImageUrl==='string' && (!hero||replace))setHero(result.draft.heroImageUrl);
       if (
         Array.isArray(result.draft.sections) &&
         (!sections.length || input.get("replace") === "on")
@@ -261,8 +269,9 @@ export function NetworkProfileWorkspace({
       }
       setPreview((current) => ({ ...current, ...changes }));
       setSources(result.sources);
+      setAiResult({fields:Object.keys(changes).length,sections:Array.isArray(result.draft.sections)?result.draft.sections.length:0,missing:result.missing||[]});
       setNotice(
-        "PagePilot-AI-Entwurf übernommen, noch nicht gespeichert oder veröffentlicht. Bitte Texte und Inhaltsbereiche prüfen, persönliche Angaben und Bilder ergänzen.",
+        "Deine Unternehmensseite ist vorbereitet. Schau dir die Vorschau an und veröffentliche sie nach deiner Prüfung. Noch wurde nichts gespeichert.",
       );
     } catch (error) {
       setNotice(
@@ -272,6 +281,7 @@ export function NetworkProfileWorkspace({
       );
     } finally {
       setBusy(false);
+      setAiWorking(false);
     }
   }
   if (!data)
@@ -284,6 +294,8 @@ export function NetworkProfileWorkspace({
     );
   const p = { ...data.profile, ...preview };
   function openEditablePreview() {
+    returnToSetup.current=Boolean(dialog.current?.open);
+    dialog.current?.close();
     const fields = profileForm.current
       ? Object.fromEntries(new FormData(profileForm.current).entries())
       : {};
@@ -454,30 +466,34 @@ export function NetworkProfileWorkspace({
         </header>
         {data.canEdit && (
           <details
-            className="networkCard networkCompanyImport"
+            className="networkCard networkCompanyImport pagePilotStudio"
+            open
             hidden={step !== 0}
           >
             <summary>
               <NetworkText id="ui.network-profile-workspace.ddd220b09055c251">
-                Optional: Entwurf mit PagePilot AI vorbereiten
+                ✦ PagePilot AI · Deine Homepage wird zur Unternehmensseite
               </NetworkText>
             </summary>
             <header>
               <h2>
                 <NetworkText id="ui.network-profile-workspace.ac32b98b4710f872">
-                  PagePilot AI · Aus deiner Homepage wird deine Partnerseite
+                  Deine Website rein. Deine Partnerseite vorbereitet.
                 </NetworkText>
               </h2>
             </header>
             <form onSubmit={importWebsite}>
               <p>
                 <NetworkText id="ui.network-profile-workspace.01f221c05f13332a">
-                  PagePilot AI erstellt aus deiner öffentlichen Firmenhomepage
-                  und ihren Unterseiten einen Entwurf für deine Partnerseite. Du
-                  prüfst die Texte, ergänzt Bilder und Angebote und
-                  entscheidest, wann du die Seite veröffentlichst.
+                  Unser innovativer Seitenassistent übernimmt verfügbare Texte,
+                  Logo und Titelbild, erkennt Leistungen und ordnet Inhalte in
+                  deine Rubriken ein. Du siehst das Ergebnis direkt als bearbeitbare
+                  Unternehmensseite. Prüfen, verfeinern, veröffentlichen – ganz ohne leere Seite.
                 </NetworkText>
               </p>
+              <div className="pagePilotFeatures" aria-label="Automatische Vorbereitung">
+                <span>↗ Homepage verstehen</span><span>▧ Bilder übernehmen</span><span>☷ Inhalte einordnen</span><span>✎ Alles bearbeitbar</span>
+              </div>
               <label>
                 <NetworkText id="ui.network-profile-workspace.5c542a37edb01ebf">
                   Firmenhomepage
@@ -500,17 +516,28 @@ export function NetworkProfileWorkspace({
               <label className="networkImportCheck">
                 <input name="replace" type="checkbox" />
                 <NetworkText id="ui.network-profile-workspace.9da7d07e378bb730">
-                  Bereits ausgefüllte Textfelder ersetzen (standardmäßig bleiben
-                  sie erhalten)
+                  Vorhandene Texte und Bilder ersetzen (sonst bleiben sie erhalten)
                 </NetworkText>
               </label>
               <button className="networkPrimary" disabled={busy}>
                 <NetworkText id="ui.network-profile-workspace.80e090dd9a8bccfb">
-                  {busy
+                  {aiWorking
                     ? "PagePilot AI analysiert deine Homepage …"
-                    : "Partnerseite mit PagePilot AI vorbereiten"}
+                    : "✦ Meine Unternehmensseite automatisch erstellen"}
                 </NetworkText>
               </button>
+              {aiWorking && <div className="pagePilotProgress" role="status"><span />Homepage, Inhalte und Bilder werden geprüft. Das dauert meist ein bis zwei Minuten. Bitte dieses Fenster geöffnet lassen.</div>}
+              {aiResult && <section className="pagePilotResult" aria-live="polite">
+                <strong>Deine Seite nimmt Gestalt an.</strong>
+                <p>{aiResult.fields} Angaben vorbereitet · {aiResult.sections} Inhaltsbereiche eingeordnet</p>
+                <div className="pagePilotMediaReview">
+                  <div>{logo?<img src={logo} alt="Übernommenes Firmenlogo"/>:<span>Logo ergänzen</span>}<small>Firmenlogo</small></div>
+                  <div>{hero?<img src={hero} alt="Übernommenes Titelbild"/>:<span>Titelbild ergänzen</span>}<small>Titelbild</small></div>
+                </div>
+                {aiResult.missing.length>0 && <p>Bitte noch prüfen oder ergänzen: {aiResult.missing.join(', ')}. Nicht auffindbare Angaben werden nicht erfunden.</p>}
+                <button type="button" className="networkPrimary" onClick={openEditablePreview}>Vorschau öffnen &amp; verfeinern →</button>
+                <small>Du entscheidest, was veröffentlicht wird. Bitte kontrolliere die Angaben und die Nutzungsrechte der übernommenen Bilder.</small>
+              </section>}
               {sources.length > 0 && (
                 <details>
                   <summary>
@@ -1334,7 +1361,8 @@ export function NetworkProfileWorkspace({
           initial={editablePreview}
           userId={access?.currentUserId || ""}
           onSave={saveEditablePreview}
-          onClose={() => setEditablePreview(null)}
+          canPublish={!service}
+          onClose={() => {setEditablePreview(null);if(returnToSetup.current){returnToSetup.current=false;requestAnimationFrame(()=>dialog.current?.showModal());}}}
         />
       )}
       {notice && (

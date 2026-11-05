@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   useEffect,
-  useMemo,
   useState,
   useRef,
   type FormEvent,
@@ -87,54 +86,47 @@ export function NetworkMembersWorkspace() {
     [invite, setInvite] = useState(false),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
+  const [page,setPage]=useState(1),[total,setTotal]=useState(0),[loading,setLoading]=useState(false);
+  const loadSequence=useRef(0);
   async function load() {
     const token = getPortalSession();
     if (!token || !networkId) return;
+    const sequence=++loadSequence.current;setLoading(true);
     try {
-      setMembers(
-        await portalRequest<Member[]>(`/networks/${networkId}/memberships`, {
+      const status=Object.entries(labels).find(([,label])=>label===filter)?.[0]||'';
+      const result=await portalRequest<{items:Member[];total:number;page:number}>(`/networks/${networkId}/memberships/page?${new URLSearchParams({page:String(page),pageSize:'12',q:query,status})}`, {
           token,
-        }),
-      );
+        });
+      if(sequence!==loadSequence.current)return;
+      setMembers(result.items);setTotal(result.total);setPage(result.page);
       setNotice("");
     } catch (error) {
+      if(sequence!==loadSequence.current)return;
       setNotice(
         error instanceof Error
           ? error.message
           : "Partnerverzeichnis konnte nicht geladen werden.",
       );
-    }
+    }finally{if(sequence===loadSequence.current)setLoading(false);}
   }
   useEffect(() => {
-    void load();
-  }, [networkId]);
+    const timer=setTimeout(()=>void load(),250);
+    return()=>{clearTimeout(timer);loadSequence.current++;};
+  }, [networkId,page,query,filter]);
+  async function openMember(id:string){
+    const token=getPortalSession();if(!token)return;
+    try{const member=await portalRequest<Member>(`/networks/${networkId}/memberships/${encodeURIComponent(id)}`,{token});setSelected(member);}
+    catch(error){setNotice(error instanceof Error?error.message:'Partnerseite konnte nicht geladen werden.');}
+  }
   const openedFromLink = useRef("");
   const profileId = useSearchParams().get("profil");
   useEffect(() => {
     const id = profileId;
     if (!id || openedFromLink.current === networkId + id) return;
-    const member = members.find(
-      (m) =>
-        m.id === id &&
-        m.status === "active" &&
-        m.organization?.networkProfile?.status === "published",
-    );
-    if (member) {
-      openedFromLink.current = networkId + id;
-      setSelected(member);
-    }
-  }, [members, networkId, profileId]);
-  const visible = useMemo(
-    () =>
-      members.filter(
-        (member) =>
-          (filter === "Alle" || labels[member.status] === filter) &&
-          `${member.organization?.displayName || ""} ${member.organization?.networkProfile?.services || ""} ${member.user?.firstName || ""} ${member.user?.lastName || ""}`
-            .toLowerCase()
-            .includes(query.toLowerCase()),
-      ),
-    [members, query, filter],
-  );
+    if(!networkId)return;openedFromLink.current = networkId + id;
+    void openMember(id);
+  }, [networkId, profileId]);
+  const visible=members;
   async function change(member: Member, status: Member["status"]) {
     const token = getPortalSession();
     if (!token || !canManage) return;
@@ -211,13 +203,13 @@ export function NetworkMembersWorkspace() {
           <span>⌕</span>
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {setQuery(event.target.value);setPage(1);}}
             placeholder="Unternehmen, Leistung oder Person suchen"
           />
         </label>
         <select
           value={filter}
-          onChange={(event) => setFilter(event.target.value)}
+          onChange={(event) => {setFilter(event.target.value);setPage(1);}}
           aria-label="Status filtern"
         >
           <option>Alle</option>
@@ -254,7 +246,7 @@ export function NetworkMembersWorkspace() {
             </p>
           </div>
         </header>
-        <div className="networkPartnerGrid">
+        <div className="networkPartnerGrid" aria-busy={loading}>
           {visible.map((member) => {
             const profile = member.organization?.networkProfile;
             return (
@@ -307,7 +299,7 @@ export function NetworkMembersWorkspace() {
                 <div className="networkPartnerCardActions">
                   <button
                     type="button"
-                    onClick={() => setSelected(member)}
+                    onClick={() => void openMember(member.id)}
                     disabled={!profile}
                   >
                     <NetworkText id="ui.network-members-workspace.8566c8b587fe9e9b">
@@ -364,7 +356,12 @@ export function NetworkMembersWorkspace() {
             );
           })}
         </div>
-        {!visible.length && (
+        {total>12 && <nav className="networkDirectoryPagination" aria-label="Mitgliederseiten">
+          <button type="button" className="networkSecondary" disabled={loading||page<=1} onClick={()=>setPage(p=>p-1)}>← Zurück</button>
+          <span>Seite {page} von {Math.max(1,Math.ceil(total/12))} · {total} Unternehmen</span>
+          <button type="button" className="networkSecondary" disabled={loading||page>=Math.ceil(total/12)} onClick={()=>setPage(p=>p+1)}>Weiter →</button>
+        </nav>}
+        {!visible.length && !loading && (
           <div className="networkEmpty">
             <b>
               <NetworkText id="ui.network-members-workspace.2f0505572b63828b">

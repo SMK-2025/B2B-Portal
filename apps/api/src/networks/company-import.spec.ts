@@ -1,8 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompanyImport, companyFields, companyWebsite } from "./company-import";
+import { CompanyWebsiteReader } from './company-website-reader';
+
+beforeEach(()=>{vi.spyOn(CompanyWebsiteReader.prototype,'read').mockRejectedValue(new Error('isolated test'));});
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
+  vi.restoreAllMocks();
 });
 describe("optional company homepage import", () => {
   it("rejects local URLs, credentials and non-HTTPS", () => {
@@ -106,5 +110,17 @@ describe("optional company homepage import", () => {
     await expect(
       new CompanyImport().generate("member", "https://example.de"),
     ).rejects.toThrow(/nichts gespeichert/);
+  });
+  it('imports only verified homepage images and keeps unavailable fields explicit',async()=>{
+    vi.stubEnv('OPENAI_API_KEY','test-only');
+    const logo='data:image/webp;base64,verified-logo',hero='data:image/webp;base64,verified-hero';
+    vi.spyOn(CompanyWebsiteReader.prototype,'read').mockResolvedValue({home:{text:'Company facts',links:[],logos:['https://example.de/logo.png'],heroes:['https://example.de/hero.jpg'],colors:['#ff8800']},pages:[{url:'https://example.de/',text:'Company facts',links:[],logos:[],heroes:[],colors:[]}]});
+    vi.spyOn(CompanyWebsiteReader.prototype,'image').mockImplementation(async(candidates,kind)=>({dataUrl:kind==='logo'?logo:hero,source:candidates[0]}));
+    const fields=Object.fromEntries(Object.keys(companyFields).map(k=>[k,'']));
+    vi.stubGlobal('fetch',vi.fn().mockResolvedValueOnce({ok:true,json:async()=>({status:'completed',output:[]})}).mockResolvedValueOnce({ok:true,json:async()=>({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify({...fields,companyName:'Company',description:'Verified description',sections:[]})}]}]})}));
+    const result=await new CompanyImport().generate('member','https://example.de');
+    expect(result.draft.logoUrl).toBe(logo);expect(result.draft.heroImageUrl).toBe(hero);
+    expect(result.draft.primaryColor).toBe('#ff8800');expect(result.missing).toEqual(['Ansprechpartner']);
+    expect(result.sources).toEqual(['https://example.de/']);
   });
 });

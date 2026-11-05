@@ -459,6 +459,16 @@ export class NetworksController {
   ) {
     return this.networks.apply(authorization, slug, body);
   }
+  @Get(":networkId/memberships/page") memberPage(
+    @Headers('authorization') authorization:string|undefined,
+    @Param('networkId') networkId:string,
+    @Query() query:Record<string,unknown>,
+  ){return this.networks.memberPage(authorization,networkId,query);}
+  @Get(":networkId/memberships/:membershipId") memberDetail(
+    @Headers('authorization') authorization:string|undefined,
+    @Param('networkId') networkId:string,
+    @Param('membershipId') membershipId:string,
+  ){return this.networks.memberDetail(authorization,networkId,membershipId);}
   @Get(":networkId/memberships") members(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,

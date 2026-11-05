@@ -2293,7 +2293,28 @@ export class NetworksService {
     );
   }
 
-  listMembers(authorization: string | undefined, networkId: string) {
+  memberPage(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+    const user=this.auth.authenticate(authorization);this.requireNetworkAccess(user.id,networkId);
+    const manager=this.isNetworkManager(user.id,networkId);
+    const page=Math.max(1,Math.min(100000,Math.floor(Number(input.page)||1))),pageSize=Math.max(1,Math.min(24,Math.floor(Number(input.pageSize)||12)));
+    const query=String(input.q||'').trim().toLowerCase().slice(0,200),status=String(input.status||'');
+    const candidates=this.store.networkMemberships.filter(m=>{
+      if(m.networkId!==networkId||['network_admin','visitor'].includes(m.role)||this.store.users.get(m.userId)?.accountRole==='platform_admin'||(!manager&&m.status!=='active')||(status&&m.status!==status))return false;
+      const org=this.store.organizations.get(m.organizationId),u=this.store.users.get(m.userId),p=org?.networkProfile;
+      // Do not search unpublished private profile fields for other members.
+      const visible=p&&(manager||m.userId===user.id||p.status==='published')?p:null;
+      return `${org?.displayName||''} ${org?.legalName||''} ${u?.firstName||''} ${u?.lastName||''} ${visible?.services||''} ${visible?.industries||''} ${visible?.tagline||''}`.toLowerCase().includes(query);
+    });
+    const actualPage=Math.min(page,Math.max(1,Math.ceil(candidates.length/pageSize)));
+    const ids=new Set(candidates.slice((actualPage-1)*pageSize,actualPage*pageSize).map(m=>m.id));
+    return {items:this.listMembers(authorization,networkId,ids,true),total:candidates.length,page:actualPage,pageSize};
+  }
+  memberDetail(authorization:string|undefined,networkId:string,id:string){
+    const member=this.listMembers(authorization,networkId,new Set([id]))[0];
+    if(!member)throw new NotFoundException('Diese Partnerseite ist nicht verfügbar.');
+    return member;
+  }
+  listMembers(authorization: string | undefined, networkId: string, ids?:Set<string>, summary=false) {
     const user = this.auth.authenticate(authorization);
     this.requireNetworkAccess(user.id, networkId);
     const showBilling = this.isNetworkInitiator(user.id, networkId),
@@ -2307,6 +2328,7 @@ export class NetworksService {
       .filter(
         (item) =>
           item.networkId === networkId &&
+          (!ids||ids.has(item.id)) &&
           item.role !== "network_admin" &&
           item.role !== "visitor" &&
           this.store.users.get(item.userId)?.accountRole !== "platform_admin" &&
@@ -2341,7 +2363,11 @@ export class NetworksService {
                 displayName: organization.displayName,
                 legalName: organization.legalName,
                 websiteUrl: organization.websiteUrl,
-                networkProfile: canSeeProfile ? profile : null,
+                networkProfile: canSeeProfile ? (summary?{
+                  status:profile!.status,logoUrl:profile!.logoUrl,companyName:profile!.companyName,
+                  tagline:profile!.tagline,services:profile!.services,contactName:profile!.contactName,
+                  primaryColor:profile!.primaryColor,secondaryColor:profile!.secondaryColor,
+                }:profile) : null,
               }
             : null,
           ...(showBilling

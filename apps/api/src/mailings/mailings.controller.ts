@@ -147,9 +147,9 @@ export class MailingsController {
     @Res() res: Response,
   ) {
     this.limit(token);
-    const before = this.store.snapshot();
+    const before = this.store.fingerprint();
     if (req.method !== "HEAD") this.service.image(token, this.automated(req));
-    if (before !== this.store.snapshot()) await this.store.persist();
+    if (before !== this.store.fingerprint()) await this.store.persist();
     res
       .type("image/gif")
       .send(

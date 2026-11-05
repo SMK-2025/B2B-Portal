@@ -50,6 +50,7 @@ import {
   disableAutomaticRenewals,
 } from "../networks/launch-promotion";
 import { createHash } from "node:crypto";
+import { RecordPersistence, StoreCollections, StorageSql } from "./record-persistence";
 type LaunchPlace = {
   campaign: string;
   network_id: string;
@@ -76,6 +77,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
   private completedWrite = 0;
   private revision = 0;
   private staleWriter = false;
+  private recordStorage = false;
+  private readonly records = new RecordPersistence();
   persistenceReady(): boolean {
     return !this.homepagePersistenceFailed && !this.staleWriter;
   }
@@ -261,6 +264,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       connect_timeout: 15,
     });
     await this.runMigrations();
+    this.recordStorage = true;
     await this.restore();
     await this.refreshLaunchPlaces();
     if (process.env.NODE_ENV === "production" && provisionKoeln(this)) {
@@ -347,6 +351,26 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     });
   }
 
+  private collections(): StoreCollections {
+    return {
+      users:this.users, mailingLeads:this.mailingLeads, mailingCampaigns:this.mailingCampaigns,
+      mailingSuppressions:this.mailingSuppressions, userByEmail:this.userByEmail,
+      organizations:this.organizations, memberships:this.memberships, teamInvitations:this.teamInvitations,
+      favorites:this.favorites, userPreferences:this.userPreferences, networks:this.networks,
+      networkConnections:this.networkConnections, operatorMails:this.operatorMails,
+      maintenanceReceipts:this.maintenanceReceipts, networkSystemMessages:this.networkSystemMessages,
+      networkBySlug:this.networkBySlug, networkMemberships:this.networkMemberships,
+      networkContents:this.networkContents, networkOrders:this.networkOrders, networkAttendances:this.networkAttendances,
+      networkRevenues:this.networkRevenues, sessions:this.sessions, verificationTokens:this.verificationTokens,
+      passwordResetTokens:this.passwordResetTokens, reviewDecisions:this.reviewDecisions, categories:this.categories,
+      servicePages:this.servicePages, needs:this.needs, matches:this.matches, conversations:this.conversations,
+      messages:this.messages, meetings:this.meetings, activities:this.activities, notifications:this.notifications,
+    };
+  }
+  fingerprint(): string {
+    return this.recordStorage ? this.records.fingerprint(this.collections()) : this.snapshot();
+  }
+
   async persist(): Promise<void> {
     if (!this.sql) return;
     if (this.staleWriter)
@@ -368,6 +392,16 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     try {
       while (this.completedWrite < this.requestedWrite) {
         const target = this.requestedWrite;
+        if (this.recordStorage) {
+          try {
+            this.revision = await this.records.save(this.sql as unknown as StorageSql, this.revision, this.collections());
+          } catch(error) {
+            if (error instanceof ServiceUnavailableException) this.staleWriter=true;
+            throw error;
+          }
+          this.completedWrite=target;
+          continue;
+        }
         const payload = this.snapshot();
         const rows = await this.sql!.unsafe(
           `INSERT INTO portal_state (id,payload,revision,updated_at)
@@ -409,7 +443,14 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       typeof rows[0].payload === "string"
         ? JSON.parse(rows[0].payload)
         : (rows[0].payload as Record<string, unknown>);
-    this.hydrate(state as Record<string, any>);
+    if ((state as any).storageVersion === 2) {
+      this.hydrate(await this.records.load(this.sql as unknown as StorageSql,state,this.collections()));
+    } else {
+      this.hydrate(state as Record<string, any>);
+      // Migration and the revision barrier are committed atomically. Railway's
+      // volume backup is the rollback point; no indefinite copy of deleted PII.
+      if (this.recordStorage) await this.persist();
+    }
   }
 
   private hydrate(state: Record<string, any>): void {

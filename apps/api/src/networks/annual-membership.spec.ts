@@ -6,6 +6,24 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it('bounds directory pages, loads large media only on detail and isolates every network',async()=>{
+    const f=await fixture();const org=f.orgs.create(f.member,f.input,true);
+    org.networkProfile={status:'published',companyName:'Partner GmbH',tagline:'Beratung',services:'Software',logoUrl:null,heroImageUrl:'data:image/webp;base64,'+'A'.repeat(4096),sections:[{title:'Detail',body:'Nur im Profil'}],documents:[]} as any;
+    for(let i=0;i<30;i++){
+      const uid='page-user-'+i,oid='page-org-'+i;
+      f.store.users.set(uid,{id:uid,firstName:'Page',lastName:String(i),email:uid+'@example.test',accountRole:'member'} as any);
+      f.store.organizations.set(oid,{id:oid,displayName:'Company '+i,legalName:'Company '+i,networkProfile:{...org.networkProfile,status:i===0?'draft':'published',services:i===0?'PRIVATE_SEARCH':'Service '+i}} as any);
+      f.store.networkMemberships.push({id:'page-'+i,networkId:f.network.id,userId:uid,organizationId:oid,role:'member',status:'active'} as any);
+    }
+    const page=f.networks.memberPage(f.member,f.network.id,{page:2,pageSize:12});
+    expect(page.items).toHaveLength(12);expect(page.total).toBe(31);
+    expect(JSON.stringify(page.items)).not.toContain('data:image/webp');expect(JSON.stringify(page.items)).not.toContain('Nur im Profil');
+    expect(f.networks.memberDetail(f.member,f.network.id,page.items[0].id).organization?.networkProfile).toHaveProperty('heroImageUrl');
+    expect(f.networks.memberPage(f.member,f.network.id,{q:'PRIVATE_SEARCH'}).items).toHaveLength(0);
+    const other=f.networks.create(f.owner,{name:'Other network',slug:'other-network'});f.networks.setAccess(f.owner,other.id,{status:'active'});
+    expect(()=>f.networks.memberDetail(f.owner,other.id,page.items[0].id)).toThrow(/nicht verfügbar/);
+    expect(()=>f.networks.memberPage(f.member,other.id,{})).toThrow();
+  });
   it("rejects reusing a company's mutable profile across networks", async () => {
     const f=await fixture();const org=f.orgs.create(f.member,f.input,true);
     const user=f.store.userByEmail.get("partner@example.de")!;

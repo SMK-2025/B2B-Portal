@@ -59,10 +59,10 @@ export class PersistenceInterceptor implements NestInterceptor {
         (path === "/health" || /^\/api\/networks\/branding\/[^/]+(?:\/texts)?$/.test(path))) ||
       (request.method === "POST" && /^\/api\/networks\/[^/]+\/profile\/import$/.test(path))
     ) return next.handle();
-    const before = this.store.snapshot();
+    const before = this.store.fingerprint();
     return next.handle().pipe(
       mergeMap(async (value) => {
-        if (before !== this.store.snapshot()) await this.store.persist();
+        if (before !== this.store.fingerprint()) await this.store.persist();
         return value;
       }),
     );

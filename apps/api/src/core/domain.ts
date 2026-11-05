@@ -93,6 +93,19 @@ export interface OrganizationRecord {
   profileRequiredCompleted?: number;
   profileRequiredSections?: boolean[];
   networkProfile?: NetworkPartnerProfile;
+  additionalCompanyPages?: Array<{
+    id: string;
+    networkId: string;
+    ownerUserId: string;
+    websiteUrl: string;
+    companyName: string;
+    ownershipConfirmedAt: string;
+    reviewStatus: "draft" | "pending" | "approved" | "rejected";
+    profile: NetworkPartnerProfile | null;
+    createdAt: string;
+    reviewedAt?: string;
+    reviewedBy?: string;
+  }>;
 }
 
 export interface NetworkPartnerProfile {

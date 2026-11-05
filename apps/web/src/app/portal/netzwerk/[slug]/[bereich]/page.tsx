@@ -20,7 +20,7 @@ const pages: Record<string, [string, string]> = {
     "Unternehmen im geschlossenen Partnerkreis finden, kennenlernen und gezielt miteinander in Kontakt bringen.",
   ],
   profil: [
-    "Meine Partnerseite",
+    "Meine Unternehmensseiten",
     "Unternehmen, Leistungen und persönliche Ansprechpartner für das geschlossene Netzwerk präsentieren.",
   ],
   veranstaltungen: [

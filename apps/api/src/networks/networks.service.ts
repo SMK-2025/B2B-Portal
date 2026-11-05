@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import { companyDomain, sameCompanyDomain } from "./company-page-domain";
 import { publicLaunchOffer, launchSettings, validateLaunchBilling } from "./launch-promotion";
 import { attributeMailingRegistration } from "../mailings/mailing-attribution";
 import { AuthService } from "../auth/auth.service";
@@ -632,6 +633,11 @@ export class NetworksService {
       const user = this.store.users.get(member.userId);
       if (!user || user.accountRole === "platform_admin") continue;
       const organization = this.store.organizations.get(member.organizationId);
+      for(const page of organization?.additionalCompanyPages || []){
+        if(page.networkId!==networkId||page.ownerUserId!==member.userId||page.reviewStatus!=='pending')continue;
+        const date=page.profile?.updatedAt||page.createdAt;
+        items.push({id:'company-page:'+page.id,title:'Unternehmensseite prüfen: '+page.companyName,createdAt:date,kind:'request',pending:true,unread:!seenAt||date>seenAt,area:'users'});
+      }
       const name =
         organization?.displayName || `${user.firstName} ${user.lastName}`;
       if (member.status === "pending" && !pendingUsers.has(member.userId)) {
@@ -2295,23 +2301,29 @@ export class NetworksService {
 
   memberPage(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
     const user=this.auth.authenticate(authorization);this.requireNetworkAccess(user.id,networkId);
-    const manager=this.isNetworkManager(user.id,networkId);
     const page=Math.max(1,Math.min(100000,Math.floor(Number(input.page)||1))),pageSize=Math.max(1,Math.min(24,Math.floor(Number(input.pageSize)||12)));
     const query=String(input.q||'').trim().toLowerCase().slice(0,200),status=String(input.status||'');
-    const candidates=this.store.networkMemberships.filter(m=>{
-      if(m.networkId!==networkId||['network_admin','visitor'].includes(m.role)||this.store.users.get(m.userId)?.accountRole==='platform_admin'||(!manager&&m.status!=='active')||(status&&m.status!==status))return false;
-      const org=this.store.organizations.get(m.organizationId),u=this.store.users.get(m.userId),p=org?.networkProfile;
-      // Do not search unpublished private profile fields for other members.
-      const visible=p&&(manager||m.userId===user.id||p.status==='published')?p:null;
-      return `${org?.displayName||''} ${org?.legalName||''} ${u?.firstName||''} ${u?.lastName||''} ${visible?.services||''} ${visible?.industries||''} ${visible?.tagline||''}`.toLowerCase().includes(query);
-    });
-    const actualPage=Math.min(page,Math.max(1,Math.ceil(candidates.length/pageSize)));
-    const ids=new Set(candidates.slice((actualPage-1)*pageSize,actualPage*pageSize).map(m=>m.id));
-    return {items:this.listMembers(authorization,networkId,ids,true),total:candidates.length,page:actualPage,pageSize};
+    // Additional approved pages share their owner's membership and billing.
+    const entries = this.listMembers(authorization,networkId,undefined,true).flatMap(member => {
+      const organization = this.store.organizations.get(this.store.networkMemberships.find(m=>m.id===member.id)!.organizationId);
+      return [member, ...(organization?.additionalCompanyPages || []).filter(p=>p.networkId===networkId && p.reviewStatus==='approved' && p.profile?.status==='published').map(p=>({
+        ...member, id: member.id + '~' + p.id,
+        organization: {...member.organization!, displayName:p.profile!.companyName,legalName:p.companyName,websiteUrl:p.websiteUrl,networkProfile:{status:p.profile!.status,logoUrl:p.profile!.logoUrl,companyName:p.profile!.companyName,tagline:p.profile!.tagline,services:p.profile!.services,contactName:p.profile!.contactName,primaryColor:p.profile!.primaryColor,secondaryColor:p.profile!.secondaryColor}},
+      }))];
+    }).filter(member => (!status || member.status===status) && `${member.organization?.displayName||''} ${member.user?.firstName||''} ${member.user?.lastName||''} ${member.organization?.networkProfile?.services||''} ${member.organization?.networkProfile?.tagline||''}`.toLowerCase().includes(query));
+    const entryPage=Math.min(page,Math.max(1,Math.ceil(entries.length/pageSize)));
+    return {items:entries.slice((entryPage-1)*pageSize,entryPage*pageSize),total:entries.length,page:entryPage,pageSize};
   }
   memberDetail(authorization:string|undefined,networkId:string,id:string){
-    const member=this.listMembers(authorization,networkId,new Set([id]))[0];
+    const [membershipId,pageId]=id.split('~');
+    const member=this.listMembers(authorization,networkId,new Set([membershipId]))[0];
     if(!member)throw new NotFoundException('Diese Partnerseite ist nicht verfügbar.');
+    if(pageId){
+      const membership=this.store.networkMemberships.find(m=>m.id===membershipId && m.networkId===networkId)!;
+      const page=this.store.organizations.get(membership.organizationId)?.additionalCompanyPages?.find(p=>p.id===pageId && p.networkId===networkId && p.reviewStatus==='approved' && p.profile?.status==='published');
+      if(!page)throw new NotFoundException('Diese Unternehmensseite ist nicht verfügbar.');
+      return {...member,organization:{...member.organization!,displayName:page.profile!.companyName,legalName:page.companyName,websiteUrl:page.websiteUrl,networkProfile:page.profile!}};
+    }
     return member;
   }
   listMembers(authorization: string | undefined, networkId: string, ids?:Set<string>, summary=false) {
@@ -2739,6 +2751,92 @@ export class NetworksService {
     };
   }
 
+  private companyPageOwner(authorization: string | undefined, networkId: string) {
+    const own = this.ownProfile(authorization, networkId);
+    if (!own.canEdit) throw new ForbiddenException('Nur der Unternehmensinhaber darf weitere Seiten verwalten.');
+    this.requireEnabledModule(networkId, 'profiles', this.auth.authenticate(authorization).id);
+    return {organization:this.store.organizations.get(own.organization.id)!, user:this.auth.authenticate(authorization)};
+  }
+  private checkCompanyHomepage(networkId:string, website:unknown, skipOrganization:string, skipPage?:string) {
+    companyDomain(website);
+    for(const membership of this.store.networkMemberships.filter(m=>m.networkId===networkId && !['left','rejected'].includes(m.status))){
+      const org=this.store.organizations.get(membership.organizationId); if(!org)continue;
+      const main=org.networkProfile?.websiteUrl || org.websiteUrl;
+      if(org.id!==skipOrganization && main && sameCompanyDomain(String(website),main))throw new ConflictException('Diese Unternehmenshomepage ist in diesem Netzwerk bereits eingebunden.');
+      for(const page of org.additionalCompanyPages || []){
+        if(page.networkId!==networkId || page.id===skipPage)continue;
+        if(sameCompanyDomain(String(website),page.websiteUrl))throw new ConflictException('Diese Unternehmenshomepage ist in diesem Netzwerk bereits eingebunden.');
+      }
+    }
+  }
+  companyPages(authorization:string|undefined,networkId:string){
+    const {organization,user}=this.companyPageOwner(authorization,networkId);
+    return {pages:(organization.additionalCompanyPages||[]).filter(p=>p.networkId===networkId&&p.ownerUserId===user.id).map(page=>({...page,profile:page.profile?{companyName:page.profile.companyName,tagline:page.profile.tagline,status:page.profile.status,logoUrl:page.profile.logoUrl,heroImageUrl:page.profile.heroImageUrl,primaryColor:page.profile.primaryColor,secondaryColor:page.profile.secondaryColor}:null})),limit:5};
+  }
+  createCompanyPage(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
+    const {organization,user}=this.companyPageOwner(authorization,networkId);
+    this.requireWritableNetwork(user.id,networkId);
+    const pages=(organization.additionalCompanyPages||[]).filter(p=>p.networkId===networkId);
+    if(pages.length>=4)throw new BadRequestException('Pro Mitglied sind maximal fünf Unternehmensseiten möglich.');
+    if(input.ownershipConfirmed!==true)throw new BadRequestException('Bitte bestätigen, dass dies ein eigenes Unternehmen oder eine eigene Marke ist.');
+    const name=requiredText(input.companyName,'Unternehmensname',2,160), website=safeUrl(input.websiteUrl);
+    if(!website)throw new BadRequestException('Bitte die Unternehmenshomepage angeben.');
+    this.checkCompanyHomepage(networkId,website,'');
+    const names=[organization.displayName,organization.networkProfile?.companyName,...pages.map(p=>p.companyName)].filter(Boolean).map(n=>n!.toLowerCase().replace(/[^\p{L}\p{N}]/gu,''));
+    if(names.includes(name.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')))throw new ConflictException('Für dieses Unternehmen existiert bereits eine Seite.');
+    const now=new Date().toISOString();
+    const page={id:randomUUID(),networkId,ownerUserId:user.id,companyName:name,websiteUrl:website,ownershipConfirmedAt:now,reviewStatus:'draft' as const,profile:null,createdAt:now};
+    (organization.additionalCompanyPages ||= []).push(page);
+    return page;
+  }
+  ownCompanyPage(authorization:string|undefined,networkId:string,pageId:string){
+    const {organization,user}=this.companyPageOwner(authorization,networkId);
+    const page=organization.additionalCompanyPages?.find(p=>p.networkId===networkId && p.id===pageId && p.ownerUserId===user.id);
+    if(!page)throw new NotFoundException('Unternehmensseite nicht gefunden.');
+    return {organization:{id:page.id,displayName:page.companyName,legalName:page.companyName,websiteUrl:page.websiteUrl},profile:page.profile,canEdit:true,reviewStatus:page.reviewStatus};
+  }
+  saveCompanyPage(authorization:string|undefined,networkId:string,pageId:string,input:Record<string,unknown>){
+    this.ownCompanyPage(authorization,networkId,pageId);
+    const {organization,user}=this.companyPageOwner(authorization,networkId);
+    this.requireWritableNetwork(user.id,networkId);
+    const page=organization.additionalCompanyPages!.find(p=>p.networkId===networkId && p.id===pageId)!;
+    const website=safeUrl(input.websiteUrl || page.websiteUrl)!;
+    this.checkCompanyHomepage(networkId,website,'',pageId);
+    const normalize=(name:unknown)=>String(name||'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+    const name=normalize(input.companyName||page.companyName);
+    if([organization.displayName,...(organization.additionalCompanyPages||[]).filter(p=>p.networkId===networkId&&p.id!==pageId).map(p=>p.companyName)].some(n=>normalize(n)===name))throw new ConflictException('Für dieses Unternehmen existiert bereits eine Seite.');
+    const temp={...organization,displayName:page.companyName,websiteUrl:website,networkProfile:page.profile||undefined};
+    // Validate every publication field, but never let members bypass owner approval.
+    const profile=this.writePartnerProfile(temp,{...input,websiteUrl:website});
+    profile.status='draft';profile.publishedAt=null;
+    page.profile=profile;page.companyName=profile.companyName;page.websiteUrl=website;
+    page.reviewStatus=input.publish===true?'pending':'draft';delete page.reviewedAt;delete page.reviewedBy;
+    if(page.reviewStatus==='pending')for(const operator of this.store.users.values()){
+      if(operator.accountRole!=='platform_admin'||this.store.notifications.some(n=>n.userId===operator.id&&n.type==='network.company-page.review'&&n.data.pageId===page.id&&!n.readAt))continue;
+      this.store.notifications.push({id:randomUUID(),userId:operator.id,type:'network.company-page.review',data:{networkId,pageId:page.id,userId:page.ownerUserId,title:'Unternehmensseite zur Freigabe: '+page.companyName},readAt:null,createdAt:new Date().toISOString()});
+    }
+    return profile;
+  }
+  reviewCompanyPages(authorization:string|undefined,networkId:string,userId:string){
+    this.requirePlatformAdmin(this.auth.authenticate(authorization).id);
+    const membership=this.store.networkMemberships.find(m=>m.networkId===networkId && m.userId===userId);
+    if(!membership)throw new NotFoundException('Mitglied nicht gefunden.');
+    return {pages:(this.store.organizations.get(membership.organizationId)?.additionalCompanyPages||[]).filter(p=>p.networkId===networkId && p.ownerUserId===userId)};
+  }
+  decideCompanyPage(authorization:string|undefined,networkId:string,userId:string,pageId:string,input:Record<string,unknown>){
+    const {pages}=this.reviewCompanyPages(authorization,networkId,userId),page=pages.find(p=>p.id===pageId);
+    if(!page||!page.profile)throw new NotFoundException('Unternehmensseite nicht gefunden.');
+    if(!['approved','rejected'].includes(String(input.decision)))throw new BadRequestException('Ungültige Entscheidung.');
+    if(input.decision==='approved'){
+      if(page.reviewStatus!=='pending')throw new BadRequestException('Diese Seite wurde noch nicht zur Freigabe eingereicht.');
+      this.checkCompanyHomepage(networkId,page.websiteUrl,'',page.id);
+      const temp={displayName:page.companyName,networkProfile:page.profile} as OrganizationRecord;
+      page.profile=this.writePartnerProfile(temp,{...page.profile,publish:true});
+    }else{page.profile.status='draft';page.profile.publishedAt=null;}
+    page.reviewStatus=input.decision as 'approved'|'rejected';page.reviewedAt=new Date().toISOString();page.reviewedBy=this.auth.authenticate(authorization).id;
+    return page;
+  }
+
   updateOwnProfile(
     authorization: string | undefined,
     networkId: string,
@@ -2773,6 +2871,7 @@ export class NetworksService {
     );
     if (!organization)
       throw new NotFoundException("Unternehmen nicht gefunden.");
+    if(input.websiteUrl)this.checkCompanyHomepage(networkId,input.websiteUrl,organization.id);
     const wasPublished = organization.networkProfile?.status === "published";
     const profile = this.writePartnerProfile(organization, input);
     const key = "welcome:" + networkId + ":" + organization.id;

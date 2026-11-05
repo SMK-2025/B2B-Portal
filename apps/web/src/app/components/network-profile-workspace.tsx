@@ -56,9 +56,55 @@ type Response = {
   canEdit: boolean;
 };
 
-export function NetworkProfileWorkspace({
+type CompanyPage = {id:string;companyName:string;websiteUrl:string;reviewStatus:'draft'|'pending'|'approved'|'rejected';profile:Profile|null};
+const pageStates={draft:'Entwurf',pending:'Wartet auf Freigabe',approved:'Im Netzwerk sichtbar',rejected:'Bitte überarbeiten'};
+
+export function NetworkProfileWorkspace({service}:{service?:{networkId:string;userId:string}}={}) {
+  const access=useNetworkAccess(),networkId=access?.networkId||'';
+  const [own,setOwn]=useState<Response|null>(null),[pages,setPages]=useState<CompanyPage[]>([]),[notice,setNotice]=useState(''),[loading,setLoading]=useState(true),[creating,setCreating]=useState(false),[busy,setBusy]=useState(false);
+  const [editing,setEditing]=useState<{id:string;action:'setup'|'preview'}|null>(null);
+  const loadedNetwork=useRef('');
+  async function load(){
+    const token=getPortalSession();if(!token||!networkId||service)return;
+    setLoading(true);
+    try{
+      const [primary,additional]=await Promise.all([portalRequest<Response>(`/networks/${networkId}/profile`,{token}),portalRequest<{pages:CompanyPage[]}>(`/networks/${networkId}/company-pages`,{token})]);
+      setOwn(primary);setPages(additional.pages);
+      if(loadedNetwork.current!==networkId){loadedNetwork.current=networkId;const query=new URLSearchParams(location.search);if(query.has('pruefen'))setEditing({id:'main',action:'preview'});else if(!primary.profile||query.has('einrichten'))setEditing({id:'main',action:'setup'});}
+    }catch(e){setNotice(e instanceof Error?e.message:'Seiten konnten nicht geladen werden.');}finally{setLoading(false);}
+  }
+  useEffect(()=>{void load();},[networkId,service]);
+  if(service)return <CompanyPageEditor service={service}/>;
+  const finish=()=>{setEditing(null);void load();};
+  if(editing)return <><button type="button" className="networkSecondary" onClick={finish}>← Meine Unternehmensseiten</button><CompanyPageEditor key={editing.id} pageId={editing.id==='main'?undefined:editing.id} initialAction={editing.action} onDone={finish}/></>;
+  async function create(event:FormEvent<HTMLFormElement>){
+    event.preventDefault();const form=new FormData(event.currentTarget),token=getPortalSession();if(!token)return;setBusy(true);setNotice('');
+    try{const page=await portalRequest<CompanyPage>(`/networks/${networkId}/company-pages`,{token,body:{companyName:form.get('companyName'),websiteUrl:form.get('websiteUrl'),ownershipConfirmed:form.get('ownership')==='on'}});setCreating(false);setEditing({id:page.id,action:'setup'});}
+    catch(e){setNotice(e instanceof Error?e.message:'Seite konnte nicht angelegt werden.');}finally{setBusy(false);}
+  }
+  const cards=own?[{id:'main',companyName:own.profile?.companyName||own.organization.displayName,websiteUrl:own.profile?.websiteUrl||own.organization.websiteUrl||'',profile:own.profile,reviewStatus:own.profile?.status==='published'?'approved':'draft'} as CompanyPage,...pages]:[];
+  return <section className="companyPagesOverview">
+    <header><div><h2>Deine Unternehmen auf einen Blick</h2><p>Einrichtung und Vorschau öffnest du direkt an der jeweiligen Seite.</p></div><span>{cards.length} von 5 Seiten</span></header>
+    {loading&&<p role="status">Unternehmensseiten werden geladen …</p>}
+    <div className="companyPagesGrid">{cards.map(page=><article className="companyMiniCard" key={page.id} style={partnerBranding(page.profile)}>
+      <button type="button" className="companyMiniHero" aria-label={`Vorschau von ${page.companyName} öffnen und bearbeiten`} onClick={()=>setEditing({id:page.id,action:'preview'})}>
+        {page.profile?.heroImageUrl?<img src={page.profile.heroImageUrl} alt=""/>:<span className="companyMiniHeroPlaceholder">Dein Unternehmensauftritt</span>}
+        <span className="companyMiniStatus">{pageStates[page.reviewStatus]}</span>
+      </button>
+      <div className="companyMiniBody"><div className="companyMiniIdentity">{page.profile?.logoUrl?<img src={page.profile.logoUrl} alt=""/>:<span>{page.companyName.slice(0,2).toUpperCase()}</span>}<h3>{page.companyName}</h3></div>
+      <p>{page.profile?.tagline||'Zeig, was dein Unternehmen ausmacht.'}</p><small>{page.websiteUrl?new URL(page.websiteUrl).hostname:'Homepage noch ergänzen'}</small>
+      <div className="companyMiniActions"><button type="button" className="networkSecondary" onClick={()=>setEditing({id:page.id,action:'setup'})}>Einrichtung öffnen</button><button type="button" className="networkPrimary" onClick={()=>setEditing({id:page.id,action:'preview'})}>Vorschau öffnen & bearbeiten</button></div></div>
+    </article>)}
+    {own?.canEdit&&cards.length<5&&<button type="button" className="companyAddCard" onClick={()=>setCreating(true)}><span>＋</span><strong>Weiteres eigenes Unternehmen</strong><small>Eigene Homepage · Freigabe durch den Betreiber</small></button>}</div>
+    {creating&&<div className="networkModalBackdrop"><section className="networkModal companyCreateDialog" role="dialog" aria-modal="true" aria-labelledby="company-create-title"><h2 id="company-create-title">Eigenes Unternehmen ergänzen</h2><p>Nur eigene Unternehmen und Marken. Zusätzliche Seiten werden vor der Veröffentlichung vom Betreiber geprüft.</p><form onSubmit={create}><label>Unternehmen oder Marke<input name="companyName" required minLength={2} maxLength={160}/></label><label>Eigene Unternehmenshomepage<input name="websiteUrl" type="url" required placeholder="https://www.unternehmen.de"/></label><label className="companyOwnershipCheck"><input name="ownership" type="checkbox" required/><span>Ich bestätige, dass dieses Unternehmen oder diese Marke mir beziehungsweise meinem Unternehmen gehört. Ich lege keine Seite für fremde Unternehmen zur Umgehung eines eigenen Mitgliedszugangs an.</span></label><div><button type="button" className="networkSecondary" onClick={()=>setCreating(false)}>Abbrechen</button><button className="networkPrimary" disabled={busy}>{busy?'Wird angelegt …':'Seite einrichten'}</button></div></form>{notice&&<p role="alert">{notice}</p>}</section></div>}
+    {notice&&!creating&&<p role="status">{notice}</p>}
+  </section>;
+}
+
+function CompanyPageEditor({
   service,
-}: { service?: { networkId: string; userId: string } } = {}) {
+  pageId,initialAction,onDone,
+}: { service?: { networkId: string; userId: string };pageId?:string;initialAction?:'setup'|'preview';onDone?:()=>void } = {}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const returnToSetup=useRef(false);
   const [step, setStep] = useState(0);
@@ -76,7 +122,7 @@ export function NetworkProfileWorkspace({
     networkId = service?.networkId || access?.networkId || "",
     profilePath = service
       ? `/networks/admin/${networkId}/service-members/${service.userId}/profile`
-      : `/networks/${networkId}/profile`,
+      : pageId ? `/networks/${networkId}/company-pages/${pageId}` : `/networks/${networkId}/profile`,
     [data, setData] = useState<Response | null>(null),
     [logo, setLogo] = useState<string | null>(null),
     [hero, setHero] = useState<string | null>(null),
@@ -95,7 +141,7 @@ export function NetworkProfileWorkspace({
         setData(value);
         autoOpen.current =
           value.canEdit &&
-          (!value.profile ||
+          (initialAction==='setup' || (!value.profile && initialAction!=='preview') ||
             new URLSearchParams(window.location.search).has("einrichten"));
         setLogo(value.profile?.logoUrl || null);
         setHero(value.profile?.heroImageUrl || null);
@@ -116,7 +162,7 @@ export function NetworkProfileWorkspace({
       data &&
       !service &&
       !reviewed.current &&
-      new URLSearchParams(location.search).has("pruefen")
+      (initialAction==='preview' || new URLSearchParams(location.search).has("pruefen"))
     ) {
       reviewed.current = true;
       openEditablePreview();
@@ -199,10 +245,10 @@ export function NetworkProfileWorkspace({
       });
       verifyPartnerMediaSave({ heroImageUrl: hero, logoUrl: logo }, profile);
       setData((current) => (current ? { ...current, profile } : current));
-      if (publish) dialog.current?.close();
+      if (publish || onDone) {dialog.current?.close();onDone?.();}
       setNotice(
         publish
-          ? "Ihre Partnerseite ist jetzt im Netzwerk veröffentlicht."
+          ? pageId ? "Deine zusätzliche Unternehmensseite wurde zur Freigabe eingereicht." : "Ihre Partnerseite ist jetzt im Netzwerk veröffentlicht."
           : "Entwurf gespeichert. Nur Sie und der Initiator können ihn sehen.",
       );
     } catch (error) {
@@ -361,7 +407,7 @@ export function NetworkProfileWorkspace({
   }
   return (
     <div className="networkProfileWorkspace">
-      {data.canEdit && (
+      {data.canEdit && !initialAction && (
         <section className="partnerPreviewEntry">
           <div>
             <h2>
@@ -388,7 +434,7 @@ export function NetworkProfileWorkspace({
           </button>
         </section>
       )}
-      {data.canEdit && (
+      {data.canEdit && !initialAction && (
         <section className="partnerSetupEntry">
           <div>
             <small>
@@ -428,6 +474,7 @@ export function NetworkProfileWorkspace({
         ref={dialog}
         open={!data.canEdit || undefined}
         className="partnerSetupDialog"
+        onCancel={() => onDone?.()}
         data-step={step}
         aria-labelledby="setup-title"
       >
@@ -446,7 +493,7 @@ export function NetworkProfileWorkspace({
             <button
               type="button"
               aria-label="Einrichtung schließen"
-              onClick={() => dialog.current?.close()}
+              onClick={() => {dialog.current?.close();onDone?.();}}
             >
               ×
             </button>
@@ -1347,7 +1394,7 @@ export function NetworkProfileWorkspace({
                       ? "Wird gespeichert …"
                       : service
                         ? "Für die Übergabe speichern"
-                        : "Partnerseite veröffentlichen"}
+                        : pageId ? "Zur Freigabe einreichen" : "Partnerseite veröffentlichen"}
                   </NetworkText>
                 </button>
               )}
@@ -1362,7 +1409,8 @@ export function NetworkProfileWorkspace({
           userId={access?.currentUserId || ""}
           onSave={saveEditablePreview}
           canPublish={!service}
-          onClose={() => {setEditablePreview(null);if(returnToSetup.current){returnToSetup.current=false;requestAnimationFrame(()=>dialog.current?.showModal());}}}
+          approvalRequired={Boolean(pageId)}
+          onClose={() => {setEditablePreview(null);if(returnToSetup.current){returnToSetup.current=false;requestAnimationFrame(()=>dialog.current?.showModal());}else onDone?.();}}
         />
       )}
       {notice && (

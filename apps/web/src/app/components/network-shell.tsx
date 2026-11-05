@@ -132,7 +132,7 @@ const primaryPartnerItems = [
   { path: "rueckblicke", label: "Rückblicke", icon: "◫", module: "events" },
   {
     path: "profil",
-    label: "Meine Partnerseite",
+    label: "Meine Unternehmensseiten",
     icon: "▣",
     module: "profiles",
   },
@@ -554,7 +554,7 @@ function NetworkFrame({
                     access.enabledModules.includes("profiles") ? (
                     <Link href={`${base}/profil` as never}>
                       <NetworkText id="ui.network-shell.890fd7c24aa9279c">
-                        Meine Partnerseite
+                        Meine Unternehmensseiten
                       </NetworkText>
                     </Link>
                   ) : null}
@@ -667,7 +667,7 @@ function NetworkFrame({
                       href={`${base}/profil` as never}
                     >
                       <NetworkText id="ui.network-shell.15adb2e6d8ea2179">
-                        Meine Partnerseite →
+                        Meine Unternehmensseiten →
                       </NetworkText>
                     </Link>
                   ) : null)}

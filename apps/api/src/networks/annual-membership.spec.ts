@@ -6,6 +6,44 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it('limits own company pages, requires ownership and prevents duplicate homepage variants',async()=>{
+    const f=await fixture();f.orgs.create(f.member,f.input,true);
+    expect(()=>f.networks.createCompanyPage(f.member,f.network.id,{companyName:'Brand',websiteUrl:'https://brand.test'})).toThrow(/bestätigen/);
+    expect(()=>f.networks.createCompanyPage(f.member,f.network.id,{companyName:'Brand',websiteUrl:'https://www.example.de/path',ownershipConfirmed:true})).toThrow(/bereits eingebunden/);
+    for(let i=1;i<=4;i++)f.networks.createCompanyPage(f.member,f.network.id,{companyName:'Brand '+i,websiteUrl:`https://brand${i}.test`,ownershipConfirmed:true});
+    expect(f.networks.companyPages(f.member,f.network.id).pages).toHaveLength(4);
+    expect(()=>f.networks.createCompanyPage(f.member,f.network.id,{companyName:'Brand 5',websiteUrl:'https://brand5.test',ownershipConfirmed:true})).toThrow(/maximal fünf/);
+    expect(f.store.networkOrders.size).toBe(1);expect(f.store.networkMemberships).toHaveLength(1);
+    expect(()=>f.networks.companyPages(f.owner,f.network.id)).toThrow();
+  });
+  it('keeps additional pages private until operator approval and isolates editing, directory detail and media',async()=>{
+    const f=await fixture();f.orgs.create(f.member,f.input,true);
+    const page=f.networks.createCompanyPage(f.member,f.network.id,{companyName:'Other Brand',websiteUrl:'https://other-brand.test',ownershipConfirmed:true});
+    const profile={companyName:'Other Brand',websiteUrl:'https://other-brand.test',tagline:'Eigene digitale Marke',description:'Eine eigenständige Marke für unsere digitalen Leistungen und Produkte.',services:'Software und Beratung',street:'Teststraße 12',postalCode:'12345',city:'Teststadt',country:'Deutschland',contactName:'Mara Partner',contactPosition:'Inhaberin',contactEmail:'partner@example.de',contactPhone:'0123456789',heroImageUrl:'data:image/webp;base64,'+'A'.repeat(1024),publish:true};
+    const saved=f.networks.saveCompanyPage(f.member,f.network.id,page.id,profile);expect(saved.status).toBe('draft');expect(page.reviewStatus).toBe('pending');
+    const membership=f.store.networkMemberships[0],directoryId=membership.id+'~'+page.id;
+    expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(1);
+    expect(()=>f.networks.memberDetail(f.member,f.network.id,directoryId)).toThrow();
+    expect(()=>f.networks.decideCompanyPage(f.member,f.network.id,membership.userId,page.id,{decision:'approved'})).toThrow();
+    const other=f.networks.create(f.owner,{name:'Other Network',slug:'other-company-network'});f.networks.setAccess(f.owner,other.id,{status:'active'});
+    expect(()=>f.networks.ownCompanyPage(f.member,other.id,page.id)).toThrow();
+    expect(()=>f.networks.reviewCompanyPages(f.owner,other.id,membership.userId)).toThrow();
+    f.networks.decideCompanyPage(f.owner,f.network.id,membership.userId,page.id,{decision:'approved'});
+    const result=f.networks.memberPage(f.member,f.network.id,{q:'Other Brand'});expect(result.total).toBe(1);expect(result.items[0].id).toBe(directoryId);expect(JSON.stringify(result)).not.toContain('data:image/webp');
+    expect(f.networks.memberDetail(f.member,f.network.id,directoryId).id).toBe(membership.id);
+    expect(f.networks.memberDetail(f.member,f.network.id,directoryId).organization?.networkProfile?.companyName).toBe('Other Brand');
+    expect(()=>f.networks.memberDetail(f.owner,other.id,directoryId)).toThrow();
+    f.networks.saveCompanyPage(f.member,f.network.id,page.id,{...profile,tagline:'Geänderter Auftritt'});expect(page.reviewStatus).toBe('pending');expect(page.profile?.status).toBe('draft');
+    expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(1);
+    const source=f.store.users.get(membership.userId)!;
+    f.store.users.set('other-owner',{...source,id:'other-owner',email:'other-owner@example.de'});f.store.userByEmail.set('other-owner@example.de','other-owner');
+    const org=f.store.organizations.get(membership.organizationId)!;f.store.organizations.set('other-org',{...org,id:'other-org',additionalCompanyPages:[]});
+    f.store.networkMemberships.push({...membership,id:'other-membership',userId:'other-owner',organizationId:'other-org',complimentaryAccess:true});f.store.memberships.push({userId:'other-owner',organizationId:'other-org',role:'admin'});
+    const intruder='Bearer '+(await f.auth.login({email:'other-owner@example.de',password:'Sicher-Portal-2026!'})).token;
+    expect(()=>f.networks.ownCompanyPage(intruder,f.network.id,page.id)).toThrow(/nicht gefunden/);
+    expect(()=>f.networks.saveCompanyPage(intruder,f.network.id,page.id,profile)).toThrow();
+    expect(()=>f.networks.decideCompanyPage(intruder,f.network.id,membership.userId,page.id,{decision:'approved'})).toThrow();
+  });
   it('bounds directory pages, loads large media only on detail and isolates every network',async()=>{
     const f=await fixture();const org=f.orgs.create(f.member,f.input,true);
     org.networkProfile={status:'published',companyName:'Partner GmbH',tagline:'Beratung',services:'Software',logoUrl:null,heroImageUrl:'data:image/webp;base64,'+'A'.repeat(4096),sections:[{title:'Detail',body:'Nur im Profil'}],documents:[]} as any;

@@ -481,6 +481,13 @@ export class NetworksController {
   ) {
     return this.networks.ownProfile(authorization, networkId);
   }
+  @Get(":networkId/company-pages") companyPages(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string){return this.networks.companyPages(auth,id);}
+  @Post(":networkId/company-pages") createCompanyPage(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string,@Body() body:Record<string,unknown>){return this.networks.createCompanyPage(auth,id,body);}
+  @Get(":networkId/company-pages/:pageId") companyPage(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string,@Param('pageId') pageId:string){return this.networks.ownCompanyPage(auth,id,pageId);}
+  @Post(":networkId/company-pages/:pageId") saveCompanyPage(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string,@Param('pageId') pageId:string,@Body() body:Record<string,unknown>){return this.networks.saveCompanyPage(auth,id,pageId,body);}
+  @Post(":networkId/company-pages/:pageId/import") importCompanyPage(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string,@Param('pageId') pageId:string,@Body() body:Record<string,unknown>){this.networks.ownCompanyPage(auth,id,pageId);return this.networks.importOwnProfile(auth,id,body);}
+  @Get("admin/:networkId/users/:userId/company-pages") reviewCompanyPages(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string,@Param('userId') userId:string){return this.networks.reviewCompanyPages(auth,id,userId);}
+  @Post("admin/:networkId/users/:userId/company-pages/:pageId") decideCompanyPage(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string,@Param('userId') userId:string,@Param('pageId') pageId:string,@Body() body:Record<string,unknown>){return this.networks.decideCompanyPage(auth,id,userId,pageId,body);}
   @Post(":networkId/profile") saveProfile(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,

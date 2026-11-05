@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ServiceMemberForm } from "./service-member-form";
 import { NetworkProfileWorkspace } from "./network-profile-workspace";
+import { AdminCompanyPages } from "./admin-company-pages";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { InvoiceDownload, type BillingInvoice } from "./admin-network-billing";
 type Row = {
@@ -401,6 +402,7 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                               ⋮
                             </summary>
                             <div>
+                              {row.userId && <AdminCompanyPages networkId={id} userId={row.userId} name={row.name}/>}
                               {row.service && (
                                 <>
                                   {!row.service.sentAt && (

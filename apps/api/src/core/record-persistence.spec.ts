@@ -85,7 +85,7 @@ describe('individual PostgreSQL record persistence',()=>{
       const image='data:image/png;base64,'+Buffer.alloc(4096,42).toString('base64');
       const collections={networks:new Map([['a',{id:'a',settings:{memberBilling:{months:12},launchPromotion:{enabled:true}}}],['b',{id:'b'}]]),
         networkMemberships:[{id:'ma',networkId:'a',organizationId:'oa'},{id:'mb',networkId:'b',organizationId:'ob'}],
-        organizations:new Map([['oa',{networkId:'a',logo:image,name:'A'}],['ob',{networkId:'b',logo:image,name:'B'}]]),
+        organizations:new Map([['oa',{networkId:'a',logo:image,name:'A',additionalCompanyPages:[{id:'extra',networkId:'a',ownerUserId:'owner-a',reviewStatus:'pending',profile:{heroImageUrl:image,logoUrl:image,companyName:'Own Brand'}}]}],['ob',{networkId:'b',logo:image,name:'B'}]]),
         userByEmail:new Map([['test@example.de','user-id']])};
       const store=new RecordPersistence(); let revision=await store.save(sql,0,collections);
       expect(revision).toBe(1);

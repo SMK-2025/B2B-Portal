@@ -91,12 +91,14 @@ export function PartnerEditablePreview({
   onClose,
   userId,
   canPublish=true,
+  approvalRequired=false,
 }: {
   initial: PartnerPageProfile;
   onSave: (value: PartnerPageProfile) => Promise<PartnerPageProfile>;
   onClose: () => void;
   userId: string;
   canPublish?:boolean;
+  approvalRequired?:boolean;
 }) {
   const [draft, setDraft] = useState(initial),
     [editing, setEditing] = useState<string | null>(null),
@@ -108,7 +110,7 @@ export function PartnerEditablePreview({
     [documents, setDocuments] = useState(initial.documents || []);
   async function savePage(publish:boolean){
     if(busy||readingImage)return;setBusy(true);setMessage('');
-    try{const saved=await onSave({...draft,status:publish?'published':draft.status});setDraft(saved);setMessage(publish?'Deine Unternehmensseite ist jetzt im Netzwerk sichtbar.':'Deine Unternehmensseite wurde gespeichert.');}
+    try{const saved=await onSave({...draft,status:publish?'published':draft.status});setDraft(saved);setMessage(publish?(approvalRequired?'Deine Unternehmensseite wurde zur Freigabe eingereicht.':'Deine Unternehmensseite ist jetzt im Netzwerk sichtbar.'):'Deine Unternehmensseite wurde gespeichert.');}
     catch(error){setMessage(error instanceof Error?error.message:'Speichern fehlgeschlagen. Deine Eingaben bleiben erhalten.');}
     finally{setBusy(false);}
   }
@@ -359,7 +361,7 @@ export function PartnerEditablePreview({
       {!editing && <div className="partnerPreviewSaveBar" role="region" aria-label="Unternehmensseite speichern">
         <span>Deine Seite · <strong>{draft.status==='published'?'Im Netzwerk sichtbar':'Noch nicht veröffentlicht'}</strong></span>
         <button type="button" disabled={busy} onClick={()=>void savePage(false)}>{busy?'Wird gespeichert …':'Seite speichern'}</button>
-        {canPublish&&draft.status!=='published'&&<button type="button" className="networkPrimary" disabled={busy} onClick={()=>void savePage(true)}>Im Netzwerk veröffentlichen →</button>}
+        {canPublish&&draft.status!=='published'&&<button type="button" className="networkPrimary" disabled={busy} onClick={()=>void savePage(true)}>{approvalRequired?'Zur Freigabe einreichen':'Im Netzwerk veröffentlichen'} →</button>}
       </div>}
       <ProfileDialog
         member={{

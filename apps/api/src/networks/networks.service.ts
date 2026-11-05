@@ -3653,7 +3653,7 @@ export class NetworksService {
         (item) =>
           item.networkId === networkId &&
           item.eventId === eventId &&
-          (this.isNetworkManager(actor.id, networkId) ||
+          (this.isNetworkInitiator(actor.id, networkId) ||
             item.membershipId === own?.id),
       )
       .map((item) => this.attendanceView(item))
@@ -3706,7 +3706,7 @@ export class NetworksService {
     input: Record<string, unknown>,
   ) {
     const actor = this.auth.authenticate(authorization);
-    this.requireNetworkManagement(actor.id, networkId);
+    this.requireNetworkInitiator(actor.id, networkId);
     this.requireEnabledModule(networkId, "events", actor.id);
     this.event(networkId, eventId);
     this.member(networkId, membershipId);
@@ -5648,6 +5648,7 @@ export class NetworksService {
     type: NetworkContentType,
   ) {
     this.requireNetworkAccess(userId, networkId);
+    if (type === "event") this.requireNetworkInitiator(userId, networkId);
     const user = this.store.users.get(userId);
     if (user?.accountRole === "platform_admin") return;
     const network = this.raw(networkId);
@@ -5683,6 +5684,7 @@ export class NetworksService {
     record: NetworkContentRecord,
   ) {
     this.requireNetworkAccess(userId, networkId);
+    if (record.type === "event") this.requireNetworkInitiator(userId, networkId);
     const user = this.store.users.get(userId);
     if (
       user?.accountRole === "platform_admin" &&

@@ -80,7 +80,7 @@ export default function ParticipationStatusPage() {
     <main className={styles.stage}>
       {preview?.slug===slug && <div className={styles.preview} aria-hidden="true" inert style={{"--network-accent":preview.primaryColor,"--network-primary":preview.secondaryColor} as CSSProperties}>
         <div className={styles.bar}>{preview.logoUrl && <img src={preview.logoUrl} alt="" style={{maxWidth:76,maxHeight:44,objectFit:"contain"}}/>}<b>Das Netzwerkpartner-Portal</b><span style={{marginLeft:"auto"}}>Mein Zugang</span></div>
-        <div className={styles.tabs} style={{background:preview.secondaryColor}}>Startseite　 {preview.modules.includes("profiles")&&"Partner entdecken　"}{preview.modules.includes("events")&&"Veranstaltungen　"}{preview.modules.includes("communication")&&"PartnerChat"}</div>
+        <div className={styles.tabs} style={{background:preview.secondaryColor}}>Startseite　 {preview.modules.includes("profiles")&&"Mitglieder entdecken　"}{preview.modules.includes("events")&&"Veranstaltungen　"}{preview.modules.includes("communication")&&"Mitglieder-Chat"}</div>
         <div className="networkPortal" style={{display:"block"}}><NetworkDashboardWorkspace slug={slug} preview={preview}/></div>
       </div>}
       <section
@@ -109,7 +109,7 @@ export default function ParticipationStatusPage() {
               </p>
               <p>
                 Bis zur Freigabe kannst du hier deinen Status einsehen.
-                Mitgliederverzeichnis, PartnerChat und Unternehmensseite sind
+                Mitgliederverzeichnis, Mitglieder-Chat und Unternehmensseite sind
                 noch gesperrt.
               </p>
             </>

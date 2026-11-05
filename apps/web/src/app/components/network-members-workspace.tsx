@@ -817,7 +817,7 @@ export function ProfileDialog({
                   }
                 >
                   <NetworkText id="ui.network-members-workspace.c03a0ec43f30f32b">
-                    PartnerChat beginnen →
+                    Mitglieder-Chat beginnen →
                   </NetworkText>
                 </Link>
               )}

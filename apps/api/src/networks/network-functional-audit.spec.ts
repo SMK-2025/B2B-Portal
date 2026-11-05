@@ -317,14 +317,28 @@ describe("functional audit with 50 partners", () => {
         response: "registered",
       }),
     ).toThrow(/Anmeldefrist/);
-    const proposal = networks.createContent(first.bearer, network.id, {
+    const eventInput = {
       type: "event",
       title: "Partnerfrühstück",
       description: "Unser Vorschlag",
       startsAt: future,
       data: { category: "Geschäftstreffen" },
-    });
-    expect(proposal.status).toBe("draft");
+      status: "draft",
+    };
+    expect(() => networks.createContent(first.bearer, network.id, eventInput)).toThrow();
+    const proposal = networks.createContent(initiator.bearer, network.id, eventInput);
+    // Old member-created events must not retain creator privileges.
+    proposal.createdByUserId = first.id;
+    for (const status of ["draft", "published", "completed", "archived"]) {
+      expect(() => networks.updateContent(first.bearer, network.id, proposal.id, {status})).toThrow();
+    }
+    expect(() => networks.updateContent(first.bearer, network.id, proposal.id, {title:"Changed title"})).toThrow();
+    expect(() => networks.deleteContent(first.bearer, network.id, proposal.id)).toThrow();
+    const member = store.networkMemberships.find(m=>m.networkId===network.id && m.userId===first.id)!;
+    const originalRole=member.role;member.role="moderator";
+    expect(() => networks.createContent(first.bearer, network.id, eventInput)).toThrow();
+    expect(() => networks.deleteContent(first.bearer, network.id, proposal.id)).toThrow();
+    member.role=originalRole;
     expect(() =>
       networks.updateContent(first.bearer, network.id, proposal.id, {
         status: "published",

@@ -263,7 +263,7 @@ export function PartnerChatWorkspace() {
           body: {
             type: "conversation",
             status: "published",
-            title: `PartnerChat · ${person.name}`.slice(0, 200),
+            title: `Mitglieder-Chat · ${person.name}`.slice(0, 200),
             description:
               "Vertraulicher Austausch zwischen zwei Netzwerkpartnern.",
             participantUserIds: [person.userId],
@@ -309,13 +309,13 @@ export function PartnerChatWorkspace() {
   return (
     <section
       className={`partnerChat${active ? " hasActiveChat" : ""}`}
-      aria-label="PartnerChat"
+      aria-label="Mitglieder-Chat"
     >
       <aside className="partnerChatSidebar">
         <header>
           <h2>
             <NetworkText id="ui.partner-chat-workspace.d6163d6685bdad2a">
-              PartnerChat
+              Mitglieder-Chat
             </NetworkText>
           </h2>
           <p>
@@ -326,8 +326,8 @@ export function PartnerChatWorkspace() {
         </header>
         <input
           className="partnerChatSearch"
-          aria-label="Partner und Chats suchen"
-          placeholder="Partner oder Chat suchen …"
+          aria-label="Mitglieder und Chats suchen"
+          placeholder="Mitglied oder Chat suchen …"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -455,7 +455,7 @@ export function PartnerChatWorkspace() {
               </button>
               <Avatar person={person} />
               <div>
-                <h2>{person?.name || thread?.title || "PartnerChat"}</h2>
+                <h2>{person?.name || thread?.title || "Mitglieder-Chat"}</h2>
                 <p>
                   {person?.company || "Geschlossener Teilnehmerkreis"}
                   <NetworkText id="ui.partner-chat-workspace.0ccdcc9c25c50330">

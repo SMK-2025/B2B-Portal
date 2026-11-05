@@ -125,7 +125,7 @@ const primaryPartnerItems = [
   },
   {
     path: "kommunikation",
-    label: "PartnerChat",
+    label: "Mitglieder-Chat",
     icon: "✉",
     module: "communication",
   },

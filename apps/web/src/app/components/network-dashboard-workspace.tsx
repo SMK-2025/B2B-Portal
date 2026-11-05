@@ -423,7 +423,7 @@ export function NetworkDashboardWorkspace({
                   <span className="loungeBoardPin" aria-hidden="true" />
                   <div className="loungeNoteMeta">
                     <span><NetworkText id="dashboard.board.event.pinned">Veranstaltung · Angepinnt</NetworkText></span>
-                    <b><NetworkText id={data.upcomingEvents.length ? "dashboard.board.event.upcoming" : "dashboard.board.event.past"}>{data.upcomingEvents.length ? "Bevorstehend" : "Bereits stattgefunden"}</NetworkText></b>
+                    <b style={{background:"#edf0f3",color:"#243a4c"}}><NetworkText id={data.upcomingEvents.length ? "dashboard.board.event.upcoming" : "dashboard.board.event.past"}>{data.upcomingEvents.length ? "Bevorstehend" : "Bereits stattgefunden"}</NetworkText></b>
                   </div>
                   <img src={eventImage || data.network.settings?.bannerImageUrl || "/images/network-meeting-club.webp"} alt="" />
                   <h3>{event.title}</h3>
@@ -590,7 +590,7 @@ export function NetworkDashboardWorkspace({
       )}
       <nav className="loungeQuickAccess" aria-label="Weitere Partnerbereiche">
         {[
-          ["kommunikation", "PartnerChat", "communication"],
+          ["kommunikation", "Mitglieder-Chat", "communication"],
         ]
           .filter(([, , module]) => enabled(module))
           .map(([path, label]) => (

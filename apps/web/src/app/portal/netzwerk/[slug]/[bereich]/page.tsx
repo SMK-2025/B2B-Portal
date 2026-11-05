@@ -40,7 +40,7 @@ const pages: Record<string, [string, string]> = {
     "Geschäftsanfragen, Leistungen und Kooperationsangebote ausschließlich im geschlossenen Partnernetzwerk sichtbar machen.",
   ],
   kommunikation: [
-    "PartnerChat",
+    "Mitglieder-Chat",
     "Direkt miteinander sprechen, Bilder teilen und neue Kontakte persönlich vertiefen.",
   ],
   themen: [

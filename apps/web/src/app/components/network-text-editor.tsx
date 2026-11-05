@@ -11,6 +11,7 @@ import {
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
+import { networkUiCopy } from "../lib/network-ui-copy";
 
 type CopyState = { texts: Record<string, string>; revision: number };
 function validCopy(value: CopyState) {
@@ -156,7 +157,7 @@ export function NetworkText({
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const value = editor?.texts?.[id] ?? children;
+  const value = networkUiCopy(id, editor?.texts, children);
   useEffect(() => {
     if (!editor?.enabled) setEditing(false);
   }, [editor?.enabled]);

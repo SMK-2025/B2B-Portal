@@ -42,6 +42,12 @@ type Attendance = {
   companionCount: number;
   note: string | null;
 };
+
+function eventPhase(item:Item) {
+  if(item.data.eventStatus === "cancelled") return "Abgesagt";
+  return item.startsAt && Date.parse(item.endsAt || item.startsAt) < Date.now()
+    ? "Bereits stattgefunden" : "Bevorstehend";
+}
 type Config = {
   type: ContentType;
   singular: string;
@@ -261,19 +267,21 @@ export function NetworkModuleWorkspace({
   }
   const canEditItem = (item: Item) =>
     !access?.readOnly &&
-    (access?.canManage ||
-      (item.createdByUserId === access?.currentUserId &&
-        (item.type !== "event" || item.status === "draft")));
+    (item.type === "event"
+      ? Boolean(access?.isInitiator)
+      : (access?.canManage || item.createdByUserId === access?.currentUserId));
   const visible = useMemo(
     () =>
       items.filter(
         (item) =>
-          (filter === "Alle" || labels[item.status] === filter) &&
+          (filter === "Alle" || labels[item.status] === filter || (module === "veranstaltungen" && eventPhase(item) === filter)) &&
           `${item.title} ${item.description}`
             .toLowerCase()
             .includes(query.toLowerCase()),
-      ),
-    [items, query, filter],
+      ).sort((a,b)=>module !== "veranstaltungen" ? 0 :
+        Number(eventPhase(a)!=="Bevorstehend")-Number(eventPhase(b)!=="Bevorstehend") ||
+        (eventPhase(a)==="Bevorstehend" ? 1 : -1)*(Date.parse(a.startsAt||a.createdAt||a.updatedAt)-Date.parse(b.startsAt||b.createdAt||b.updatedAt))),
+    [items, query, filter,module],
   );
   if (!config) return null;
   const memberCanCreate = [
@@ -282,10 +290,9 @@ export function NetworkModuleWorkspace({
     "themen",
     "dokumente",
     "aufgaben",
-    "veranstaltungen",
   ].includes(module);
   const canCreate = Boolean(
-    !access?.readOnly && (access?.canManage || memberCanCreate),
+    !access?.readOnly && (module === "veranstaltungen" ? access?.isInitiator : (access?.canManage || memberCanCreate)),
   );
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -647,7 +654,7 @@ export function NetworkModuleWorkspace({
 
   return (
     <div className="networkFunctionalWorkspace">
-      {!board && (
+      {!board && module !== "veranstaltungen" && (
         <section className="networkModulePurpose">
           <strong>
             <NetworkText id="ui.network-module-workspace.d7210663cfd95a64">
@@ -676,7 +683,8 @@ export function NetworkModuleWorkspace({
           aria-label="Status filtern"
         >
           <option>Alle</option>
-          {Object.values(labels).map((label) => (
+          {module === "veranstaltungen" && ["Bevorstehend","Bereits stattgefunden","Abgesagt"].map(label=><option key={label}>{label}</option>)}
+          {Object.values(labels).filter(()=>module !== "veranstaltungen" || access?.isInitiator).map((label) => (
             <option key={label}>{label}</option>
           ))}
         </select>
@@ -696,7 +704,7 @@ export function NetworkModuleWorkspace({
           </button>
         )}
       </div>
-      <div className={board ? "boardCounts" : "networkMemberStats"}>
+      {module !== "veranstaltungen" && <div className={board ? "boardCounts" : "networkMemberStats"}>
         <button
           className={filter === "Alle" ? "active" : ""}
           onClick={() => setFilter("Alle")}
@@ -722,7 +730,7 @@ export function NetworkModuleWorkspace({
               <span>{labels[value]}</span>
             </button>
           ))}
-      </div>
+      </div>}
       {board ? (
         <NetworkBoardPager
           key={JSON.stringify([slug, query, filter])}
@@ -871,7 +879,7 @@ export function NetworkModuleWorkspace({
           })}
         </NetworkBoardPager>
       ) : (
-        <section className="networkCard">
+        <section className={`networkCard${module === "veranstaltungen" ? " networkEventCatalog" : ""}`}>
           <header>
             <div>
               <h2>
@@ -880,7 +888,7 @@ export function NetworkModuleWorkspace({
                 </NetworkText>
               </h2>
             </div>
-            <button
+            {(module !== "veranstaltungen" || access?.isInitiator) && <button
               type="button"
               onClick={exportCsv}
               disabled={!visible.length}
@@ -888,7 +896,7 @@ export function NetworkModuleWorkspace({
               <NetworkText id="ui.network-module-workspace.c859cc1c24cf0a40">
                 CSV exportieren
               </NetworkText>
-            </button>
+            </button>}
           </header>
           <div className="networkContentRows">
             {visible.map((item) => (
@@ -900,18 +908,17 @@ export function NetworkModuleWorkspace({
                     : undefined
                 }
               >
-                {["veranstaltungen", "themen"].includes(module) &&
-                  (item.data.imageUrl || item.data.coverImageUrl) && (
+                {["veranstaltungen", "themen"].includes(module) && (
                     <img
                       className="networkEventThumbnail"
-                      src={item.data.imageUrl || item.data.coverImageUrl}
+                      src={item.data.imageUrl || item.data.coverImageUrl || "/images/network-meeting-club.webp"}
                       alt=""
                     />
                   )}
                 <div>
-                  <span className={`networkMemberStatus ${item.status}`}>
+                  {(module !== "veranstaltungen" || access?.isInitiator) && <span className={`networkMemberStatus ${item.status}`}>
                     {labels[item.status]}
-                  </span>
+                  </span>}
                   {module === "veranstaltungen" && (
                     <span className="networkContentCategory">
                       <NetworkText id="ui.network-module-workspace.480a2432a9fd2e22">
@@ -977,8 +984,7 @@ export function NetworkModuleWorkspace({
                           </NetworkText>
                         </a>
                       )}
-                    {(access?.canManage ||
-                      item.createdByUserId === access?.currentUserId) && (
+                    {canEditItem(item) && (
                       <button
                         onClick={() => {
                           setEditing(item);
@@ -1002,7 +1008,7 @@ export function NetworkModuleWorkspace({
                         ↗
                       </button>
                     )}
-                    {module === "veranstaltungen" && (
+                    {module === "veranstaltungen" && access?.isInitiator && (
                       <button
                         onClick={() => void openAttendance(item)}
                         title="Teilnahme und Anwesenheit"
@@ -1011,8 +1017,7 @@ export function NetworkModuleWorkspace({
                         ♙
                       </button>
                     )}
-                    {(access?.canManage ||
-                      item.createdByUserId === access?.currentUserId) &&
+                    {canEditItem(item) &&
                       !(module === "veranstaltungen" && !access?.canManage) &&
                       item.status !== "published" &&
                       item.status !== "completed" && (
@@ -1024,8 +1029,7 @@ export function NetworkModuleWorkspace({
                           ✓
                         </button>
                       )}
-                    {(access?.canManage ||
-                      item.createdByUserId === access?.currentUserId) &&
+                    {canEditItem(item) &&
                       item.status !== "completed" && (
                         <button
                           onClick={() => void change(item, "completed")}
@@ -1035,8 +1039,7 @@ export function NetworkModuleWorkspace({
                           ○
                         </button>
                       )}
-                    {(access?.canManage ||
-                      item.createdByUserId === access?.currentUserId) &&
+                    {canEditItem(item) &&
                       item.status !== "archived" && (
                         <button
                           onClick={() => void change(item, "archived")}
@@ -1046,8 +1049,7 @@ export function NetworkModuleWorkspace({
                           ⌑
                         </button>
                       )}
-                    {(access?.canManage ||
-                      item.createdByUserId === access?.currentUserId) && (
+                    {canEditItem(item) && (
                       <button
                         className="networkDeleteAction"
                         disabled={busy}
@@ -1871,7 +1873,7 @@ export function NetworkModuleWorkspace({
                   )}
                 </form>
               )}
-            {access?.canManage && (
+            {access?.isInitiator && (
               <>
                 <header>
                   <div>

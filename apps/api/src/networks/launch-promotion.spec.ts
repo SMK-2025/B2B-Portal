@@ -242,15 +242,18 @@ describe("network launch promotion", () => {
     expect(issue).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
   });
-  it("serializes database allocation with an advisory transaction lock", async () => {
+  it.each([false,true])("allocates free places despite unrelated billing version changes (JSON text=%s)", async (asText) => {
     const { store, network } = fixture(1);
+    network.settings.memberBilling!.version="in-memory-billing";
+    const persisted=structuredClone(network.settings);
+    persisted.memberBilling!.version="persisted-billing";
     const rows: any[] = [],
       queries: string[] = [];
     let queue = Promise.resolve();
     const unsafe = vi.fn(async (q: string, args: any[] = []) => {
       queries.push(q);
       if (q.includes("jsonb_array_elements"))
-        return [{ settings: network.settings }];
+        return [{ settings: asText ? JSON.stringify(persisted) : persisted }];
       if (q.startsWith("INSERT")) {
         rows.push({
           campaign: args[0],
@@ -280,5 +283,12 @@ describe("network launch promotion", () => {
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     expect(rows).toHaveLength(1);
     expect(queries[0]).toContain("pg_advisory_xact_lock");
+    expect(queries.find(q=>q.includes("jsonb_array_elements"))).toContain("jsonb_typeof");
+    persisted.launchPromotion!.freeMonths=3;
+    await expect(store.claimLaunchPlace("koeln","c","Firma C")).rejects.toThrow(/Startaktion wurde geändert/);
+    persisted.launchPromotion!.freeMonths=6;
+    persisted.memberPaymentModel="network";
+    await expect(store.claimLaunchPlace("koeln","c","Firma C")).rejects.toThrow(/Startaktion wurde geändert/);
+    expect(rows).toHaveLength(1);
   });
 });

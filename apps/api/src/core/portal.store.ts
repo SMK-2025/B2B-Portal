@@ -148,19 +148,23 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     const p = await this.sql.begin(async (tx) => {
       await tx.unsafe("SELECT pg_advisory_xact_lock(6620100)");
       const persisted = await tx.unsafe(
-        "SELECT n->1->'settings' AS settings FROM portal_state p CROSS JOIN LATERAL jsonb_array_elements(p.payload->'networks') n WHERE p.id='primary' AND n->>0=$1",
+        "SELECT entry.value->1->'settings' AS settings FROM portal_state p CROSS JOIN LATERAL jsonb_array_elements((CASE WHEN jsonb_typeof(p.payload)='string' THEN (p.payload #>> '{}')::jsonb ELSE p.payload END)->'networks') AS entry(value) WHERE p.id='primary' AND entry.value->>0=$1",
         [networkId],
       );
-      const settings = (persisted as { settings: NetworkRecord["settings"] }[])[0]?.settings as
-        NetworkRecord["settings"] | undefined;
+      const rawSettings = (persisted as { settings: NetworkRecord["settings"] | string }[])[0]?.settings;
+      const settings: NetworkRecord["settings"] | undefined = typeof rawSettings === "string" ? JSON.parse(rawSettings) : rawSettings;
       const live = settings?.launchPromotion;
       if (
         !live?.enabled ||
         live.id !== promotion.id ||
         live.limit !== promotion.limit ||
         live.freeMonths !== promotion.freeMonths ||
-        settings?.memberBilling?.version !==
-          this.networks.get(networkId)?.settings.memberBilling?.version
+        !settings?.memberBilling ||
+        settings.memberPaymentModel === "network" ||
+        settings.billingMode === "cooperation_free" ||
+        settings.memberBilling.freeUntil ||
+        settings.memberBilling.paidFrom ||
+        settings.memberBilling.paidThrough
       )
         throw new ConflictException(
           "Die Startaktion wurde geändert. Bitte lade die aktuellen Konditionen erneut.",

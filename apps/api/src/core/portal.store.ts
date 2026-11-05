@@ -71,6 +71,14 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     );
   }
   private writeQueue: Promise<void> = Promise.resolve();
+  private flush: Promise<void> | null = null;
+  private requestedWrite = 0;
+  private completedWrite = 0;
+  private revision = 0;
+  private staleWriter = false;
+  persistenceReady(): boolean {
+    return !this.homepagePersistenceFailed && !this.staleWriter;
+  }
   private launchPlaces: LaunchPlace[] = [];
   launchUsed(networkId: string) {
     return this.launchPlaces.filter((p) => p.network_id === networkId).length;
@@ -287,9 +295,10 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     }
     if(process.env.NODE_ENV==="production" && disableAutomaticRenewals(this)) await this.persist();
     if (process.env.NODE_ENV === "production") {
+      const before = this.snapshot();
       retireLegacyInitiator(this);
       resetTestMember(this);
-      await this.persist();
+      if (before !== this.snapshot()) await this.persist();
     }
     this.logger.log("PostgreSQL-Persistenz ist aktiv.");
   }
@@ -340,37 +349,62 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
 
   async persist(): Promise<void> {
     if (!this.sql) return;
-    const payload = this.snapshot();
+    if (this.staleWriter)
+      throw new ServiceUnavailableException("Der Datenstand wurde parallel geändert. Bitte später erneut versuchen.");
     this.pendingPersistenceWrites++;
-    this.writeQueue = this.writeQueue.then(async () => {
-      await this.sql!.unsafe(
-        `INSERT INTO portal_state (id,payload,revision,updated_at)
-         VALUES ('primary',$1::jsonb,1,now())
-         ON CONFLICT (id) DO UPDATE SET
-           payload=EXCLUDED.payload,
-           revision=portal_state.revision+1,
-           updated_at=now()`,
-        [payload],
-      );
-    });
-    return this.writeQueue
-      .catch((error) => {
-        this.homepagePersistenceFailed = true;
-        throw error;
-      })
+    this.requestedWrite++;
+    if (!this.flush) {
+      this.flush = Promise.resolve().then(() => this.flushWrites());
+      // Shutdown waits for the latest batch, but one failed batch must not
+      // poison the queue permanently. Its callers still receive the failure.
+      this.writeQueue = this.flush.catch(() => {});
+    }
+    return this.flush
       .finally(() => {
         this.pendingPersistenceWrites--;
       });
   }
+  private async flushWrites(): Promise<void> {
+    try {
+      while (this.completedWrite < this.requestedWrite) {
+        const target = this.requestedWrite;
+        const payload = this.snapshot();
+        const rows = await this.sql!.unsafe(
+          `INSERT INTO portal_state (id,payload,revision,updated_at)
+           VALUES ('primary',$1::jsonb,1,now())
+           ON CONFLICT (id) DO UPDATE SET
+             payload=EXCLUDED.payload,
+             revision=portal_state.revision+1,
+             updated_at=now()
+           WHERE portal_state.revision=$2
+           RETURNING revision`,
+          [payload, this.revision],
+        ) as unknown as Array<{revision: string | number}>;
+        if (!rows.length) {
+          this.staleWriter = true;
+          throw new ServiceUnavailableException("Paralleler Datenbankzugriff erkannt. Der veraltete Schreibzugriff wurde gestoppt.");
+        }
+        this.revision = Number(rows[0].revision);
+        this.completedWrite = target;
+      }
+      this.homepagePersistenceFailed = false;
+    } catch (error) {
+      this.homepagePersistenceFailed = true;
+      throw error;
+    } finally {
+      this.flush = null;
+    }
+  }
 
   private async restore(): Promise<void> {
     const rows = (await this.sql!.unsafe(
-      "SELECT payload FROM portal_state WHERE id='primary' LIMIT 1",
-    )) as Array<{ payload: unknown }>;
+      "SELECT payload,revision FROM portal_state WHERE id='primary' LIMIT 1",
+    )) as Array<{ payload: unknown; revision: string | number }>;
     if (!rows.length) {
       await this.persist();
       return;
     }
+    this.revision = Number(rows[0].revision);
     const state =
       typeof rows[0].payload === "string"
         ? JSON.parse(rows[0].payload)

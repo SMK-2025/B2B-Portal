@@ -6,6 +6,16 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it("rejects reusing a company's mutable profile across networks", async () => {
+    const f=await fixture();const org=f.orgs.create(f.member,f.input,true);
+    const user=f.store.userByEmail.get("partner@example.de")!;
+    const other=f.networks.create(f.owner,{name:"Isolated target",slug:"isolated-target"});
+    f.networks.setAccess(f.owner,other.id,{status:"active"});
+    const before=f.store.networkMemberships.length;
+    expect(()=>f.networks.addMember(f.owner,other.id,{organizationId:org.id,userId:user,role:"member"})).toThrow(/unabhängige Kopie/);
+    expect(f.store.networkMemberships).toHaveLength(before);
+    expect(()=>f.networks.listMembers(f.member,other.id)).toThrow();
+  });
   it("validates private partner PDF documents, preserves omitted uploads and rejects forged or excessive files", async () => {
     const f=await fixture(); f.orgs.create(f.member,f.input,true);
     const bytes=Buffer.from("%PDF-1.7\nTest document");

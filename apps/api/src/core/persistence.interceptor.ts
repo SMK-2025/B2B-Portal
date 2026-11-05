@@ -51,6 +51,14 @@ export class PersistenceInterceptor implements NestInterceptor {
           );
       }
     }
+    const path = String(request.path || request.url).split("?")[0];
+    // These handlers are deliberately read-only and never modify PortalStore.
+    // Health probes and public branding must not serialize all member files.
+    if (
+      (["GET", "HEAD"].includes(request.method) &&
+        (path === "/health" || /^\/api\/networks\/branding\/[^/]+(?:\/texts)?$/.test(path))) ||
+      (request.method === "POST" && /^\/api\/networks\/[^/]+\/profile\/import$/.test(path))
+    ) return next.handle();
     const before = this.store.snapshot();
     return next.handle().pipe(
       mergeMap(async (value) => {

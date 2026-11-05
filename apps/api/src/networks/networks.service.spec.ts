@@ -188,8 +188,13 @@ describe("network tenancy", () => {
     });
     // Membership in the Giants network must never grant access to Bayer 04.
     expect(() => networks.proBSchedule(partnerBearer, football.id)).toThrow();
+    const footballOrganization = organizations.create(partnerBearer, {
+      legalName: "Partner Fußball",
+      displayName: "Partner Fußball",
+      role: "both",
+    });
     networks.addMember(ownerBearer, football.id, {
-      organizationId: partnerOrganization.id,
+      organizationId: footballOrganization.id,
       userId: partnerRegistration.user.id,
       role: "organization_admin",
     });

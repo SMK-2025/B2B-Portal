@@ -2998,6 +2998,11 @@ export class NetworksService {
         item.userId === userId &&
         item.status === "active",
     );
+    if (this.store.networkMemberships.some(m =>
+      m.organizationId === organizationId && m.networkId !== networkId))
+      throw new ConflictException(
+        "Unternehmensdaten dürfen nicht zwischen Netzwerken geteilt werden. Bitte die Partnerseite als unabhängige Kopie übernehmen.",
+      );
     if (existing) {
       if (actor.accountRole === "platform_admin" && existing.role !== role) {
         existing.role = role;

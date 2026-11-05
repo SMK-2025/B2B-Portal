@@ -1,4 +1,4 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get, ServiceUnavailableException } from "@nestjs/common";
 import { PortalStore } from "./core/portal.store";
 import { AutomaticBillingService } from "./networks/automatic-billing.service";
 import {
@@ -14,6 +14,8 @@ export class HealthController {
   ) {}
   @Get()
   status() {
+    if (!this.store.persistenceReady())
+      throw new ServiceUnavailableException("Datenhaltung vorübergehend nicht verfügbar.");
     return {
       status: "ok",
       einvoiceValidated: this.billing.formatValidated,

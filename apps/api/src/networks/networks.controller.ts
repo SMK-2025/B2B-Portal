@@ -122,6 +122,8 @@ export class NetworksController {
     @Headers("authorization") auth: string | undefined,
     @Param("networkId") id: string,
   ) {
+    this.networks.adminBilling(auth, id);
+    await this.networks.refreshLaunchCounter();
     const result = this.networks.adminBilling(auth, id);
     return {
       ...result,
@@ -229,7 +231,8 @@ export class NetworksController {
   ) {
     return this.networks.archiveSystemMessage(auth, id, messageId);
   }
-  @Post("invitations/quote") quote(@Body() body: Record<string, unknown>) {
+  @Post("invitations/quote") async quote(@Body() body: Record<string, unknown>) {
+    await this.networks.refreshLaunchCounter();
     return this.networks.invitationQuote(body);
   }
   @Get("admin/member-registrations") registrations(
@@ -372,9 +375,10 @@ export class NetworksController {
   ) {
     return this.networks.sharedInvitation(auth, id, body);
   }
-  @Get("participation/quote/:slug") participationQuote(
+  @Get("participation/quote/:slug") async participationQuote(
     @Param("slug") slug: string,
   ) {
+    await this.networks.refreshLaunchCounter();
     return this.networks.participationQuote(slug);
   }
   @Post("participation/request") requestParticipation(

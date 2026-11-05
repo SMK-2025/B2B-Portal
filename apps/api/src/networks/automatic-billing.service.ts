@@ -11,6 +11,7 @@ import { EmailService } from "../auth/email.service";
 import { invoicePdf, type InvoiceData } from "./invoice-document";
 import { zugferdInvoice } from "./zugferd-invoice";
 import { addCalendarDays, berlinMidnight } from "./invoice-schedule";
+import { addMonths } from "./launch-promotion";
 import { randomUUID } from "node:crypto";
 import type { NetworkOrderRecord } from "../core/domain";
 
@@ -121,7 +122,7 @@ export class AutomaticBillingService
         )
           continue;
         if (order.manualServiceInvoice && !order.invoiceSentAt) continue;
-        if (p.invoiceDate <= today && !order.invoiceSentAt)
+        if (!order.launchPromotion && p.invoiceDate <= today && !order.invoiceSentAt)
           await this.issue(order, today);
         if (
           p.autoRenew &&
@@ -365,13 +366,12 @@ export class AutomaticBillingService
       month: "2-digit",
       day: "2-digit",
     }).format(new Date(order.serviceEndsAt));
-    const end = new Date(startDate + "T12:00:00Z");
-    end.setUTCFullYear(end.getUTCFullYear() + 1);
-    const endDate = end.toISOString().slice(0, 10);
+    const endDate = addMonths(startDate, p.renewalMonths);
     const net = order.monthlyNetCents * p.renewalMonths,
       vat = Math.round(net * 0.19);
     const next: NetworkOrderRecord = {
       ...structuredClone(order),
+      launchPromotion: undefined,
       manualServiceInvoice: false,
       id,
       minimumTermMonths: p.renewalMonths,

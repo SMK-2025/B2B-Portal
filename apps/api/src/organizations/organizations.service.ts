@@ -19,6 +19,7 @@ import { opaqueToken, tokenHash } from "../auth/password";
 import { EmailService } from "../auth/email.service";
 import { annualOrder, fullPortalModules } from "../networks/annual-membership";
 import { enqueueOperatorMail } from "../core/operator-mail";
+import { applyLaunch, launchEnabled, launchSummary } from "../networks/launch-promotion";
 
 @Injectable()
 export class OrganizationsService {
@@ -27,10 +28,36 @@ export class OrganizationsService {
     @Inject(AuthService) private readonly auth: AuthService,
     @Inject(EmailService) private readonly email: EmailService,
   ) {}
+  async createNetwork(authorization: string | undefined, input: Record<string, unknown>) {
+    const user=this.auth.authenticate(authorization);
+    const invite=[...this.store.networkContents.values()].find(i=>i.data.kind==="network_invitation" && i.data.inviteTokenHash===tokenHash(String(input.networkInviteToken || "")) && i.data.email===user.email && !i.data.usedAt && i.endsAt && Date.parse(i.endsAt)>Date.now());
+    const network=invite && this.store.networks.get(invite.networkId);
+    const launch=network && launchSummary(network,this.store.launchUsed(network.id));
+    if(input.launchPromotionAccepted && input.launchPromotionAccepted!==launch?.version)
+      throw new BadRequestException("Die Startaktion wurde geändert. Bitte Konditionen neu laden; es wurde keine kostenpflichtige Buchung ausgelöst.");
+    if(launch && (launch.remaining>0 || this.store.launchReserved(network!.id,user.id)) && !input.launchPromotionAccepted)
+      throw new BadRequestException("Bitte die aktuellen Konditionen der kostenlosen Startaktion laden und bestätigen.");
+    if (!network || !launchEnabled(network) || !input.launchPromotionAccepted)
+      return this.create(authorization,input,true);
+    if (!user.emailVerifiedAt || (invite.data.admissionStatus && invite.data.admissionStatus!=="approved") || network.status!=="active")
+      throw new ForbiddenException("Bitte E-Mail bestätigen und die Freigabe abwarten.");
+    if(["network_admin","visitor"].includes(String(invite.data.role)))
+      throw new ForbiddenException("Verwaltungs- und Besucherzugänge belegen keinen Unternehmens-Startplatz.");
+    if (this.store.networkMemberships.some(m=>m.networkId===network.id && m.userId===user.id))
+      throw new BadRequestException("Du bist diesem Netzwerk bereits zugeordnet.");
+    // Validate all billable contract and organization fields before reserving a limited place.
+    annualOrder(network,user.id,input);
+    if(input.role!=="network") throw new BadRequestException("Ungültige Unternehmensrolle.");
+    const company=requiredText(input.legalName,"Rechtlicher Firmenname",2,200);
+    requiredText(input.displayName,"Anzeigename",2,200); safeUrl(input.websiteUrl);
+    const grant=await this.store.claimLaunchPlace(network.id,user.id,company);
+    return this.create(authorization,input,true,grant);
+  }
   create(
     authorization: string | undefined,
     input: Record<string, unknown>,
     requireNetworkInvitation = false,
+    launchGrant?: {slot:number; startsOn:string; campaignId:string; freeMonths:number},
   ) {
     const user = this.auth.authenticate(authorization);
     if (!user.emailVerifiedAt)
@@ -116,6 +143,9 @@ export class OrganizationsService {
       requestedNetwork && !centrallyFunded
         ? annualOrder(requestedNetwork, user.id, input)
         : null;
+    if (memberOrder && launchGrant) applyLaunch(memberOrder,launchGrant);
+    if (requestedNetwork && launchEnabled(requestedNetwork) && input.launchPromotionAccepted && !launchGrant)
+      throw new BadRequestException("Bitte die Startaktion über die gesicherte Registrierung abschließen.");
     const websiteUrl = safeUrl(input.websiteUrl);
     const organization: OrganizationRecord = {
       id: randomUUID(),

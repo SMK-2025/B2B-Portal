@@ -5,7 +5,9 @@ import Link from "next/link";
 import { portalRequest } from "../lib/portal-api";
 import { authorizedMailingToken } from "../lib/mailing-token";
 import "./network-participation-request.css";
+import { LaunchPromotionNotice, type LaunchPromotion } from "./launch-promotion-notice";
 type Offer = {
+  launchPromotion?: LaunchPromotion | null;
   version: string;
   monthlyNetCents: number;
   annualNetCents: number;
@@ -104,6 +106,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
           ...fields,
           accurate,
           ...consents,
+          renewalAccepted: new FormData(event.currentTarget).get("renewalAccepted") === "on",
           network,
           offerVersion: offer.version,
           referral: new URLSearchParams(window.location.search).get("ref"),
@@ -323,6 +326,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
                       Deine Portalnutzung
                     </NetworkText>
                   </h2>
+                  <LaunchPromotionNotice promotion={offer.launchPromotion} monthlyNetCents={offer.monthlyNetCents}/>
                   {offer.centrallyFunded ? (
                     <p>
                       <NetworkText id="ui.network-participation-request.d9ded7717e76f81b">
@@ -398,6 +402,10 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
                     </>
                   )}
                 </section>
+                {offer.launchPromotion && <label className="full legalConsent">
+                  <input type="checkbox" name="renewalAccepted" required/>
+                  <span>Ich stimme der dargestellten automatischen kostenpflichtigen Verlängerung um jeweils zwölf Monate zu. Ich kann sie fristgerecht im Mitgliedskonto ausschalten.</span>
+                </label>}
                 <label className="full legalConsent">
                   <input
                     type="checkbox"

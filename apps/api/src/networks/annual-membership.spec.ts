@@ -1080,6 +1080,39 @@ describe("personal annual membership billing", () => {
     expect(order.billingPolicy!.renewalDeadline).toBeTruthy();
     expect(Date.parse(order.billingPolicy!.renewalInvoiceDate!)-Date.parse(order.billingPolicy!.renewalDeadline!)).toBe(86400000);
   });
+  it("books a limited free start with explicit renewal consent, without changing another network", async () => {
+    const f=await fixture();
+    const other=f.networks.create(f.owner,{name:"Andere Stadt",slug:"andere-stadt"});const before=structuredClone(other);
+    const config={monthlyNetCents:1900,memberPaymentModel:"individual",billing:{months:12,autoRenew:true,automaticInvoices:true,renewalMonths:12},launchPromotion:{enabled:true,limit:100,freeMonths:6}};
+    expect(()=>f.networks.memberPricing(f.member,f.network.id,config)).toThrow();
+    f.networks.memberPricing(f.owner,f.network.id,config);
+    const quote=f.networks.invitationQuote({invite:f.invite});
+    const input={...f.input,acceptedMonthlyNetCents:1900,acceptedBillingVersion:quote.billing!.version,pdfInvoiceAccepted:true,renewalAccepted:true,launchPromotionAccepted:quote.launchPromotion!.version};
+    await expect(f.orgs.createNetwork(f.member,{...input,renewalAccepted:false})).rejects.toThrow();
+    await expect(f.orgs.createNetwork(f.member,{...input,invoiceStreet:""})).rejects.toThrow();
+    expect(f.store.launchUsed(f.network.id)).toBe(0);
+    await f.orgs.createNetwork(f.member,input);
+    expect(f.store.launchUsed(f.network.id)).toBe(1);
+    const order=[...f.store.networkOrders.values()][0];
+    expect(order).toMatchObject({grossCents:0,minimumTermMonths:6,monthlyNetCents:1900,launchPromotion:{slot:1}});
+    expect(other).toEqual(before);
+    f.networks.changeRenewal(f.member,f.network.id,order.id,{enabled:false});
+    expect(order.billingPolicy!.renewalDisabledAt).toBeTruthy();
+    expect(f.networks.adminBilling(f.owner,f.network.id).launchCounter).toEqual({used:1});
+    await expect(f.orgs.createNetwork(f.member,input)).rejects.toThrow();
+    expect(f.store.launchUsed(f.network.id)).toBe(1);
+  });
+  it("requires new acceptance if the promotion changes and never silently charges an exhausted free offer",async()=>{
+    const f=await fixture();
+    f.networks.memberPricing(f.owner,f.network.id,{monthlyNetCents:1900,memberPaymentModel:"individual",billing:{months:12,autoRenew:true,automaticInvoices:true,renewalMonths:12},launchPromotion:{enabled:true,limit:1,freeMonths:6}});
+    const q=f.networks.invitationQuote({invite:f.invite});
+    const input={...f.input,acceptedMonthlyNetCents:1900,acceptedBillingVersion:q.billing!.version,pdfInvoiceAccepted:true,renewalAccepted:true,launchPromotionAccepted:q.launchPromotion!.version};
+    await f.store.claimLaunchPlace(f.network.id,"another","Andere GmbH");
+    await expect(f.orgs.createNetwork(f.member,input)).rejects.toThrow(/vergeben/);
+    expect(f.store.organizations.size).toBe(0);expect(f.store.networkOrders.size).toBe(0);
+    f.network.settings.launchPromotion!.freeMonths=3;
+    await expect(f.orgs.createNetwork(f.member,input)).rejects.toThrow(/geändert/);
+  });
   it("shows default 69 euro, records the invoice snapshot and immediately unlocks every function despite open payment", async () => {
     const f = await fixture();
     expect(f.networks.invitationQuote({ invite: f.invite })).toMatchObject({

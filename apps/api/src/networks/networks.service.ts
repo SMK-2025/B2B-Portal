@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import { launchSummary, launchSettings, validateLaunchBilling } from "./launch-promotion";
 import { attributeMailingRegistration } from "../mailings/mailing-attribution";
 import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
@@ -243,6 +244,10 @@ export class NetworksService {
       networkSlug: network.slug,
       initiator: invite.data.role === "network_admin",
       memberPaymentModel: network.settings.memberPaymentModel || "individual",
+      launchPromotion: launchSummary(network,this.store.launchUsed(network.id)) && {
+        ...launchSummary(network,this.store.launchUsed(network.id))!,
+        reserved: this.store.launchReserved(network.id,this.store.userByEmail.get(String(invite.data.email)) || ""),
+      },
       ...(network.settings.memberPaymentModel === "network"
         ? {}
         : pricing(network)),
@@ -262,16 +267,19 @@ export class NetworksService {
     )
       throw new BadRequestException("Ungültiges Zahlungsmodell.");
     const cents = validMemberPrice(input.monthlyNetCents);
+    const nextSettings = {...network.settings,memberMonthlyNetCents:cents};
     if (input.billing && typeof input.billing === "object") {
-      network.settings.memberBilling = memberBillingSettings(
+      nextSettings.memberBilling = memberBillingSettings(
         input.billing,
         network.slug,
       );
     }
-    network.settings.memberMonthlyNetCents = cents;
     if (input.memberPaymentModel !== undefined)
-      network.settings.memberPaymentModel = input.memberPaymentModel as
+      nextSettings.memberPaymentModel = input.memberPaymentModel as
         "individual" | "network";
+    if(input.launchPromotion) nextSettings.launchPromotion=launchSettings(input.launchPromotion,network.settings.launchPromotion,this.store.launchUsed(id));
+    validateLaunchBilling({...network,settings:nextSettings});
+    network.settings=nextSettings;
     network.updatedAt = new Date().toISOString();
     this.operatorAudit(user.id, id, "operator.billing.updated");
     return { ...network, memberPrice: pricing(network) };
@@ -284,6 +292,8 @@ export class NetworksService {
       networkName: network.name,
       memberPaymentModel: network.settings.memberPaymentModel || "individual",
       cooperationFree: network.settings.billingMode === "cooperation_free",
+      launchPromotion: network.settings.launchPromotion || null,
+      launchCounter: network.settings.launchPromotion ? {used:this.store.launchUsed(network.id)} : null,
       ...pricing(network),
       schedule: network.settings.memberBilling?.freeUntil
         ? invoiceSchedule(network.settings.memberBilling.freeUntil)
@@ -555,6 +565,7 @@ export class NetworksService {
       trialEndsAt: null,
       enabledModules: fullPortalModules(),
       settings: {
+        ...(input.launchPromotion ? {launchPromotion:launchSettings(input.launchPromotion,undefined,0)} : {}),
         ...(input.billing
           ? { memberBilling: memberBillingSettings(input.billing, slug) }
           : {}),
@@ -574,6 +585,7 @@ export class NetworksService {
       createdAt: now,
       updatedAt: now,
     };
+    validateLaunchBilling(network);
     this.store.networks.set(network.id, network);
     this.store.networkBySlug.set(network.slug, network.id);
     return network;
@@ -1280,6 +1292,7 @@ export class NetworksService {
     const quote = pricing(network);
     const offer = {
       ...quote,
+      launchPromotion: launchSummary(network,this.store.launchUsed(network.id)),
       centrallyFunded: network.settings.memberPaymentModel === "network",
       schedule: quote.billing?.freeUntil
         ? invoiceSchedule(quote.billing.freeUntil)
@@ -1293,6 +1306,7 @@ export class NetworksService {
     };
     return { ...offer, version: tokenHash(JSON.stringify(offer)) };
   }
+  async refreshLaunchCounter() { await this.store.refreshLaunchPlaces(); }
   async requestParticipation(input: Record<string, unknown>) {
     if (
       ![
@@ -1314,6 +1328,8 @@ export class NetworksService {
       );
     const email = emailAddress(input.email);
     const offer = this.participationQuote(String(input.network));
+    if (offer.launchPromotion && input.renewalAccepted !== true)
+      throw new BadRequestException("Bitte die kostenpflichtige automatische Verlängerung nach der kostenlosen Startzeit ausdrücklich bestätigen.");
     if (input.offerVersion !== offer.version)
       throw new BadRequestException(
         "Die Konditionen wurden aktualisiert. Bitte lade die Kostenübersicht erneut und bestätige sie.",
@@ -1395,6 +1411,7 @@ export class NetworksService {
           costsAccepted: true,
           termsAccepted: true,
           privacyAcknowledged: true,
+          renewalAccepted: input.renewalAccepted === true,
         },
         referrer: [...this.store.networkContents.values()].find(
           (r) =>

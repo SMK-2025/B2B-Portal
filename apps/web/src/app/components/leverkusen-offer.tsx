@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { portalRequest } from "../lib/portal-api";
+import { LaunchPromotionNotice, type LaunchPromotion } from "./launch-promotion-notice";
 type Offer = {
+  launchPromotion?: LaunchPromotion | null;
   monthlyNetCents: number;
   annualNetCents: number;
   vatCents: number;
@@ -64,6 +66,7 @@ export function LeverkusenOffer({
             </p>
           ) : (
             <>
+              <LaunchPromotionNotice promotion={offer.launchPromotion} monthlyNetCents={offer.monthlyNetCents}/>
               <p className="levOfferPrice">
                 <strong>{money(offer.monthlyNetCents)}</strong>
                 <span>netto pro Monat · zzgl. {offer.vatPercent} % MwSt.</span>

@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 type Order = {
+  launchPromotion?: {id:string;slot:number;paidFrom:string};
   hasPdf?: boolean;
   paymentStatus?: string;
   paidAt?: string;
@@ -207,6 +208,9 @@ export function MemberBillingAccount({
         )}
       {orders.map((o) => (
         <div key={o.id} style={{ padding: 20 }}>
+          {o.launchPromotion ? <p><strong>Startaktion · Dein Platz: {o.launchPromotion.slot}</strong><br/>
+            {o.minimumTermMonths} Monate kostenlos · 0,00 € während dieser Startlaufzeit.<br/>
+            Bei eingeschalteter Verlängerung ab {date(o.launchPromotion.paidFrom)}: zwölf Monate für {money(o.monthlyNetCents*12)} netto / {money(Math.round(o.monthlyNetCents*12*1.19))} inklusive MwSt. im Voraus.</p> :
           <p>
             <strong>
               {money(o.monthlyNetCents)} netto pro Monat × {o.minimumTermMonths}{" "}
@@ -214,7 +218,7 @@ export function MemberBillingAccount({
             </strong>
             <br />
             Gesamtbetrag inklusive MwSt.: {money(o.grossCents)}
-          </p>
+          </p>}
           <p>
             Leistungszeitraum: {date(o.serviceStartsAt)} bis{" "}
             {date(new Date(Date.parse(o.serviceEndsAt) - 1).toISOString())}
@@ -228,7 +232,7 @@ export function MemberBillingAccount({
                     {date(o.billingPolicy.freeUntil)}.<br />
                   </>
                 )}
-                Rechnungsversand geplant: {date(o.billingPolicy.invoiceDate)} ·
+                {o.launchPromotion ? "Erste Rechnung nur bei eingeschalteter Verlängerung: " : "Rechnungsversand geplant: "}{date(o.billingPolicy.invoiceDate)} ·
                 Zahlungsziel: {date(o.billingPolicy.paymentDueDate)}
               </p>
               {o.billingPolicy.autoRenew && (
@@ -272,7 +276,7 @@ export function MemberBillingAccount({
           )}
           <p>
             Zahlungsstatus:{" "}
-            {o.paymentStatus === "paid"
+            {o.launchPromotion ? "Kostenlose Startlaufzeit – keine Zahlung erforderlich" : o.paymentStatus === "paid"
               ? "Gezahlt" + (o.paidAt ? " am " + date(o.paidAt) : "")
               : o.paymentStatus === "overdue"
                 ? "Überfällig"

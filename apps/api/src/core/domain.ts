@@ -188,6 +188,7 @@ export interface NetworkRecord {
     billingMode?: "standard" | "cooperation_free";
     memberPaymentModel?: "individual" | "network";
     memberMonthlyNetCents?: number;
+    launchPromotion?: { id: string; enabled: boolean; limit: number; freeMonths: number };
     memberBilling?: {
       months: number;
       freeUntil: string | null;
@@ -361,6 +362,7 @@ export interface NetworkOrderRecord {
   monthlyNetCents: number;
   setupNetCents: number;
   minimumTermMonths: number;
+  launchPromotion?: { id: string; slot: number; paidFrom: string };
   billingPolicy?: {
     version: string;
     acceptedAt: string;

@@ -4,7 +4,7 @@ import { OrganizationsService } from "./organizations.service";
 @Controller("organizations")
 export class OrganizationsController {
   constructor(@Inject(OrganizationsService) private readonly organizations: OrganizationsService) {}
-  @Post() create(@Headers("authorization") auth: string | undefined, @Body() body: Record<string,unknown>) { return this.organizations.create(auth,body,true); }
+  @Post() create(@Headers("authorization") auth: string | undefined, @Body() body: Record<string,unknown>) { return this.organizations.createNetwork(auth,body); }
   @Get("mine") mine(@Headers("authorization") auth: string | undefined) { return this.organizations.listMine(auth); }
   @Post("team-invitations/accept") acceptInvitation(@Headers("authorization")auth:string|undefined,@Body("token")token:unknown){return this.organizations.acceptInvitation(auth,token);}
   @Get(":id/team") team(@Headers("authorization")auth:string|undefined,@Param("id")id:string){return this.organizations.team(auth,id);}

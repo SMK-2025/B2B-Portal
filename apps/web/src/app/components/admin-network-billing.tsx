@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
+import { LaunchPromotionSettings } from "./launch-promotion-settings";
 export type BillingInvoice = {
   id: string;
   order_id: string;
@@ -8,6 +9,8 @@ export type BillingInvoice = {
   downloadable: boolean;
 };
 type Billing = {
+  launchPromotion?: {enabled:boolean;limit:number;freeMonths:number}|null;
+  launchCounter?: {used:number}|null;
   memberPaymentModel: "individual" | "network";
   monthlyNetCents: number;
   months: number;
@@ -139,6 +142,7 @@ export function AdminNetworkBilling({
         body: {
           monthlyNetCents: Math.round(Number(f.get("price")) * 100),
           memberPaymentModel: f.get("model"),
+          launchPromotion: {enabled:f.get("launchEnabled")==="on",limit:Number(f.get("launchLimit")),freeMonths:Number(f.get("launchMonths"))},
           billing: {
             months: Number(f.get("months")),
             freeUntil: f.get("freeUntil"),
@@ -189,11 +193,11 @@ export function AdminNetworkBilling({
       </button>
       <dialog
         ref={dialog}
-        className="adminUsersDialog"
+        className="adminUsersDialog adminBillingDialog"
         aria-label={`Zahlungsdetails ${name}`}
       >
-        <header>
-          <h2>Zahlungsdetails · {name}</h2>
+        <header style={{flexWrap:"wrap",gap:12}}>
+          <h2 style={{flex:"1 1 200px",minWidth:0,overflowWrap:"anywhere"}}>Zahlungsdetails · {name}</h2>
           <button
             type="button"
             className="portalSecondary"
@@ -280,6 +284,7 @@ export function AdminNetworkBilling({
                   Mitgliederbuchungen
                 </span>
               </label>
+              <LaunchPromotionSettings value={data.launchPromotion} used={data.launchCounter?.used || 0}/>
               <p className="full">
                 Aktuell gespeichert: {data.months} ×{" "}
                 {money(data.monthlyNetCents)} ={" "}
@@ -299,7 +304,7 @@ export function AdminNetworkBilling({
               </button>
             </form>
             <h3>Bestehende Buchungen & Rechnungen</h3>
-            <div className="adminUsersTable">
+            <div className="adminUsersTable" style={{maxWidth:"100%",minWidth:0,overflowX:"auto"}}>
               <table>
                 <thead>
                   <tr>

@@ -159,6 +159,7 @@ export default function RegistrationPage() {
           termsAccepted: form.get("termsAccepted") === "on",
           paymentObligationAccepted:
             form.get("paymentObligationAccepted") === "on",
+          launchPromotionAccepted: form.get("launchPromotionAccepted"),
           legalName,
           displayName: legalName,
           role: "network",

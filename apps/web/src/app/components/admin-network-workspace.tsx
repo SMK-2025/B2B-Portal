@@ -8,6 +8,7 @@ import { AdminNetworkUsers } from "./admin-network-users";
 import { AdminNetworkShare } from "./admin-network-share";
 import { AdminNetworkBilling } from "./admin-network-billing";
 import { AdminNetworkActivity } from "./admin-network-activity";
+import { LaunchPromotionSettings } from "./launch-promotion-settings";
 
 type NetworkStatus = "draft" | "trial" | "active" | "suspended";
 type Network = {
@@ -132,6 +133,7 @@ export function AdminNetworkWorkspace() {
           legalName: form.get("legalName"),
           websiteUrl: form.get("websiteUrl"),
           memberPaymentModel: form.get("memberPaymentModel"),
+          launchPromotion: {enabled:form.get("launchEnabled")==="on",limit:Number(form.get("launchLimit")),freeMonths:Number(form.get("launchMonths"))},
           billing: {
             months: Number(form.get("billingMonths")),
             freeUntil: form.get("billingFreeUntil"),
@@ -726,6 +728,7 @@ export function AdminNetworkWorkspace() {
                     required
                   />
                 </label>
+                <LaunchPromotionSettings/>
                 <details>
                   <summary>
                     Abrechnungszeitraum und Rechnungsversand (optional)

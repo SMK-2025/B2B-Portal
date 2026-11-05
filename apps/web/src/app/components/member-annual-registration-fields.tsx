@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { portalRequest } from "../lib/portal-api";
+import { LaunchPromotionNotice, type LaunchPromotion } from "./launch-promotion-notice";
 type Quote = {
+  launchPromotion?: LaunchPromotion | null;
   networkName: string;
   monthlyNetCents: number;
   annualNetCents: number;
@@ -64,6 +66,7 @@ export function MemberAnnualRegistrationFields({
         )}
       </div>
     );
+  const promotional=!!quote.launchPromotion && (quote.launchPromotion.remaining>0 || !!quote.launchPromotion.reserved);
   if (quote.initiator)
     return (
       <div>
@@ -124,6 +127,7 @@ export function MemberAnnualRegistrationFields({
   if (summaryOnly)
     return (
       <div className="full registrationPriceStep">
+        <LaunchPromotionNotice promotion={quote.launchPromotion} monthlyNetCents={quote.monthlyNetCents}/>
         {quote.billing?.freeUntil && (
           <p>
             <strong>
@@ -197,6 +201,7 @@ export function MemberAnnualRegistrationFields({
     );
   const price = (
     <div className="full pricingClarity">
+      <LaunchPromotionNotice promotion={quote.launchPromotion} monthlyNetCents={quote.monthlyNetCents}/>
       <h2>Deine Nutzung des Netzwerkpartner-Portals</h2>
       <p>Alle Funktionen für deinen persönlichen Partnerzugang. Anbieter und Vertragspartner: Media Online Innovations Group.</p>
       <p>
@@ -239,7 +244,9 @@ export function MemberAnnualRegistrationFields({
                 .
               </>
             )}{" "}
-            {quote.billing.freeUntil
+            {quote.launchPromotion && (quote.launchPromotion.remaining>0 || quote.launchPromotion.reserved)
+              ? "Während der kostenlosen Startlaufzeit keine Rechnung. Nur bei eingeschalteter Verlängerung erfolgt die erste Jahresrechnung 15 Tage vor Beginn der kostenpflichtigen Laufzeit, zahlbar innerhalb von 14 Tagen."
+              : quote.billing.freeUntil
               ? "Die Rechnung wird 15 Tage vor Ende der kostenlosen Nutzung versendet, zahlbar innerhalb von 14 Tagen. Bei späterer Anmeldung erfolgt der Versand nach der Buchung."
               : "Die Rechnung folgt nach der Buchung mit 14 Tagen Zahlungsziel."}
           </>
@@ -256,6 +263,8 @@ export function MemberAnnualRegistrationFields({
   return (
     <>
       {!hidePrice && price}
+      {quote.launchPromotion && (quote.launchPromotion.remaining>0 || quote.launchPromotion.reserved) &&
+        <input type="hidden" name="launchPromotionAccepted" value={quote.launchPromotion.version}/>}
       {quote.billing?.automaticInvoices && (
         <label className="full memberAnnualConsent">
           <input type="checkbox" name="pdfInvoiceAccepted" required />
@@ -367,16 +376,16 @@ export function MemberAnnualRegistrationFields({
           <Link href="/agb" target="_blank">
             Vertragsbedingungen
           </Link>{" "}
-          sowie die oben dargestellte Laufzeit von {quote.months || 12} Monaten
+          sowie {promotional ? `die kostenlose Anfangsphase von ${quote.launchPromotion!.freeMonths} Monaten und die anschließende kostenpflichtige Laufzeit von zwölf Monaten` : `die oben dargestellte Laufzeit von ${quote.months || 12} Monaten`}
           und die ausdrücklich bestätigten Abrechnungsbedingungen.
         </span>
       </label>
       <label className="full memberAnnualConsent">
         <input type="checkbox" name="paymentObligationAccepted" required />
         <span>
-          Ich buche verbindlich für insgesamt {money(quote.grossCents)}{" "}
+          {promotional ? `Ich starte für ${quote.launchPromotion!.freeMonths} Monate kostenlos. Wenn ich die automatische Verlängerung nicht fristgerecht ausschalte, buche ich anschließend für insgesamt` : "Ich buche verbindlich für insgesamt"} {money(quote.grossCents)}{" "}
           inklusive 19 % MwSt. für {quote.months || 12} Monate.{" "}
-          {quote.billing?.freeUntil
+          {promotional ? "Während der kostenlosen Anfangsphase fällt keine Rechnung an." : quote.billing?.freeUntil
             ? "Bis zum angegebenen Ende der kostenlosen Nutzung fallen keine Nutzungsgebühren an. Die Rechnung betrifft ausschließlich den vereinbarten kostenpflichtigen Zeitraum."
             : "Die Zahlungspflicht besteht auch bei sofortiger Freischaltung."}
         </span>
@@ -384,7 +393,7 @@ export function MemberAnnualRegistrationFields({
       <button className="primary full" disabled={loading}>
         {loading
           ? "Jahresmitgliedschaft wird angelegt …"
-          : "Zahlungspflichtige Jahresmitgliedschaft buchen"}
+          : promotional ? "Kostenlos starten · kostenpflichtige Verlängerung bestätigen" : "Zahlungspflichtige Jahresmitgliedschaft buchen"}
       </button>
     </>
   );

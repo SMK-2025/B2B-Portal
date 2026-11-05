@@ -1,6 +1,8 @@
 import {
   Injectable,
   Logger,
+  ConflictException,
+  ServiceUnavailableException,
   OnApplicationShutdown,
   OnModuleInit,
 } from "@nestjs/common";
@@ -43,6 +45,19 @@ import {
 } from "./retire-legacy-initiator";
 import type { MailingCampaign, MailingLead } from "../mailings/mailing.types";
 import { provisionKoeln } from "./provision-koeln";
+import {
+  configureKoelnLaunch,
+  KOELN_LAUNCH,
+} from "../networks/launch-promotion";
+import { createHash } from "node:crypto";
+type LaunchPlace = {
+  campaign: string;
+  network_id: string;
+  user_id: string;
+  company_hash: string;
+  slot: number;
+  starts_on: string;
+};
 
 @Injectable()
 export class PortalStore implements OnModuleInit, OnApplicationShutdown {
@@ -56,6 +71,119 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     );
   }
   private writeQueue: Promise<void> = Promise.resolve();
+  private launchPlaces: LaunchPlace[] = [];
+  launchUsed(networkId: string) {
+    return this.launchPlaces.filter((p) => p.network_id === networkId).length;
+  }
+  launchReserved(networkId: string, userId: string) {
+    return this.launchPlaces.some(
+      (p) => p.network_id === networkId && p.user_id === userId,
+    );
+  }
+  async refreshLaunchPlaces() {
+    if (this.sql)
+      this.launchPlaces = (await this.sql.unsafe(
+        "SELECT campaign,network_id,user_id,company_hash,slot,starts_on FROM b2b_launch_places",
+      )) as typeof this.launchPlaces;
+  }
+  async claimLaunchPlace(networkId: string, userId: string, company: string) {
+    const promotion = this.networks.get(networkId)?.settings.launchPromotion;
+    if (!promotion?.enabled)
+      throw new ConflictException("Die Startaktion ist nicht mehr aktiv.");
+    const companyHash = createHash("sha256")
+      .update(
+        company
+          .normalize("NFKC")
+          .toLocaleLowerCase("de-DE")
+          .replace(/[^\p{L}\p{N}]/gu, ""),
+      )
+      .digest("hex");
+    const startsOn = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Berlin",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const reserve = (places: LaunchPlace[]) => {
+      const old = places.find(
+        (p) => p.user_id === userId || p.company_hash === companyHash,
+      );
+      if (old) {
+        if (old.user_id !== userId || old.company_hash !== companyHash)
+          throw new ConflictException(
+            "Dieses Unternehmen hat bereits einen Startplatz. Bitte den Betreiber kontaktieren.",
+          );
+        return old;
+      }
+      if (places.length >= promotion.limit)
+        throw new ConflictException(
+          "Die kostenlosen Startplätze sind vergeben. Bitte lade die Konditionen erneut. Es wurde keine kostenpflichtige Buchung ausgelöst.",
+        );
+      return {
+        campaign: promotion.id,
+        network_id: networkId,
+        user_id: userId,
+        company_hash: companyHash,
+        slot: places.length + 1,
+        starts_on: startsOn,
+      };
+    };
+    if (!this.sql) {
+      if (process.env.NODE_ENV === "production")
+        throw new ServiceUnavailableException(
+          "Die Platzvergabe ist momentan nicht verfügbar.",
+        );
+      const p = reserve(
+        this.launchPlaces.filter((p) => p.network_id === networkId),
+      );
+      if (!this.launchPlaces.includes(p)) this.launchPlaces.push(p);
+      return {
+        slot: p.slot,
+        startsOn: p.starts_on,
+        campaignId: promotion.id,
+        freeMonths: promotion.freeMonths,
+      };
+    }
+    const p = await this.sql.begin(async (tx) => {
+      await tx.unsafe("SELECT pg_advisory_xact_lock(6620100)");
+      const persisted = await tx.unsafe(
+        "SELECT n->1->'settings' AS settings FROM portal_state p CROSS JOIN LATERAL jsonb_array_elements(p.payload->'networks') n WHERE p.id='primary' AND n->>0=$1",
+        [networkId],
+      );
+      const settings = (persisted as { settings: NetworkRecord["settings"] }[])[0]?.settings as
+        NetworkRecord["settings"] | undefined;
+      const live = settings?.launchPromotion;
+      if (
+        !live?.enabled ||
+        live.id !== promotion.id ||
+        live.limit !== promotion.limit ||
+        live.freeMonths !== promotion.freeMonths ||
+        settings?.memberBilling?.version !==
+          this.networks.get(networkId)?.settings.memberBilling?.version
+      )
+        throw new ConflictException(
+          "Die Startaktion wurde geändert. Bitte lade die aktuellen Konditionen erneut.",
+        );
+      const places = (await tx.unsafe(
+        "SELECT campaign,network_id,user_id,company_hash,slot,starts_on FROM b2b_launch_places WHERE network_id=$1",
+        [networkId],
+      )) as LaunchPlace[];
+      const p = reserve(places);
+      if (!places.includes(p))
+        await tx.unsafe(
+          "INSERT INTO b2b_launch_places(campaign,network_id,slot,user_id,company_hash,starts_on) VALUES($1,$2,$3,$4,$5,$6)",
+          [promotion.id, networkId, p.slot, userId, companyHash, p.starts_on],
+        );
+      return p;
+    });
+    await this.refreshLaunchPlaces();
+    return {
+      slot: p.slot,
+      startsOn: p.starts_on,
+      campaignId: promotion.id,
+      freeMonths: promotion.freeMonths,
+    };
+  }
   readonly users = new Map<string, UserRecord>();
   readonly mailingLeads = new Map<string, MailingLead>();
   readonly mailingCampaigns = new Map<string, MailingCampaign>();
@@ -120,9 +248,12 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     });
     await this.runMigrations();
     await this.restore();
+    await this.refreshLaunchPlaces();
     if (process.env.NODE_ENV === "production" && provisionKoeln(this)) {
       await this.persist();
     }
+    if (process.env.NODE_ENV === "production" && configureKoelnLaunch(this))
+      await this.persist();
     const billingUpdate = "bayer04-season-january-2027-v1";
     if (!this.maintenanceReceipts.has(billingUpdate)) {
       const network = [...this.networks.values()].find(

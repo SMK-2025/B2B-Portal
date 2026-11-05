@@ -13,7 +13,7 @@ import { AccountSettingsWorkspace } from "../../../../components/account-setting
 const pages: Record<string, [string, string]> = {
   konto: [
     "Mein Konto & Sicherheit",
-    "Persönliche Login-Adresse und Passwort sicher verwalten.",
+    "Dein Zugang, deine Mitgliedschaften und Rechnungen – übersichtlich an einem Ort.",
   ],
   mitglieder: [
     "Partnerverzeichnis",

@@ -5,7 +5,7 @@ export default function AccountPage() {
     <PortalShell
       role="admin"
       title="Mein Konto & Sicherheit"
-      intro="Persönliche Login-Adresse und Passwort sicher verwalten."
+      intro="Dein Zugang, deine Mitgliedschaften und Rechnungen – übersichtlich an einem Ort."
     >
       <AccountSettingsWorkspace />
     </PortalShell>

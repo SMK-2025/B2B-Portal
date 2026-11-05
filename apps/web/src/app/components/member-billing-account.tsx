@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 type Order = {
-  launchPromotion?: {id:string;slot:number;paidFrom:string};
+  launchPromotion?: {id:string;slot:number;limit?:number;paidFrom:string};
   hasPdf?: boolean;
   paymentStatus?: string;
   paidAt?: string;
@@ -208,7 +208,7 @@ export function MemberBillingAccount({
         )}
       {orders.map((o) => (
         <div key={o.id} style={{ padding: 20 }}>
-          {o.launchPromotion ? <p><strong>Startaktion · Dein Platz: {o.launchPromotion.slot}</strong><br/>
+          {o.launchPromotion ? <p><strong>Herzlichen Glückwunsch! Als eines der ersten{o.launchPromotion.limit ? ` ${o.launchPromotion.limit}` : ""} Mitglieder erhältst du deine kostenlose Mitgliedschaft.</strong><br/>
             {o.minimumTermMonths} Monate kostenlos · 0,00 € während dieser Startlaufzeit.<br/>
             Bei eingeschalteter Verlängerung ab {date(o.launchPromotion.paidFrom)}: zwölf Monate für {money(o.monthlyNetCents*12)} netto / {money(Math.round(o.monthlyNetCents*12*1.19))} inklusive MwSt. im Voraus.</p> :
           <p>

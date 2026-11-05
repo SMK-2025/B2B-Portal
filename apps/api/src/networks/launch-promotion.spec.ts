@@ -10,6 +10,7 @@ import {
   KOELN_LAUNCH,
   launchSettings,
   launchSummary,
+  publicLaunchOffer,
   validateLaunchBilling,
 } from "./launch-promotion";
 
@@ -57,6 +58,17 @@ function order(): NetworkOrderRecord {
 }
 afterEach(() => vi.useRealTimers());
 describe("network launch promotion", () => {
+  it("does not expose allocated or remaining place counts in public offers", () => {
+    const { network } = fixture();
+    expect(publicLaunchOffer(network, 88)).toMatchObject({
+      available: true,
+      limit: 100,
+      freeMonths: 6,
+    });
+    expect(publicLaunchOffer(network, 100)).toMatchObject({ available: false });
+    expect(publicLaunchOffer(network, 88)).not.toHaveProperty("used");
+    expect(publicLaunchOffer(network, 88)).not.toHaveProperty("remaining");
+  });
   it("atomically caps simultaneous applicants at the configured limit", async () => {
     const { store } = fixture();
     const results = await Promise.allSettled(

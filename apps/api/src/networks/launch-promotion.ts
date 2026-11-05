@@ -24,6 +24,23 @@ export function launchSummary(network: NetworkRecord, used: number) {
     freeMonths: p.freeMonths,
   };
 }
+/** Public offers never expose the number of allocated or remaining places. */
+export function publicLaunchOffer(
+  network: NetworkRecord,
+  used: number,
+  reserved = false,
+) {
+  const p = launchSummary(network, used);
+  return p
+    ? {
+        id: p.id,
+        version: p.version,
+        limit: p.limit,
+        freeMonths: p.freeMonths,
+        available: p.remaining > 0 || reserved,
+      }
+    : null;
+}
 
 export function launchSettings(
   input: unknown,
@@ -91,6 +108,7 @@ export function applyLaunch(
     startsOn: string;
     campaignId: string;
     freeMonths: number;
+    limit?: number;
   },
 ) {
   if (!order.billingPolicy?.autoRenew)
@@ -98,7 +116,12 @@ export function applyLaunch(
       "Die Startaktion wurde geändert. Bitte Konditionen erneut bestätigen.",
     );
   const paidFrom = addMonths(grant.startsOn, grant.freeMonths);
-  order.launchPromotion = { id: grant.campaignId, slot: grant.slot, paidFrom };
+  order.launchPromotion = {
+    id: grant.campaignId,
+    slot: grant.slot,
+    limit: grant.limit,
+    paidFrom,
+  };
   order.minimumTermMonths = grant.freeMonths;
   order.annualNetCents = 0;
   order.vatCents = 0;

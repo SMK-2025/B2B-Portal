@@ -14,6 +14,8 @@ Für Köln wird einmalig für künftige Buchungen aktiviert: 100 Plätze, sechs 
 
 ## Zähler und Schutz
 
+Der Zähler ist ausschließlich in der Betreiberverwaltung sichtbar. Öffentliche Angebote enthalten keine Anzahl vergebener oder verbleibender Plätze, sondern nur die Verfügbarkeit der Aktion. Vor Abschluss erscheint ein kurzer Startvorteil mit den anschließenden Vertragskosten; nach erfolgreicher Platzvergabe wird im Konto zur kostenlosen Mitgliedschaft gratuliert. Interne Platznummern werden dort nicht angezeigt.
+
 PostgreSQL-Tabelle `b2b_launch_places`, unabhängig vom Portal-Snapshot. Die Zuteilung läuft in einer Transaktion mit Advisory Lock. Vor der Zuteilung wird die persistierte Netzwerkkonfiguration geprüft. Slot, Nutzerkennung und normalisierter Unternehmens-Hash sind eindeutig. Wiederholungen erzeugen keinen weiteren Platz; Löschen und erneutes Anlegen eines Portalzugangs setzt den Zähler nicht zurück. Es werden keine E-Mail-Adressen in dieses Ledger übernommen. Der Hash ersetzt keine Prüfung der Unternehmensidentität durch den Betreiber.
 
 Bei ausgeschöpfter Aktion wird eine noch als kostenlos bestätigte Buchung abgelehnt. Sie wird niemals stillschweigend kostenpflichtig. Die Person muss die dann regulären Konditionen neu laden und bestätigen. Änderungen der Aktionsdauer oder Abschalten der Aktion erfordern ebenfalls eine erneute Bestätigung. Bereits vergebene Plätze können durch Bearbeiten der Zahlungsdetails nicht zurückgesetzt werden; die Obergrenze darf nicht unter die bereits vergebene Zahl abgesenkt werden.

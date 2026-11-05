@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import { launchSummary, launchSettings, validateLaunchBilling } from "./launch-promotion";
+import { publicLaunchOffer, launchSettings, validateLaunchBilling } from "./launch-promotion";
 import { attributeMailingRegistration } from "../mailings/mailing-attribution";
 import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
@@ -244,10 +244,7 @@ export class NetworksService {
       networkSlug: network.slug,
       initiator: invite.data.role === "network_admin",
       memberPaymentModel: network.settings.memberPaymentModel || "individual",
-      launchPromotion: launchSummary(network,this.store.launchUsed(network.id)) && {
-        ...launchSummary(network,this.store.launchUsed(network.id))!,
-        reserved: this.store.launchReserved(network.id,this.store.userByEmail.get(String(invite.data.email)) || ""),
-      },
+      launchPromotion: publicLaunchOffer(network,this.store.launchUsed(network.id),this.store.launchReserved(network.id,this.store.userByEmail.get(String(invite.data.email)) || "")),
       ...(network.settings.memberPaymentModel === "network"
         ? {}
         : pricing(network)),
@@ -1292,7 +1289,7 @@ export class NetworksService {
     const quote = pricing(network);
     const offer = {
       ...quote,
-      launchPromotion: launchSummary(network,this.store.launchUsed(network.id)),
+      launchPromotion: publicLaunchOffer(network,this.store.launchUsed(network.id)),
       centrallyFunded: network.settings.memberPaymentModel === "network",
       schedule: quote.billing?.freeUntil
         ? invoiceSchedule(quote.billing.freeUntil)

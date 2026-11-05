@@ -142,6 +142,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
         startsOn: p.starts_on,
         campaignId: promotion.id,
         freeMonths: promotion.freeMonths,
+        limit: promotion.limit,
       };
     }
     const p = await this.sql.begin(async (tx) => {
@@ -182,6 +183,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       startsOn: p.starts_on,
       campaignId: promotion.id,
       freeMonths: promotion.freeMonths,
+      limit: promotion.limit,
     };
   }
   readonly users = new Map<string, UserRecord>();

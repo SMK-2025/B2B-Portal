@@ -66,7 +66,7 @@ export function MemberAnnualRegistrationFields({
         )}
       </div>
     );
-  const promotional=!!quote.launchPromotion && (quote.launchPromotion.remaining>0 || !!quote.launchPromotion.reserved);
+  const promotional=!!quote.launchPromotion && (quote.launchPromotion.available ?? ((quote.launchPromotion.remaining || 0)>0 || !!quote.launchPromotion.reserved));
   if (quote.initiator)
     return (
       <div>
@@ -244,7 +244,7 @@ export function MemberAnnualRegistrationFields({
                 .
               </>
             )}{" "}
-            {quote.launchPromotion && (quote.launchPromotion.remaining>0 || quote.launchPromotion.reserved)
+            {promotional
               ? "Während der kostenlosen Startlaufzeit keine Rechnung. Nur bei eingeschalteter Verlängerung erfolgt die erste Jahresrechnung 15 Tage vor Beginn der kostenpflichtigen Laufzeit, zahlbar innerhalb von 14 Tagen."
               : quote.billing.freeUntil
               ? "Die Rechnung wird 15 Tage vor Ende der kostenlosen Nutzung versendet, zahlbar innerhalb von 14 Tagen. Bei späterer Anmeldung erfolgt der Versand nach der Buchung."
@@ -263,7 +263,7 @@ export function MemberAnnualRegistrationFields({
   return (
     <>
       {!hidePrice && price}
-      {quote.launchPromotion && (quote.launchPromotion.remaining>0 || quote.launchPromotion.reserved) &&
+      {promotional && quote.launchPromotion &&
         <input type="hidden" name="launchPromotionAccepted" value={quote.launchPromotion.version}/>}
       {quote.billing?.automaticInvoices && (
         <label className="full memberAnnualConsent">

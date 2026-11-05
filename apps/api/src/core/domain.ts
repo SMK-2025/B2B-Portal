@@ -362,7 +362,7 @@ export interface NetworkOrderRecord {
   monthlyNetCents: number;
   setupNetCents: number;
   minimumTermMonths: number;
-  launchPromotion?: { id: string; slot: number; paidFrom: string };
+  launchPromotion?: { id: string; slot: number; limit?: number; paidFrom: string };
   billingPolicy?: {
     version: string;
     acceptedAt: string;

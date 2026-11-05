@@ -224,7 +224,7 @@ describe("network launch promotion", () => {
     const billing = new AutomaticBillingService(store, email) as any;
     billing.sql = {};
     billing.formatValidated = true;
-    const issue = vi.spyOn(billing, "issue").mockResolvedValue();
+    const issue = vi.spyOn(billing, "issue").mockResolvedValue(undefined);
     await billing.tick();
     expect(issue).not.toHaveBeenCalled();
     vi.setSystemTime(new Date("2027-04-20T12:00:00Z"));

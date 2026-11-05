@@ -2785,7 +2785,7 @@ export class NetworksService {
     const names=[organization.displayName,organization.networkProfile?.companyName,...pages.map(p=>p.companyName)].filter(Boolean).map(n=>n!.toLowerCase().replace(/[^\p{L}\p{N}]/gu,''));
     if(names.includes(name.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')))throw new ConflictException('Für dieses Unternehmen existiert bereits eine Seite.');
     const now=new Date().toISOString();
-    const page={id:randomUUID(),networkId,ownerUserId:user.id,companyName:name,websiteUrl:website,ownershipConfirmedAt:now,reviewStatus:'draft' as const,profile:null,createdAt:now};
+    const page: NonNullable<OrganizationRecord['additionalCompanyPages']>[number]={id:randomUUID(),networkId,ownerUserId:user.id,companyName:name,websiteUrl:website,ownershipConfirmedAt:now,reviewStatus:'draft',profile:null,createdAt:now};
     (organization.additionalCompanyPages ||= []).push(page);
     return page;
   }

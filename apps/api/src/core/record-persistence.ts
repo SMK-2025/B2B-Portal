@@ -93,16 +93,16 @@ export class RecordPersistence {
     const manifest = JSON.stringify({storageVersion:2, counts, networks:networkHeaders});
     const next = await sql.begin(async tx => {
       const barrier = await tx.unsafe(`INSERT INTO portal_state(id,payload,revision,updated_at)
-        VALUES ('primary',$1::jsonb,1,now()) ON CONFLICT(id) DO UPDATE SET payload=EXCLUDED.payload,
+        VALUES ('primary',$1::text::jsonb,1,now()) ON CONFLICT(id) DO UPDATE SET payload=EXCLUDED.payload,
         revision=portal_state.revision+1,updated_at=now() WHERE portal_state.revision=$2 RETURNING revision`, [manifest,revision]);
       if (!barrier.length) throw new ServiceUnavailableException("Paralleler Datenbankzugriff erkannt. Bitte den Server neu verbinden.");
       for (const file of media.values()) await tx.unsafe("INSERT INTO portal_media(hash,mime_type,bytes) VALUES($1,$2,$3) ON CONFLICT(hash) DO NOTHING",[file.hash,file.mime,file.bytes]);
       for (let offset=0; offset<changed.length; offset+=100) await tx.unsafe(`INSERT INTO portal_records(collection,record_key,network_id,ordinal,payload,media_refs,media_hashes,fingerprint)
         SELECT collection,record_key,network_id,ordinal,payload,media_refs,media_hashes,fingerprint
-        FROM jsonb_to_recordset($1::jsonb) AS x(collection text,record_key text,network_id text,ordinal integer,payload jsonb,media_refs jsonb,media_hashes text[],fingerprint text)
+        FROM jsonb_to_recordset($1::text::jsonb) AS x(collection text,record_key text,network_id text,ordinal integer,payload jsonb,media_refs jsonb,media_hashes text[],fingerprint text)
         ON CONFLICT(collection,record_key) DO UPDATE SET network_id=EXCLUDED.network_id,ordinal=EXCLUDED.ordinal,payload=EXCLUDED.payload,
         media_refs=EXCLUDED.media_refs,media_hashes=EXCLUDED.media_hashes,fingerprint=EXCLUDED.fingerprint,updated_at=now()`,[JSON.stringify(changed.slice(offset,offset+100))]);
-      if (removed.length) await tx.unsafe(`DELETE FROM portal_records r USING jsonb_to_recordset($1::jsonb) AS x(collection text,record_key text)
+      if (removed.length) await tx.unsafe(`DELETE FROM portal_records r USING jsonb_to_recordset($1::text::jsonb) AS x(collection text,record_key text)
         WHERE r.collection=x.collection AND r.record_key=x.record_key`,[JSON.stringify(removed)]);
       if (changed.length || removed.length) await tx.unsafe("DELETE FROM portal_media m WHERE NOT EXISTS(SELECT 1 FROM portal_records r WHERE r.media_hashes @> ARRAY[m.hash])");
       return Number(barrier[0].revision);

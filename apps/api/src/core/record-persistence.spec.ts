@@ -18,6 +18,28 @@ async function setup() {
   return {db,sql:adapter(db)};
 }
 describe('individual PostgreSQL record persistence',()=>{
+  it('binds pre-serialized JSON as text, avoiding postgres.js JSONB double encoding',async()=>{
+    const {db}=await setup();
+    const driver=(connection:any):StorageSql=>({
+      unsafe:async(q,p=[])=>{
+        // postgres.js applies JSON.stringify to parameters inferred as JSONB (OID 3802).
+        const bound=p.map((v,i)=>new RegExp(`\\$${i+1}::jsonb\\b`).test(q)?JSON.stringify(v):v);
+        return (await connection.query(q,bound)).rows;
+      },
+      begin:work=>connection.transaction((tx:any)=>work(driver(tx)))
+    });
+    try {
+      const sql=driver(db), records=new RecordPersistence();
+      const collections={users:new Map([['u',{id:'u',name:'Test'}]]),networks:new Map()};
+      let revision=await records.save(sql,0,collections);
+      const manifest=(await sql.unsafe('SELECT payload FROM portal_state'))[0].payload;
+      expect(manifest.storageVersion).toBe(2);
+      expect((await records.load(sql,manifest,collections)).users).toEqual([['u',{id:'u',name:'Test'}]]);
+      collections.users.clear();revision=await records.save(sql,revision,collections);
+      expect(revision).toBe(2);
+      expect(await sql.unsafe('SELECT * FROM portal_records')).toHaveLength(0);
+    }finally{await db.close();}
+  },30000);
   it('migrates an existing full snapshot atomically and restores all collections after restart',async()=>{
     const {db,sql}=await setup();
     try{

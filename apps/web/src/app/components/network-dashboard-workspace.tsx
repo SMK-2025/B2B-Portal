@@ -303,113 +303,6 @@ export function NetworkDashboardWorkspace({
           ) : (
             <NetworkMatchdayCard />
           ))}
-        {enabled("events") && event && (
-          <section className="networkCard loungeCard loungeNextEvent">
-            <header>
-              <h2>
-                <NetworkText id="ui.network-dashboard-workspace.8117f4536ce13e04">
-                  {data.upcomingEvents.length
-                    ? "Unser nächstes Treffen"
-                    : event
-                      ? "Letzte Veranstaltung"
-                      : "Unser nächstes Treffen"}
-                </NetworkText>
-              </h2>
-              <Link
-                href={`${base}/veranstaltungen` as never}
-                aria-label="Alle Veranstaltungen"
-              >
-                ↗
-              </Link>
-            </header>
-            <div className="loungeCardBody">
-              {event ? (
-                <>
-                  <div className="loungeEventVisual">
-                    <time dateTime={event.startsAt!}>
-                      <strong>{new Date(event.startsAt!).getDate()}</strong>
-                      <span>
-                        {new Date(event.startsAt!).toLocaleDateString("de-DE", {
-                          month: "short",
-                        })}
-                      </span>
-                    </time>
-                    {eventImage ? (
-                      <img src={eventImage} alt="" />
-                    ) : (
-                      <div className="loungeEventPlaceholder">
-                        <span>
-                          <NetworkText id="ui.network-dashboard-workspace.fc89fa716675dce3">
-                            RAUM FÜR BEGEGNUNGEN
-                          </NetworkText>
-                        </span>
-                        <strong>
-                          <NetworkText id="ui.network-dashboard-workspace.640b8e17ea4832d0">
-                            Persönlich verbunden.
-                          </NetworkText>
-                        </strong>
-                      </div>
-                    )}
-                  </div>
-                  <h3>{event.title}</h3>
-                  {!data.upcomingEvents.length && (
-                    <strong>
-                      <NetworkText id="ui.network-dashboard-workspace.a44568da6421b189">
-                        Bereits stattgefunden
-                      </NetworkText>
-                    </strong>
-                  )}
-                  <p className="loungeDate">
-                    {new Date(event.startsAt!).toLocaleDateString("de-DE", {
-                      weekday: "long",
-                      day: "2-digit",
-                      month: "long",
-                    })}{" "}
-                    ·{" "}
-                    {new Date(event.startsAt!).toLocaleTimeString("de-DE", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      timeZone: "Europe/Berlin",
-                    })}{" "}
-                    <NetworkText id="ui.network-dashboard-workspace.4221b9b808159cb2">
-                      Uhr
-                    </NetworkText>
-                  </p>
-                  <p className="loungeExcerpt">{event.description}</p>
-                  <Link
-                    className="loungeDarkButton"
-                    href={
-                      `${base}/veranstaltungen?event=${encodeURIComponent(event.id)}` as never
-                    }
-                  >
-                    <NetworkText id="ui.network-dashboard-workspace.4fbb81d772589609">
-                      Treffen ansehen →
-                    </NetworkText>
-                  </Link>
-                </>
-              ) : (
-                <div className="loungeEmpty">
-                  <h3>
-                    <NetworkText id="ui.network-dashboard-workspace.190cd970f22a8494">
-                      Der nächste Austausch kommt.
-                    </NetworkText>
-                  </h3>
-                  <p>
-                    <NetworkText id="ui.network-dashboard-workspace.cb2f474e18275309">
-                      Neue Termine findest du hier. Bis dahin kannst du deine
-                      Partner schon persönlich kennenlernen.
-                    </NetworkText>
-                  </p>
-                  <Link href={`${base}/veranstaltungen` as never}>
-                    <NetworkText id="ui.network-dashboard-workspace.3c581c67563a2e65">
-                      Kalender öffnen →
-                    </NetworkText>
-                  </Link>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
         {enabled("profiles") && (
           <section className="networkCard loungeCard loungeMemberHighlight">
             <header>
@@ -488,7 +381,7 @@ export function NetworkDashboardWorkspace({
             </div>
           </section>
         )}
-        {enabled("community") && (
+        {(enabled("community") || (enabled("events") && event)) && (
           <section
             className="loungeNoticeboard"
             aria-labelledby="noticeboard-title"
@@ -522,7 +415,26 @@ export function NetworkDashboardWorkspace({
               </Link>
             </header>
             <div className="loungeBoardSurface">
-              {data.announcements.length ? (
+              {enabled("events") && event && (
+                <Link
+                  className="loungeBoardNote loungeBoardNote0"
+                  href={`${base}/veranstaltungen?event=${encodeURIComponent(event.id)}` as never}
+                >
+                  <span className="loungeBoardPin" aria-hidden="true" />
+                  <div className="loungeNoteMeta">
+                    <span><NetworkText id="dashboard.board.event.pinned">Veranstaltung · Angepinnt</NetworkText></span>
+                    <b><NetworkText id={data.upcomingEvents.length ? "dashboard.board.event.upcoming" : "dashboard.board.event.past"}>{data.upcomingEvents.length ? "Bevorstehend" : "Bereits stattgefunden"}</NetworkText></b>
+                  </div>
+                  <img src={eventImage || data.network.settings?.bannerImageUrl || "/images/network-meeting-club.webp"} alt="" />
+                  <h3>{event.title}</h3>
+                  <time className="loungeDate" dateTime={event.startsAt!}>
+                    {new Date(event.startsAt!).toLocaleString("de-DE", { weekday:"long", day:"2-digit", month:"long", hour:"2-digit", minute:"2-digit", timeZone:"Europe/Berlin" })} Uhr
+                  </time>
+                  <p>{event.description}</p>
+                  <div className="loungeNoteBottom"><span><NetworkText id="dashboard.board.event.open">Veranstaltung ansehen →</NetworkText></span></div>
+                </Link>
+              )}
+              {enabled("community") && data.announcements.length ? (
                 data.announcements.slice(0, 6).map((item, index) => (
                   <button
                     type="button"
@@ -594,7 +506,7 @@ export function NetworkDashboardWorkspace({
                     </div>
                   </button>
                 ))
-              ) : (
+              ) : !enabled("events") || !event ? (
                 <div className="loungeBoardEmpty">
                   <strong>
                     <NetworkText id="ui.network-dashboard-workspace.006f6cebf5393796">
@@ -608,7 +520,7 @@ export function NetworkDashboardWorkspace({
                     </NetworkText>
                   </p>
                 </div>
-              )}
+              ) : null}
             </div>
           </section>
         )}

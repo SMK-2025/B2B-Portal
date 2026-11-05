@@ -39,6 +39,7 @@ export default function RegistrationPage() {
     [invitedEmail, setInvitedEmail] = useState(""),
     [emailLocked, setEmailLocked] = useState(false),
     [networkInviteToken, setNetworkInviteToken] = useState(""),
+    [freeStart, setFreeStart] = useState(false),
     [ready, setReady] = useState(false);
   const acceptsRequests = [
     "unternehmerfreunde",
@@ -270,6 +271,7 @@ export default function RegistrationPage() {
               invite={networkInviteToken}
               loading={loading}
               priceOnly
+              onFreeStart={setFreeStart}
               onPaymentModel={setPaymentModel}
             />
           ) : (
@@ -526,7 +528,7 @@ export default function RegistrationPage() {
                     onClick={() => setStep("pricing")}
                   >
                     <NetworkText id="ui.page.9ed1d16a1f6a379f">
-                      {centralPayment
+                      {centralPayment || freeStart
                         ? "← Einladung erneut ansehen"
                         : "← Preisübersicht erneut ansehen"}
                     </NetworkText>
@@ -710,13 +712,13 @@ export default function RegistrationPage() {
                 <>
                   <h1>
                     <NetworkText id="ui.page.344eae7f3aee013b">
-                      {centralPayment
+                      {centralPayment || freeStart
                         ? "Dein Unternehmen"
                         : "Unternehmen & Jahresmitgliedschaft"}
                     </NetworkText>
                   </h1>
                   <p className="lead">
-                    {centralPayment ? (
+                    {centralPayment || freeStart ? (
                       "Ergänze dein Unternehmen und starte in deinem geschlossenen Partnernetzwerk."
                     ) : (
                       <>
@@ -728,7 +730,7 @@ export default function RegistrationPage() {
                   </p>
                   <form onSubmit={createOrganization} className="formGrid">
                     <label className="full">
-                      {centralPayment
+                      {centralPayment || freeStart
                         ? "Vollständiger Firmenname"
                         : "Vollständiger Firmenname / Rechnungsempfänger"}
                       <input

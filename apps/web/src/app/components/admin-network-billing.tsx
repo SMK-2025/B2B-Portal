@@ -267,14 +267,6 @@ export function AdminNetworkBilling({
               </label>
               <label className="legalConsent full">
                 <input
-                  name="autoRenew"
-                  type="checkbox"
-                  defaultChecked={data.billing?.autoRenew}
-                />
-                <span>Automatische Verlängerung um zwölf Monate</span>
-              </label>
-              <label className="legalConsent full">
-                <input
                   name="automaticInvoices"
                   type="checkbox"
                   defaultChecked={data.billing?.automaticInvoices}

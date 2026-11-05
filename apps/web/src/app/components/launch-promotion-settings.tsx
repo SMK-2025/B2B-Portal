@@ -61,10 +61,7 @@ export function LaunchPromotionSettings({
         Aktionsplatz frei.
       </p>
       <small>
-        Nur für individuell zahlende Mitglieder: Danach automatische
-        Verlängerung um zwölf Monate zum bestätigten Preis. Rechnungsversand 15
-        Tage vorher; bis 16 Tage vorher ausschaltbar. Bitte die entsprechenden
-        Abrechnungsoptionen aktivieren und feste Datumszeiträume leeren.
+        Für individuell zahlende Netzwerke ohne feste Datumszeiträume.
         Änderungen gelten ausschließlich für neue Buchungen.
       </small>
     </fieldset>

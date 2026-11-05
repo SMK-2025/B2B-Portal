@@ -52,6 +52,7 @@ export function annualOrder(
   userId: string,
   input: Record<string, unknown>,
   operatorMandate?: { reference: string },
+  freeLaunch = false,
 ): NetworkOrderRecord {
   if (network.status !== "active")
     throw new BadRequestException(
@@ -60,7 +61,7 @@ export function annualOrder(
   const quote = pricing(network);
   const policy = network.settings.memberBilling;
   if (
-    !operatorMandate &&
+    !operatorMandate && !freeLaunch &&
     policy?.automaticInvoices &&
     input.pdfInvoiceAccepted !== true &&
     input.pdfInvoiceAccepted !== "on"
@@ -74,16 +75,7 @@ export function annualOrder(
     );
   if (
     !operatorMandate &&
-    policy?.autoRenew &&
-    input.renewalAccepted !== true &&
-    input.renewalAccepted !== "on"
-  )
-    throw new BadRequestException(
-      "Bitte die automatische Vertragsverlängerung ausdrücklich bestätigen.",
-    );
-  if (
-    !operatorMandate &&
-    (input.paymentObligationAccepted !== true ||
+    ((!freeLaunch && input.paymentObligationAccepted !== true) ||
       input.termsAccepted !== true ||
       input.authorityConfirmed !== true)
   )
@@ -115,8 +107,6 @@ export function annualOrder(
   const serviceEnd = policy?.paidThrough
     ? berlinMidnight(addCalendarDays(policy.paidThrough, 1))
     : end.toISOString();
-  const renewalStart = policy?.paidThrough ? addCalendarDays(policy.paidThrough, 1)
-    : new Intl.DateTimeFormat("en-CA", {timeZone:"Europe/Berlin",year:"numeric",month:"2-digit",day:"2-digit"}).format(end);
   return {
     id: randomUUID(),
     kind: "member_annual",
@@ -128,27 +118,27 @@ export function annualOrder(
       2,
       200,
     ),
-    invoiceContact: requiredText(
+    invoiceContact: freeLaunch ? "" : requiredText(
       input.invoiceContact,
       "Rechnungskontakt",
       3,
       160,
     ),
-    invoiceEmail: emailAddress(input.invoiceEmail),
-    invoiceStreet: requiredText(
+    invoiceEmail: freeLaunch ? "" : emailAddress(input.invoiceEmail),
+    invoiceStreet: freeLaunch ? "" : requiredText(
       input.invoiceStreet,
       "Rechnungsstraße und Hausnummer",
       3,
       200,
     ),
-    invoicePostalCode: requiredText(
+    invoicePostalCode: freeLaunch ? "" : requiredText(
       input.invoicePostalCode,
       "Rechnungs-Postleitzahl",
       2,
       20,
     ),
-    invoiceCity: requiredText(input.invoiceCity, "Rechnungsort", 2, 120),
-    invoiceCountry: requiredText(input.invoiceCountry, "Rechnungsland", 2, 100),
+    invoiceCity: freeLaunch ? "" : requiredText(input.invoiceCity, "Rechnungsort", 2, 120),
+    invoiceCountry: freeLaunch ? "" : requiredText(input.invoiceCountry, "Rechnungsland", 2, 100),
     invoiceVatId:
       typeof input.invoiceVatId === "string"
         ? input.invoiceVatId.trim().slice(0, 50)
@@ -180,15 +170,15 @@ export function annualOrder(
             invoiceDate: schedule?.invoiceDate || today,
             paymentDueDate:
               schedule?.paymentDueDate || addCalendarDays(today, 14),
-            autoRenew: policy.autoRenew,
+            autoRenew: false,
             renewalMonths: policy.renewalMonths,
-            renewalDeadline: policy.autoRenew ? addCalendarDays(renewalStart, -16) : null,
-            renewalInvoiceDate: policy.autoRenew ? addCalendarDays(renewalStart, -15) : null,
+            renewalDeadline: null,
+            renewalInvoiceDate: null,
             automaticInvoices: policy.automaticInvoices,
           },
         }
       : {}),
-    termsVersion: "agb-2026-11-03",
+      termsVersion: "agb-2026-11-05",
     pricingVersion: "member-flat-annual-2026-10-19",
     // The operator's documented mandate is not a member's online acceptance.
     authorityConfirmed: !operatorMandate,

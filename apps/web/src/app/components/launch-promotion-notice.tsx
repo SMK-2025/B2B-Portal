@@ -18,8 +18,7 @@ export function LaunchPromotionNotice({
   const available =
     promotion.available ??
     ((promotion.remaining || 0) > 0 || promotion.reserved);
-  const money = (c: number) =>
-    (c / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+  if(!available) return null;
   return (
     <aside
       className="full"
@@ -46,16 +45,6 @@ export function LaunchPromotionNotice({
           {promotion.freeMonths} Monate kostenlos vernetzen.
         </p>
       )}
-      <p>
-        {available ? "Danach" : "Regulär"} automatische Verlängerung um jeweils
-        zwölf Monate: {money(monthlyNetCents)} netto monatlich, insgesamt{" "}
-        <strong>
-          {money(Math.round(monthlyNetCents * 12 * 1.19))} inklusive MwSt. pro
-          Jahr
-        </strong>
-        .
-      </p>
-      <p>Im Konto bis 16 Tage vor Beginn der nächsten Laufzeit ausschaltbar.</p>
     </aside>
   );
 }

@@ -38,11 +38,6 @@ export function memberBillingSettings(
     throw new BadRequestException(
       "Bitte zusammenhängenden Zeitraum nach der kostenlosen Nutzung angeben.",
     );
-  const sport = slug === "bayer04leverkusen" || slug === "bayer-giants";
-  if (b.autoRenew === true && (renewalMonths !== 12 || (sport && !paidThrough)))
-    throw new BadRequestException(
-      sport ? "Für die Saisonverlängerung bitte ein Saisonende und zwölf Folgemonate angeben." : "Die automatische Verlängerung beträgt zwölf Monate.",
-    );
   if (paidFrom && paidThrough) {
     const start = new Date(paidFrom + "T12:00:00Z");
     start.setUTCMonth(start.getUTCMonth() + months);
@@ -56,7 +51,7 @@ export function memberBillingSettings(
     freeUntil,
     paidFrom,
     paidThrough,
-    autoRenew: b.autoRenew === true,
+    autoRenew: false,
     renewalMonths,
     automaticInvoices: b.automaticInvoices === true,
     version: randomUUID(),

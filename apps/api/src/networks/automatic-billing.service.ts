@@ -11,7 +11,6 @@ import { EmailService } from "../auth/email.service";
 import { invoicePdf, type InvoiceData } from "./invoice-document";
 import { zugferdInvoice } from "./zugferd-invoice";
 import { addCalendarDays, berlinMidnight } from "./invoice-schedule";
-import { addMonths } from "./launch-promotion";
 import { randomUUID } from "node:crypto";
 import type { NetworkOrderRecord } from "../core/domain";
 
@@ -109,6 +108,7 @@ export class AutomaticBillingService
           (m) => m.id === order.membershipId,
         );
         const network = this.store.networks.get(order.networkId);
+        if(order.launchPromotion || order.id.startsWith("renewal:")) continue;
         if (
           !p?.automaticInvoices ||
           !p.pdfConsentAt ||
@@ -124,13 +124,6 @@ export class AutomaticBillingService
         if (order.manualServiceInvoice && !order.invoiceSentAt) continue;
         if (!order.launchPromotion && p.invoiceDate <= today && !order.invoiceSentAt)
           await this.issue(order, today);
-        if (
-          p.autoRenew &&
-          !p.renewalDisabledAt &&
-          p.renewalInvoiceDate &&
-          p.renewalInvoiceDate <= today
-        )
-          await this.renew(order, today);
       }
     } catch (error) {
       if (!this.formatValidated) {
@@ -354,51 +347,6 @@ export class AutomaticBillingService
         [row.id],
       );
     }
-  }
-  private async renew(order: NetworkOrderRecord, today: string) {
-    if (!this.sql || !order.billingPolicy || !order.serviceEndsAt) return;
-    const p = order.billingPolicy;
-    const id = `renewal:${order.id}`;
-    if (this.store.networkOrders.has(id)) return;
-    const startDate = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/Berlin",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date(order.serviceEndsAt));
-    const endDate = addMonths(startDate, p.renewalMonths);
-    const net = order.monthlyNetCents * p.renewalMonths,
-      vat = Math.round(net * 0.19);
-    const next: NetworkOrderRecord = {
-      ...structuredClone(order),
-      launchPromotion: undefined,
-      manualServiceInvoice: false,
-      id,
-      minimumTermMonths: p.renewalMonths,
-      annualNetCents: net,
-      vatCents: vat,
-      grossCents: net + vat,
-      serviceStartsAt: berlinMidnight(startDate),
-      serviceEndsAt: berlinMidnight(endDate),
-      invoiceReference: null,
-      invoiceSentAt: null,
-      paymentStatus: "open",
-      paidAt: null,
-      submittedAt: new Date().toISOString(),
-      billingPolicy: {
-        ...p,
-        sourceOrderId: order.id,
-        freeUntil: null,
-        invoiceDate: p.renewalInvoiceDate!,
-        paymentDueDate: addCalendarDays(p.renewalInvoiceDate!, 14),
-        renewalDeadline: addCalendarDays(endDate, -16),
-        renewalInvoiceDate: addCalendarDays(endDate, -15),
-      },
-    };
-    // Stable order id makes restart recovery deterministic.
-    this.store.networkOrders.set(id, next);
-    await this.store.persist();
-    await this.issue(next, today);
   }
   async status(orderIds?: string[]) {
     if (orderIds && !orderIds.length) return [];

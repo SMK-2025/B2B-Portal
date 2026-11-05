@@ -266,14 +266,6 @@ export function AdminMemberRegistrations() {
               </label>
               <label>
                 <input
-                  name="autoRenew"
-                  type="checkbox"
-                  defaultChecked={n.memberPrice.billing?.autoRenew || false}
-                />
-                Automatische Verlängerung um zwölf Monate vereinbaren
-              </label>
-              <label>
-                <input
                   name="automaticInvoices"
                   type="checkbox"
                   defaultChecked={

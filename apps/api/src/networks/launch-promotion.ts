@@ -17,7 +17,7 @@ export function launchSummary(network: NetworkRecord, used: number) {
   const p = network.settings.launchPromotion!;
   return {
     id: p.id,
-    version: `${p.id}:${p.limit}:${p.freeMonths}`,
+    version: `${p.id}:${p.limit}:${p.freeMonths}:fixed-term-v2`,
     limit: p.limit,
     used,
     remaining: Math.max(0, p.limit - used),
@@ -77,15 +77,13 @@ export function validateLaunchBilling(n: NetworkRecord) {
   if (
     n.settings.memberPaymentModel === "network" ||
     n.settings.billingMode === "cooperation_free" ||
-    !b?.autoRenew ||
-    !b.automaticInvoices ||
-    b.months !== 12 ||
+    !b ||
     b.freeUntil ||
     b.paidFrom ||
     b.paidThrough
   )
     throw new BadRequestException(
-      "Für die Startaktion bitte individuelle Zahlung, zwölf reguläre Monate, automatische Verlängerung und Rechnungsversand wählen. Feste Datumszeiträume dürfen nicht gleichzeitig gesetzt sein.",
+      "Für die Startaktion bitte individuelle Zahlung ohne feste Datumszeiträume wählen.",
     );
 }
 
@@ -111,7 +109,7 @@ export function applyLaunch(
     limit?: number;
   },
 ) {
-  if (!order.billingPolicy?.autoRenew)
+  if (!order.billingPolicy)
     throw new BadRequestException(
       "Die Startaktion wurde geändert. Bitte Konditionen erneut bestätigen.",
     );
@@ -133,8 +131,33 @@ export function applyLaunch(
   order.billingPolicy.freeUntil = addCalendarDays(paidFrom, -1);
   order.billingPolicy.invoiceDate = addCalendarDays(paidFrom, -15);
   order.billingPolicy.paymentDueDate = addCalendarDays(paidFrom, -1);
-  order.billingPolicy.renewalDeadline = addCalendarDays(paidFrom, -16);
-  order.billingPolicy.renewalInvoiceDate = addCalendarDays(paidFrom, -15);
+  order.billingPolicy.autoRenew = false;
+  order.billingPolicy.automaticInvoices = false;
+  order.billingPolicy.renewalDisabledAt = new Date().toISOString();
+  order.billingPolicy.renewalDeadline = null;
+  order.billingPolicy.renewalInvoiceDate = null;
+  order.paymentObligationAccepted = false;
+}
+
+/** No extension, new order or mail is created by this operator-requested change. */
+export function disableAutomaticRenewals(store: {networks:Map<string,NetworkRecord>;networkOrders:Map<string,NetworkOrderRecord>;maintenanceReceipts:Map<string,MaintenanceReceipt>}) {
+  const receipt="all-memberships-fixed-term-2026-11-05-v1";
+  if(store.maintenanceReceipts.has(receipt)) return false;
+  const now=new Date().toISOString();
+  for(const n of store.networks.values()) if(n.settings.memberBilling) {
+    n.settings.memberBilling.autoRenew=false;
+    n.settings.memberBilling.version=receipt;
+    n.updatedAt=now;
+  }
+  for(const o of store.networkOrders.values()) if(o.billingPolicy) {
+    o.billingPolicy.autoRenew=false;o.billingPolicy.renewalDisabledAt=now;
+    o.billingPolicy.renewalDeadline=null;o.billingPolicy.renewalInvoiceDate=null;
+    if(o.launchPromotion) o.billingPolicy.automaticInvoices=false;
+    // Stop unsent future renewal bookings; never alter an issued invoice.
+    if(o.id.startsWith("renewal:") && !o.invoiceReference && !o.invoiceSentAt) o.status="cancelled";
+  }
+  store.maintenanceReceipts.set(receipt,{state:"applied",completedAt:now});
+  return true;
 }
 
 /** Only future Cologne bookings change; previously accepted contracts remain untouched. */
@@ -159,7 +182,7 @@ export function configureKoelnLaunch(store: {
     freeUntil: null,
     paidFrom: null,
     paidThrough: null,
-    autoRenew: true,
+    autoRenew: false,
     renewalMonths: 12,
     automaticInvoices: true,
     version: KOELN_LAUNCH,

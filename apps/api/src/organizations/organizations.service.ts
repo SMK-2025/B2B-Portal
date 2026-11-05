@@ -46,7 +46,7 @@ export class OrganizationsService {
     if (this.store.networkMemberships.some(m=>m.networkId===network.id && m.userId===user.id))
       throw new BadRequestException("Du bist diesem Netzwerk bereits zugeordnet.");
     // Validate all billable contract and organization fields before reserving a limited place.
-    annualOrder(network,user.id,input);
+    annualOrder(network,user.id,input,undefined,true);
     if(input.role!=="network") throw new BadRequestException("Ungültige Unternehmensrolle.");
     const company=requiredText(input.legalName,"Rechtlicher Firmenname",2,200);
     requiredText(input.displayName,"Anzeigename",2,200); safeUrl(input.websiteUrl);
@@ -141,7 +141,7 @@ export class OrganizationsService {
       );
     const memberOrder =
       requestedNetwork && !centrallyFunded
-        ? annualOrder(requestedNetwork, user.id, input)
+        ? annualOrder(requestedNetwork, user.id, input,undefined,!!launchGrant)
         : null;
     if (memberOrder && launchGrant) applyLaunch(memberOrder,launchGrant);
     if (requestedNetwork && launchEnabled(requestedNetwork) && input.launchPromotionAccepted && !launchGrant)
@@ -226,7 +226,7 @@ export class OrganizationsService {
           style: "currency",
           currency: "EUR",
         });
-      enqueueOperatorMail(
+      if(!memberOrder.launchPromotion) enqueueOperatorMail(
         this.store,
         `annual-booking:${memberOrder.id}`,
         "Neue Jahresmitgliedschaft – Rechnung erstellen",

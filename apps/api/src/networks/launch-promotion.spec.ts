@@ -7,6 +7,7 @@ import {
   addMonths,
   applyLaunch,
   configureKoelnLaunch,
+  disableAutomaticRenewals,
   KOELN_LAUNCH,
   launchSettings,
   launchSummary,
@@ -58,6 +59,22 @@ function order(): NetworkOrderRecord {
 }
 afterEach(() => vi.useRealTimers());
 describe("network launch promotion", () => {
+  it("disables all existing renewals once, preserving terms and issued invoices", () => {
+    const {store,network}=fixture();
+    const other=structuredClone(network);other.id="other";store.networks.set(other.id,other);
+    const paid={...order(),serviceEndsAt:"2027-05-05T00:00:00Z",grossCents:27132,invoiceReference:"B2B-0000001"};
+    store.networkOrders.set(paid.id,paid);
+    const free=structuredClone(paid);free.id="free";
+    applyLaunch(free,{slot:1,startsOn:"2026-11-05",campaignId:KOELN_LAUNCH,freeMonths:6});store.networkOrders.set(free.id,free);
+    const pending={...structuredClone(paid),id:"renewal:old",invoiceReference:null,invoiceSentAt:null};store.networkOrders.set(pending.id,pending);
+    expect(disableAutomaticRenewals(store)).toBe(true);
+    for(const n of store.networks.values()) expect(n.settings.memberBilling!.autoRenew).toBe(false);
+    for(const o of store.networkOrders.values()) expect(o.billingPolicy!.autoRenew).toBe(false);
+    expect(paid).toMatchObject({grossCents:27132,invoiceReference:"B2B-0000001",serviceEndsAt:"2027-05-05T00:00:00Z",billingPolicy:{automaticInvoices:true}});
+    expect(free.billingPolicy!.automaticInvoices).toBe(false);
+    expect(pending.status).toBe("cancelled");
+    expect(disableAutomaticRenewals(store)).toBe(false);
+  });
   it("does not expose allocated or remaining place counts in public offers", () => {
     const { network } = fixture();
     expect(publicLaunchOffer(network, 88)).toMatchObject({
@@ -176,7 +193,9 @@ describe("network launch promotion", () => {
       billingPolicy: {
         freeUntil: "2027-05-04",
         invoiceDate: "2027-04-20",
-        renewalDeadline: "2027-04-19",
+        renewalDeadline: null,
+        autoRenew: false,
+        automaticInvoices: false,
         paymentDueDate: "2027-05-04",
       },
     });
@@ -215,15 +234,12 @@ describe("network launch promotion", () => {
     expect(store.networkOrders.size).toBe(1);
     o.billingPolicy!.renewalDisabledAt = null;
     await billing.tick();
-    const paid = store.networkOrders.get("renewal:order")!;
-    expect(paid).toMatchObject({
-      minimumTermMonths: 12,
-      annualNetCents: 22800,
-      vatCents: 4332,
-      grossCents: 27132,
-      launchPromotion: undefined,
-    });
-    expect(issue).toHaveBeenCalledTimes(1);
+    o.billingPolicy!.autoRenew = true; // Stale persisted data must not bypass the global safeguard.
+    vi.setSystemTime(new Date("2027-06-05T12:00:00Z"));
+    await billing.tick();
+    expect(store.networkOrders.has("renewal:order")).toBe(false);
+    expect(store.networkOrders.size).toBe(1);
+    expect(issue).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
   });
   it("serializes database allocation with an advisory transaction lock", async () => {

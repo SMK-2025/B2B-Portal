@@ -751,10 +751,6 @@ export function AdminNetworkWorkspace() {
                     <input type="date" name="billingPaidThrough" />
                   </label>
                   <label className="billingInlineChoice">
-                    <input type="checkbox" name="billingAutoRenew" />
-                    Verlängerung um zwölf Monate vereinbaren
-                  </label>
-                  <label className="billingInlineChoice">
                     <input type="checkbox" name="billingAutoInvoices" />
                     Validierte E-Rechnungen automatisch versenden
                   </label>

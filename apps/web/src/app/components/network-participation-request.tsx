@@ -335,7 +335,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
                       </NetworkText>
                     </p>
                   ) : (
-                    <>
+                    <div hidden={!!offer.launchPromotion?.available}>
                       {offer.billing?.freeUntil && (
                         <p>
                           <NetworkText id="ui.network-participation-request.06b746897b686912">
@@ -399,13 +399,9 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
                           {date(offer.schedule.paymentDueDate)}.
                         </p>
                       )}
-                    </>
+                    </div>
                   )}
                 </section>
-                {offer.launchPromotion && <label className="full legalConsent">
-                  <input type="checkbox" name="renewalAccepted" required/>
-                  <span>Ich stimme der dargestellten automatischen kostenpflichtigen Verlängerung um jeweils zwölf Monate zu. Ich kann sie fristgerecht im Mitgliedskonto ausschalten.</span>
-                </label>}
                 <label className="full legalConsent">
                   <input
                     type="checkbox"
@@ -418,7 +414,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
                       })
                     }
                   />
-                  <span>Ich akzeptiere die dargestellten Kostenbeiträge.</span>
+                  <span>{offer.launchPromotion?.available ? "Ich möchte die kostenlose Mitgliedschaft anfragen." : "Ich akzeptiere die dargestellten Kostenbeiträge."}</span>
                 </label>
                 <label className="full legalConsent">
                   <input

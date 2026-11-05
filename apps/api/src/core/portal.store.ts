@@ -47,7 +47,7 @@ import type { MailingCampaign, MailingLead } from "../mailings/mailing.types";
 import { provisionKoeln } from "./provision-koeln";
 import {
   configureKoelnLaunch,
-  KOELN_LAUNCH,
+  disableAutomaticRenewals,
 } from "../networks/launch-promotion";
 import { createHash } from "node:crypto";
 type LaunchPlace = {
@@ -281,6 +281,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
         await this.persist();
       }
     }
+    if(process.env.NODE_ENV==="production" && disableAutomaticRenewals(this)) await this.persist();
     if (process.env.NODE_ENV === "production") {
       retireLegacyInitiator(this);
       resetTestMember(this);

@@ -87,24 +87,6 @@ export function MemberBillingAccount({
           setNotice("Zahlungshistorie konnte nicht geladen werden."),
         );
   }, [access?.networkId, historyNetwork?.id]);
-  async function toggle(o: Order) {
-    setBusy(true);
-    try {
-      await portalRequest(
-        `/networks/${access?.networkId || historyNetwork?.id}/my-billing/${encodeURIComponent(o.id)}/renewal`,
-        {
-          token: getPortalSession() || "",
-          body: { enabled: !!o.billingPolicy?.renewalDisabledAt },
-        },
-      );
-      await load();
-      setNotice("Verlängerungseinstellung gespeichert.");
-    } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Speichern fehlgeschlagen.");
-    } finally {
-      setBusy(false);
-    }
-  }
   async function accept(e: FormEvent<HTMLFormElement>, o: Order) {
     e.preventDefault();
     if (!offer?.billing) return;
@@ -121,7 +103,6 @@ export function MemberBillingAccount({
             authorityConfirmed: true,
             paymentObligationAccepted: true,
             pdfInvoiceAccepted: true,
-            renewalAccepted: true,
           },
         },
       );
@@ -156,7 +137,7 @@ export function MemberBillingAccount({
     <section className="networkCard accountSecurityCard">
       <header>
         <h2>
-          Meine Abrechnung & Verlängerung
+          Meine Mitgliedschaft & Rechnungen
           {historyNetwork && " · " + historyNetwork.name}
         </h2>
       </header>
@@ -184,12 +165,6 @@ export function MemberBillingAccount({
               Tage. Bei späterer Zustimmung wird die Rechnung nach Bestätigung
               versendet.
             </p>
-            {offer.billing.autoRenew && (
-              <p>
-                Automatische Verlängerung um zwölf Monate zum bestätigten
-                Monatspreis. Ausschaltbar bis einschließlich 16 Kalendertage vor Beginn des Folgezeitraums. Die Folgerechnung ist 15 Tage vor dessen Beginn vorgesehen.
-              </p>
-            )}
             <label>
               <input type="checkbox" required />
               Ich bin zur Buchung für mein Unternehmen berechtigt und stimme dem
@@ -197,7 +172,7 @@ export function MemberBillingAccount({
               <a href="/agb" target="_blank">
                 AGB
               </a>
-              , der beschriebenen Verlängerungsregel und dem Rechnungsversand
+              und dem Rechnungsversand
               als E-Rechnung mit PDF-Darstellung zu. Meine bestehende Buchung
               wird nicht ohne diese Bestätigung umgestellt.
             </label>
@@ -209,8 +184,7 @@ export function MemberBillingAccount({
       {orders.map((o) => (
         <div key={o.id} style={{ padding: 20 }}>
           {o.launchPromotion ? <p><strong>Herzlichen Glückwunsch! Als eines der ersten{o.launchPromotion.limit ? ` ${o.launchPromotion.limit}` : ""} Mitglieder erhältst du deine kostenlose Mitgliedschaft.</strong><br/>
-            {o.minimumTermMonths} Monate kostenlos · 0,00 € während dieser Startlaufzeit.<br/>
-            Bei eingeschalteter Verlängerung ab {date(o.launchPromotion.paidFrom)}: zwölf Monate für {money(o.monthlyNetCents*12)} netto / {money(Math.round(o.monthlyNetCents*12*1.19))} inklusive MwSt. im Voraus.</p> :
+            {o.minimumTermMonths} Monate kostenlos · 0,00 € während dieser Startlaufzeit.</p> :
           <p>
             <strong>
               {money(o.monthlyNetCents)} netto pro Monat × {o.minimumTermMonths}{" "}
@@ -223,7 +197,7 @@ export function MemberBillingAccount({
             Leistungszeitraum: {date(o.serviceStartsAt)} bis{" "}
             {date(new Date(Date.parse(o.serviceEndsAt) - 1).toISOString())}
           </p>
-          {o.billingPolicy ? (
+          {o.billingPolicy && !o.launchPromotion && (
             <>
               <p>
                 {o.billingPolicy.freeUntil && (
@@ -235,38 +209,7 @@ export function MemberBillingAccount({
                 {o.launchPromotion ? "Erste Rechnung nur bei eingeschalteter Verlängerung: " : "Rechnungsversand geplant: "}{date(o.billingPolicy.invoiceDate)} ·
                 Zahlungsziel: {date(o.billingPolicy.paymentDueDate)}
               </p>
-              {o.billingPolicy.autoRenew && (
-                <>
-                  <p>
-                    Automatische Verlängerung um {o.billingPolicy.renewalMonths}{" "}
-                    Monate:{" "}
-                    <strong>
-                      {o.billingPolicy.renewalDisabledAt
-                        ? "ausgeschaltet"
-                        : "eingeschaltet"}
-                    </strong>
-                    <br />
-                    Änderung möglich bis einschließlich{" "}
-                    {date(o.billingPolicy.renewalDeadline!)}. Folgerechnung:{" "}
-                    {date(o.billingPolicy.renewalInvoiceDate!)}.
-                  </p>
-                  <button
-                    type="button"
-                    disabled={busy || !!access?.readOnly}
-                    onClick={() => void toggle(o)}
-                  >
-                    {o.billingPolicy.renewalDisabledAt
-                      ? "Verlängerung wieder einschalten"
-                      : "Automatische Verlängerung ausschalten"}
-                  </button>
-                </>
-              )}
             </>
-          ) : (
-            <p>
-              Für diese bestehende Buchung wurde keine neue automatische
-              Verlängerung vereinbart.
-            </p>
           )}
           {o.invoiceReference && (
             <p>

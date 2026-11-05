@@ -430,27 +430,18 @@ export class NetworksService {
     const order = this.myBilling(authorization, networkId).find(
       (o) => o.id === orderId,
     );
-    if (!order?.billingPolicy?.renewalDeadline)
+    if (!order?.billingPolicy)
       throw new BadRequestException(
         "Für diese Buchung ist keine automatische Verlängerung vereinbart.",
       );
-    if (typeof input.enabled !== "boolean")
+    if (input.enabled !== false)
       throw new BadRequestException(
-        "Bitte einen gültigen Verlängerungsstatus angeben.",
+        "Automatische Verlängerungen sind für alle Mitgliedschaften deaktiviert.",
       );
-    const today = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/Berlin",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date());
-    if (today > order.billingPolicy.renewalDeadline)
-      throw new BadRequestException(
-        "Die Änderungsfrist für diesen Vertragszeitraum ist abgelaufen. Bitte den Betreiber kontaktieren.",
-      );
-    order.billingPolicy.renewalDisabledAt = input.enabled
-      ? null
-      : new Date().toISOString();
+    order.billingPolicy.autoRenew=false;
+    order.billingPolicy.renewalDisabledAt=new Date().toISOString();
+    order.billingPolicy.renewalDeadline=null;
+    order.billingPolicy.renewalInvoiceDate=null;
     return order;
   }
   updateMemberInvoice(
@@ -1298,7 +1289,7 @@ export class NetworksService {
         quote.billing?.autoRenew && quote.billing.paidThrough
           ? addCalendarDays(quote.billing.paidThrough, -15)
           : null,
-      termsVersion: "agb-2026-11-03",
+      termsVersion: "agb-2026-11-05",
       privacyVersion: "datenschutz-2026-11-03",
     };
     return { ...offer, version: tokenHash(JSON.stringify(offer)) };
@@ -1325,8 +1316,6 @@ export class NetworksService {
       );
     const email = emailAddress(input.email);
     const offer = this.participationQuote(String(input.network));
-    if (offer.launchPromotion && input.renewalAccepted !== true)
-      throw new BadRequestException("Bitte die kostenpflichtige automatische Verlängerung nach der kostenlosen Startzeit ausdrücklich bestätigen.");
     if (input.offerVersion !== offer.version)
       throw new BadRequestException(
         "Die Konditionen wurden aktualisiert. Bitte lade die Kostenübersicht erneut und bestätige sie.",
@@ -4145,7 +4134,7 @@ export class NetworksService {
       monthlyNetCents,
       setupNetCents: 0,
       minimumTermMonths: 12,
-      termsVersion: "agb-2026-11-03",
+      termsVersion: "agb-2026-11-05",
       pricingVersion: "network-user-modules-2026-10",
       authorityConfirmed: true,
       termsAccepted: true,
@@ -5107,6 +5096,14 @@ export class NetworksService {
       )
     )
       throw new ForbiddenException("Kein Zugriff auf dieses Netzwerk.");
+    const membership = this.store.networkMemberships.find(m => m.userId === userId && m.networkId === networkId && m.status === "active");
+    if (membership && !membership.complimentaryAccess && !membership.centrallyFunded && !["visitor", "network_admin"].includes(membership.role) && !this.isNetworkInitiator(userId, networkId)) {
+      const latest = [...this.store.networkOrders.values()]
+        .filter(o => o.networkId === networkId && o.orderedByUserId === userId && o.kind === "member_annual" && o.status === "accepted")
+        .sort((a,b) => (b.serviceEndsAt || "").localeCompare(a.serviceEndsAt || ""))[0];
+      if (latest?.serviceEndsAt && Date.parse(latest.serviceEndsAt) <= Date.now())
+        throw new ForbiddenException("Deine Mitgliedschaft ist abgelaufen. Deine Rechnungen bleiben in Mein Konto verfügbar.");
+    }
   }
   private requireNetworkAdmin(userId: string, networkId: string) {
     if (this.store.users.get(userId)?.accountRole === "platform_admin") return;

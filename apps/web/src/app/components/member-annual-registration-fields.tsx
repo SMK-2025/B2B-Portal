@@ -33,6 +33,7 @@ export function MemberAnnualRegistrationFields({
   priceOnly = false,
   hidePrice = false,
   onPaymentModel,
+  onFreeStart,
 }: {
   invite: string;
   loading: boolean;
@@ -41,6 +42,7 @@ export function MemberAnnualRegistrationFields({
   priceOnly?: boolean;
   hidePrice?: boolean;
   onPaymentModel?: (model: "individual" | "network") => void;
+  onFreeStart?: (free:boolean)=>void;
 }) {
   const [quote, setQuote] = useState<Quote | null>(null),
     [error, setError] = useState("");
@@ -51,6 +53,7 @@ export function MemberAnnualRegistrationFields({
       .then((value) => {
         setQuote(value);
         onPaymentModel?.(value.memberPaymentModel || "individual");
+        onFreeStart?.(!!value.launchPromotion && (value.launchPromotion.available ?? ((value.launchPromotion.remaining || 0)>0 || !!value.launchPromotion.reserved)));
       })
       .catch((e) => setError(e.message));
   }
@@ -124,6 +127,20 @@ export function MemberAnnualRegistrationFields({
       </>
     );
   }
+  if(promotional && quote.launchPromotion) {
+    const months=quote.launchPromotion.freeMonths;
+    if(priceOnly) return <div><h2>Dein Startvorteil: {months} Monate kostenlos</h2><p>Als eines der ersten {quote.launchPromotion.limit} Mitglieder kannst du Unternehmen entdecken, Partner finden und neue Kontakte knüpfen.</p></div>;
+    if(summaryOnly) return <><LaunchPromotionNotice promotion={quote.launchPromotion} monthlyNetCents={quote.monthlyNetCents}/>{onContinue && <button type="button" className="primary full" onClick={onContinue}>Weiter · Zugang erstellen</button>}</>;
+    return <>
+      {!hidePrice && <LaunchPromotionNotice promotion={quote.launchPromotion} monthlyNetCents={quote.monthlyNetCents}/>}
+      <input type="hidden" name="launchPromotionAccepted" value={quote.launchPromotion.version}/>
+      <input type="hidden" name="acceptedBillingVersion" value={quote.billing?.version || ""}/>
+      <input type="hidden" name="acceptedMonthlyNetCents" value={quote.monthlyNetCents}/>
+      <label className="full memberAnnualConsent"><input type="checkbox" name="authorityConfirmed" required/><span>Ich bin berechtigt, mein Unternehmen im Netzwerk anzumelden.</span></label>
+      <label className="full memberAnnualConsent"><input type="checkbox" name="termsAccepted" required/><span>Ich akzeptiere die <Link href="/agb" target="_blank">AGB</Link> für meine kostenlose Mitgliedschaft von {months} Monaten.</span></label>
+      <button className="primary full" disabled={loading}>{loading ? "Mitgliedschaft wird eingerichtet …" : "Kostenlose Mitgliedschaft starten"}</button>
+    </>;
+  }
   if (summaryOnly)
     return (
       <div className="full registrationPriceStep">
@@ -167,10 +184,7 @@ export function MemberAnnualRegistrationFields({
           </div>
         </dl>
         <p className="registrationPriceTerms">
-          Separate Rechnung · keine Online-Abbuchung ·{" "}
-          {quote.billing?.autoRenew
-            ? "Vertragsverlängerung, im Mitgliedskonto ausschaltbar"
-            : "keine automatische Verlängerung"}
+          Separate Rechnung · keine Online-Abbuchung
         </p>
         {onContinue && (
           <form
@@ -244,16 +258,14 @@ export function MemberAnnualRegistrationFields({
                 .
               </>
             )}{" "}
-            {promotional
-              ? "Während der kostenlosen Startlaufzeit keine Rechnung. Nur bei eingeschalteter Verlängerung erfolgt die erste Jahresrechnung 15 Tage vor Beginn der kostenpflichtigen Laufzeit, zahlbar innerhalb von 14 Tagen."
-              : quote.billing.freeUntil
+            {quote.billing.freeUntil
               ? "Die Rechnung wird 15 Tage vor Ende der kostenlosen Nutzung versendet, zahlbar innerhalb von 14 Tagen. Bei späterer Anmeldung erfolgt der Versand nach der Buchung."
               : "Die Rechnung folgt nach der Buchung mit 14 Tagen Zahlungsziel."}
           </>
         ) : (
           <>
             Zwölf Monate ab Buchung, sofortiger Zugang. Die Rechnung erhältst du
-            separat. Keine Online-Abbuchung, keine automatische Verlängerung.
+            separat. Keine Online-Abbuchung.
           </>
         )}
       </p>
@@ -280,17 +292,6 @@ export function MemberAnnualRegistrationFields({
           name="acceptedBillingVersion"
           value={quote.billing.version}
         />
-      )}
-      {quote.billing?.autoRenew && (
-        <label className="full memberAnnualConsent">
-          <input type="checkbox" required name="renewalAccepted" />
-          <span>
-            Ich stimme der automatischen Verlängerung um jeweils{" "}
-            {quote.billing.renewalMonths} Monate zum hier genannten Monatspreis
-            zu. Ich kann die Verlängerung bis 16 Kalendertage vor Beginn der
-            nächsten Vertragslaufzeit im Mitgliedskonto ausschalten. Die Folgerechnung ist 15 Kalendertage vor deren Beginn vorgesehen.
-          </span>
-        </label>
       )}
       <input
         type="hidden"

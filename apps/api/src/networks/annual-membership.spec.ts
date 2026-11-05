@@ -349,9 +349,9 @@ describe("personal annual membership billing", () => {
       version,
       invoiceDate: "2027-01-16",
       paymentDueDate: "2027-01-30",
-      renewalDeadline: "2027-06-15",
-      renewalInvoiceDate: "2027-06-16",
-      autoRenew: true,
+      renewalDeadline: null,
+      renewalInvoiceDate: null,
+      autoRenew: false,
     });
     expect(order.serviceEndsAt).toBe("2027-06-30T22:00:00.000Z");
     f.networks.changeRenewal(f.member, f.network.id, order.id, {
@@ -1071,14 +1071,15 @@ describe("personal annual membership billing", () => {
   it("allows rolling business terms without a season and preserves fixed sports renewals", async()=>{
     const f=await fixture(), billing={months:6,autoRenew:true,renewalMonths:12,automaticInvoices:true};
     for(const slug of ["bayer04leverkusen","bayer-giants"])
-      expect(()=>f.networks.create(f.owner,{name:slug,slug,billing})).toThrow(/Saisonende/);
+      expect(f.networks.create(f.owner,{name:slug,slug,billing}).settings.memberBilling!.autoRenew).toBe(false);
     const n=f.networks.create(f.owner,{name:"Unternehmernetzwerk Leverkusen",slug:"unternehmernetzwerkleverkusen",billing});
     f.networks.setAccess(f.owner,n.id,{status:"active"});
     f.networks.memberPricing(f.owner,n.id,{monthlyNetCents:6900,billing});
     const order=annualOrder(n,f.registered.user.id,{...f.input,acceptedBillingVersion:n.settings.memberBilling!.version,pdfInvoiceAccepted:true,renewalAccepted:true});
     expect(order.minimumTermMonths).toBe(6);
-    expect(order.billingPolicy!.renewalDeadline).toBeTruthy();
-    expect(Date.parse(order.billingPolicy!.renewalInvoiceDate!)-Date.parse(order.billingPolicy!.renewalDeadline!)).toBe(86400000);
+    expect(order.billingPolicy!.autoRenew).toBe(false);
+    expect(order.billingPolicy!.renewalDeadline).toBeNull();
+    expect(order.billingPolicy!.renewalInvoiceDate).toBeNull();
   });
   it("books a limited free start with explicit renewal consent, without changing another network", async () => {
     const f=await fixture();
@@ -1088,10 +1089,9 @@ describe("personal annual membership billing", () => {
     f.networks.memberPricing(f.owner,f.network.id,config);
     const quote=f.networks.invitationQuote({invite:f.invite});
     const input={...f.input,acceptedMonthlyNetCents:1900,acceptedBillingVersion:quote.billing!.version,pdfInvoiceAccepted:true,renewalAccepted:true,launchPromotionAccepted:quote.launchPromotion!.version};
-    await expect(f.orgs.createNetwork(f.member,{...input,renewalAccepted:false})).rejects.toThrow();
-    await expect(f.orgs.createNetwork(f.member,{...input,invoiceStreet:""})).rejects.toThrow();
+    await expect(f.orgs.createNetwork(f.member,{...input,termsAccepted:false})).rejects.toThrow();
     expect(f.store.launchUsed(f.network.id)).toBe(0);
-    await f.orgs.createNetwork(f.member,input);
+    await f.orgs.createNetwork(f.member,{...input,renewalAccepted:false,pdfInvoiceAccepted:false,paymentObligationAccepted:false,invoiceStreet:"",invoiceEmail:""});
     expect(f.store.launchUsed(f.network.id)).toBe(1);
     const order=[...f.store.networkOrders.values()][0];
     expect(order).toMatchObject({grossCents:0,minimumTermMonths:6,monthlyNetCents:1900,launchPromotion:{slot:1}});
@@ -1101,6 +1101,10 @@ describe("personal annual membership billing", () => {
     expect(f.networks.adminBilling(f.owner,f.network.id).launchCounter).toEqual({used:1});
     await expect(f.orgs.createNetwork(f.member,input)).rejects.toThrow();
     expect(f.store.launchUsed(f.network.id)).toBe(1);
+    order.serviceEndsAt="2020-01-01T00:00:00Z";
+    expect(()=>f.networks.publicBySlug(f.member,f.network.slug)).toThrow(/abgelaufen/);
+    expect(f.networks.myBilling(f.member,f.network.id)).toHaveLength(1);
+    expect(f.store.users.has(f.registered.user.id)).toBe(true);
   });
   it("requires new acceptance if the promotion changes and never silently charges an exhausted free offer",async()=>{
     const f=await fixture();
@@ -1231,9 +1235,8 @@ describe("personal annual membership billing", () => {
         ?.endingSoon,
     ).toBe(true);
     order.serviceEndsAt = new Date(Date.now() - 1000).toISOString();
-    expect(
-      f.networks.publicBySlug(f.member, f.network.slug).enabledModules,
-    ).not.toContain("documents");
+    expect(() => f.networks.publicBySlug(f.member, f.network.slug)).toThrow(/abgelaufen/);
+    expect(f.networks.myBilling(f.member,f.network.id)[0].invoiceReference).toBe("2026-001");
   });
   it("does not allow the legacy module checkout for a new network", async () => {
     const f = await fixture();

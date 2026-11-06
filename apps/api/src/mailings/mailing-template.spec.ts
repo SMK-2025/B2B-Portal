@@ -44,9 +44,12 @@ describe("personal letter template", () => {
       unsubscribe: "https://example.de/unsubscribe",
     });
     expect(html).toContain("max-width:320px");
-    expect(html).toContain("border-radius:10px");
-    expect(html.match(/<v:roundrect/g)).toHaveLength(2);
-    expect(html).toContain("line-height:48px");
+    expect(html).not.toContain("border-radius");
+    expect(html).not.toContain("v:roundrect");
+    expect(html).not.toContain("mso-hide:all");
+    expect(html).toContain('width="320"');
+    expect(html).toContain("mso-padding-alt:16px");
+    expect(html).toContain("padding:16px;border:0");
     expect(html).toContain('bgcolor="#c8102e"');
     expect(html).toContain('bgcolor="#ffffff"');
     expect(html).toContain("Das Netzwerk kennenlernen →");

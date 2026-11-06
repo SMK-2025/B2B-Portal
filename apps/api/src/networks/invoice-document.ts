@@ -72,14 +72,12 @@ export async function invoicePdf(data: InvoiceData): Promise<Uint8Array> {
   page.drawImage(logo, { x: 42, y: 754, width: 216, height: 54 });
   write("RECHNUNG", 553, 789, 13, true, true);
   write("Digitales Netzwerkpartner-Portal", 553, 768, 9, false, true);
-  write("Media Online Innovations Group", 42, 711, 11, true);
-  write("Inhaber: Martin Kelm", 42, 695);
-  write("Im Weidenblech 25 · 51371 Leverkusen", 42, 679, 9);
   write("Tel.: 0214/330140-60", 553, 711, 9, false, true);
   write("mail@media-online-innovations.group", 553, 695, 9, false, true);
   write("media-online-innovations.group", 553, 679, 9, false, true);
   write("RECHNUNG AN", 42, 634, 8, true);
   const o = data.order;
+  let recipientY = 615;
   for (const [i, s] of [
     o.invoiceCompany,
     o.invoiceContact,
@@ -87,6 +85,7 @@ export async function invoicePdf(data: InvoiceData): Promise<Uint8Array> {
     `${o.invoicePostalCode} ${o.invoiceCity}`,
     o.invoiceCountry,
   ].entries()) {
+    if (!s.trim()) continue;
     // Wrap long names and addresses within the recipient column.
     const words = clean(s).split(/\s+/);
     let row = "",
@@ -105,11 +104,11 @@ export async function invoicePdf(data: InvoiceData): Promise<Uint8Array> {
       throw Error(
         "Rechnungsadresse passt nicht vollständig in das Layout. Bitte vor dem Versand prüfen.",
       );
-    lines
-      .slice(0, 2)
-      .forEach((line, j) =>
-        write(line, 42, 615 - i * 27 - j * 12, 10, i === 0),
-      );
+    for (const line of lines) {
+      if (recipientY < 475) throw Error("Rechnungsadresse passt nicht vollständig in das Layout. Bitte vor dem Versand prüfen.");
+      write(line, 42, recipientY, 10, i === 0);
+      recipientY -= 14;
+    }
   }
   [
     ["Rechnungsnummer", data.number],

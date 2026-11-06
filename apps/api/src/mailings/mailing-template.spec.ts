@@ -6,8 +6,59 @@ import {
   STORY_BODY,
 } from "./mailing-template";
 describe("personal letter template", () => {
+  it("uses a right-aligned network heading with a narrow-screen fallback", () => {
+    const html = renderMailingTemplate({
+      body: "Guten Tag,",
+      networkName: "Unternehmernetzwerk Köln & Region",
+      color: "#c8102e",
+      logo: "https://example.de/logo.png",
+      web: "https://example.de",
+      links: {
+        landing: "https://example.de/stadt",
+        register: "https://example.de/register",
+        homepage: "https://example.de",
+      },
+      unsubscribe: "https://example.de/unsubscribe",
+    });
+    expect(html).toContain(
+      'class="mailHeaderName" align="right" valign="middle"',
+    );
+    expect(html).toContain("font-size:21px;line-height:28px");
+    expect(html).toContain("table-layout:fixed");
+    expect(html).toContain("max-width:480px");
+    expect(html).toContain("Unternehmernetzwerk Köln &amp; Region");
+    expect(html).toContain('alt="B2B Matching"');
+  });
+  it("renders two matching mail-safe buttons without changing tracked destinations", () => {
+    const html = renderMailingTemplate({
+      body: "Guten Tag,",
+      networkName: "Köln",
+      color: "#c8102e",
+      logo: "https://example.de/logo.png",
+      web: "https://example.de",
+      links: {
+        landing: "https://example.de/click/landing?token=a&kind=landing",
+        register: "https://example.de/click/register?token=a&kind=register",
+        homepage: "https://example.de/",
+      },
+      unsubscribe: "https://example.de/unsubscribe",
+    });
+    expect(html).toContain("max-width:320px");
+    expect(html).toContain("border-radius:10px");
+    expect(html.match(/<v:roundrect/g)).toHaveLength(2);
+    expect(html).toContain("line-height:48px");
+    expect(html).toContain('bgcolor="#c8102e"');
+    expect(html).toContain('bgcolor="#ffffff"');
+    expect(html).toContain("Das Netzwerk kennenlernen →");
+    expect(html).toContain("Direkt zur Teilnahmeanfrage →");
+    expect(html).toContain("token=a&amp;kind=landing");
+    expect(html).toContain("token=a&amp;kind=register");
+    expect(html).toContain('href="https://example.de/unsubscribe"');
+  });
   it("starts the general template with the agreed networking greeting", () => {
-    expect(STORY_BODY.split("\n")[0]).toBe("Liebe Unternehmerinnen und Unternehmer, liebe Freunde des guten Netzwerkens,");
+    expect(STORY_BODY.split("\n")[0]).toBe(
+      "Liebe Unternehmerinnen und Unternehmer, liebe Freunde des guten Netzwerkens,",
+    );
   });
   it("handles complete, partial and absent names without leftover placeholders", () => {
     expect(

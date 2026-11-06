@@ -6,6 +6,9 @@ import {
   STORY_BODY,
 } from "./mailing-template";
 describe("personal letter template", () => {
+  it("starts the general template with the agreed networking greeting", () => {
+    expect(STORY_BODY.split("\n")[0]).toBe("Liebe Unternehmerinnen und Unternehmer, liebe Freunde des guten Netzwerkens,");
+  });
   it("handles complete, partial and absent names without leftover placeholders", () => {
     expect(
       personalizeMail("Guten Tag {{firstName}} {{lastName}},", {

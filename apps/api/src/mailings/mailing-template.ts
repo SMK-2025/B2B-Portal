@@ -1,26 +1,25 @@
 export const STORY_SUBJECT =
   "Vielleicht sitzt Ihr nächster Geschäftskontakt nur drei Straßen weiter.";
-export const STORY_BODY = `Guten Tag {{firstName}} {{lastName}},
+export const STORY_BODY = `Liebe Unternehmerinnen und Unternehmer, liebe Freunde des guten Netzwerkens,
 
-Ein Getränk in der Hand, ein lockeres Gespräch am Stehtisch. „Was machen Sie eigentlich beruflich?“ – und plötzlich wird aus einer zufälligen Begegnung eine gemeinsame Geschäftsidee.
+wie unkompliziert wünschen Sie sich Business-Netzwerken?
 
-So unkompliziert wünschen wir uns Netzwerken. Auch zwischen zwei Veranstaltungen, mitten im Arbeitsalltag.
+Auch zwischen geplanten und durchgetakteten Veranstaltungen, mitten im Arbeitsalltag. Immer dann, wenn Zeit fürs Netzwerken ist und es zeitlich zu Ihnen passt – nicht nach vorgegebenen Terminen. Nicht nur beim Business-Frühstück. Auch nicht nur auf einer After-Work-Party. Nein. Immer dann, wenn es ein konkretes Thema gibt, wenn Sie Angebote und Leistungen suchen, für die Sie ein Partnerunternehmen benötigen. Und wenn es mal wirklich eilt und ein Auftrag winkt, dann sollten Sie nicht erst suchen müssen, sondern Ihrem Kunden sagen können: „Kein Problem, kriegen wir hin.“
 
-Dafür gibt es **{{networkName}} auf B2B-Matching.de**: Einloggen, Unternehmen entdecken, eine Nachricht schreiben. Vielleicht finden Sie genau die Unterstützung, die Sie gerade suchen – nur drei Straßen weiter.
+Dafür gibt es das {{networkName}}! Kernkompetenz: B2B-Matching. Online-Netzwerken, so einfach wie Kundenverträge unterschreiben. Registrieren, einloggen, Unternehmen, Leistungen und Angebote entdecken, Vernetzungsanfragen senden und den integrierten Mitglieder-Chat nutzen, um eine Nachricht zu schreiben. Vielleicht finden Sie genau die Unterstützung, die Sie gerade suchen – nur drei Straßen weiter. In wenigen Minuten zum neuen Kontakt. Hört sich zu gut an? Funktioniert auch genau so!
 
-Mit Ihrer eigenen Unternehmensseite zeigen Sie, was Sie anbieten und wobei Sie anderen Unternehmen helfen können. Über die Freitextsuche finden Sie passende Leistungen und Produkte. Im Unternehmer-Chat kommen Sie direkt miteinander ins Gespräch.
+Mit Ihrer eigenen Unternehmensseite zeigen Sie, was Sie anbieten und wobei Sie anderen Unternehmen helfen können. Mit kurzen Stichpunkten werden Sie gefunden und Sie finden ebenso passende Unternehmen und deren Leistungen und Produkte. Im Unternehmer-Chat kommen Sie direkt miteinander ins Gespräch. Ob ein neuer Auftrag, eine gemeinsame Aktion oder ein hilfreicher Kontakt: Alles beginnt damit, voneinander zu wissen. Und mit einem kleinen Scan mit Ihrer Smartphone-Kamera speichern Sie den neuen Kontakt direkt ab.
 
-Ob ein neuer Auftrag, eine gemeinsame Aktion oder ein hilfreicher Kontakt: Alles beginnt damit, voneinander zu wissen.
+Lernen Sie unser Netzwerk jetzt kennen und stellen Sie Ihre Mitgliedsanfrage. Nicht ganz kostenlos, denn wir bauen und betreiben das Portal, um Ihnen bei Ihren B2B-Themen weiterzuhelfen. {{launchOffer}}
 
-Lernen Sie unser Netzwerk kennen und stellen Sie Ihre Teilnahmeanfrage.
-
-Die aktuellen Konditionen sehen Sie transparent vor Abschluss Ihrer Registrierung.
+Ach, und noch etwas: B2B-Matching.de ist so fortschrittlich entwickelt, dass Sie Ihre ganz persönliche Unternehmensseite auch vollautomatisiert mit unserer KI – der PagePilot AI – ohne Mühe in wenigen Augenblicken erstellen und aktivieren können.
 
 Ich freue mich darauf, Sie und Ihr Unternehmen im Netzwerk kennenzulernen.
 
 Viele Grüße
 Martin Kelm
-B2B-Matching.de`;
+B2B-Matching.de
+Ein Service der Media Online Innovations Group`;
 
 export const escapeMail = (text: string) =>
   text.replace(
@@ -44,7 +43,7 @@ export function cityFromNetwork(name: string) {
 export function personalizeMail(text: string, values: Record<string, string>) {
   return text
     .replace(
-      /\{\{(firstName|lastName|company|networkName|city)\}\}/g,
+      /\{\{(firstName|lastName|company|networkName|city|launchOffer)\}\}/g,
       (_, key: string) => values[key] || "",
     )
     .replace(

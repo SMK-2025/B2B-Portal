@@ -370,6 +370,9 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       company: lead.company || "",
       networkName: n.name,
       city: cityFromNetwork(n.name),
+      launchOffer: n.settings.launchPromotion?.enabled && n.settings.memberPaymentModel !== "network" && n.settings.billingMode !== "cooperation_free" && this.store.launchUsed(n.id) < n.settings.launchPromotion.limit
+        ? `Vielleicht sind Sie sogar eines der ersten ${n.settings.launchPromotion.limit} Unternehmen, die das ${n.name} ${n.settings.launchPromotion.freeMonths} Monate kostenlos nutzen können.`
+        : "Die aktuellen Konditionen sehen Sie transparent vor Abschluss Ihrer Registrierung.",
     };
     const body = personalizeMail(c.body, values);
     let logo = this.web() + "/images/b2b-matching-logo-brand.png";

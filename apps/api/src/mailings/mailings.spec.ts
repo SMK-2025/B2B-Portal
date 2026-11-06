@@ -141,10 +141,10 @@ describe("owner mailing system", () => {
       expect(preview.html).toContain(`bgcolor="${color}"`);
       expect(preview.html).toContain(`href="https://b2b-matching.de${path}"`);
       expect(preview.html).toContain(`network=${slug}`);
-      expect(preview.html).toContain("Ein Getränk in der Hand");
+      expect(preview.html).toContain("wie unkompliziert wünschen Sie sich Business-Netzwerken?");
       expect(preview.html).not.toContain("<h1");
       expect(preview.html).not.toContain("{{");
-      expect(preview.text).toContain("Guten Tag,");
+      expect(preview.text).toContain("Liebe Unternehmerinnen und Unternehmer, liebe Freunde des guten Netzwerkens,");
       expect(preview.text).not.toContain("**");
       expect(preview.text).toContain("\n\n");
       expect(preview.html).not.toContain(

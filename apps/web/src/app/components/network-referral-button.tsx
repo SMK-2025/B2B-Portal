@@ -2,7 +2,8 @@
 import { NetworkText } from "./network-text-editor";
 import { useId, useRef, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
-export function NetworkReferralButton({ networkId }: { networkId: string }) {
+export function NetworkReferralButton({ networkId, embedded=false }: { networkId: string; embedded?: boolean }) {
+  const ReferralSurface = embedded ? "article" : "dialog";
   const [busy, setBusy] = useState(false);
   const referralDialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -46,7 +47,7 @@ export function NetworkReferralButton({ networkId }: { networkId: string }) {
   }
   return (
     <>
-      <button
+      {!embedded && <button
         className="networkReferralNavAction"
         type="button"
         aria-haspopup="dialog"
@@ -73,11 +74,11 @@ export function NetworkReferralButton({ networkId }: { networkId: string }) {
         <NetworkText id="ui.network-referral-button.2489be64eb08abd2">
           Netzwerk empfehlen
         </NetworkText>
-      </button>
-      <dialog
-        ref={referralDialog}
+      </button>}
+      <ReferralSurface
+        ref={embedded ? undefined : referralDialog}
         aria-labelledby={titleId}
-        className="referralDialog"
+        className={`referralDialog${embedded ? ' referralInline' : ''}`}
       >
         <div className="referralHeader">
           <div>
@@ -92,14 +93,14 @@ export function NetworkReferralButton({ networkId }: { networkId: string }) {
               </NetworkText>
             </h2>
           </div>
-          <button
+          {!embedded && <button
             type="button"
             className="referralClose"
             aria-label="Schließen"
             onClick={() => referralDialog.current?.close()}
           >
             ×
-          </button>
+          </button>}
         </div>
         <div className="referralBody">
           <p>
@@ -177,7 +178,7 @@ export function NetworkReferralButton({ networkId }: { networkId: string }) {
           )}
           <div role="status">{feedback}</div>
         </div>
-      </dialog>
+      </ReferralSurface>
     </>
   );
 }

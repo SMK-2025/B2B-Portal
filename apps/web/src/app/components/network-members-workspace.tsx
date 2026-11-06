@@ -363,13 +363,7 @@ export function NetworkMembersWorkspace() {
               </article>
             );
           })}
-          <article className="networkDirectoryReferralCard">
-            <span className="networkDirectoryReferralIcon" aria-hidden="true">↗</span>
-            <span>GEMEINSAM VERNETZEN</span>
-            <h3>Gute Kontakte wachsen durch Empfehlungen.</h3>
-            <p>Du kennst ein Unternehmen, das zu diesem Netzwerk passt? Lade es ein oder teile deinen persönlichen Empfehlungslink.</p>
-            {!access?.readOnly && access?.role !== 'platform_admin' ? <NetworkReferralButton networkId={networkId}/> : <p className="networkDirectoryReferralHint">Mitglieder können dieses Netzwerk über ihren persönlichen Zugang empfehlen.</p>}
-          </article>
+          {!access?.readOnly && access?.role !== 'platform_admin' && <NetworkReferralButton networkId={networkId} embedded/>}
         </div>
         {total>12 && <nav className="networkDirectoryPagination" aria-label="Mitgliederseiten">
           <button type="button" className="networkSecondary" disabled={loading||page<=1} onClick={()=>setPage(p=>p-1)}>← Zurück</button>

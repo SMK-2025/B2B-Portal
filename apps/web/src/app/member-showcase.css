@@ -1,11 +1,7 @@
 /* Shared member directory: image-led cards, scoped to avoid changing profile popups. */
-.networkDirectoryReferralCard{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:20px;padding:32px;border:1px solid var(--network-accent,#536bdb);border-radius:18px;background:linear-gradient(145deg,#fff,var(--network-soft,#eef0fb));min-height:360px;}
-.networkDirectoryReferralIcon{display:grid;place-items:center;width:64px;height:64px;border-radius:18px;background:var(--network-accent,#536bdb);color:#fff;font-size:36px;}
-.networkDirectoryReferralCard>span:not(.networkDirectoryReferralIcon){font-size:11px;letter-spacing:1.4px;color:var(--network-accent,#536bdb);}
-.networkPortal .networkDirectoryReferralCard h3{font-size:26px;line-height:1.25;font-weight:700!important;margin:0;}
-.networkDirectoryReferralCard p{font-size:15px;line-height:1.7;margin:0;color:#586b7e;}
-.networkDirectoryReferralCard .networkReferralNavAction{display:flex;align-items:center;gap:10px;width:100%;justify-content:center;min-height:48px;padding:12px 16px;border:0;border-bottom:3px solid var(--network-accent,#536bdb);border-radius:10px;background:var(--network-dark,#172e40);color:#fff;font-size:15px;cursor:pointer;}
-.networkDirectoryReferralCard .networkDirectoryReferralHint{font-size:13px;}
+.networkPartnerGrid>.referralInline{display:flex;flex-direction:column;width:100%;height:100%;max-height:none;min-width:0;margin:0;box-shadow:0 6px 24px #142b4010;overflow:hidden;}
+.referralInline .referralHeader{flex:none;}
+.referralInline .referralBody{flex:1;align-content:center;}
 .networkPortal .networkPartnerGrid{grid-auto-rows:1fr;align-items:stretch;}
 .networkPortal .networkPartnerCard.networkMemberShowcase {
   padding:0 24px 24px;gap:14px;overflow:hidden;text-align:left;

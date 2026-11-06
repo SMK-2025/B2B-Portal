@@ -75,7 +75,7 @@ const labels = {
   suspended: "Deaktiviert",
   left: "Ausgetreten",
 } as const;
-function MemberCardHero({networkId, memberId}: {networkId:string;memberId:string}) {
+function MemberCardHero({networkId, memberId, companyName}: {networkId:string;memberId:string;companyName:string}) {
   const target=useRef<HTMLDivElement>(null);
   const [image,setImage]=useState<string|null>(null);
   useEffect(()=>{
@@ -93,8 +93,9 @@ function MemberCardHero({networkId, memberId}: {networkId:string;memberId:string
     observer.observe(element);
     return()=>{active=false;observer.disconnect();};
   },[networkId,memberId]);
-  return <div ref={target} className={`networkMemberHero${image?' hasImage':''}`} aria-hidden="true">
+  return <div ref={target} className={`networkMemberHero${image?' hasImage':''}`}>
     {image?<img src={image} alt="" loading="lazy" decoding="async"/>:<span className="networkMemberHeroPattern"/>}
+    <h3>{companyName}</h3>
   </div>;
 }
 export function NetworkMembersWorkspace() {
@@ -262,7 +263,7 @@ export function NetworkMembersWorkspace() {
             </h2>
             <p>
               <NetworkText id="ui.network-members-workspace.b7c8f480c76082ca">
-                Öffnen Sie eine Partnerseite, um Unternehmen, Kompetenzen und
+                Öffnen Sie eine Unternehmensseite, um Unternehmen, Kompetenzen und
                 Ansprechpartner kennenzulernen.
               </NetworkText>
             </p>
@@ -277,7 +278,7 @@ export function NetworkMembersWorkspace() {
                 className="networkPartnerCard networkMemberShowcase"
                 style={partnerBranding(profile)}
               >
-                <MemberCardHero networkId={networkId} memberId={member.id}/>
+                <MemberCardHero networkId={networkId} memberId={member.id} companyName={member.organization?.displayName || member.organization?.legalName || "Unternehmen"}/>
                 <div className="networkPartnerCardTop">
                   {profile?.logoUrl ? (
                     <img src={profile.logoUrl} alt="" />
@@ -292,21 +293,12 @@ export function NetworkMembersWorkspace() {
                     {labels[member.status]}
                   </b>
                 </div>
-                <small>
-                  <NetworkText id="ui.network-members-workspace.04acaf57ccd7c188">
-                    {profile?.status === "published"
-                      ? "PARTNERSEITE"
-                      : "PROFIL NOCH NICHT VERÖFFENTLICHT"}
-                  </NetworkText>
+                <small className="networkMemberPublication" aria-hidden={profile?.status === "published"}>
+                  {profile?.status !== "published" && <NetworkText id="ui.member-showcase.draft">Noch nicht veröffentlicht</NetworkText>}
                 </small>
-                <h3>
-                  {member.organization?.displayName ||
-                    member.organization?.legalName ||
-                    "Unternehmen"}
-                </h3>
                 <p>
                   {profile?.tagline ||
-                    "Dieses Unternehmen ergänzt seine Partnerseite noch."}
+                    "Dieses Unternehmen ergänzt seine Unternehmensseite noch."}
                 </p>
                 {profile?.services && (
                   <div className="networkPartnerServices">
@@ -325,8 +317,8 @@ export function NetworkMembersWorkspace() {
                     onClick={() => void openMember(member.id)}
                     disabled={!profile}
                   >
-                    <NetworkText id="ui.network-members-workspace.8566c8b587fe9e9b">
-                      Partnerseite besuchen
+                    <NetworkText id="ui.member-showcase.open-company">
+                      Unternehmen ansehen
                     </NetworkText>
                   </button>
                   {canManage && (
@@ -360,8 +352,8 @@ export function NetworkMembersWorkspace() {
                     </div>
                   )}
                 </div>
-                {member.billing && (
-                  <small className="networkBillingHint">
+                  <small className="networkBillingHint" aria-hidden={!member.billing}>
+                  {member.billing && <>
                     <NetworkText id="ui.network-members-workspace.09648af336bf127f">
                       {member.billing.status === "paid"
                         ? "Bezahlt"
@@ -373,8 +365,8 @@ export function NetworkMembersWorkspace() {
                     <NetworkText id="ui.network-members-workspace.ad49b3508fbe620f">
                       Tage Restlaufzeit
                     </NetworkText>
+                  </>}
                   </small>
-                )}
               </article>
             );
           })}

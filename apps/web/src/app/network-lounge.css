@@ -67,6 +67,10 @@
 .referralBody [role=status]:empty {display:none}
 .referralBody [role=status]:not(:empty) {padding:10px 12px;background:#f2f5f7;border-radius:8px}
 .referralDialog button:disabled {opacity:.6;cursor:wait}
+.networkPortal .networkAccountMenu{width:270px;max-width:calc(100vw - 24px);padding:8px;border-radius:14px;box-shadow:0 14px 40px #17263620;}
+.networkPortal .networkAccountMenu>a,.networkPortal .networkAccountMenu>button{display:flex;align-items:center;gap:12px;box-sizing:border-box;min-height:48px;padding:12px;border-radius:9px;line-height:1.4;color:#243947;text-decoration:none;}
+.networkAccountMenu>a>svg,.networkAccountMenu>button>svg{width:20px;height:20px;flex:0 0 20px;color:#64798a;}
+.networkPortal .networkAccountMenu .networkAccountLogout{margin-top:6px;border-top:1px solid #e2e7ec;border-radius:0 0 9px 9px;padding-top:16px;}
 @media(max-width:480px){.referralHeader,.referralBody{padding:16px}}
 .networkHorizontalNavigation {background:#f4f6f8;box-shadow:0 4px 16px #1223380c;}
 .networkPrimaryTabs {gap:8px;padding-block:10px;}

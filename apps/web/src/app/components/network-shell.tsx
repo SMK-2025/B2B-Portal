@@ -38,6 +38,8 @@ function NetworkNavigationIcon({ path }: { path: string }) {
     profil: ["M3 4h18v16H3Z", "M3 9h18M8 9v11"],
     rueckblicke: ["M3 5h18v15H3Z", "m3 17 6-6 4 4 3-3 5 5", "M15 8h2"],
     konto: ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8", "M4 21a8 8 0 0 1 16 0"],
+    hilfe: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20", "M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4", "M12 17h.01"],
+    abmelden: ["M9 3H4v18h5", "M9 12h12", "m17 8 4 4-4 4"],
     einstellungen: [
       "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8",
       "M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2",
@@ -540,12 +542,14 @@ function NetworkFrame({
               {account && (
                 <div className="networkAccountMenu">
                   <Link href={`${base}/konto` as never}>
+                    <NetworkNavigationIcon path="konto"/>
                     <NetworkText id="ui.network-shell.43c0137e4397f2b1">
                       Mein Konto & Sicherheit
                     </NetworkText>
                   </Link>
                   {access.isInitiator ? (
                     <Link href={`${base}/einstellungen` as never}>
+                      <NetworkNavigationIcon path="einstellungen"/>
                       <NetworkText id="ui.network-shell.9c119d7d91c5b647">
                         Netzwerk-Verwaltung
                       </NetworkText>
@@ -553,14 +557,16 @@ function NetworkFrame({
                   ) : access.role !== "visitor" &&
                     access.enabledModules.includes("profiles") ? (
                     <Link href={`${base}/profil` as never}>
+                      <NetworkNavigationIcon path="profil"/>
                       <NetworkText id="ui.network-shell.890fd7c24aa9279c">
                         Meine Unternehmensseiten
                       </NetworkText>
                     </Link>
                   ) : null}
-                  <a href="mailto:service@b2b-matching.de"><NetworkText id="ui.network-shell.5109b38afaef193f">Hilfe & Kontakt</NetworkText></a>
+                  <a href="mailto:service@b2b-matching.de"><NetworkNavigationIcon path="hilfe"/><NetworkText id="ui.network-shell.5109b38afaef193f">Hilfe & Kontakt</NetworkText></a>
                   {!access.readOnly && access.role !== "platform_admin" && <NetworkReferralButton key={access.networkId} networkId={access.networkId}/>}
-                  <button type="button" onClick={logout}>
+                  <button type="button" className="networkAccountLogout" onClick={logout}>
+                    <NetworkNavigationIcon path="abmelden"/>
                     <NetworkText id="ui.network-shell.545f8be33bf06a1c">
                       Abmelden
                     </NetworkText>

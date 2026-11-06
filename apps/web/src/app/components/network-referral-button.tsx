@@ -61,15 +61,19 @@ export function NetworkReferralButton({ networkId, embedded=false }: { networkId
       >
         <svg
           aria-hidden="true"
-          width="18"
-          height="18"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <circle cx="9" cy="7" r="3" />
-          <path d="M2 20v-2a7 7 0 0 1 14 0v2m3-15v8m-4-4h8" />
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <path d="m8.6 10.5 6.8-4m-6.8 7 6.8 4" />
         </svg>
         <NetworkText id="ui.network-referral-button.2489be64eb08abd2">
           Netzwerk empfehlen

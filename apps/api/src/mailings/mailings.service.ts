@@ -149,7 +149,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
           body: c.body,
           revision: c.revision,
           createdAt: c.createdAt,
-          locked: Object.keys(c.deliveries).length > 0,
+          locked: this.sending.has(c.id),
           ...this.reportData(c),
         })),
       defaults: { subject: STORY_SUBJECT, body: STORY_BODY },
@@ -275,9 +275,9 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     if (input.id) {
       campaign = this.campaign(String(input.id));
       if (campaign.networkId !== networkId) throw new ForbiddenException();
-      if (Object.keys(campaign.deliveries).length)
+      if (this.sending.has(campaign.id))
         throw new BadRequestException(
-          "Bereits gestartete Mailings bleiben unverändert. Bitte ein neues Mailing anlegen.",
+          "Der aktuelle Versandlauf läuft noch. Bitte danach bearbeiten.",
         );
       if (input.revision !== campaign.revision)
         throw new BadRequestException(
@@ -295,12 +295,17 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         revision: 0,
         deliveries: {},
       };
-    campaign.name = requiredText(input.name, "Mailingname", 3, 150);
-    campaign.subject = requiredText(input.subject, "Betreff", 3, 180).replace(
+    const name = requiredText(input.name, "Mailingname", 3, 150);
+    const subject = requiredText(input.subject, "Betreff", 3, 180).replace(
       /[\r\n]/g,
       " ",
     );
-    campaign.body = requiredText(input.body, "Mailtext", 30, 15000);
+    const body = requiredText(input.body, "Mailtext", 30, 15000);
+    if (input.id) {
+      (campaign.versions ??= []).push({ revision: campaign.revision, name: campaign.name, subject: campaign.subject, body: campaign.body, archivedAt: new Date().toISOString() });
+      for (const delivery of Object.values(campaign.deliveries)) delivery.revision ??= campaign.revision;
+    }
+    Object.assign(campaign, { name, subject, body });
     campaign.revision++;
     campaign.updatedAt = new Date().toISOString();
     this.store.mailingCampaigns.set(campaign.id, campaign);
@@ -488,12 +493,17 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       throw new BadRequestException("Tageslimit von 200 Empfängern erreicht.");
     // Persisted attempts across ALL networks/campaigns count, including uncertain
     // provider outcomes. A sliding window prevents a double burst at the hour.
-    const startedInHour = [...this.store.mailingCampaigns.values()]
+    const attempts = [...this.store.mailingCampaigns.values()]
       .flatMap((campaign) => Object.values(campaign.deliveries))
-      .filter((delivery) => Date.parse(delivery.startedAt) > Date.now() - 3_600_000).length;
-    if (startedInHour >= 30)
-      throw new BadRequestException("Stundenlimit erreicht: maximal 30 Mailing-E-Mails innerhalb von 60 Minuten. Bitte später erneut freigeben.");
-    const rows = this.eligible(c).slice(0, Math.min(20, 30 - startedInHour, 200 - sentToday));
+      .map((delivery) => Date.parse(delivery.startedAt));
+    const now = Date.now();
+    const startedInHour = attempts.filter((at) => at > now - 3_600_000).length;
+    const startedInHalfHour = attempts.filter((at) => at > now - 1_800_000).length;
+    if (startedInHour >= 40)
+      throw new BadRequestException("Stundenlimit erreicht: maximal 40 Mailing-E-Mails innerhalb von 60 Minuten. Bitte später erneut freigeben.");
+    if (startedInHalfHour >= 20)
+      throw new BadRequestException("Halbstundenlimit erreicht: maximal 20 Mailing-E-Mails innerhalb von 30 Minuten. Bitte später erneut freigeben.");
+    const rows = this.eligible(c).slice(0, Math.min(20 - startedInHalfHour, 40 - startedInHour, 200 - sentToday));
     this.sending.add(id);
     let submitted = 0,
       uncertain = 0;
@@ -501,6 +511,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       for (const lead of rows) {
         if (!lead.marketing || this.suppressed(lead)) continue;
         const d: MailingDelivery = {
+          revision: c.revision,
           token: opaqueToken(),
           state: "sending",
           startedAt: new Date().toISOString(),

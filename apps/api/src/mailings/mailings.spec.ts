@@ -83,21 +83,23 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("owner mailing system", () => {
-  it("limits all campaigns to 30 persisted delivery attempts in a rolling hour", async () => {
+  it("limits all campaigns to 20 attempts per rolling half-hour and 40 per rolling hour", async () => {
     const s = setup();
     s.service.importLeads('owner', s.a.id, {
-      rows: Array.from({length: 40}, (_, i) => ({email: `lead${i}@example.de`})),
+      rows: Array.from({length: 60}, (_, i) => ({email: `lead${i}@example.de`})),
       marketing: evidence,
     });
     const id = s.campaign();
     expect((await s.send(id)).submitted).toBe(20);
-    expect((await s.send(id)).submitted).toBe(10);
-    await expect(s.send(id)).rejects.toThrow('Stundenlimit');
+    await expect(s.send(id)).rejects.toThrow('Halbstundenlimit');
     const second = s.service.saveCampaign('owner', s.a.id, {name:'Andere Kampagne',subject:'Weitere Einladung',body:'Ein weiterer ausreichend langer Einladungstext.'});
-    await expect(s.service.sendBatch('owner',second.id,{confirmName:'Andere Kampagne',revision:1,expectedCount:s.service.report('owner',second.id).eligible})).rejects.toThrow('Stundenlimit');
+    await expect(s.service.sendBatch('owner',second.id,{confirmName:'Andere Kampagne',revision:1,expectedCount:s.service.report('owner',second.id).eligible})).rejects.toThrow('Halbstundenlimit');
+    for (const delivery of Object.values(s.store.mailingCampaigns.get(id)!.deliveries)) delivery.startedAt = new Date(Date.now() - 1_800_001).toISOString();
+    expect((await s.send(id)).submitted).toBe(20);
+    await expect(s.send(id)).rejects.toThrow('Stundenlimit');
     for (const delivery of Object.values(s.store.mailingCampaigns.get(id)!.deliveries)) delivery.startedAt = new Date(Date.now() - 3_600_001).toISOString();
-    expect((await s.send(id)).submitted).toBe(10);
-    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(40);
+    expect((await s.send(id)).submitted).toBe(20);
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(60);
   });
   it.each([
     [
@@ -231,7 +233,7 @@ describe("owner mailing system", () => {
     s.service.click(token, "landing", false);
     expect(s.service.report("owner", id).recipients[0].landingClicks).toBe(0);
   });
-  it("requires current confirmation, sends once and locks the draft", async () => {
+  it("requires current confirmation, preserves sent versions and edits remaining recipients", async () => {
     const s = setup();
     s.lead();
     const id = s.campaign();
@@ -245,9 +247,15 @@ describe("owner mailing system", () => {
     await s.send(id);
     await s.send(id);
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
-    expect(() =>
-      s.service.saveCampaign("owner", s.a.id, { id, revision: 1 }),
-    ).toThrow(/unverändert/);
+    s.service.saveCampaign("owner", s.a.id, { id, revision: 1, name: "Aktualisierte Einladung", subject: "Neuer Betreff", body: "Dieser aktualisierte Text gilt nur für weitere Empfänger." });
+    const c = s.store.mailingCampaigns.get(id)!;
+    expect(c.versions?.[0].revision).toBe(1);
+    expect(Object.values(c.deliveries)[0].revision).toBe(1);
+    s.service.importLeads("owner", s.a.id, { rows: [{ email: "next@example.de" }], marketing: evidence });
+    await expect(s.service.sendBatch("owner", id, { confirmName: c.name, revision: 1, expectedCount: 1 })).rejects.toThrow();
+    await s.service.sendBatch("owner", id, { confirmName: c.name, revision: 2, expectedCount: s.service.report("owner", id).eligible });
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(s.email.sendCampaignMail).mock.calls[1][0].subject).toBe("Neuer Betreff");
   });
   it("keeps uncertain deliveries from automatic retries", async () => {
     const s = setup();

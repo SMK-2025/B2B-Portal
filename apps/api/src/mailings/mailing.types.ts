@@ -30,6 +30,7 @@ export type MailingEvent = {
   providerId?: string;
 };
 export type MailingDelivery = {
+  revision?: number;
   token: string;
   state: "sending" | "submitted" | "uncertain";
   startedAt: string;
@@ -39,6 +40,7 @@ export type MailingDelivery = {
   events: MailingEvent[];
 };
 export type MailingCampaign = {
+  versions?: { revision: number; name: string; subject: string; body: string; archivedAt: string }[];
   id: string;
   networkId: string;
   name: string;

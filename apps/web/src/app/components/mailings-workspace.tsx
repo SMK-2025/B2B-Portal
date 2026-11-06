@@ -514,7 +514,7 @@ export function MailingsWorkspace() {
                   >
                     <strong>{c.name}</strong>
                     <span>
-                      {c.locked ? "Versand gestartet" : "Entwurf"} ·{" "}
+                      {c.locked ? "Versand läuft" : c.stats.submitted ? "Fortsetzbar" : "Entwurf"} ·{" "}
                       {c.stats.submitted} übergeben
                     </span>
                   </button>
@@ -547,6 +547,7 @@ export function MailingsWorkspace() {
                     ? "Gespeichertes Mailing"
                     : "Mailing gestalten"}
                 </h3>
+                {campaign && campaign.stats.submitted > 0 && <p>Änderungen gelten nur für noch nicht angeschriebene Empfänger. Bereits versendete Versionen bleiben erhalten. Nach jedem Lauf endet der Versand; weitere Empfänger benötigen deine erneute Freigabe.</p>}
                 <label>
                   Interner Mailingname
                   <input
@@ -614,14 +615,14 @@ export function MailingsWorkspace() {
                   )}
                   {!campaign?.locked && (
                     <button className="mailingPrimary" disabled={busy}>
-                      Entwurf speichern
+                      Änderungen speichern
                     </button>
                   )}
                   {campaign && (
                     <>
                       <button
                         type="button"
-                        disabled={busy}
+                        disabled={busy || draft.name !== campaign.name || draft.subject !== campaign.subject || draft.body !== campaign.body}
                         onClick={() =>
                           void action(async () => {
                             const p = await request<{ html: string }>(
@@ -635,7 +636,7 @@ export function MailingsWorkspace() {
                       </button>
                       <button
                         type="button"
-                        disabled={busy || !data.readiness.mail}
+                        disabled={busy || !data.readiness.mail || draft.name !== campaign.name || draft.subject !== campaign.subject || draft.body !== campaign.body}
                         onClick={() => {
                           if (
                             window.confirm(
@@ -658,6 +659,7 @@ export function MailingsWorkspace() {
                         className="mailingPrimary"
                         disabled={
                           busy ||
+                          draft.name !== campaign.name || draft.subject !== campaign.subject || draft.body !== campaign.body ||
                           !campaign.eligible ||
                           !data.readiness.mail ||
                           !data.readiness.tracking
@@ -880,7 +882,7 @@ export function MailingsWorkspace() {
                 </p>
                 <p>
                   {campaign.eligible} freigegebene Kontakte offen. Dieser Klick
-                  versendet an maximal 20 Kontakte. Insgesamt höchstens 30 Mailing-E-Mails innerhalb von 60 Minuten über alle Netzwerke hinweg. Jeder weitere Versandlauf benötigt deine erneute Freigabe; ohne sie wird nichts weiter versendet. Tageslimit: 200. Abgemeldete
+                  versendet an maximal 20 Kontakte. Insgesamt höchstens 20 Mailing-E-Mails innerhalb von 30 Minuten und 40 innerhalb von 60 Minuten über alle Netzwerke hinweg. Jeder weitere Versandlauf benötigt deine erneute Freigabe; ohne sie wird nichts weiter versendet. Tageslimit: 200. Abgemeldete
                   und bereits angeschriebene Kontakte werden übersprungen.
                 </p>
                 <label>

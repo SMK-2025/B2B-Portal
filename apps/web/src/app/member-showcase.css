@@ -11,8 +11,8 @@
   aspect-ratio:12/5;overflow:hidden;background:linear-gradient(125deg,var(--partner-primary,#173047),var(--partner-secondary,#425e76));
 }
 .networkMemberHero>img{display:block;width:100%;height:100%;object-fit:cover;}
-.networkMemberHero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 10%,#071322bb 75%,#071322ef);pointer-events:none;}
-.networkPortal .networkMemberShowcase .networkMemberHero>h3{position:absolute;z-index:1;left:24px;right:24px;bottom:48px;margin:0;color:#fff;font-size:22px;line-height:1.25;font-weight:600;text-shadow:0 2px 8px #0008;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+.networkMemberHero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#071322d9 0%,#07132275 45%,transparent 80%);pointer-events:none;}
+.networkPortal .networkMemberShowcase .networkMemberHero>h3{position:absolute;z-index:1;left:24px;right:24px;top:24px;bottom:auto;margin:0;color:#fff;font-size:26px;line-height:1.2;font-weight:700;text-shadow:0 2px 8px #0008;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
 .networkMemberHeroPattern{position:absolute;inset:0;background:radial-gradient(ellipse at 75% 10%,#ffffff35,transparent 55%),repeating-linear-gradient(135deg,transparent 0 60px,#ffffff09 61px 62px);}
 .networkPortal .networkMemberShowcase .networkPartnerCardTop {
   height:76px;min-height:76px;max-height:76px;flex:0 0 76px;margin:-38px 0 0;justify-content:flex-start;position:relative;z-index:2;
@@ -37,3 +37,4 @@
 .networkPortal .networkMemberShowcase .networkPartnerCardActions .networkMemberActions{min-height:36px;}
 .networkPortal .networkMemberShowcase .networkBillingHint{letter-spacing:0;font-size:12px;min-height:24px;line-height:24px;display:block;margin:0;}
 @media(max-width:620px){.networkPortal .networkPartnerGrid{padding:16px;gap:18px;}.networkPortal .networkMemberShowcase>h3{font-size:21px;}}
+@media(max-width:620px){.networkPortal .networkMemberShowcase .networkMemberHero>h3{top:16px;left:20px;right:20px;font-size:22px;}}

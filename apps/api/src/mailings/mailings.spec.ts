@@ -83,6 +83,22 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("owner mailing system", () => {
+  it("limits all campaigns to 30 persisted delivery attempts in a rolling hour", async () => {
+    const s = setup();
+    s.service.importLeads('owner', s.a.id, {
+      rows: Array.from({length: 40}, (_, i) => ({email: `lead${i}@example.de`})),
+      marketing: evidence,
+    });
+    const id = s.campaign();
+    expect((await s.send(id)).submitted).toBe(20);
+    expect((await s.send(id)).submitted).toBe(10);
+    await expect(s.send(id)).rejects.toThrow('Stundenlimit');
+    const second = s.service.saveCampaign('owner', s.a.id, {name:'Andere Kampagne',subject:'Weitere Einladung',body:'Ein weiterer ausreichend langer Einladungstext.'});
+    await expect(s.service.sendBatch('owner',second.id,{confirmName:'Andere Kampagne',revision:1,expectedCount:s.service.report('owner',second.id).eligible})).rejects.toThrow('Stundenlimit');
+    for (const delivery of Object.values(s.store.mailingCampaigns.get(id)!.deliveries)) delivery.startedAt = new Date(Date.now() - 3_600_001).toISOString();
+    expect((await s.send(id)).submitted).toBe(10);
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(40);
+  });
   it.each([
     [
       "Unternehmernetzwerk-Leverkusen",

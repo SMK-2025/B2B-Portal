@@ -483,7 +483,14 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       ).length;
     if (sentToday >= 200)
       throw new BadRequestException("Tageslimit von 200 Empfängern erreicht.");
-    const rows = this.eligible(c).slice(0, Math.min(20, 200 - sentToday));
+    // Persisted attempts across ALL networks/campaigns count, including uncertain
+    // provider outcomes. A sliding window prevents a double burst at the hour.
+    const startedInHour = [...this.store.mailingCampaigns.values()]
+      .flatMap((campaign) => Object.values(campaign.deliveries))
+      .filter((delivery) => Date.parse(delivery.startedAt) > Date.now() - 3_600_000).length;
+    if (startedInHour >= 30)
+      throw new BadRequestException("Stundenlimit erreicht: maximal 30 Mailing-E-Mails innerhalb von 60 Minuten. Bitte später erneut freigeben.");
+    const rows = this.eligible(c).slice(0, Math.min(20, 30 - startedInHour, 200 - sentToday));
     this.sending.add(id);
     let submitted = 0,
       uncertain = 0;

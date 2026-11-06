@@ -880,7 +880,7 @@ export function MailingsWorkspace() {
                 </p>
                 <p>
                   {campaign.eligible} freigegebene Kontakte offen. Dieser Klick
-                  versendet an maximal 20 Kontakte. Tageslimit: 200. Abgemeldete
+                  versendet an maximal 20 Kontakte. Insgesamt höchstens 30 Mailing-E-Mails innerhalb von 60 Minuten über alle Netzwerke hinweg. Jeder weitere Versandlauf benötigt deine erneute Freigabe; ohne sie wird nichts weiter versendet. Tageslimit: 200. Abgemeldete
                   und bereits angeschriebene Kontakte werden übersprungen.
                 </p>
                 <label>

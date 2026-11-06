@@ -75,7 +75,7 @@ const labels = {
   suspended: "Deaktiviert",
   left: "Ausgetreten",
 } as const;
-function MemberCardHero({networkId, memberId, companyName}: {networkId:string;memberId:string;companyName:string}) {
+function MemberCardHero({networkId, memberId, companyName, services}: {networkId:string;memberId:string;companyName:string;services?:string}) {
   const target=useRef<HTMLDivElement>(null);
   const [image,setImage]=useState<string|null>(null);
   useEffect(()=>{
@@ -95,7 +95,10 @@ function MemberCardHero({networkId, memberId, companyName}: {networkId:string;me
   },[networkId,memberId]);
   return <div ref={target} className={`networkMemberHero${image?' hasImage':''}`}>
     {image?<img src={image} alt="" loading="lazy" decoding="async"/>:<span className="networkMemberHeroPattern"/>}
-    <h3>{companyName}</h3>
+    <div className="networkMemberHeroContent">
+      <h3>{companyName}</h3>
+      {services && <div className="networkMemberHeroFacts">{services.split(/[,;\n]/).map(value=>value.trim()).filter(Boolean).slice(0,3).map(value=><span key={value}>{value}</span>)}</div>}
+    </div>
   </div>;
 }
 export function NetworkMembersWorkspace() {
@@ -278,7 +281,7 @@ export function NetworkMembersWorkspace() {
                 className="networkPartnerCard networkMemberShowcase"
                 style={partnerBranding(profile)}
               >
-                <MemberCardHero networkId={networkId} memberId={member.id} companyName={member.organization?.displayName || member.organization?.legalName || "Unternehmen"}/>
+                <MemberCardHero networkId={networkId} memberId={member.id} companyName={member.organization?.displayName || member.organization?.legalName || "Unternehmen"} services={profile?.services}/>
                 <div className="networkPartnerCardTop">
                   {profile?.logoUrl ? (
                     <img src={profile.logoUrl} alt="" />
@@ -300,17 +303,6 @@ export function NetworkMembersWorkspace() {
                   {profile?.tagline ||
                     "Dieses Unternehmen ergänzt seine Unternehmensseite noch."}
                 </p>
-                {profile?.services && (
-                  <div className="networkPartnerServices">
-                    {profile.services
-                      .split(/[,;\n]/)
-                      .filter(Boolean)
-                      .slice(0, 3)
-                      .map((value) => (
-                        <span key={value}>{value.trim()}</span>
-                      ))}
-                  </div>
-                )}
                 <div className="networkPartnerCardActions">
                   <button
                     type="button"

@@ -40,6 +40,8 @@ export type MailingDelivery = {
   events: MailingEvent[];
 };
 export type MailingCampaign = {
+  paused?: boolean;
+  pausedAt?: string;
   versions?: { revision: number; name: string; subject: string; body: string; archivedAt: string }[];
   id: string;
   networkId: string;

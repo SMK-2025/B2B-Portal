@@ -150,6 +150,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
           revision: c.revision,
           createdAt: c.createdAt,
           locked: this.sending.has(c.id),
+          paused: !!c.paused,
           ...this.reportData(c),
         })),
       defaults: { subject: STORY_SUBJECT, body: STORY_BODY },
@@ -458,6 +459,23 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     });
     return { sentTo: actor.email };
   }
+  async stopCampaign(authorization: string | undefined, id: string) {
+    const actor = this.owner(authorization);
+    const c = this.campaign(id);
+    c.paused = true;
+    c.pausedAt = new Date().toISOString();
+    this.store.activities.push({ id: randomUUID(), matchId: null, organizationId: null, actorUserId: actor.id, type: "mailing.campaign.stopped", visibility: "platform_internal", data: { campaignId: id, networkId: c.networkId }, createdAt: c.pausedAt });
+    await this.store.persist();
+    return { paused: true, running: this.sending.has(id) };
+  }
+  async resumeCampaign(authorization: string | undefined, id: string) {
+    this.owner(authorization);
+    const c = this.campaign(id);
+    if (this.sending.has(id)) throw new BadRequestException("Die laufende Übergabe wird noch beendet. Bitte kurz warten.");
+    c.paused = false;
+    await this.store.persist();
+    return { paused: false };
+  }
   async sendBatch(
     authorization: string | undefined,
     id: string,
@@ -466,6 +484,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     const actor = this.owner(authorization),
       c = this.campaign(id),
       n = this.network(c.networkId);
+    if (c.paused) throw new BadRequestException("Mailing ist gestoppt. Vor einem weiteren Versand ausdrücklich fortsetzen.");
     this.api();
     if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
       throw new ServiceUnavailableException(
@@ -509,6 +528,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       uncertain = 0;
     try {
       for (const lead of rows) {
+        if (c.paused) break;
         if (!lead.marketing || this.suppressed(lead)) continue;
         const d: MailingDelivery = {
           revision: c.revision,
@@ -519,6 +539,13 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         };
         c.deliveries[lead.id] = d;
         await this.store.persist();
+        // A stop can arrive while the reservation is being persisted. No provider
+        // request has started yet, so release this recipient for a later run.
+        if (c.paused) {
+          delete c.deliveries[lead.id];
+          await this.store.persist();
+          break;
+        }
         try {
           await this.email.sendCampaignMail({
             to: lead.email,
@@ -547,7 +574,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         data: { campaignId: id, networkId: c.networkId, submitted, uncertain },
         createdAt: new Date().toISOString(),
       });
-      return { submitted, uncertain, remaining: this.eligible(c).length };
+      return { submitted, uncertain, remaining: this.eligible(c).length, paused: !!c.paused };
     } finally {
       this.sending.delete(id);
     }

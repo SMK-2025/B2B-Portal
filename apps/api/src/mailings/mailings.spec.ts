@@ -83,6 +83,54 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("owner mailing system", () => {
+  it("stops a live batch after its in-flight handoff and resumes only explicitly", async () => {
+    const s = setup();
+    s.service.importLeads("owner", s.a.id, { rows: Array.from({ length: 3 }, (_, i) => ({ email: `stop${i}@example.de` })), marketing: evidence });
+    const id = s.campaign();
+    let release!: () => void;
+    let entered!: () => void;
+    const started = new Promise<void>((resolve) => { entered = resolve; });
+    vi.mocked(s.email.sendCampaignMail).mockImplementationOnce(async () => {
+      entered();
+      await new Promise<void>((resolve) => { release = resolve; });
+    });
+    const sending = s.send(id);
+    await started;
+    await s.service.stopCampaign("owner", id);
+    await expect(s.service.resumeCampaign("owner", id)).rejects.toThrow(/Übergabe/);
+    release();
+    expect(await sending).toMatchObject({ submitted: 1, remaining: 2, paused: true });
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
+    await expect(s.send(id)).rejects.toThrow(/gestoppt/);
+    const restored = new PortalStore();
+    restored.hydrate(JSON.parse(s.store.snapshot()));
+    expect(restored.mailingCampaigns.get(id)?.paused).toBe(true);
+    await s.service.resumeCampaign("owner", id);
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
+    expect((await s.send(id)).submitted).toBe(2);
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(3);
+  });
+  it("checks a stop arriving during reservation persistence before contacting the provider", async () => {
+    const s = setup();
+    s.lead();
+    const id = s.campaign();
+    vi.spyOn(s.store, "persist").mockImplementationOnce(async () => {
+      await s.service.stopCampaign("owner", id);
+    });
+    expect(await s.send(id)).toMatchObject({ submitted: 0, remaining: 1, paused: true });
+    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+    expect(Object.keys(s.store.mailingCampaigns.get(id)!.deliveries)).toHaveLength(0);
+  });
+  it("limits stopping to the owner and the selected campaign", async () => {
+    const s = setup();
+    const id = s.campaign();
+    const other = s.service.saveCampaign("owner", s.a.id, { name: "Zweites Mailing", subject: "Weiterer Betreff", body: "Ein weiterer ausreichend langer Text für dieses Mailing." }).id;
+    await s.service.stopCampaign("owner", id);
+    expect(s.store.mailingCampaigns.get(other)?.paused).toBeUndefined();
+    s.actor.accountRole = "member";
+    await expect(s.service.stopCampaign("owner", other)).rejects.toThrow();
+    await expect(s.service.resumeCampaign("owner", id)).rejects.toThrow();
+  });
   it("limits all campaigns to 20 attempts per rolling half-hour and 40 per rolling hour", async () => {
     const s = setup();
     s.service.importLeads('owner', s.a.id, {

@@ -120,6 +120,18 @@ export class MailingsController {
   ) {
     return this.service.sendBatch(auth, id, body);
   }
+  @Post("campaign/:id/stop") stop(
+    @Headers("authorization") auth: string | undefined,
+    @Param("id") id: string,
+  ) {
+    return this.service.stopCampaign(auth, id);
+  }
+  @Post("campaign/:id/resume") resume(
+    @Headers("authorization") auth: string | undefined,
+    @Param("id") id: string,
+  ) {
+    return this.service.resumeCampaign(auth, id);
+  }
   @Get("public/click/:token/:link") async click(
     @Param("token") token: string,
     @Param("link") link: string,

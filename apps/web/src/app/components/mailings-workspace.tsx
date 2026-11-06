@@ -51,6 +51,7 @@ type Campaign = {
   body: string;
   revision: number;
   locked: boolean;
+  paused?: boolean;
   eligible: number;
   stats: Record<string, number>;
   recipients: Recipient[];
@@ -83,6 +84,8 @@ export function MailingsWorkspace() {
   const [draft, setDraft] = useState({ name: "", subject: "", body: "" }),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
+  const [sendingId, setSendingId] = useState("");
+  const [stopping, setStopping] = useState(false);
   const [csv, setCsv] = useState<ReturnType<typeof parseMailingCsv>>([]),
     [source, setSource] = useState(""),
     [marketing, setMarketing] = useState(false),
@@ -123,6 +126,26 @@ export function MailingsWorkspace() {
       setBusy(false);
     }
   }
+  async function stopMailing(id: string) {
+    setStopping(true);
+    try {
+      await request(`/campaign/${id}/stop`, {});
+      setNotice("Stopp bestätigt. Keine weiteren Empfänger werden übergeben. Eine bereits laufende Übergabe wird noch beendet.");
+      await load();
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "Stopp konnte nicht bestätigt werden. Bitte erneut versuchen.");
+    } finally { setStopping(false); }
+  }
+  useEffect(() => {
+    if (!network) return;
+    let active = true;
+    const timer = window.setInterval(() => {
+      void request<Workspace>(`/network/${network}`).then((result) => {
+        if (active) setData(result);
+      }).catch(() => {});
+    }, 5000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [network]);
   useEffect(() => {
     const token = getPortalSession();
     if (!token) return;
@@ -314,6 +337,24 @@ export function MailingsWorkspace() {
               <strong>{data.campaigns.length}</strong>
               <span>Mailings</span>
             </div>
+          </div>
+          <div className="mailingCard" aria-label="Versandsteuerung">
+            <h3>Versandsteuerung</h3>
+            <p>Jeder Lauf endet nach maximal 20 Mails. Mit „Versand stoppen“ kannst du auch einen laufenden Versand abbrechen. Bereits übergebene Mails können nicht zurückgerufen werden.</p>
+            {data.campaigns.filter((c) => c.id === selected || c.locked || c.id === sendingId).map((c) => (
+              <div key={c.id} className="mailingActions">
+                <strong>{c.name} · {c.paused ? "Gestoppt" : c.locked || c.id === sendingId ? "Versand läuft" : "Wartet auf Freigabe"}</strong>
+                <button type="button" disabled={stopping || !!c.paused} onClick={() => void stopMailing(c.id)} style={{ background: "#b42318", color: "#ffffff", borderColor: "#b42318" }}>
+                  {stopping ? "Wird gestoppt …" : c.paused ? "Versand gestoppt" : "Versand stoppen"}
+                </button>
+                {c.paused && <button type="button" disabled={busy || c.locked || c.id === sendingId} onClick={() => void action(async () => {
+                  await request(`/campaign/${c.id}/resume`, {});
+                  await load();
+                  setNotice("Mailing wieder freigegeben. Es wird nichts automatisch versendet. Bitte Text prüfen und den nächsten Lauf separat bestätigen.");
+                })}>Mailing wieder freigeben</button>}
+              </div>
+            ))}
+            {!selected && !data.campaigns.some((c) => c.locked || c.id === sendingId) && <p>Wähle ein Mailing aus, um es zu stoppen.</p>}
           </div>
           <nav className="mailingTabs" aria-label="Mailing-Bereiche">
             {[
@@ -514,7 +555,7 @@ export function MailingsWorkspace() {
                   >
                     <strong>{c.name}</strong>
                     <span>
-                      {c.locked ? "Versand läuft" : c.stats.submitted ? "Fortsetzbar" : "Entwurf"} ·{" "}
+                      {c.paused ? "Gestoppt" : c.locked ? "Versand läuft" : c.stats.submitted ? "Fortsetzbar" : "Entwurf"} ·{" "}
                       {c.stats.submitted} übergeben
                     </span>
                   </button>
@@ -659,6 +700,7 @@ export function MailingsWorkspace() {
                         className="mailingPrimary"
                         disabled={
                           busy ||
+                          campaign.paused || campaign.locked ||
                           draft.name !== campaign.name || draft.subject !== campaign.subject || draft.body !== campaign.body ||
                           !campaign.eligible ||
                           !data.readiness.mail ||
@@ -897,10 +939,14 @@ export function MailingsWorkspace() {
                   disabled={busy || confirmName !== campaign.name}
                   onClick={() =>
                     void action(async () => {
+                      setSendConfirm(false);
+                      setSendingId(campaign.id);
+                      try {
                       const r = await request<{
                         submitted: number;
                         uncertain: number;
                         remaining: number;
+                        paused: boolean;
                       }>(`/campaign/${campaign.id}/send`, {
                         confirmName,
                         revision: campaign.revision,
@@ -909,8 +955,9 @@ export function MailingsWorkspace() {
                       await load();
                       setSendConfirm(false);
                       setNotice(
-                        `${r.submitted} übergeben · ${r.uncertain} unklar · ${r.remaining} noch offen.`,
+                        `${r.paused ? "Versand gestoppt. " : ""}${r.submitted} übergeben · ${r.uncertain} unklar · ${r.remaining} noch offen.`,
                       );
+                      } finally { setSendingId(""); }
                     })
                   }
                 >

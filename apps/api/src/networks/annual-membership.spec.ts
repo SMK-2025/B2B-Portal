@@ -24,6 +24,7 @@ describe("personal annual membership billing", () => {
     const membership=f.store.networkMemberships[0],directoryId=membership.id+'~'+page.id;
     expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(1);
     expect(()=>f.networks.memberDetail(f.member,f.network.id,directoryId)).toThrow();
+    expect(()=>f.networks.memberHero(f.member,f.network.id,directoryId)).toThrow();
     expect(()=>f.networks.decideCompanyPage(f.member,f.network.id,membership.userId,page.id,{decision:'approved'})).toThrow();
     const other=f.networks.create(f.owner,{name:'Other Network',slug:'other-company-network'});f.networks.setAccess(f.owner,other.id,{status:'active'});
     expect(()=>f.networks.ownCompanyPage(f.member,other.id,page.id)).toThrow();
@@ -31,8 +32,10 @@ describe("personal annual membership billing", () => {
     f.networks.decideCompanyPage(f.owner,f.network.id,membership.userId,page.id,{decision:'approved'});
     const result=f.networks.memberPage(f.member,f.network.id,{q:'Other Brand'});expect(result.total).toBe(1);expect(result.items[0].id).toBe(directoryId);expect(JSON.stringify(result)).not.toContain('data:image/webp');
     expect(f.networks.memberDetail(f.member,f.network.id,directoryId).id).toBe(membership.id);
+    expect(f.networks.memberHero(f.member,f.network.id,directoryId).heroImageUrl).toBe(profile.heroImageUrl);
     expect(f.networks.memberDetail(f.member,f.network.id,directoryId).organization?.networkProfile?.companyName).toBe('Other Brand');
     expect(()=>f.networks.memberDetail(f.owner,other.id,directoryId)).toThrow();
+    expect(()=>f.networks.memberHero(f.owner,other.id,directoryId)).toThrow();
     f.networks.saveCompanyPage(f.member,f.network.id,page.id,{...profile,tagline:'Geänderter Auftritt'});expect(page.reviewStatus).toBe('pending');expect(page.profile?.status).toBe('draft');
     expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(1);
     const source=f.store.users.get(membership.userId)!;
@@ -57,6 +60,8 @@ describe("personal annual membership billing", () => {
     expect(page.items).toHaveLength(12);expect(page.total).toBe(31);
     expect(JSON.stringify(page.items)).not.toContain('data:image/webp');expect(JSON.stringify(page.items)).not.toContain('Nur im Profil');
     expect(f.networks.memberDetail(f.member,f.network.id,page.items[0].id).organization?.networkProfile).toHaveProperty('heroImageUrl');
+    expect(f.networks.memberHero(f.member,f.network.id,page.items[0].id).heroImageUrl).toBe(org.networkProfile.heroImageUrl);
+    expect(()=>f.networks.memberHero(undefined,f.network.id,page.items[0].id)).toThrow();
     expect(f.networks.memberPage(f.member,f.network.id,{q:'PRIVATE_SEARCH'}).items).toHaveLength(0);
     const other=f.networks.create(f.owner,{name:'Other network',slug:'other-network'});f.networks.setAccess(f.owner,other.id,{status:'active'});
     expect(()=>f.networks.memberDetail(f.owner,other.id,page.items[0].id)).toThrow(/nicht verfügbar/);

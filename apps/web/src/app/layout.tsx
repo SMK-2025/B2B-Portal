@@ -22,6 +22,7 @@ import { shareImage } from "./components/public-metadata";
 import { PublicNavigation } from "./components/public-navigation";
 import { MailingAttributionBridge } from "./components/mailing-attribution-bridge";
 import "./mailings.css";
+import "./member-showcase.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://b2b-matching.de";
 

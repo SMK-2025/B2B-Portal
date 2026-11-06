@@ -469,6 +469,11 @@ export class NetworksController {
     @Param('networkId') networkId:string,
     @Param('membershipId') membershipId:string,
   ){return this.networks.memberDetail(authorization,networkId,membershipId);}
+  @Get(":networkId/memberships/:membershipId/hero") memberHero(
+    @Headers('authorization') authorization:string|undefined,
+    @Param('networkId') networkId:string,
+    @Param('membershipId') membershipId:string,
+  ){return this.networks.memberHero(authorization,networkId,membershipId);}
   @Get(":networkId/memberships") members(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,

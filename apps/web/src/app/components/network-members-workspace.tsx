@@ -75,6 +75,28 @@ const labels = {
   suspended: "Deaktiviert",
   left: "Ausgetreten",
 } as const;
+function MemberCardHero({networkId, memberId}: {networkId:string;memberId:string}) {
+  const target=useRef<HTMLDivElement>(null);
+  const [image,setImage]=useState<string|null>(null);
+  useEffect(()=>{
+    const element=target.current;if(!element)return;
+    let active=true,requested=false;
+    const load=()=>{
+      if(requested)return;requested=true;
+      const token=getPortalSession();if(!token)return;
+      void portalRequest<{heroImageUrl:string|null}>(`/networks/${networkId}/memberships/${encodeURIComponent(memberId)}/hero`,{token})
+        .then(value=>{if(active)setImage(value.heroImageUrl);}).catch(()=>{});
+    };
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)){load();observer.disconnect();}
+    },{rootMargin:'150px'});
+    observer.observe(element);
+    return()=>{active=false;observer.disconnect();};
+  },[networkId,memberId]);
+  return <div ref={target} className={`networkMemberHero${image?' hasImage':''}`} aria-hidden="true">
+    {image?<img src={image} alt="" loading="lazy" decoding="async"/>:<span className="networkMemberHeroPattern"/>}
+  </div>;
+}
 export function NetworkMembersWorkspace() {
   const access = useNetworkAccess(),
     networkId = access?.networkId || "",
@@ -252,9 +274,10 @@ export function NetworkMembersWorkspace() {
             return (
               <article
                 key={member.id}
-                className="networkPartnerCard"
+                className="networkPartnerCard networkMemberShowcase"
                 style={partnerBranding(profile)}
               >
+                <MemberCardHero networkId={networkId} memberId={member.id}/>
                 <div className="networkPartnerCardTop">
                   {profile?.logoUrl ? (
                     <img src={profile.logoUrl} alt="" />

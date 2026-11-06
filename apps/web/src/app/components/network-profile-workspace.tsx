@@ -709,8 +709,9 @@ function CompanyPageEditor({
                     <div className="partnerHeroHelp">
                       <small>
                         <NetworkText id="ui.network-profile-workspace.9287549ecf6f8e21">
-                          Querformat empfohlen · z. B. 1.920 × 800 Pixel · PNG,
-                          JPG oder WebP · maximal 1,5 MB
+                          Empfohlen: 1.920 × 800 Pixel (12:5) · PNG, JPG oder WebP · maximal 1,5 MB.
+                          Das Bild füllt den gesamten Titelbereich. Je nach Bildschirm werden die Ränder beschnitten;
+                          wichtige Motive deshalb mittig und Texte mit ausreichend Randabstand platzieren.
                         </NetworkText>
                       </small>
                       {hero && (

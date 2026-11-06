@@ -2326,6 +2326,11 @@ export class NetworksService {
     }
     return member;
   }
+  memberHero(authorization:string|undefined,networkId:string,id:string){
+    const member=this.memberDetail(authorization,networkId,id);
+    const profile=member.organization?.networkProfile;
+    return {heroImageUrl:profile && 'heroImageUrl' in profile ? profile.heroImageUrl||null : null};
+  }
   listMembers(authorization: string | undefined, networkId: string, ids?:Set<string>, summary=false) {
     const user = this.auth.authenticate(authorization);
     this.requireNetworkAccess(user.id, networkId);

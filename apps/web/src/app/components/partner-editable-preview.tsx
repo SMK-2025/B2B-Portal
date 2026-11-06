@@ -312,7 +312,9 @@ export function PartnerEditablePreview({
                         }}
                       />
                     </label>
-                    <small>PNG, JPG oder WebP · max. 1,5 MB</small>
+                    <small>{label === "Titelbild"
+                      ? "Empfohlen: 1.920 × 800 Pixel (12:5). Vollflächige Anzeige mit Beschnitt an den Rändern; wichtige Motive mittig und Texte mit ausreichend Randabstand platzieren. PNG, JPG oder WebP · max. 1,5 MB."
+                      : "PNG, JPG oder WebP · max. 1,5 MB"}</small>
                     {url && (
                       <button
                         type="button"

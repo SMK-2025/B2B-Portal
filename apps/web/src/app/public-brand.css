@@ -201,3 +201,8 @@
 .solutionTone-club{--solution-photo:url('/images/network-meeting-club.webp')}
 .solutionTone-ecosystem{--solution-photo:url('/images/network-meeting-ecosystem.webp')}
 @media(max-width:650px){.publicSite .editorialHeroCopy{padding:60px 20px}.publicSite .editorialHero h1{font-size:34px}.publicSite .editorialHeroMedia::before,.solutionPage .solutionHero::before{background:rgba(17,26,58,.84)}.solutionPage .solutionHero h1{font-size:38px}.solutionPage .solutionHero p{font-size:17px}.solutionPage .solutionHero>div>div{flex-direction:column;align-items:center}.solutionPage .solutionHero .v2Button{width:min(300px,100%)}}
+.v2Header .publicLoginButton{background:#172d42;border-color:#172d42;color:#fff;box-shadow:none;min-width:78px}
+.v2Header .publicLoginButton:hover{background:#24465e;border-color:#24465e;color:#fff}
+.v2Header .publicOwnPortalButton{background:#5865df;border-color:#5865df;color:#fff;min-width:118px}
+.v2Header .publicOwnPortalButton:hover{background:#4854ce;border-color:#4854ce;color:#fff}
+.v2Header .desktopActions{gap:10px}

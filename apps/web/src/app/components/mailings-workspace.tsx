@@ -52,6 +52,7 @@ type Campaign = {
   revision: number;
   locked: boolean;
   paused?: boolean;
+  automatic?: { enabled: boolean; nextAt: string; lastError?: string };
   eligible: number;
   stats: Record<string, number>;
   recipients: Recipient[];
@@ -130,21 +131,34 @@ export function MailingsWorkspace() {
     setStopping(true);
     try {
       await request(`/campaign/${id}/stop`, {});
-      setNotice("Stopp bestätigt. Keine weiteren Empfänger werden übergeben. Eine bereits laufende Übergabe wird noch beendet.");
+      setNotice(
+        "Stopp bestätigt. Keine weiteren Empfänger werden übergeben. Eine bereits laufende Übergabe wird noch beendet.",
+      );
       await load();
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Stopp konnte nicht bestätigt werden. Bitte erneut versuchen.");
-    } finally { setStopping(false); }
+      setNotice(
+        e instanceof Error
+          ? e.message
+          : "Stopp konnte nicht bestätigt werden. Bitte erneut versuchen.",
+      );
+    } finally {
+      setStopping(false);
+    }
   }
   useEffect(() => {
     if (!network) return;
     let active = true;
     const timer = window.setInterval(() => {
-      void request<Workspace>(`/network/${network}`).then((result) => {
-        if (active) setData(result);
-      }).catch(() => {});
+      void request<Workspace>(`/network/${network}`)
+        .then((result) => {
+          if (active) setData(result);
+        })
+        .catch(() => {});
     }, 5000);
-    return () => { active = false; window.clearInterval(timer); };
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
   }, [network]);
   useEffect(() => {
     const token = getPortalSession();
@@ -340,21 +354,77 @@ export function MailingsWorkspace() {
           </div>
           <div className="mailingCard" aria-label="Versandsteuerung">
             <h3>Versandsteuerung</h3>
-            <p>Jeder Lauf endet nach maximal 20 Mails. Mit „Versand stoppen“ kannst du auch einen laufenden Versand abbrechen. Bereits übergebene Mails können nicht zurückgerufen werden.</p>
-            {data.campaigns.filter((c) => c.id === selected || c.locked || c.id === sendingId).map((c) => (
-              <div key={c.id} className="mailingActions">
-                <strong>{c.name} · {c.paused ? "Gestoppt" : c.locked || c.id === sendingId ? "Versand läuft" : "Wartet auf Freigabe"}</strong>
-                <button type="button" disabled={stopping || !!c.paused} onClick={() => void stopMailing(c.id)} style={{ background: "#b42318", color: "#ffffff", borderColor: "#b42318" }}>
-                  {stopping ? "Wird gestoppt …" : c.paused ? "Versand gestoppt" : "Versand stoppen"}
-                </button>
-                {c.paused && <button type="button" disabled={busy || c.locked || c.id === sendingId} onClick={() => void action(async () => {
-                  await request(`/campaign/${c.id}/resume`, {});
-                  await load();
-                  setNotice("Mailing wieder freigegeben. Es wird nichts automatisch versendet. Bitte Text prüfen und den nächsten Lauf separat bestätigen.");
-                })}>Mailing wieder freigeben</button>}
-              </div>
-            ))}
-            {!selected && !data.campaigns.some((c) => c.locked || c.id === sendingId) && <p>Wähle ein Mailing aus, um es zu stoppen.</p>}
+            <p>
+              Nach deiner Startfreigabe: automatisch bis zu 20 Mails alle 30
+              Minuten, bis die Liste fertig ist oder du stoppst. Höchstens 40
+              Mails pro 60 Minuten und 200 pro Tag. Bereits übergebene Mails
+              können nicht zurückgerufen werden.
+            </p>
+            {data.campaigns
+              .filter(
+                (c) =>
+                  c.id === selected ||
+                  c.locked ||
+                  c.automatic?.enabled ||
+                  c.id === sendingId,
+              )
+              .map((c) => (
+                <div key={c.id} className="mailingActions">
+                  <strong>
+                    {c.name} ·{" "}
+                    {c.paused
+                      ? "Gestoppt"
+                      : c.locked || c.id === sendingId
+                        ? "Versand läuft"
+                        : c.automatic?.enabled
+                          ? "Automatischer Versand aktiv"
+                          : "Wartet auf Freigabe"}
+                  </strong>
+                  {c.automatic?.enabled && (
+                    <span>Nächste Prüfung: {stamp(c.automatic.nextAt)}</span>
+                  )}
+                  {c.automatic?.lastError && (
+                    <span>{c.automatic.lastError}</span>
+                  )}
+                  <button
+                    type="button"
+                    disabled={stopping || !!c.paused}
+                    onClick={() => void stopMailing(c.id)}
+                    style={{
+                      background: "#b42318",
+                      color: "#ffffff",
+                      borderColor: "#b42318",
+                    }}
+                  >
+                    {stopping
+                      ? "Wird gestoppt …"
+                      : c.paused
+                        ? "Versand gestoppt"
+                        : "Versand stoppen"}
+                  </button>
+                  {c.paused && (
+                    <button
+                      type="button"
+                      disabled={busy || c.locked || c.id === sendingId}
+                      onClick={() =>
+                        void action(async () => {
+                          await request(`/campaign/${c.id}/resume`, {});
+                          await load();
+                          setNotice(
+                            "Mailing bereit. Bitte Text prüfen und den automatischen Versand erneut starten.",
+                          );
+                        })
+                      }
+                    >
+                      Mailing wieder freigeben
+                    </button>
+                  )}
+                </div>
+              ))}
+            {!selected &&
+              !data.campaigns.some(
+                (c) => c.locked || c.automatic?.enabled || c.id === sendingId,
+              ) && <p>Wähle ein Mailing aus, um es zu stoppen.</p>}
           </div>
           <nav className="mailingTabs" aria-label="Mailing-Bereiche">
             {[
@@ -555,8 +625,14 @@ export function MailingsWorkspace() {
                   >
                     <strong>{c.name}</strong>
                     <span>
-                      {c.paused ? "Gestoppt" : c.locked ? "Versand läuft" : c.stats.submitted ? "Fortsetzbar" : "Entwurf"} ·{" "}
-                      {c.stats.submitted} übergeben
+                      {c.paused
+                        ? "Gestoppt"
+                        : c.locked
+                          ? "Versand läuft"
+                          : c.stats.submitted
+                            ? "Fortsetzbar"
+                            : "Entwurf"}{" "}
+                      · {c.stats.submitted} übergeben
                     </span>
                   </button>
                 ))}
@@ -578,7 +654,7 @@ export function MailingsWorkspace() {
                     const fresh = await load();
                     choose(fresh.campaigns.find((c) => c.id === result.id));
                     setNotice(
-                      "Entwurf gespeichert. Es wurde nichts versendet.",
+                      "Änderungen gespeichert. Eine laufende Automatik wurde angehalten. Bitte vor dem Fortsetzen erneut prüfen und freigeben.",
                     );
                   });
                 }}
@@ -588,7 +664,14 @@ export function MailingsWorkspace() {
                     ? "Gespeichertes Mailing"
                     : "Mailing gestalten"}
                 </h3>
-                {campaign && campaign.stats.submitted > 0 && <p>Änderungen gelten nur für noch nicht angeschriebene Empfänger. Bereits versendete Versionen bleiben erhalten. Nach jedem Lauf endet der Versand; weitere Empfänger benötigen deine erneute Freigabe.</p>}
+                {campaign && campaign.stats.submitted > 0 && (
+                  <p>
+                    Änderungen gelten nur für noch nicht angeschriebene
+                    Empfänger. Beim Speichern wird eine aktive Automatik
+                    angehalten. Bitte den neuen Text vor dem Fortsetzen erneut
+                    freigeben.
+                  </p>
+                )}
                 <label>
                   Interner Mailingname
                   <input
@@ -663,7 +746,12 @@ export function MailingsWorkspace() {
                     <>
                       <button
                         type="button"
-                        disabled={busy || draft.name !== campaign.name || draft.subject !== campaign.subject || draft.body !== campaign.body}
+                        disabled={
+                          busy ||
+                          draft.name !== campaign.name ||
+                          draft.subject !== campaign.subject ||
+                          draft.body !== campaign.body
+                        }
                         onClick={() =>
                           void action(async () => {
                             const p = await request<{ html: string }>(
@@ -677,7 +765,13 @@ export function MailingsWorkspace() {
                       </button>
                       <button
                         type="button"
-                        disabled={busy || !data.readiness.mail || draft.name !== campaign.name || draft.subject !== campaign.subject || draft.body !== campaign.body}
+                        disabled={
+                          busy ||
+                          !data.readiness.mail ||
+                          draft.name !== campaign.name ||
+                          draft.subject !== campaign.subject ||
+                          draft.body !== campaign.body
+                        }
                         onClick={() => {
                           if (
                             window.confirm(
@@ -700,8 +794,12 @@ export function MailingsWorkspace() {
                         className="mailingPrimary"
                         disabled={
                           busy ||
-                          campaign.paused || campaign.locked ||
-                          draft.name !== campaign.name || draft.subject !== campaign.subject || draft.body !== campaign.body ||
+                          campaign.paused ||
+                          campaign.locked ||
+                          campaign.automatic?.enabled ||
+                          draft.name !== campaign.name ||
+                          draft.subject !== campaign.subject ||
+                          draft.body !== campaign.body ||
                           !campaign.eligible ||
                           !data.readiness.mail ||
                           !data.readiness.tracking
@@ -711,7 +809,7 @@ export function MailingsWorkspace() {
                           setSendConfirm(true);
                         }}
                       >
-                        Versand prüfen ({campaign.eligible})
+                        Automatischen Versand prüfen ({campaign.eligible})
                       </button>
                     </>
                   )}
@@ -916,7 +1014,7 @@ export function MailingsWorkspace() {
             )}
             {sendConfirm && campaign && (
               <>
-                <h2>Versand ausdrücklich freigeben</h2>
+                <h2>Automatischen Versand freigeben</h2>
                 <p>
                   <strong>
                     {current?.name} · {campaign.name}
@@ -924,8 +1022,13 @@ export function MailingsWorkspace() {
                 </p>
                 <p>
                   {campaign.eligible} freigegebene Kontakte offen. Dieser Klick
-                  versendet an maximal 20 Kontakte. Insgesamt höchstens 20 Mailing-E-Mails innerhalb von 30 Minuten und 40 innerhalb von 60 Minuten über alle Netzwerke hinweg. Jeder weitere Versandlauf benötigt deine erneute Freigabe; ohne sie wird nichts weiter versendet. Tageslimit: 200. Abgemeldete
-                  und bereits angeschriebene Kontakte werden übersprungen.
+                  startet den automatischen Versand: bis zu 20 Mails alle 30
+                  Minuten, bis die freigegebene Liste fertig ist oder du
+                  stoppst. Insgesamt höchstens 40 Mails pro 60 Minuten und 200
+                  pro Tag über alle Netzwerke hinweg; danach geht es am nächsten
+                  Tag weiter. Später neu importierte Empfänger benötigen eine
+                  neue Freigabe. Abgemeldete und bereits angeschriebene Kontakte
+                  werden übersprungen.
                 </p>
                 <label>
                   Zur Bestätigung den Mailingnamen eingeben
@@ -942,26 +1045,26 @@ export function MailingsWorkspace() {
                       setSendConfirm(false);
                       setSendingId(campaign.id);
                       try {
-                      const r = await request<{
-                        submitted: number;
-                        uncertain: number;
-                        remaining: number;
-                        paused: boolean;
-                      }>(`/campaign/${campaign.id}/send`, {
-                        confirmName,
-                        revision: campaign.revision,
-                        expectedCount: campaign.eligible,
-                      });
-                      await load();
-                      setSendConfirm(false);
-                      setNotice(
-                        `${r.paused ? "Versand gestoppt. " : ""}${r.submitted} übergeben · ${r.uncertain} unklar · ${r.remaining} noch offen.`,
-                      );
-                      } finally { setSendingId(""); }
+                        const r = await request<{
+                          automatic: boolean;
+                          remaining: number;
+                        }>(`/campaign/${campaign.id}/automatic`, {
+                          confirmName,
+                          revision: campaign.revision,
+                          expectedCount: campaign.eligible,
+                        });
+                        await load();
+                        setSendConfirm(false);
+                        setNotice(
+                          `Automatischer Versand gestartet: ${r.remaining} freigegebene Kontakte. Du kannst jederzeit stoppen.`,
+                        );
+                      } finally {
+                        setSendingId("");
+                      }
                     })
                   }
                 >
-                  Jetzt tatsächlich versenden
+                  Automatischen Versand starten
                 </button>
               </>
             )}

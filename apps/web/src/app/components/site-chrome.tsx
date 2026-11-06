@@ -37,15 +37,15 @@ export function SiteHeader() {
           <Link href={"/sicherheit" as never}>Sicherheit</Link>
         </nav>
         <div className="desktopActions">
-          <Link className="v2Login" href="/anmelden">
-            Partnerportal anmelden
+          <Link className="v2Button small publicLoginButton" href="/anmelden">
+            Login
           </Link>
-          <a
-            className="v2Button small"
-            href="mailto:service@b2b-matching.de?subject=Partnerportal%20anfragen"
+          <Link
+            className="v2Button small publicOwnPortalButton"
+            href={"/eigenes-portal" as never}
           >
-            Portal anfragen
-          </a>
+            Eigenes Portal
+          </Link>
         </div>
         <details className="mobileMenu">
           <summary aria-label="Menü öffnen">
@@ -64,13 +64,15 @@ export function SiteHeader() {
             <Link href={"/so-funktionierts" as never}>Einführung</Link>
             <Link href={"/sicherheit" as never}>Sicherheit</Link>
             <hr />
-            <Link href="/anmelden">Partnerportal anmelden</Link>
-            <a
-              className="v2Button"
-              href="mailto:service@b2b-matching.de?subject=Partnerportal%20anfragen"
+            <Link className="v2Button publicLoginButton" href="/anmelden">
+              Login
+            </Link>
+            <Link
+              className="v2Button publicOwnPortalButton"
+              href={"/eigenes-portal" as never}
             >
-              Portal anfragen
-            </a>
+              Eigenes Portal
+            </Link>
           </div>
         </details>
       </header>
@@ -78,32 +80,34 @@ export function SiteHeader() {
   );
 }
 
-export function SiteFooter({ formal = false }: { formal?: boolean } = {}) {
+export function SiteFooter({
+  formal = false,
+  showPitch = true,
+}: { formal?: boolean; showPitch?: boolean } = {}) {
   return (
     <>
-      <aside className="networkPitch" aria-label="Eigenes Netzwerkportal">
-        <div className="networkPitchInner">
-          <div>
-            <span>White-Label-Netzwerkportal</span>
-            <h2>
-              {formal
-                ? "Sie bringen Menschen zusammen. Warum nicht auch zwischen den Treffen?"
-                : "Du bringst Menschen zusammen. Warum nicht auch zwischen den Treffen?"}
-            </h2>
-            <p>
-              {formal
-                ? "Geben Sie Ihrem Netzwerk ein eigenes Portal – mit Ihrem Namen, Ihrem Logo und Ihren Farben. Dort finden Mitglieder den richtigen Kontakt, teilen Angebote und verabreden sich zum nächsten Treffen. Sie gestalten das Netzwerk, wir betreiben die Technik."
-                : "Gib deinem Netzwerk ein eigenes Portal – mit eurem Namen, eurem Logo und euren Farben. Dort finden Mitglieder den richtigen Kontakt, teilen Angebote und verabreden sich zum nächsten Treffen. Ihr gestaltet das Netzwerk, wir betreiben die Technik."}
-            </p>
+      {showPitch && (
+        <aside className="networkPitch" aria-label="Eigenes Netzwerkportal">
+          <div className="networkPitchInner">
+            <div>
+              <span>White-Label-Netzwerkportal</span>
+              <h2>
+                {formal
+                  ? "Sie bringen Menschen zusammen. Warum nicht auch zwischen den Treffen?"
+                  : "Du bringst Menschen zusammen. Warum nicht auch zwischen den Treffen?"}
+              </h2>
+              <p>
+                {formal
+                  ? "Geben Sie Ihrem Netzwerk ein eigenes Portal – mit Ihrem Namen, Ihrem Logo und Ihren Farben. Dort finden Mitglieder den richtigen Kontakt, teilen Angebote und verabreden sich zum nächsten Treffen. Sie gestalten das Netzwerk, wir betreiben die Technik."
+                  : "Gib deinem Netzwerk ein eigenes Portal – mit eurem Namen, eurem Logo und euren Farben. Dort finden Mitglieder den richtigen Kontakt, teilen Angebote und verabreden sich zum nächsten Treffen. Ihr gestaltet das Netzwerk, wir betreiben die Technik."}
+              </p>
+            </div>
+            <Link className="v2Button" href={"/eigenes-portal" as never}>
+              Eigenes Portal entdecken <span aria-hidden="true">→</span>
+            </Link>
           </div>
-          <a
-            className="v2Button"
-            href="mailto:service@b2b-matching.de?subject=Eigenes%20White-Label-Netzwerkportal%20anfragen"
-          >
-            Eigenes Netzwerkportal anfragen <span aria-hidden="true">→</span>
-          </a>
-        </div>
-      </aside>
+        </aside>
+      )}
       <FooterLinks />
     </>
   );
@@ -148,9 +152,7 @@ function FooterLinks() {
         <div>
           <b>Zugang</b>
           <Link href="/anmelden">Anmelden</Link>
-          <a href="mailto:service@b2b-matching.de?subject=Partnerportal%20anfragen">
-            Portal anfragen
-          </a>
+          <Link href={"/eigenes-portal" as never}>Eigenes Portal</Link>
         </div>
         <div>
           <b>Rechtliches</b>

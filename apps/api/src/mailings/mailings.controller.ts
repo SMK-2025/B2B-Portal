@@ -126,6 +126,13 @@ export class MailingsController {
   ) {
     return this.service.stopCampaign(auth, id);
   }
+  @Post("campaign/:id/automatic") automatic(
+    @Headers("authorization") auth: string | undefined,
+    @Param("id") id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.service.startAutomatic(auth, id, body);
+  }
   @Post("campaign/:id/resume") resume(
     @Headers("authorization") auth: string | undefined,
     @Param("id") id: string,

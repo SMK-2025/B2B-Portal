@@ -83,23 +83,125 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("owner mailing system", () => {
+  it("automatically continues approved recipients, survives reload and excludes later imports", async () => {
+    const s = setup();
+    s.service.importLeads("owner", s.a.id, {
+      rows: Array.from({ length: 25 }, (_, i) => ({
+        email: `auto${i}@example.de`,
+      })),
+      marketing: evidence,
+    });
+    const id = s.campaign();
+    await s.service.startAutomatic("owner", id, {
+      confirmName: "Erstes Mailing",
+      revision: 1,
+      expectedCount: 25,
+    });
+    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+    s.service.importLeads("owner", s.a.id, {
+      rows: [{ email: "later@example.de" }],
+      marketing: evidence,
+    });
+    await s.service.processAutomatic();
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(20);
+    await s.service.processAutomatic();
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(20);
+    s.store.hydrate(JSON.parse(s.store.snapshot()));
+    const c = s.store.mailingCampaigns.get(id)!;
+    c.automatic!.nextAt = new Date(Date.now() - 1).toISOString();
+    for (const d of Object.values(c.deliveries))
+      d.startedAt = new Date(Date.now() - 1_800_001).toISOString();
+    await s.service.processAutomatic();
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(25);
+    expect(c.automatic!.enabled).toBe(false);
+    expect(s.service.report("owner", id).eligible).toBe(1);
+  });
+  it("stops automation on stop or edited copy and never resumes without a fresh approval", async () => {
+    const s = setup();
+    s.lead();
+    const id = s.campaign();
+    await expect(
+      s.service.startAutomatic("owner", id, {
+        confirmName: "Erstes Mailing",
+        revision: 0,
+        expectedCount: 1,
+      }),
+    ).rejects.toThrow();
+    await s.service.startAutomatic("owner", id, {
+      confirmName: "Erstes Mailing",
+      revision: 1,
+      expectedCount: 1,
+    });
+    await s.service.stopCampaign("owner", id);
+    await s.service.processAutomatic();
+    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+    await s.service.startAutomatic("owner", id, {
+      confirmName: "Erstes Mailing",
+      revision: 1,
+      expectedCount: 1,
+    });
+    s.service.saveCampaign("owner", s.a.id, {
+      id,
+      revision: 1,
+      name: "Neue Version",
+      subject: "Neuer Betreff",
+      body: "Ein neuer ausreichend langer Text für die Empfänger.",
+    });
+    await s.service.processAutomatic();
+    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+    expect(s.store.mailingCampaigns.get(id)!.paused).toBe(true);
+    expect(s.store.mailingCampaigns.get(id)!.automatic!.enabled).toBe(false);
+  });
+  it("keeps the automatic hourly cap and pauses safely on ambiguous provider outcomes", async () => {
+    const s = setup();
+    s.lead();
+    const id = s.campaign();
+    await s.service.startAutomatic("owner", id, {
+      confirmName: "Erstes Mailing",
+      revision: 1,
+      expectedCount: 1,
+    });
+    vi.mocked(s.email.sendCampaignMail).mockRejectedValueOnce(
+      new Error("timeout"),
+    );
+    await s.service.processAutomatic();
+    expect(s.store.mailingCampaigns.get(id)!.paused).toBe(true);
+    expect(s.store.mailingCampaigns.get(id)!.automatic!.enabled).toBe(false);
+    await s.service.processAutomatic();
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
+  });
   it("stops a live batch after its in-flight handoff and resumes only explicitly", async () => {
     const s = setup();
-    s.service.importLeads("owner", s.a.id, { rows: Array.from({ length: 3 }, (_, i) => ({ email: `stop${i}@example.de` })), marketing: evidence });
+    s.service.importLeads("owner", s.a.id, {
+      rows: Array.from({ length: 3 }, (_, i) => ({
+        email: `stop${i}@example.de`,
+      })),
+      marketing: evidence,
+    });
     const id = s.campaign();
     let release!: () => void;
     let entered!: () => void;
-    const started = new Promise<void>((resolve) => { entered = resolve; });
+    const started = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
     vi.mocked(s.email.sendCampaignMail).mockImplementationOnce(async () => {
       entered();
-      await new Promise<void>((resolve) => { release = resolve; });
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
     });
     const sending = s.send(id);
     await started;
     await s.service.stopCampaign("owner", id);
-    await expect(s.service.resumeCampaign("owner", id)).rejects.toThrow(/Übergabe/);
+    await expect(s.service.resumeCampaign("owner", id)).rejects.toThrow(
+      /Übergabe/,
+    );
     release();
-    expect(await sending).toMatchObject({ submitted: 1, remaining: 2, paused: true });
+    expect(await sending).toMatchObject({
+      submitted: 1,
+      remaining: 2,
+      paused: true,
+    });
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
     await expect(s.send(id)).rejects.toThrow(/gestoppt/);
     const restored = new PortalStore();
@@ -117,14 +219,24 @@ describe("owner mailing system", () => {
     vi.spyOn(s.store, "persist").mockImplementationOnce(async () => {
       await s.service.stopCampaign("owner", id);
     });
-    expect(await s.send(id)).toMatchObject({ submitted: 0, remaining: 1, paused: true });
+    expect(await s.send(id)).toMatchObject({
+      submitted: 0,
+      remaining: 1,
+      paused: true,
+    });
     expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
-    expect(Object.keys(s.store.mailingCampaigns.get(id)!.deliveries)).toHaveLength(0);
+    expect(
+      Object.keys(s.store.mailingCampaigns.get(id)!.deliveries),
+    ).toHaveLength(0);
   });
   it("limits stopping to the owner and the selected campaign", async () => {
     const s = setup();
     const id = s.campaign();
-    const other = s.service.saveCampaign("owner", s.a.id, { name: "Zweites Mailing", subject: "Weiterer Betreff", body: "Ein weiterer ausreichend langer Text für dieses Mailing." }).id;
+    const other = s.service.saveCampaign("owner", s.a.id, {
+      name: "Zweites Mailing",
+      subject: "Weiterer Betreff",
+      body: "Ein weiterer ausreichend langer Text für dieses Mailing.",
+    }).id;
     await s.service.stopCampaign("owner", id);
     expect(s.store.mailingCampaigns.get(other)?.paused).toBeUndefined();
     s.actor.accountRole = "member";
@@ -133,19 +245,37 @@ describe("owner mailing system", () => {
   });
   it("limits all campaigns to 20 attempts per rolling half-hour and 40 per rolling hour", async () => {
     const s = setup();
-    s.service.importLeads('owner', s.a.id, {
-      rows: Array.from({length: 60}, (_, i) => ({email: `lead${i}@example.de`})),
+    s.service.importLeads("owner", s.a.id, {
+      rows: Array.from({ length: 60 }, (_, i) => ({
+        email: `lead${i}@example.de`,
+      })),
       marketing: evidence,
     });
     const id = s.campaign();
     expect((await s.send(id)).submitted).toBe(20);
-    await expect(s.send(id)).rejects.toThrow('Halbstundenlimit');
-    const second = s.service.saveCampaign('owner', s.a.id, {name:'Andere Kampagne',subject:'Weitere Einladung',body:'Ein weiterer ausreichend langer Einladungstext.'});
-    await expect(s.service.sendBatch('owner',second.id,{confirmName:'Andere Kampagne',revision:1,expectedCount:s.service.report('owner',second.id).eligible})).rejects.toThrow('Halbstundenlimit');
-    for (const delivery of Object.values(s.store.mailingCampaigns.get(id)!.deliveries)) delivery.startedAt = new Date(Date.now() - 1_800_001).toISOString();
+    await expect(s.send(id)).rejects.toThrow("Halbstundenlimit");
+    const second = s.service.saveCampaign("owner", s.a.id, {
+      name: "Andere Kampagne",
+      subject: "Weitere Einladung",
+      body: "Ein weiterer ausreichend langer Einladungstext.",
+    });
+    await expect(
+      s.service.sendBatch("owner", second.id, {
+        confirmName: "Andere Kampagne",
+        revision: 1,
+        expectedCount: s.service.report("owner", second.id).eligible,
+      }),
+    ).rejects.toThrow("Halbstundenlimit");
+    for (const delivery of Object.values(
+      s.store.mailingCampaigns.get(id)!.deliveries,
+    ))
+      delivery.startedAt = new Date(Date.now() - 1_800_001).toISOString();
     expect((await s.send(id)).submitted).toBe(20);
-    await expect(s.send(id)).rejects.toThrow('Stundenlimit');
-    for (const delivery of Object.values(s.store.mailingCampaigns.get(id)!.deliveries)) delivery.startedAt = new Date(Date.now() - 3_600_001).toISOString();
+    await expect(s.send(id)).rejects.toThrow("Stundenlimit");
+    for (const delivery of Object.values(
+      s.store.mailingCampaigns.get(id)!.deliveries,
+    ))
+      delivery.startedAt = new Date(Date.now() - 3_600_001).toISOString();
     expect((await s.send(id)).submitted).toBe(20);
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(60);
   });
@@ -191,10 +321,14 @@ describe("owner mailing system", () => {
       expect(preview.html).toContain(`bgcolor="${color}"`);
       expect(preview.html).toContain(`href="https://b2b-matching.de${path}"`);
       expect(preview.html).toContain(`network=${slug}`);
-      expect(preview.html).toContain("wie unkompliziert wünschen Sie sich Business-Netzwerken?");
+      expect(preview.html).toContain(
+        "wie unkompliziert wünschen Sie sich Business-Netzwerken?",
+      );
       expect(preview.html).not.toContain("<h1");
       expect(preview.html).not.toContain("{{");
-      expect(preview.text).toContain("Liebe Unternehmerinnen und Unternehmer, liebe Freunde des guten Netzwerkens,");
+      expect(preview.text).toContain(
+        "Liebe Unternehmerinnen und Unternehmer, liebe Freunde des guten Netzwerkens,",
+      );
       expect(preview.text).not.toContain("**");
       expect(preview.text).toContain("\n\n");
       expect(preview.html).not.toContain(
@@ -295,15 +429,36 @@ describe("owner mailing system", () => {
     await s.send(id);
     await s.send(id);
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
-    s.service.saveCampaign("owner", s.a.id, { id, revision: 1, name: "Aktualisierte Einladung", subject: "Neuer Betreff", body: "Dieser aktualisierte Text gilt nur für weitere Empfänger." });
+    s.service.saveCampaign("owner", s.a.id, {
+      id,
+      revision: 1,
+      name: "Aktualisierte Einladung",
+      subject: "Neuer Betreff",
+      body: "Dieser aktualisierte Text gilt nur für weitere Empfänger.",
+    });
     const c = s.store.mailingCampaigns.get(id)!;
     expect(c.versions?.[0].revision).toBe(1);
     expect(Object.values(c.deliveries)[0].revision).toBe(1);
-    s.service.importLeads("owner", s.a.id, { rows: [{ email: "next@example.de" }], marketing: evidence });
-    await expect(s.service.sendBatch("owner", id, { confirmName: c.name, revision: 1, expectedCount: 1 })).rejects.toThrow();
-    await s.service.sendBatch("owner", id, { confirmName: c.name, revision: 2, expectedCount: s.service.report("owner", id).eligible });
+    s.service.importLeads("owner", s.a.id, {
+      rows: [{ email: "next@example.de" }],
+      marketing: evidence,
+    });
+    await expect(
+      s.service.sendBatch("owner", id, {
+        confirmName: c.name,
+        revision: 1,
+        expectedCount: 1,
+      }),
+    ).rejects.toThrow();
+    await s.service.sendBatch("owner", id, {
+      confirmName: c.name,
+      revision: 2,
+      expectedCount: s.service.report("owner", id).eligible,
+    });
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(s.email.sendCampaignMail).mock.calls[1][0].subject).toBe("Neuer Betreff");
+    expect(vi.mocked(s.email.sendCampaignMail).mock.calls[1][0].subject).toBe(
+      "Neuer Betreff",
+    );
   });
   it("keeps uncertain deliveries from automatic retries", async () => {
     const s = setup();

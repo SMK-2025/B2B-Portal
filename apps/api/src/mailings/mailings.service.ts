@@ -35,6 +35,8 @@ import type {
 export class MailingsService implements OnModuleInit, OnModuleDestroy {
   private readonly sending = new Set<string>();
   private retentionTimer?: ReturnType<typeof setInterval>;
+  private automaticTimer?: ReturnType<typeof setInterval>;
+  private automaticBusy = false;
   onModuleInit() {
     const sweep = async () => {
       let changed = false;
@@ -59,9 +61,18 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     run();
     this.retentionTimer = setInterval(run, 3600000);
     this.retentionTimer.unref();
+    this.automaticTimer = setInterval(() => {
+      void this.processAutomatic().catch(() =>
+        new Logger(MailingsService.name).error(
+          "Automatischer Mailinglauf fehlgeschlagen.",
+        ),
+      );
+    }, 15000);
+    this.automaticTimer.unref();
   }
   onModuleDestroy() {
     if (this.retentionTimer) clearInterval(this.retentionTimer);
+    if (this.automaticTimer) clearInterval(this.automaticTimer);
   }
   constructor(
     private readonly store: PortalStore,
@@ -151,6 +162,13 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
           createdAt: c.createdAt,
           locked: this.sending.has(c.id),
           paused: !!c.paused,
+          automatic: c.automatic
+            ? {
+                enabled: c.automatic.enabled,
+                nextAt: c.automatic.nextAt,
+                lastError: c.automatic.lastError,
+              }
+            : undefined,
           ...this.reportData(c),
         })),
       defaults: { subject: STORY_SUBJECT, body: STORY_BODY },
@@ -303,8 +321,19 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     );
     const body = requiredText(input.body, "Mailtext", 30, 15000);
     if (input.id) {
-      (campaign.versions ??= []).push({ revision: campaign.revision, name: campaign.name, subject: campaign.subject, body: campaign.body, archivedAt: new Date().toISOString() });
-      for (const delivery of Object.values(campaign.deliveries)) delivery.revision ??= campaign.revision;
+      if (campaign.automatic?.enabled) {
+        campaign.automatic.enabled = false;
+        campaign.paused = true;
+      }
+      (campaign.versions ??= []).push({
+        revision: campaign.revision,
+        name: campaign.name,
+        subject: campaign.subject,
+        body: campaign.body,
+        archivedAt: new Date().toISOString(),
+      });
+      for (const delivery of Object.values(campaign.deliveries))
+        delivery.revision ??= campaign.revision;
     }
     Object.assign(campaign, { name, subject, body });
     campaign.revision++;
@@ -376,9 +405,13 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       company: lead.company || "",
       networkName: n.name,
       city: cityFromNetwork(n.name),
-      launchOffer: n.settings.launchPromotion?.enabled && n.settings.memberPaymentModel !== "network" && n.settings.billingMode !== "cooperation_free" && this.store.launchUsed(n.id) < n.settings.launchPromotion.limit
-        ? `Vielleicht sind Sie sogar eines der ersten ${n.settings.launchPromotion.limit} Unternehmen, die das ${n.name} ${n.settings.launchPromotion.freeMonths} Monate kostenlos nutzen können.`
-        : "Die aktuellen Konditionen sehen Sie transparent vor Abschluss Ihrer Registrierung.",
+      launchOffer:
+        n.settings.launchPromotion?.enabled &&
+        n.settings.memberPaymentModel !== "network" &&
+        n.settings.billingMode !== "cooperation_free" &&
+        this.store.launchUsed(n.id) < n.settings.launchPromotion.limit
+          ? `Vielleicht sind Sie sogar eines der ersten ${n.settings.launchPromotion.limit} Unternehmen, die das ${n.name} ${n.settings.launchPromotion.freeMonths} Monate kostenlos nutzen können.`
+          : "Die aktuellen Konditionen sehen Sie transparent vor Abschluss Ihrer Registrierung.",
     };
     const body = personalizeMail(c.body, values);
     let logo = this.web() + "/images/b2b-matching-logo-brand.png";
@@ -463,28 +496,190 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     const actor = this.owner(authorization);
     const c = this.campaign(id);
     c.paused = true;
+    if (c.automatic) c.automatic.enabled = false;
     c.pausedAt = new Date().toISOString();
-    this.store.activities.push({ id: randomUUID(), matchId: null, organizationId: null, actorUserId: actor.id, type: "mailing.campaign.stopped", visibility: "platform_internal", data: { campaignId: id, networkId: c.networkId }, createdAt: c.pausedAt });
+    this.store.activities.push({
+      id: randomUUID(),
+      matchId: null,
+      organizationId: null,
+      actorUserId: actor.id,
+      type: "mailing.campaign.stopped",
+      visibility: "platform_internal",
+      data: { campaignId: id, networkId: c.networkId },
+      createdAt: c.pausedAt,
+    });
     await this.store.persist();
     return { paused: true, running: this.sending.has(id) };
   }
   async resumeCampaign(authorization: string | undefined, id: string) {
     this.owner(authorization);
     const c = this.campaign(id);
-    if (this.sending.has(id)) throw new BadRequestException("Die laufende Übergabe wird noch beendet. Bitte kurz warten.");
+    if (this.sending.has(id))
+      throw new BadRequestException(
+        "Die laufende Übergabe wird noch beendet. Bitte kurz warten.",
+      );
     c.paused = false;
     await this.store.persist();
     return { paused: false };
+  }
+  async startAutomatic(
+    authorization: string | undefined,
+    id: string,
+    input: Record<string, unknown>,
+  ) {
+    const actor = this.owner(authorization),
+      c = this.campaign(id);
+    if (this.sending.has(id))
+      throw new BadRequestException(
+        "Bitte das Ende der laufenden Übergabe abwarten.",
+      );
+    if (c.automatic?.enabled)
+      throw new BadRequestException("Automatischer Versand ist bereits aktiv.");
+    if (
+      input.confirmName !== c.name ||
+      input.revision !== c.revision ||
+      input.expectedCount !== this.eligible(c).length
+    )
+      throw new BadRequestException(
+        "Bitte aktuellen Versandumfang prüfen und erneut freigeben.",
+      );
+    if (this.network(c.networkId).status !== "active")
+      throw new BadRequestException("Netzwerk ist nicht aktiv.");
+    this.api();
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
+      throw new ServiceUnavailableException(
+        "Mailversand ist noch nicht eingerichtet.",
+      );
+    const recipientIds = this.eligible(c).map((lead) => lead.id);
+    if (!recipientIds.length)
+      throw new BadRequestException(
+        "Keine freigegebenen Empfänger mehr offen.",
+      );
+    c.paused = false;
+    c.automatic = {
+      enabled: true,
+      approvedBy: actor.id,
+      approvedRevision: c.revision,
+      recipientIds,
+      nextAt: new Date().toISOString(),
+    };
+    try {
+      await this.store.persist();
+    } catch (error) {
+      c.automatic.enabled = false;
+      c.paused = true;
+      throw error;
+    }
+    return { automatic: true, remaining: recipientIds.length };
+  }
+  async processAutomatic() {
+    if (
+      this.automaticBusy ||
+      this.sending.size ||
+      !this.store.persistenceReady()
+    )
+      return;
+    this.automaticBusy = true;
+    try {
+      const c = [...this.store.mailingCampaigns.values()]
+        .filter(
+          (c) =>
+            c.automatic?.enabled &&
+            !c.paused &&
+            Date.parse(c.automatic.nextAt) <= Date.now(),
+        )
+        .sort((a, b) =>
+          a.automatic!.nextAt.localeCompare(b.automatic!.nextAt),
+        )[0];
+      if (!c?.automatic) return;
+      const auto = c.automatic;
+      const actor = this.store.users.get(auto.approvedBy);
+      if (
+        !actor ||
+        actor.accountRole !== "platform_admin" ||
+        auto.approvedRevision !== c.revision ||
+        this.network(c.networkId).status !== "active"
+      ) {
+        auto.enabled = false;
+        c.paused = true;
+        auto.lastError =
+          "Automatik angehalten. Berechtigung, Netzwerkstatus oder Textversion bitte erneut prüfen.";
+        await this.store.persist();
+        return;
+      }
+      const scope = new Set(auto.recipientIds);
+      if (!this.eligible(c).some((lead) => scope.has(lead.id))) {
+        auto.enabled = false;
+        await this.store.persist();
+        return;
+      }
+      auto.nextAt = new Date(Date.now() + 1_800_000).toISOString();
+      try {
+        await this.store.persist();
+        const result = await this.dispatchBatch(
+          actor,
+          c.id,
+          {
+            confirmName: c.name,
+            revision: c.revision,
+            expectedCount: this.eligible(c).length,
+          },
+          scope,
+        );
+        auto.lastError = undefined;
+        if (result.uncertain) {
+          auto.enabled = false;
+          c.paused = true;
+          auto.lastError =
+            "Versandstatus unklar. Bitte vor dem Fortsetzen prüfen.";
+        }
+        if (!this.eligible(c).some((lead) => scope.has(lead.id)))
+          auto.enabled = false;
+        await this.store.persist();
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Versand konnte nicht fortgesetzt werden.";
+        if (/limit|Versandlauf läuft/i.test(message)) {
+          auto.nextAt = new Date(Date.now() + 60_000).toISOString();
+          auto.lastError = message;
+        } else {
+          auto.enabled = false;
+          c.paused = true;
+          auto.lastError =
+            "Automatik angehalten. Bitte Versandkonfiguration und Status prüfen.";
+        }
+        await this.store.persist();
+      }
+    } finally {
+      this.automaticBusy = false;
+    }
   }
   async sendBatch(
     authorization: string | undefined,
     id: string,
     input: Record<string, unknown>,
   ) {
-    const actor = this.owner(authorization),
-      c = this.campaign(id),
+    const actor = this.owner(authorization);
+    if (this.campaign(id).automatic?.enabled)
+      throw new BadRequestException(
+        "Automatischer Versand ist aktiv. Bitte zuerst stoppen.",
+      );
+    return this.dispatchBatch(actor, id, input);
+  }
+  private async dispatchBatch(
+    actor: { id: string },
+    id: string,
+    input: Record<string, unknown>,
+    scope?: Set<string>,
+  ) {
+    const c = this.campaign(id),
       n = this.network(c.networkId);
-    if (c.paused) throw new BadRequestException("Mailing ist gestoppt. Vor einem weiteren Versand ausdrücklich fortsetzen.");
+    if (c.paused)
+      throw new BadRequestException(
+        "Mailing ist gestoppt. Vor einem weiteren Versand ausdrücklich fortsetzen.",
+      );
     this.api();
     if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM_EMAIL)
       throw new ServiceUnavailableException(
@@ -517,12 +712,23 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       .map((delivery) => Date.parse(delivery.startedAt));
     const now = Date.now();
     const startedInHour = attempts.filter((at) => at > now - 3_600_000).length;
-    const startedInHalfHour = attempts.filter((at) => at > now - 1_800_000).length;
+    const startedInHalfHour = attempts.filter(
+      (at) => at > now - 1_800_000,
+    ).length;
     if (startedInHour >= 40)
-      throw new BadRequestException("Stundenlimit erreicht: maximal 40 Mailing-E-Mails innerhalb von 60 Minuten. Bitte später erneut freigeben.");
+      throw new BadRequestException(
+        "Stundenlimit erreicht: maximal 40 Mailing-E-Mails innerhalb von 60 Minuten. Bitte später erneut freigeben.",
+      );
     if (startedInHalfHour >= 20)
-      throw new BadRequestException("Halbstundenlimit erreicht: maximal 20 Mailing-E-Mails innerhalb von 30 Minuten. Bitte später erneut freigeben.");
-    const rows = this.eligible(c).slice(0, Math.min(20 - startedInHalfHour, 40 - startedInHour, 200 - sentToday));
+      throw new BadRequestException(
+        "Halbstundenlimit erreicht: maximal 20 Mailing-E-Mails innerhalb von 30 Minuten. Bitte später erneut freigeben.",
+      );
+    const rows = this.eligible(c)
+      .filter((lead) => !scope || scope.has(lead.id))
+      .slice(
+        0,
+        Math.min(20 - startedInHalfHour, 40 - startedInHour, 200 - sentToday),
+      );
     this.sending.add(id);
     let submitted = 0,
       uncertain = 0;
@@ -574,7 +780,12 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         data: { campaignId: id, networkId: c.networkId, submitted, uncertain },
         createdAt: new Date().toISOString(),
       });
-      return { submitted, uncertain, remaining: this.eligible(c).length, paused: !!c.paused };
+      return {
+        submitted,
+        uncertain,
+        remaining: this.eligible(c).length,
+        paused: !!c.paused,
+      };
     } finally {
       this.sending.delete(id);
     }

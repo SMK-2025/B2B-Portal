@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://b2b-matching.de";
   return [
+    ["/eigenes-portal", "monthly", .95],
     ["/Leverkusen", "monthly", .9],
     ["/Koeln", "monthly", .9],
     ["", "weekly", 1], ["/loesungen", "monthly", .95], ["/funktionen", "monthly", .9], ["/so-funktionierts", "monthly", .8], ["/sicherheit", "monthly", .8],

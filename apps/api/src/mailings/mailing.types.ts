@@ -40,9 +40,23 @@ export type MailingDelivery = {
   events: MailingEvent[];
 };
 export type MailingCampaign = {
+  automatic?: {
+    enabled: boolean;
+    approvedBy: string;
+    approvedRevision: number;
+    recipientIds: string[];
+    nextAt: string;
+    lastError?: string;
+  };
   paused?: boolean;
   pausedAt?: string;
-  versions?: { revision: number; name: string; subject: string; body: string; archivedAt: string }[];
+  versions?: {
+    revision: number;
+    name: string;
+    subject: string;
+    body: string;
+    archivedAt: string;
+  }[];
   id: string;
   networkId: string;
   name: string;

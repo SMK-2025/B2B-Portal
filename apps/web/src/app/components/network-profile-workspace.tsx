@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { PartnerDocumentsEditor, type PartnerDocument } from "./partner-documents";
 import { NetworkText } from "./network-text-editor";
 
@@ -14,6 +15,7 @@ import "./partner-setup.css";
 import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
 import { verifyPartnerMediaSave } from "../lib/partner-save-verification";
+import { companySetupProgress } from "../lib/company-setup-progress";
 import { PartnerEditablePreview } from "./partner-editable-preview";
 import type { PartnerPageProfile } from "./network-members-workspace";
 
@@ -75,17 +77,24 @@ export function NetworkProfileWorkspace({service}:{service?:{networkId:string;us
   }
   useEffect(()=>{void load();},[networkId,service]);
   if(service)return <CompanyPageEditor service={service}/>;
-  const finish=()=>{setEditing(null);void load();};
-  if(editing)return <><button type="button" className="networkSecondary" onClick={finish}>← Meine Unternehmensseiten</button><CompanyPageEditor key={editing.id} pageId={editing.id==='main'?undefined:editing.id} initialAction={editing.action} onDone={finish}/></>;
+  const finish=(message?:string)=>{setEditing(null);if(message)setNotice(message);void load();};
+  if(editing)return <><button type="button" className="networkSecondary" onClick={()=>finish()}>← Meine Unternehmensseiten</button><CompanyPageEditor key={editing.id} pageId={editing.id==='main'?undefined:editing.id} initialAction={editing.action} onDone={finish}/></>;
   async function create(event:FormEvent<HTMLFormElement>){
     event.preventDefault();const form=new FormData(event.currentTarget),token=getPortalSession();if(!token)return;setBusy(true);setNotice('');
     try{const page=await portalRequest<CompanyPage>(`/networks/${networkId}/company-pages`,{token,body:{companyName:form.get('companyName'),websiteUrl:form.get('websiteUrl'),ownershipConfirmed:form.get('ownership')==='on'}});setCreating(false);setEditing({id:page.id,action:'setup'});}
     catch(e){setNotice(e instanceof Error?e.message:'Seite konnte nicht angelegt werden.');}finally{setBusy(false);}
   }
   const cards=own?[{id:'main',companyName:own.profile?.companyName||own.organization.displayName,websiteUrl:own.profile?.websiteUrl||own.organization.websiteUrl||'',profile:own.profile,reviewStatus:own.profile?.status==='published'?'approved':'draft'} as CompanyPage,...pages]:[];
+  const progress=companySetupProgress(own?.profile);
+  const published=own?.profile?.status==='published';
   return <section className="companyPagesOverview">
     <header><div><h2>Deine Unternehmen auf einen Blick</h2><p>Einrichtung und Vorschau öffnest du direkt an der jeweiligen Seite.</p></div><span>{cards.length} von 5 Seiten</span></header>
     {loading&&<p role="status">Unternehmensseiten werden geladen …</p>}
+    {!loading&&own?.canEdit&&<section className="companyJourney" aria-labelledby="company-journey-title">
+      <div><small>DEIN NÄCHSTER SCHRITT</small><h3 id="company-journey-title">{published?'Dein Unternehmen ist im Netzwerk sichtbar.':progress.ready?'Alles vorbereitet. Jetzt Vorschau prüfen.':'Mach dein Unternehmen im Netzwerk sichtbar.'}</h3><p>{published?'Entdecke die anderen Unternehmen, finde passende Leistungen und knüpfe deinen ersten Kontakt.':progress.ready?'Prüfe deinen Auftritt und veröffentliche ihn anschließend in diesem Netzwerk.':'Starte mit deiner Homepage und PagePilot AI oder ergänze deine Angaben selbst. Entwürfe bleiben unveröffentlicht.'}</p></div>
+      <ol>{progress.checks.map(check=><li key={check.title} data-complete={check.complete}><span aria-hidden="true">{check.complete?'✓':'○'}</span>{check.title}</li>)}<li data-complete={published}><span aria-hidden="true">{published?'✓':'○'}</span>Veröffentlicht</li></ol>
+      {published?<Link className="networkPrimary" href={`/portal/netzwerk/${access?.slug}/mitglieder`}>Netzwerk-Mitglieder entdecken →</Link>:<button type="button" className="networkPrimary" onClick={()=>setEditing({id:'main',action:progress.ready?'preview':'setup'})}>{progress.ready?'Vorschau prüfen & veröffentlichen':'Unternehmensseite vervollständigen'} →</button>}
+    </section>}
     <div className="companyPagesGrid">{cards.map(page=><article className="companyMiniCard" key={page.id} style={partnerBranding(page.profile)}>
       <button type="button" className="companyMiniHero" aria-label={`Vorschau von ${page.companyName} öffnen und bearbeiten`} onClick={()=>setEditing({id:page.id,action:'preview'})}>
         {page.profile?.heroImageUrl?<img src={page.profile.heroImageUrl} alt=""/>:<span className="companyMiniHeroPlaceholder">Dein Unternehmensauftritt</span>}
@@ -104,13 +113,14 @@ export function NetworkProfileWorkspace({service}:{service?:{networkId:string;us
 function CompanyPageEditor({
   service,
   pageId,initialAction,onDone,
-}: { service?: { networkId: string; userId: string };pageId?:string;initialAction?:'setup'|'preview';onDone?:()=>void } = {}) {
+}: { service?: { networkId: string; userId: string };pageId?:string;initialAction?:'setup'|'preview';onDone?:(message?:string)=>void } = {}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const returnToSetup=useRef(false);
   const [step, setStep] = useState(0);
   const [aiResult,setAiResult]=useState<{fields:number;sections:number;missing:string[]}|null>(null);
   const [aiWorking,setAiWorking]=useState(false);
   const steps = ["Unternehmen", "Leistungen", "Gestaltung", "Kontakt"];
+  useEffect(() => { if (dialog.current?.open) dialog.current.scrollTop = 0; }, [step]);
   const autoOpen = useRef(false);
   const profileForm = useRef<HTMLFormElement>(null),
     [sources, setSources] = useState<string[]>([]),
@@ -139,6 +149,7 @@ function CompanyPageEditor({
     portalRequest<Response>(profilePath, { token })
       .then((value) => {
         setData(value);
+        if (initialAction === 'setup') setStep(companySetupProgress(value.profile).nextStep);
         autoOpen.current =
           value.canEdit &&
           (initialAction==='setup' || (!value.profile && initialAction!=='preview') ||
@@ -245,7 +256,7 @@ function CompanyPageEditor({
       });
       verifyPartnerMediaSave({ heroImageUrl: hero, logoUrl: logo }, profile);
       setData((current) => (current ? { ...current, profile } : current));
-      if (publish || onDone) {dialog.current?.close();onDone?.();}
+      if (publish || onDone) {dialog.current?.close();onDone?.(publish ? pageId ? 'Deine zusätzliche Unternehmensseite wurde zur Freigabe eingereicht.' : 'Deine Unternehmensseite ist jetzt in diesem Netzwerk sichtbar.' : 'Dein Entwurf ist gespeichert. Du kannst später hier weitermachen.');}
       setNotice(
         publish
           ? pageId ? "Deine zusätzliche Unternehmensseite wurde zur Freigabe eingereicht." : "Ihre Partnerseite ist jetzt im Netzwerk veröffentlicht."
@@ -510,6 +521,7 @@ function CompanyPageEditor({
               </button>
             ))}
           </nav>
+          <div className="setupOrientation"><span>Schritt {step + 1} von 4</span><progress max={4} value={step + 1} aria-label="Aktueller Einrichtungsschritt"/><p>{['Deine Homepage kann PagePilot AI als Grundlage nutzen. Ergänze anschließend die Angaben zu deinem Unternehmen.','Zeige, was du anbietest und für wen deine Leistungen interessant sind.','Gib deinem Auftritt ein Gesicht. Logo und Titelbild sind empfohlen, aber keine Pflicht.','So erreichen dich die Mitglieder. Prüfe danach deine Vorschau und veröffentliche deine Seite.'][step]}</p></div>
         </header>
         {data.canEdit && (
           <details
@@ -986,6 +998,8 @@ function CompanyPageEditor({
                     <input
                       name="companyName"
                       required
+                      minLength={2}
+                      maxLength={160}
                       defaultValue={
                         p?.companyName || data.organization.displayName
                       }
@@ -999,6 +1013,7 @@ function CompanyPageEditor({
                     <input
                       name="tagline"
                       required
+                      minLength={5}
                       maxLength={180}
                       defaultValue={p?.tagline || ""}
                       placeholder="In einem Satz: Wofür steht Ihr Unternehmen?"
@@ -1012,6 +1027,7 @@ function CompanyPageEditor({
                     <textarea
                       name="description"
                       required
+                      minLength={30}
                       rows={6}
                       maxLength={3000}
                       defaultValue={p?.description || ""}
@@ -1026,6 +1042,8 @@ function CompanyPageEditor({
                     <input
                       name="street"
                       required
+                      minLength={3}
+                      maxLength={200}
                       defaultValue={p?.street || ""}
                       disabled={!data.canEdit}
                     />
@@ -1037,6 +1055,8 @@ function CompanyPageEditor({
                     <input
                       name="postalCode"
                       required
+                      minLength={4}
+                      maxLength={12}
                       defaultValue={p?.postalCode || ""}
                       disabled={!data.canEdit}
                     />
@@ -1048,6 +1068,8 @@ function CompanyPageEditor({
                     <input
                       name="city"
                       required
+                      minLength={2}
+                      maxLength={120}
                       defaultValue={p?.city || ""}
                       disabled={!data.canEdit}
                     />
@@ -1059,6 +1081,8 @@ function CompanyPageEditor({
                     <input
                       name="country"
                       required
+                      minLength={2}
+                      maxLength={80}
                       defaultValue={p?.country || "Deutschland"}
                       disabled={!data.canEdit}
                     />
@@ -1112,6 +1136,7 @@ function CompanyPageEditor({
                     <textarea
                       name="services"
                       required
+                      minLength={10}
                       rows={7}
                       maxLength={2000}
                       defaultValue={p?.services || ""}
@@ -1170,6 +1195,8 @@ function CompanyPageEditor({
                     <input
                       name="contactName"
                       required
+                      minLength={3}
+                      maxLength={160}
                       defaultValue={p?.contactName || ""}
                       disabled={!data.canEdit}
                     />
@@ -1181,6 +1208,8 @@ function CompanyPageEditor({
                     <input
                       name="contactPosition"
                       required
+                      minLength={2}
+                      maxLength={160}
                       defaultValue={p?.contactPosition || ""}
                       disabled={!data.canEdit}
                     />
@@ -1205,6 +1234,8 @@ function CompanyPageEditor({
                       name="contactPhone"
                       type="tel"
                       required
+                      minLength={5}
+                      maxLength={60}
                       defaultValue={p?.contactPhone || ""}
                       disabled={!data.canEdit}
                     />
@@ -1354,6 +1385,7 @@ function CompanyPageEditor({
                   Entwurf speichern
                 </NetworkText>
               </button>
+              {step === 3 && !service && <button type="button" className="networkSecondary" disabled={busy || readingDocuments} onClick={openEditablePreview}>Vorschau prüfen</button>}
               {step < 3 ? (
                 <button
                   type="button"

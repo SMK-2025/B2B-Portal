@@ -10,15 +10,17 @@ export type LaunchPromotion = {
 export function LaunchPromotionNotice({
   promotion,
   monthlyNetCents,
+  formal = false,
 }: {
   promotion?: LaunchPromotion | null;
   monthlyNetCents: number;
+  formal?: boolean;
 }) {
   if (!promotion) return null;
   const available =
     promotion.available ??
     ((promotion.remaining || 0) > 0 || promotion.reserved);
-  if(!available) return null;
+  if (!available) return null;
   return (
     <aside
       className="full"
@@ -35,14 +37,14 @@ export function LaunchPromotionNotice({
     >
       <strong style={{ fontSize: "1.15rem" }}>
         {available
-          ? `Dein Startvorteil: ${promotion.freeMonths} Monate kostenlos`
+          ? `${formal ? "Ihr" : "Dein"} Startvorteil: ${promotion.freeMonths} Monate kostenlos`
           : "Deine Mitgliedschaft im Netzwerk"}
       </strong>
       {available && (
         <p>
-          Als eines der ersten {promotion.limit} Mitglieder kannst du
-          Unternehmen entdecken, Kontakte knüpfen und dich{" "}
-          {promotion.freeMonths} Monate kostenlos vernetzen.
+          {formal
+            ? `Als eines der ersten ${promotion.limit} Mitglieder können Sie Unternehmen entdecken, Kontakte knüpfen und sich ${promotion.freeMonths} Monate kostenlos vernetzen.`
+            : `Als eines der ersten ${promotion.limit} Mitglieder kannst du Unternehmen entdecken, Kontakte knüpfen und dich ${promotion.freeMonths} Monate kostenlos vernetzen.`}
         </p>
       )}
     </aside>

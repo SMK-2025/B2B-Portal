@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { portalRequest } from "../lib/portal-api";
-import { LaunchPromotionNotice, type LaunchPromotion } from "./launch-promotion-notice";
+import {
+  LaunchPromotionNotice,
+  type LaunchPromotion,
+} from "./launch-promotion-notice";
 type Offer = {
   launchPromotion?: LaunchPromotion | null;
   monthlyNetCents: number;
@@ -27,9 +30,11 @@ const date = (d: string) =>
 export function LeverkusenOffer({
   requestHref,
   networkSlug = "unternehmernetzwerkleverkusen",
+  formal = false,
 }: {
   requestHref: string;
   networkSlug?: string;
+  formal?: boolean;
 }) {
   const [offer, setOffer] = useState<Offer | null>(null),
     [error, setError] = useState(false);
@@ -50,7 +55,9 @@ export function LeverkusenOffer({
   }, [networkSlug]);
   return (
     <aside className="levOffer" aria-label="Aktuelle Teilnahmebedingungen">
-      <span className="levEyebrow">DEINE NETZWERKTEILNAHME</span>
+      <span className="levEyebrow">
+        {formal ? "IHRE NETZWERKTEILNAHME" : "DEINE NETZWERKTEILNAHME"}
+      </span>
       <h3>
         Alle Verbindungen.
         <br />
@@ -66,7 +73,11 @@ export function LeverkusenOffer({
             </p>
           ) : (
             <>
-              <LaunchPromotionNotice promotion={offer.launchPromotion} monthlyNetCents={offer.monthlyNetCents}/>
+              <LaunchPromotionNotice
+                promotion={offer.launchPromotion}
+                monthlyNetCents={offer.monthlyNetCents}
+                formal={formal}
+              />
               <p className="levOfferPrice">
                 <strong>{money(offer.monthlyNetCents)}</strong>
                 <span>netto pro Monat · zzgl. {offer.vatPercent} % MwSt.</span>
@@ -103,7 +114,9 @@ export function LeverkusenOffer({
         ) : (
           <p>
             {error
-              ? "Die aktuellen Konditionen siehst du im Anmeldeprozess. Hier werden bewusst keine möglicherweise veralteten Preise angezeigt."
+              ? formal
+                ? "Die aktuellen Konditionen sehen Sie im Anmeldeprozess."
+                : "Die aktuellen Konditionen siehst du im Anmeldeprozess. Hier werden bewusst keine möglicherweise veralteten Preise angezeigt."
               : "Aktuelle Konditionen werden aus dem Netzwerk geladen …"}
           </p>
         )}
@@ -111,16 +124,16 @@ export function LeverkusenOffer({
       <ul>
         <li>Eigene Unternehmensseite</li>
         <li>Mitgliederverzeichnis & Vernetzung</li>
-        <li>PartnerChat, Angebote & Gesuche</li>
+        <li>Mitglieder-Chat, Angebote & Gesuche</li>
         <li>Schwarzes Brett & Veranstaltungen</li>
       </ul>
       <a className="levPrimary" href={requestHref}>
         Teilnahme anfragen <span aria-hidden="true">↗</span>
       </a>
       <small>
-        Die Anfrage allein löst noch keine Rechnung aus. Nach Freigabe
-        bestätigst du die Buchung mit deinen Rechnungsangaben. Maßgeblich sind
-        die dann angezeigten Konditionen.
+        {formal
+          ? "Die Anfrage allein löst noch keine Rechnung aus. Nach Freigabe bestätigen Sie die Buchung mit Ihren Rechnungsangaben. Maßgeblich sind die dann angezeigten Konditionen."
+          : "Die Anfrage allein löst noch keine Rechnung aus. Nach Freigabe bestätigst du die Buchung mit deinen Rechnungsangaben. Maßgeblich sind die dann angezeigten Konditionen."}
       </small>
     </aside>
   );

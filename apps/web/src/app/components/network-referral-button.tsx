@@ -1,10 +1,11 @@
 "use client";
 import { NetworkText } from "./network-text-editor";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 export function NetworkReferralButton({ networkId }: { networkId: string }) {
   const [busy, setBusy] = useState(false);
   const referralDialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   const [referralLink, setReferralLink] = useState(""),
     [recipient, setRecipient] = useState(""),
     [informed, setInformed] = useState(false),
@@ -75,7 +76,7 @@ export function NetworkReferralButton({ networkId }: { networkId: string }) {
       </button>
       <dialog
         ref={referralDialog}
-        aria-labelledby="referral-title"
+        aria-labelledby={titleId}
         className="referralDialog"
       >
         <div className="referralHeader">
@@ -85,7 +86,7 @@ export function NetworkReferralButton({ networkId }: { networkId: string }) {
                 Persönliche Einladung
               </NetworkText>
             </span>
-            <h2 id="referral-title">
+            <h2 id={titleId}>
               <NetworkText id="ui.network-referral-button.2489be64eb08abd2">
                 Netzwerk empfehlen
               </NetworkText>

@@ -2310,7 +2310,7 @@ export class NetworksService {
         ...member, id: member.id + '~' + p.id,
         organization: {...member.organization!, displayName:p.profile!.companyName,legalName:p.companyName,websiteUrl:p.websiteUrl,networkProfile:{status:p.profile!.status,logoUrl:p.profile!.logoUrl,companyName:p.profile!.companyName,tagline:p.profile!.tagline,services:p.profile!.services,contactName:p.profile!.contactName,primaryColor:p.profile!.primaryColor,secondaryColor:p.profile!.secondaryColor}},
       }))];
-    }).filter(member => (!status || member.status===status) && `${member.organization?.displayName||''} ${member.user?.firstName||''} ${member.user?.lastName||''} ${member.organization?.networkProfile?.services||''} ${member.organization?.networkProfile?.tagline||''}`.toLowerCase().includes(query));
+    }).filter(member => (this.isNetworkManager(user.id,networkId) || member.organization?.networkProfile?.status==='published') && (!status || member.status===status) && `${member.organization?.displayName||''} ${member.user?.firstName||''} ${member.user?.lastName||''} ${member.organization?.networkProfile?.services||''} ${member.organization?.networkProfile?.tagline||''}`.toLowerCase().includes(query));
     const entryPage=Math.min(page,Math.max(1,Math.ceil(entries.length/pageSize)));
     return {items:entries.slice((entryPage-1)*pageSize,entryPage*pageSize),total:entries.length,page:entryPage,pageSize};
   }
@@ -2324,6 +2324,8 @@ export class NetworksService {
       if(!page)throw new NotFoundException('Diese Unternehmensseite ist nicht verfügbar.');
       return {...member,organization:{...member.organization!,displayName:page.profile!.companyName,legalName:page.companyName,websiteUrl:page.websiteUrl,networkProfile:page.profile!}};
     }
+    const actor=this.auth.authenticate(authorization);
+    if(member.organization?.networkProfile?.status!=='published' && !this.isNetworkManager(actor.id,networkId))throw new NotFoundException('Diese Unternehmensseite ist noch nicht veröffentlicht.');
     return member;
   }
   memberHero(authorization:string|undefined,networkId:string,id:string){

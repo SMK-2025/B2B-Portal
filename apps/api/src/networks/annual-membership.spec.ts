@@ -6,6 +6,18 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it('hides unpublished companies from members in directory, detail and hero but keeps manager access',async()=>{
+    const f=await fixture();const org=f.orgs.create(f.member,f.input,true);const membership=f.store.networkMemberships[0];
+    org.networkProfile={status:'draft',companyName:'Private draft',tagline:'Draft',heroImageUrl:'private-image'} as any;
+    expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(0);
+    expect(()=>f.networks.memberDetail(f.member,f.network.id,membership.id)).toThrow(/nicht veröffentlicht/);
+    expect(()=>f.networks.memberHero(f.member,f.network.id,membership.id)).toThrow();
+    expect(f.networks.memberPage(f.owner,f.network.id,{}).total).toBe(1);
+    expect(f.networks.memberDetail(f.owner,f.network.id,membership.id).organization?.networkProfile?.status).toBe('draft');
+    org.networkProfile!.status='published';
+    expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(1);
+    expect(f.networks.memberHero(f.member,f.network.id,membership.id).heroImageUrl).toBe('private-image');
+  });
   it('limits own company pages, requires ownership and prevents duplicate homepage variants',async()=>{
     const f=await fixture();f.orgs.create(f.member,f.input,true);
     expect(()=>f.networks.createCompanyPage(f.member,f.network.id,{companyName:'Brand',websiteUrl:'https://brand.test'})).toThrow(/bestätigen/);
@@ -22,7 +34,7 @@ describe("personal annual membership billing", () => {
     const profile={companyName:'Other Brand',websiteUrl:'https://other-brand.test',tagline:'Eigene digitale Marke',description:'Eine eigenständige Marke für unsere digitalen Leistungen und Produkte.',services:'Software und Beratung',street:'Teststraße 12',postalCode:'12345',city:'Teststadt',country:'Deutschland',contactName:'Mara Partner',contactPosition:'Inhaberin',contactEmail:'partner@example.de',contactPhone:'0123456789',heroImageUrl:'data:image/webp;base64,'+'A'.repeat(1024),publish:true};
     const saved=f.networks.saveCompanyPage(f.member,f.network.id,page.id,profile);expect(saved.status).toBe('draft');expect(page.reviewStatus).toBe('pending');
     const membership=f.store.networkMemberships[0],directoryId=membership.id+'~'+page.id;
-    expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(1);
+    expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(0);
     expect(()=>f.networks.memberDetail(f.member,f.network.id,directoryId)).toThrow();
     expect(()=>f.networks.memberHero(f.member,f.network.id,directoryId)).toThrow();
     expect(()=>f.networks.decideCompanyPage(f.member,f.network.id,membership.userId,page.id,{decision:'approved'})).toThrow();
@@ -37,7 +49,7 @@ describe("personal annual membership billing", () => {
     expect(()=>f.networks.memberDetail(f.owner,other.id,directoryId)).toThrow();
     expect(()=>f.networks.memberHero(f.owner,other.id,directoryId)).toThrow();
     f.networks.saveCompanyPage(f.member,f.network.id,page.id,{...profile,tagline:'Geänderter Auftritt'});expect(page.reviewStatus).toBe('pending');expect(page.profile?.status).toBe('draft');
-    expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(1);
+    expect(f.networks.memberPage(f.member,f.network.id,{}).total).toBe(0);
     const source=f.store.users.get(membership.userId)!;
     f.store.users.set('other-owner',{...source,id:'other-owner',email:'other-owner@example.de'});f.store.userByEmail.set('other-owner@example.de','other-owner');
     const org=f.store.organizations.get(membership.organizationId)!;f.store.organizations.set('other-org',{...org,id:'other-org',additionalCompanyPages:[]});
@@ -57,7 +69,7 @@ describe("personal annual membership billing", () => {
       f.store.networkMemberships.push({id:'page-'+i,networkId:f.network.id,userId:uid,organizationId:oid,role:'member',status:'active'} as any);
     }
     const page=f.networks.memberPage(f.member,f.network.id,{page:2,pageSize:12});
-    expect(page.items).toHaveLength(12);expect(page.total).toBe(31);
+    expect(page.items).toHaveLength(12);expect(page.total).toBe(30);
     expect(JSON.stringify(page.items)).not.toContain('data:image/webp');expect(JSON.stringify(page.items)).not.toContain('Nur im Profil');
     expect(f.networks.memberDetail(f.member,f.network.id,page.items[0].id).organization?.networkProfile).toHaveProperty('heroImageUrl');
     expect(f.networks.memberHero(f.member,f.network.id,page.items[0].id).heroImageUrl).toBe(org.networkProfile.heroImageUrl);

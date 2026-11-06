@@ -2,6 +2,7 @@
 import { PartnerDocuments, type PartnerDocument } from "./partner-documents";
 import { NetworkText } from "./network-text-editor";
 import { NetworkConnectionButton } from "./network-connections";
+import { NetworkReferralButton } from "./network-referral-button";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -152,7 +153,7 @@ export function NetworkMembersWorkspace() {
     if(!networkId)return;openedFromLink.current = networkId + id;
     void openMember(id);
   }, [networkId, profileId]);
-  const visible=members;
+  const visible=members.filter(member=>canManage || member.organization?.networkProfile?.status==='published');
   async function change(member: Member, status: Member["status"]) {
     const token = getPortalSession();
     if (!token || !canManage) return;
@@ -362,6 +363,13 @@ export function NetworkMembersWorkspace() {
               </article>
             );
           })}
+          <article className="networkDirectoryReferralCard">
+            <span className="networkDirectoryReferralIcon" aria-hidden="true">↗</span>
+            <span>GEMEINSAM VERNETZEN</span>
+            <h3>Gute Kontakte wachsen durch Empfehlungen.</h3>
+            <p>Du kennst ein Unternehmen, das zu diesem Netzwerk passt? Lade es ein oder teile deinen persönlichen Empfehlungslink.</p>
+            {!access?.readOnly && access?.role !== 'platform_admin' ? <NetworkReferralButton networkId={networkId}/> : <p className="networkDirectoryReferralHint">Mitglieder können dieses Netzwerk über ihren persönlichen Zugang empfehlen.</p>}
+          </article>
         </div>
         {total>12 && <nav className="networkDirectoryPagination" aria-label="Mitgliederseiten">
           <button type="button" className="networkSecondary" disabled={loading||page<=1} onClick={()=>setPage(p=>p-1)}>← Zurück</button>

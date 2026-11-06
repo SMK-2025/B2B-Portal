@@ -377,7 +377,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       logo =
         this.api() + "/api/mailings/public/brand/" + encodeURIComponent(n.id);
     else if (n.logoUrl === "/images/unternehmernetzwerk-koeln.svg")
-      logo = this.web() + "/images/unternehmernetzwerk-koeln-mail.png";
+      logo = this.web() + "/images/b2b-matching-logo-brand.png";
     else if (
       n.logoUrl &&
       /^\/images\/[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp)$/i.test(n.logoUrl) &&

@@ -44,7 +44,7 @@ import {
   resetTestMember,
 } from "./retire-legacy-initiator";
 import type { MailingCampaign, MailingLead } from "../mailings/mailing.types";
-import { provisionKoeln } from "./provision-koeln";
+import { provisionKoeln, replaceKoelnLogo } from "./provision-koeln";
 import {
   configureKoelnLaunch,
   disableAutomaticRenewals,
@@ -270,6 +270,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
     if (process.env.NODE_ENV === "production" && provisionKoeln(this)) {
       await this.persist();
     }
+    if (process.env.NODE_ENV === 'production' && replaceKoelnLogo(this)) await this.persist();
     if (process.env.NODE_ENV === "production" && configureKoelnLaunch(this))
       await this.persist();
     const billingUpdate = "bayer04-season-january-2027-v1";

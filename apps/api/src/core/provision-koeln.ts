@@ -3,6 +3,17 @@ import type { PortalStore } from "./portal.store";
 import { fullPortalModules } from "../networks/annual-membership";
 
 const receipt = "provision-unternehmernetzwerk-koeln-2026-11-04-v1";
+
+/** Operator-requested logo replacement, restricted to the Cologne network. */
+export function replaceKoelnLogo(store: PortalStore): boolean {
+  const key = 'koeln-b2b-logo-2026-11-06-v1';
+  if (store.maintenanceReceipts.has(key)) return false;
+  const network = [...store.networks.values()].find(n => n.slug === 'unternehmernetzwerkkoeln');
+  if (!network) return false;
+  network.logoUrl = '/images/b2b-matching-logo-brand.png';
+  store.maintenanceReceipts.set(key, {state:'applied', completedAt:new Date().toISOString()});
+  return true;
+}
 /** One-time operator-requested provisioning. No users, emails or invoices are created. */
 export function provisionKoeln(store: PortalStore): boolean {
   if (store.maintenanceReceipts.has(receipt)) return false;
@@ -34,7 +45,7 @@ export function provisionKoeln(store: PortalStore): boolean {
     name: "Unternehmernetzwerk Köln",
     legalName: null,
     websiteUrl: "https://b2b-matching.de/Koeln",
-    logoUrl: "/images/unternehmernetzwerk-koeln.svg",
+    logoUrl: "/images/b2b-matching-logo-brand.png",
     primaryColor: "#c8102e",
     secondaryColor: "#171717",
     status: "active",

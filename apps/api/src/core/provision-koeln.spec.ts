@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PortalStore } from "./portal.store";
-import { provisionKoeln } from "./provision-koeln";
+import { provisionKoeln, replaceKoelnLogo } from "./provision-koeln";
 
 function fixture() {
   const s = new PortalStore();
@@ -13,6 +13,20 @@ function fixture() {
   return s;
 }
 describe("owner-requested Cologne provisioning", () => {
+  it('replaces only the Cologne logo and preserves all other settings', () => {
+    const s = fixture();
+    provisionKoeln(s);
+    const network = [...s.networks.values()].find(n => n.slug === 'unternehmernetzwerkkoeln')!;
+    network.logoUrl = '/images/unternehmernetzwerk-koeln.svg';
+    const before = JSON.stringify({...network,logoUrl:null});
+    const other = JSON.stringify(s.networks.get('lev'));
+    expect(replaceKoelnLogo(s)).toBe(true);
+    expect(network.logoUrl).toBe('/images/b2b-matching-logo-brand.png');
+    expect(JSON.stringify({...network,logoUrl:null})).toBe(before);
+    expect(JSON.stringify(s.networks.get('lev'))).toBe(other);
+    expect(replaceKoelnLogo(s)).toBe(false);
+    expect(s.operatorMails.size).toBe(0);
+  });
   it("creates an isolated active network with approved pricing and no memberships or orders", () => {
     const s = fixture(),
       before = JSON.stringify(s.networks.get("lev"));

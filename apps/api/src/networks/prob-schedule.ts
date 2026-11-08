@@ -82,8 +82,8 @@ export const PROB_GAMES: ProBGame[] = [
     startsAt: "2026-11-07T18:00:00+01:00",
     opponent: "Porsche BBA Ludwigsburg",
     home: true,
-    officialGiantsScore: null,
-    officialOpponentScore: null,
+    officialGiantsScore: 89,
+    officialOpponentScore: 60,
   },
   {
     id: "2026-11-15-fellbach",

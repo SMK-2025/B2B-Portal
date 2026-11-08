@@ -5,8 +5,8 @@ export const BUNDESLIGA_SOURCE =
   "https://www.bundesliga.com/de/bundesliga/spieltag/2026-2027/bayer-04-leverkusen";
 export const BUNDESLIGA_TABLE_SOURCE =
   "https://www.bundesliga.com/de/bundesliga/tabelle";
-export const BUNDESLIGA_AS_OF = "2026-11-01";
-// Official Bundesliga snapshot, checked 26 October 2026 after matchday 7. Dates without a kickoff
+export const BUNDESLIGA_AS_OF = "2026-11-08";
+// Official Bundesliga snapshot, checked 8 November 2026 before Sunday's games. Dates without a kickoff
 // remain matchday windows, never advertised as confirmed appointments.
 const clubs = [
   ["FCB", "FC Bayern München", "00000G"],
@@ -92,42 +92,42 @@ export const BUNDESLIGA_GAMES: BundesligaGame[] = fixtures.map(
 const standingsOrder = [
   "FCB",
   "BVB",
-  "SCF",
   "RBL",
+  "SCF",
   "SVW",
   "B04",
   "ELV",
-  "M05",
-  "FCA",
   "VFB",
-  "TSG",
-  "SCP",
-  "HSV",
-  "KOE",
   "SGE",
-  "S04",
+  "HSV",
+  "M05",
+  "SCP",
+  "FCA",
+  "TSG",
+  "KOE",
   "FCU",
+  "S04",
   "BMG",
 ];
 const rows = [
-  [5, 3, 0, 27, 8, 18],
-  [5, 3, 0, 14, 6, 18],
+  [6, 3, 0, 29, 9, 21],
+  [6, 3, 0, 16, 7, 21],
+  [6, 0, 3, 27, 13, 18],
   [5, 1, 2, 18, 10, 16],
-  [5, 0, 3, 22, 11, 15],
-  [4, 3, 1, 17, 14, 15],
+  [4, 3, 2, 17, 15, 15],
   [4, 1, 3, 18, 16, 13],
-  [4, 1, 3, 16, 16, 13],
-  [3, 1, 4, 17, 17, 10],
-  [2, 3, 3, 18, 15, 9],
-  [3, 0, 5, 14, 15, 9],
+  [4, 1, 4, 17, 18, 13],
+  [4, 0, 5, 15, 15, 12],
+  [3, 3, 3, 15, 20, 12],
+  [4, 0, 5, 10, 20, 12],
+  [3, 1, 5, 18, 19, 10],
+  [2, 4, 3, 8, 11, 10],
+  [2, 3, 4, 20, 20, 9],
   [3, 0, 5, 14, 16, 9],
-  [2, 3, 3, 6, 9, 9],
-  [3, 0, 4, 6, 16, 9],
-  [2, 2, 3, 8, 11, 8],
-  [2, 2, 3, 10, 17, 8],
+  [2, 3, 3, 9, 12, 9],
+  [1, 4, 3, 7, 19, 7],
   [1, 3, 4, 4, 9, 6],
-  [1, 3, 3, 6, 18, 6],
-  [1, 1, 6, 11, 22, 4],
+  [1, 1, 7, 12, 25, 4],
 ];
 export const BUNDESLIGA_TABLE = rows.map(
   ([wins, draws, losses, goalsFor, goalsAgainst, points], index) => ({

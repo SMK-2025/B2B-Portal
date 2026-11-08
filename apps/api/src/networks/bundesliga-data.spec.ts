@@ -16,7 +16,8 @@ describe("official Bundesliga data", () => {
       dflDatalibrarySeasonId: "DFL-SEA-0001KA",
       matchday: 8,
       teams: { home: { nameFull: g.home }, away: { nameFull: g.away } },
-      matchStatus: index ? "FINAL_WHISTLE" : "PRE_MATCH",
+      matchStatus:
+        index && g.homeScore !== null ? "FINAL_WHISTLE" : "PRE_MATCH",
       matchDateFixed: true,
       plannedKickOff: g.kickoff,
       score: {
@@ -30,9 +31,9 @@ describe("official Bundesliga data", () => {
     );
     expect(rows).toHaveLength(9);
     expect(rows[0].homeScore).toBeNull();
-    expect(rows.find((r) => r.home === "Bayer 04 Leverkusen")).toMatchObject({
+    expect(rows.find((r) => r.home === "Borussia Dortmund")).toMatchObject({
       homeScore: 2,
-      awayScore: 4,
+      awayScore: 1,
     });
     expect(() => parseOfficialRound(page(games.slice(1)), 8)).toThrow();
   });

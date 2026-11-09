@@ -819,6 +819,10 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         verified: count("verified") > 0,
         delivered: count("delivered") > 0,
         bounced: count("bounce") > 0,
+        dropped: count("dropped") > 0,
+        deferred: count("deferred") > 0,
+        spamReported: count("spamreport") > 0,
+        unsubscribed: !!lead && this.store.mailingSuppressions.get(tokenHash(lead.email))?.reason === "recipient_unsubscribed",
         automatedSignals: d.events.filter((e) => e.automated).length,
         events: d.events,
       };
@@ -828,6 +832,9 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       stats: {
         submitted: recipients.filter((r) => r.state === "submitted").length,
         delivered: recipients.filter((r) => r.delivered).length,
+        opened: recipients.filter((r) => r.imageRequests > 0).length,
+        failed: recipients.filter((r) => r.bounced || r.dropped).length,
+        unsubscribed: recipients.filter((r) => r.unsubscribed).length,
         uncertain: recipients.filter((r) => r.state !== "submitted").length,
         clicked: recipients.filter(
           (r) => r.homepageClicks + r.landingClicks + r.registerClicks > 0,
@@ -978,6 +985,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         ) ||
         !Number.isFinite(e.timestamp) ||
         e.timestamp < 0 ||
+        e.timestamp < Date.now() / 1000 - 180 * 86400 ||
         e.timestamp > Date.now() / 1000 + 300 ||
         typeof e.sg_event_id !== "string" ||
         d.events.some((x) => x.providerId === e.sg_event_id)

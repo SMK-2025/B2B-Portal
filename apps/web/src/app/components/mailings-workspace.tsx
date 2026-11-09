@@ -35,6 +35,11 @@ type Recipient = {
   verified: boolean;
   delivered: boolean;
   bounced: boolean;
+  dropped?: boolean;
+  deferred?: boolean;
+  spamReported?: boolean;
+  unsubscribed?: boolean;
+  tracking?: boolean;
   automatedSignals: number;
   error?: string;
   events: Array<{
@@ -86,6 +91,10 @@ export function MailingsWorkspace() {
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
   const [sendingId, setSendingId] = useState("");
+  const [reportSearch, setReportSearch] = useState("");
+  const [reportFilter, setReportFilter] = useState("all");
+  const [reportPage, setReportPage] = useState(0);
+  useEffect(() => setReportPage(0), [selected, reportSearch, reportFilter, network]);
   const [stopping, setStopping] = useState(false);
   const [csv, setCsv] = useState<ReturnType<typeof parseMailingCsv>>([]),
     [source, setSource] = useState(""),
@@ -102,6 +111,18 @@ export function MailingsWorkspace() {
     [confirmName, setConfirmName] = useState("");
   const current = networks.find((n) => n.id === network),
     campaign = data?.campaigns.find((c) => c.id === selected);
+  const reportRecipients = (campaign?.recipients || []).filter((r) => {
+    if (!`${r.email} ${r.company}`.toLocaleLowerCase().includes(reportSearch.trim().toLocaleLowerCase())) return false;
+    if (reportFilter === "delivered") return r.delivered;
+    if (reportFilter === "opened") return r.imageRequests > 0;
+    if (reportFilter === "clicked") return r.homepageClicks + r.landingClicks + r.registerClicks > 0;
+    if (reportFilter === "failed") return r.bounced || r.dropped || r.spamReported || r.state !== "submitted";
+    if (reportFilter === "unsubscribed") return r.unsubscribed;
+    if (reportFilter === "registered") return r.registered;
+    return true;
+  });
+  const reportPages = Math.max(1, Math.ceil(reportRecipients.length / 25));
+  const safeReportPage = Math.min(reportPage, reportPages - 1);
   async function request<T>(path: string, body?: unknown) {
     const token = getPortalSession();
     if (!token) throw new Error("Bitte als Plattformbetreiber anmelden.");
@@ -819,7 +840,7 @@ export function MailingsWorkspace() {
           )}
           {tab === "reports" && (
             <div className="mailingCard">
-              <h3>Ergebnisse nachvollziehen</h3>
+              <h3>Mailing-Ergebnisse im Überblick</h3>
               <label>
                 Mailing
                 <select
@@ -845,7 +866,7 @@ export function MailingsWorkspace() {
                 Aktualisieren
               </button>
               <p className="mailingExplanation">
-                Bildabrufe sind keine sicheren Öffnungen. Mailprogramme,
+                Zustellung bedeutet: Der empfangende Mailserver hat die E-Mail angenommen, nicht zwingend der Posteingang. Bildabrufe sind keine sicheren Öffnungen. Mailprogramme,
                 Bild-Proxys und Sicherheitsprüfungen können Aufrufe auslösen.
                 Erkannte automatisierte Signale werden getrennt gezählt; nicht
                 alle sind erkennbar. Eine Registrierung wird nur bei passender
@@ -856,32 +877,34 @@ export function MailingsWorkspace() {
                 <>
                   <div className="mailingStats">
                     {[
-                      ["Übergeben", campaign.stats.submitted],
-                      ["Mailserver angenommen", campaign.stats.delivered],
-                      ["Kontakte mit Klick", campaign.stats.clicked],
-                      ["Registriert", campaign.stats.registered],
-                      ["E-Mail bestätigt", campaign.stats.verified],
-                    ].map(([label, count]) => (
-                      <div key={label}>
+                      ["Übergeben", campaign.stats.submitted, "all"],
+                      ["Zugestellt · Mailserver", data.readiness.deliveryWebhook ? campaign.stats.delivered : "–", "delivered"],
+                      ["Öffnungssignal", campaign.stats.opened ?? campaign.recipients.filter(r => r.imageRequests > 0).length, "opened"],
+                      ["Kontakte mit Klick", campaign.stats.clicked, "clicked"],
+                      ["Registriert", campaign.stats.registered, "registered"],
+                      ["Abgemeldet", campaign.stats.unsubscribed ?? 0, "unsubscribed"],
+                    ].map(([label, count, filter]) => (
+                      <button type="button" className={reportFilter === filter ? "reportStat selected" : "reportStat"} key={label} onClick={() => setReportFilter(String(filter))}>
                         <strong>{count}</strong>
                         <span>{label}</span>
-                      </div>
+                      </button>
                     ))}
                   </div>
-                  <div className="mailingTable">
+                  {!data.readiness.deliveryWebhook && <p className="mailingExplanation">Zustellrückmeldungen sind noch nicht verbunden. Fehlende Rückmeldungen bedeuten nicht, dass die E-Mails unzustellbar sind.</p>}
+                  <div className="mailingReportTools">
+                    <label>Kontakt suchen<input type="search" placeholder="Unternehmen oder E-Mail-Adresse" value={reportSearch} onChange={e => setReportSearch(e.target.value)} /></label>
+                    <label>Ergebnisse filtern<select value={reportFilter} onChange={e => setReportFilter(e.target.value)}><option value="all">Alle Kontakte</option><option value="delivered">Zugestellt</option><option value="opened">Mit Öffnungssignal</option><option value="clicked">Mit Linkklick</option><option value="registered">Registriert</option><option value="failed">Versandprobleme</option><option value="unsubscribed">Abgemeldet</option></select></label>
+                  </div>
+                  <div className="mailingTable mailingReportTable">
                     <table>
                       <thead>
                         <tr>
                           {[
                             "Kontakt",
                             "Versandstatus",
-                            "Bildabrufe*",
-                            "Homepage",
-                            "Landingpage",
-                            "Anmeldung",
-                            "Seitenaufrufe*",
+                            "Öffnungssignal",
+                            "Linkklicks",
                             "Registrierung",
-                            "Automat. Signale*",
                             "Verlauf",
                           ].map((h) => (
                             <th key={h}>{h}</th>
@@ -889,30 +912,28 @@ export function MailingsWorkspace() {
                         </tr>
                       </thead>
                       <tbody>
-                        {campaign.recipients.map((r) => (
+                        {reportRecipients.slice(safeReportPage * 25, safeReportPage * 25 + 25).map((r) => (
                           <tr key={r.leadId}>
                             <td>
-                              {r.email}
-                              <br />
-                              {r.company}
+                              <strong>{r.company || r.email}</strong>
+                              {r.company && <small>{r.email}</small>}
                             </td>
                             <td>
-                              {r.bounced
+                              <span className={`mailingStatus ${r.bounced || r.dropped ? "bad" : r.delivered ? "good" : "pending"}`}>{r.bounced
                                 ? "Unzustellbar"
+                                : r.dropped ? "Nicht versendet" : r.spamReported ? "Spam gemeldet"
                                 : r.delivered
-                                  ? "Mailserver angenommen"
+                                  ? "Zugestellt"
+                                  : r.deferred ? "Zustellung verzögert"
                                   : r.state === "submitted"
-                                    ? "An Versanddienst übergeben"
-                                    : "Unklar – kein Neuversand"}
-                              <br />
-                              {stamp(r.submittedAt)}
+                                    ? "Übergeben · Rückmeldung offen"
+                                    : "Versand unklar"}</span>
+                              <small>{stamp(r.submittedAt)}</small>
+                              {r.unsubscribed && <small>Abgemeldet</small>}
                               {r.error && <p>{r.error}</p>}
                             </td>
-                            <td>{r.imageRequests}</td>
-                            <td>{r.homepageClicks}</td>
-                            <td>{r.landingClicks}</td>
-                            <td>{r.registerClicks}</td>
-                            <td>{r.views}</td>
+                            <td>{r.imageRequests > 0 ? <span className="mailingStatus good">Signal erkannt · {r.imageRequests}</span> : r.tracking === false ? "Nicht erfasst" : "Kein Signal"}{r.automatedSignals > 0 && <small>{r.automatedSignals} automatische Signale</small>}</td>
+                            <td><div className="mailingClickChips"><span>Landingpage <b>{r.landingClicks}</b></span><span>Registrierung <b>{r.registerClicks}</b></span><span>Homepage <b>{r.homepageClicks}</b></span></div></td>
                             <td>
                               {r.verified
                                 ? "E-Mail bestätigt"
@@ -920,10 +941,9 @@ export function MailingsWorkspace() {
                                   ? "Registriert"
                                   : "–"}
                             </td>
-                            <td>{r.automatedSignals}</td>
                             <td>
                               <button onClick={() => setEvents(r)}>
-                                Ansehen
+                                Details
                               </button>
                             </td>
                           </tr>
@@ -931,6 +951,8 @@ export function MailingsWorkspace() {
                       </tbody>
                     </table>
                   </div>
+                  {reportRecipients.length === 0 && <p>Keine passenden Kontakte gefunden.</p>}
+                  <div className="mailingPagination"><span>{reportRecipients.length} Kontakte · Seite {safeReportPage + 1} von {reportPages}</span><div><button disabled={safeReportPage === 0} onClick={() => setReportPage(safeReportPage - 1)}>← Zurück</button><button disabled={safeReportPage + 1 >= reportPages} onClick={() => setReportPage(safeReportPage + 1)}>Weiter →</button></div></div>
                   <p>
                     * Nur bei dokumentierter Trackingfreigabe. Signale sind
                     keine Messung von Aufenthaltsdauer oder sicherer

@@ -220,13 +220,16 @@ export class MailingsController {
         '<!doctype html><html lang="de"><meta name="viewport" content="width=device-width"><title>Abgemeldet</title><body style="font:18px Arial;padding:40px"><h1>Du bist abgemeldet.</h1><p>Du erhältst keine weiteren Werbe-Mailings von B2B Matching.</p></body></html>',
       );
   }
-  @Post("public/webhook") @HttpCode(200) webhook(
+  @Post("public/webhook") @HttpCode(200) async webhook(
     @Req() req: Request & { rawBody?: Buffer },
     @Headers("x-twilio-email-event-webhook-signature")
     signature: string | undefined,
     @Headers("x-twilio-email-event-webhook-timestamp")
     timestamp: string | undefined,
   ) {
-    return this.service.webhook(req.rawBody, signature, timestamp);
+    const result = this.service.webhook(req.rawBody, signature, timestamp);
+    // Acknowledge only after durable storage; otherwise SendGrid must retry.
+    await this.store.persist();
+    return result;
   }
 }

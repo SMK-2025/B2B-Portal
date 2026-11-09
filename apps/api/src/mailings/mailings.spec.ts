@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { MailingsService } from "./mailings.service";
+import { MailingsController } from "./mailings.controller";
 import { PortalStore } from "../core/portal.store";
 import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
@@ -596,6 +597,28 @@ describe("owner mailing system", () => {
     const token = s.store.mailingCampaigns.get(id)!.deliveries[l.id].token;
     expect(s.store.snapshot()).toContain(token);
     expect(JSON.stringify(s.service.report("owner", id))).not.toContain(token);
+  });
+  it("reports opening signals and unsubscribe separately from delivery", async () => {
+    const s = setup();
+    const l = s.lead();
+    const id = s.campaign();
+    await s.send(id);
+    const d = s.store.mailingCampaigns.get(id)!.deliveries[l.id];
+    s.service.image(d.token, false);
+    s.service.unsubscribe(d.token);
+    const report = s.service.report("owner", id);
+    expect(report.stats.opened).toBe(1);
+    expect(report.stats.unsubscribed).toBe(1);
+    expect(report.stats.delivered).toBe(0);
+  });
+  it("acknowledges webhooks only after durable persistence", async () => {
+    const service = { webhook: vi.fn(() => ({ accepted: true })) };
+    const store = { persist: vi.fn(async () => {}) };
+    const controller = new MailingsController(service as unknown as MailingsService, store as unknown as PortalStore);
+    await expect(controller.webhook({rawBody: Buffer.from('[]')} as never, "signature", "timestamp")).resolves.toEqual({accepted:true});
+    expect(store.persist).toHaveBeenCalledOnce();
+    store.persist.mockRejectedValueOnce(new Error("storage unavailable"));
+    await expect(controller.webhook({rawBody: Buffer.from('[]')} as never, "signature", "timestamp")).rejects.toThrow("storage unavailable");
   });
 });
 describe("CSV import", () => {

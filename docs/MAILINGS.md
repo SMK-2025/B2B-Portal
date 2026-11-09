@@ -48,3 +48,9 @@ Die API prüft Signatur auf Zeitstempel + unverändertem Rohkörper, maximal fü
 - `node apps/api/tests/mailings-http.mjs`
 
 Der HTTP-Test startet eine isolierte lokale API ohne Datenbank. Der Maildienst ist vollständig ersetzt. Nie mit einer produktiven Instanz verbinden. Die Browserprüfung wurde mit simulierten Kontakten und gesperrten echten Versand-Endpunkten auf Desktop, Tablet und Mobil durchgeführt.
+# Mailing-Auswertung (November 2026)
+
+Die Ergebnisübersicht zeigt 25 Kontakte pro Seite, Such- und Statusfilter sowie getrennte Linkziele. Öffnungssignale beruhen weiterhin ausschließlich auf dem bestehenden, freigabeabhängigen Bildabruf; globales SendGrid-Öffnungstracking bleibt deaktiviert. Ein fehlendes Signal ist kein Nachweis einer ungeöffneten E-Mail.
+
+Signierte Zustellereignisse werden vor der HTTP-Bestätigung dauerhaft gespeichert. Bei Speicherfehlern erhält SendGrid keinen erfolgreichen Abschluss und kann erneut zustellen; Ereignis-IDs verhindern Doppelzählungen. Providerereignisse sind auf 180 Tage begrenzt. Zustellung bedeutet Annahme durch den Empfängermailserver, keine Posteingangs- oder Lesegarantie. Bereits versendete Nachrichten ohne gespeicherte Rückmeldung bleiben unbekannt; diese Einrichtung rekonstruiert keine historische Zustellung und versendet nichts erneut.
+

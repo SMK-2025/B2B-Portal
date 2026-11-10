@@ -7,7 +7,7 @@ import {
   BUNDESLIGA_AS_OF,
 } from "./bundesliga-schedule";
 import { bundesligaSnapshot } from "./bundesliga-data";
-describe("verified sports snapshot 8 November 2026 before Sunday's games", () => {
+describe("verified network-specific sports snapshots", () => {
   it("matches all eight Giants results to the official league table", () => {
     const completed = PROB_GAMES.filter((g) => g.officialGiantsScore !== null);
     expect(completed).toHaveLength(8);
@@ -40,11 +40,11 @@ describe("verified sports snapshot 8 November 2026 before Sunday's games", () =>
     }
     expect(PROB_AS_OF).toBe("2026-11-08");
   });
-  it("retains Leverkusen's eight final scores and keeps today's derby unplayed", () => {
+  it("retains Leverkusen's nine final scores including the completed derby", () => {
     const games = BUNDESLIGA_GAMES.filter(
       (g) => g.officialGiantsScore !== null,
     );
-    expect(games).toHaveLength(8);
+    expect(games).toHaveLength(9);
     expect(games[7]).toMatchObject({
       opponent: "VfB Stuttgart",
       home: true,
@@ -61,11 +61,11 @@ describe("verified sports snapshot 8 November 2026 before Sunday's games", () =>
       (r) => r.team === "Bayer 04 Leverkusen",
     )!;
     expect(team).toMatchObject({
-      rank: 6,
-      played: 8,
-      points: 13,
-      goalsFor: 18,
-      goalsAgainst: 16,
+      rank: 5,
+      played: 9,
+      points: 16,
+      goalsFor: 20,
+      goalsAgainst: 17,
     });
     expect(games.reduce((s, g) => s + g.officialGiantsScore!, 0)).toBe(
       team.goalsFor,
@@ -76,16 +76,16 @@ describe("verified sports snapshot 8 November 2026 before Sunday's games", () =>
     expect(BUNDESLIGA_TABLE.reduce((s, r) => s + r.goalsFor, 0)).toBe(
       BUNDESLIGA_TABLE.reduce((s, r) => s + r.goalsAgainst, 0),
     );
-    expect(BUNDESLIGA_AS_OF).toBe("2026-11-08");
+    expect(BUNDESLIGA_AS_OF).toBe("2026-11-10");
     expect(BUNDESLIGA_GAMES[8]).toMatchObject({
       opponent: "1. FC Köln",
-      officialGiantsScore: null,
-      officialOpponentScore: null,
+      officialGiantsScore: 2,
+      officialOpponentScore: 1,
     });
     expect(bundesligaSnapshot().round.day).toBe(9);
     expect(
       bundesligaSnapshot().round.games.filter((g) => g.homeScore !== null),
-    ).toHaveLength(6);
+    ).toHaveLength(9);
     expect(
       BUNDESLIGA_TABLE.find((r) => r.team === "FC Bayern München"),
     ).toMatchObject({ played: 9, points: 21 });

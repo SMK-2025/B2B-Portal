@@ -1,5 +1,12 @@
 export type MailingConsent = { at: string; source: string };
+export type MailingList = {
+  id: string;
+  name: string;
+  source: string;
+  createdAt: string;
+};
 export type MailingLead = {
+  lists?: MailingList[];
   id: string;
   networkId: string;
   email: string;
@@ -40,6 +47,7 @@ export type MailingDelivery = {
   events: MailingEvent[];
 };
 export type MailingCampaign = {
+  recipientListId?: string;
   automatic?: {
     enabled: boolean;
     approvedBy: string;

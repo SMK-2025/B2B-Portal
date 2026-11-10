@@ -50,6 +50,7 @@ type Recipient = {
   }>;
 };
 type Campaign = {
+  recipientListId: string;
   id: string;
   name: string;
   subject: string;
@@ -63,6 +64,16 @@ type Campaign = {
   recipients: Recipient[];
 };
 type Workspace = {
+  lists: {
+    id: string;
+    name: string;
+    source: string;
+    createdAt: string;
+    leadIds: string[];
+    total: number;
+    blocked: number;
+    available: number;
+  }[];
   leads: Lead[];
   campaigns: Campaign[];
   defaults: { subject: string; body: string };
@@ -90,11 +101,17 @@ export function MailingsWorkspace() {
   const [draft, setDraft] = useState({ name: "", subject: "", body: "" }),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
+  const [recipientListId, setRecipientListId] = useState("");
+  const [contactListId, setContactListId] = useState("");
+  const [listName, setListName] = useState("");
   const [sendingId, setSendingId] = useState("");
   const [reportSearch, setReportSearch] = useState("");
   const [reportFilter, setReportFilter] = useState("all");
   const [reportPage, setReportPage] = useState(0);
-  useEffect(() => setReportPage(0), [selected, reportSearch, reportFilter, network]);
+  useEffect(
+    () => setReportPage(0),
+    [selected, reportSearch, reportFilter, network],
+  );
   const [stopping, setStopping] = useState(false);
   const [csv, setCsv] = useState<ReturnType<typeof parseMailingCsv>>([]),
     [source, setSource] = useState(""),
@@ -111,12 +128,28 @@ export function MailingsWorkspace() {
     [confirmName, setConfirmName] = useState("");
   const current = networks.find((n) => n.id === network),
     campaign = data?.campaigns.find((c) => c.id === selected);
+  const selectedList = data?.lists?.find((list) => list.id === recipientListId);
+  const contactList = data?.lists?.find((list) => list.id === contactListId);
+  const visibleLeads = (data?.leads || []).filter(
+    (lead) => !contactList || contactList.leadIds.includes(lead.id),
+  );
+  const listChanged =
+    !!campaign && recipientListId !== (campaign.recipientListId || "");
   const reportRecipients = (campaign?.recipients || []).filter((r) => {
-    if (!`${r.email} ${r.company}`.toLocaleLowerCase().includes(reportSearch.trim().toLocaleLowerCase())) return false;
+    if (
+      !`${r.email} ${r.company}`
+        .toLocaleLowerCase()
+        .includes(reportSearch.trim().toLocaleLowerCase())
+    )
+      return false;
     if (reportFilter === "delivered") return r.delivered;
     if (reportFilter === "opened") return r.imageRequests > 0;
-    if (reportFilter === "clicked") return r.homepageClicks + r.landingClicks + r.registerClicks > 0;
-    if (reportFilter === "failed") return r.bounced || r.dropped || r.spamReported || r.state !== "submitted";
+    if (reportFilter === "clicked")
+      return r.homepageClicks + r.landingClicks + r.registerClicks > 0;
+    if (reportFilter === "failed")
+      return (
+        r.bounced || r.dropped || r.spamReported || r.state !== "submitted"
+      );
     if (reportFilter === "unsubscribed") return r.unsubscribed;
     if (reportFilter === "registered") return r.registered;
     return true;
@@ -200,6 +233,9 @@ export function MailingsWorkspace() {
     let active = true;
     setData(null);
     setSelected("");
+    setRecipientListId("");
+    setContactListId("");
+    setListName("");
     setCsv([]);
     setConsentLead(null);
     setPreview(null);
@@ -218,6 +254,7 @@ export function MailingsWorkspace() {
   }, [network]);
   function choose(c?: Campaign) {
     setSelected(c?.id || "");
+    setRecipientListId(c?.recipientListId || "");
     setDraft(
       c
         ? { name: c.name, subject: c.subject, body: c.body }
@@ -498,15 +535,19 @@ export function MailingsWorkspace() {
                       duplicate: number;
                       blocked: number;
                       issues: string[];
+                      listId: string;
+                      listName: string;
                     }>(`/network/${network}/import`, {
                       rows: csv,
                       source,
+                      listName,
                       ...evidence(),
                     });
                     await load();
                     setCsv([]);
+                    setContactListId(result.listId);
                     setNotice(
-                      `${result.imported} importiert · ${result.duplicate} doppelt · ${result.blocked} gesperrt. ${result.issues.slice(0, 5).join(" ")}`,
+                      `Liste „${result.listName}“ angelegt: ${result.imported} neue Kontakte · ${result.duplicate} bereits vorhanden / doppelt · ${result.blocked} gesperrt. ${result.issues.slice(0, 5).join(" ")}`,
                     );
                   });
                 }}
@@ -529,10 +570,21 @@ export function MailingsWorkspace() {
                             .text()
                             .then((text) => {
                               setCsv(parseMailingCsv(text));
+                              setListName(file.name.replace(/\.csv$/i, ""));
                               setNotice("");
                             })
                             .catch((err) => setNotice(err.message));
                       }}
+                    />
+                  </label>
+                  <label>
+                    Name der neuen Kontaktliste
+                    <input
+                      required
+                      maxLength={200}
+                      value={listName}
+                      onChange={(e) => setListName(e.target.value)}
+                      placeholder="z. B. Köln · Unternehmen · Liste 2"
                     />
                   </label>
                   <label>
@@ -563,7 +615,47 @@ export function MailingsWorkspace() {
                 </button>
               </form>
               <div className="mailingCard">
-                <h3>Kontakte dieses Netzwerks</h3>
+                <h3>Deine Kontaktlisten</h3>
+                <div className="mailingListGrid">
+                  {(data.lists || []).map((list) => (
+                    <button
+                      key={list.id}
+                      className="mailingListTile"
+                      aria-pressed={contactListId === list.id}
+                      onClick={() => setContactListId(list.id)}
+                    >
+                      <strong>{list.name}</strong>
+                      <span>{stamp(list.createdAt)}</span>
+                      <span>
+                        {list.total} Kontakte · {list.available} freigegeben ·{" "}
+                        {list.blocked} gesperrt
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <label>
+                  Kontaktliste anzeigen
+                  <select
+                    value={contactListId}
+                    onChange={(e) => setContactListId(e.target.value)}
+                  >
+                    <option value="">
+                      Alle Kontakte dieses Netzwerks ({data.leads.length})
+                    </option>
+                    {(data.lists || []).map((list) => (
+                      <option key={list.id} value={list.id}>
+                        {list.name} · {stamp(list.createdAt)} · {list.total}{" "}
+                        Kontakte
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p>
+                  {visibleLeads.length} Kontakte{" "}
+                  {contactList ? `in „${contactList.name}“` : "insgesamt"}.
+                  Abgemeldete Kontakte bleiben sichtbar, werden aber nicht
+                  angeschrieben.
+                </p>
                 <div className="mailingTable">
                   <table>
                     <thead>
@@ -575,7 +667,7 @@ export function MailingsWorkspace() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.leads.map((l) => (
+                      {visibleLeads.map((l) => (
                         <tr key={l.id}>
                           <td>
                             <strong>
@@ -627,7 +719,9 @@ export function MailingsWorkspace() {
                       ))}
                     </tbody>
                   </table>
-                  {!data.leads.length && <p>Noch keine Kontakte importiert.</p>}
+                  {!visibleLeads.length && (
+                    <p>Keine Kontakte in dieser Auswahl.</p>
+                  )}
                 </div>
               </div>
             </>
@@ -645,6 +739,11 @@ export function MailingsWorkspace() {
                     onClick={() => choose(c)}
                   >
                     <strong>{c.name}</strong>
+                    <span>
+                      {(data.lists || []).find(
+                        (list) => list.id === c.recipientListId,
+                      )?.name || "Noch keine Liste ausgewählt"}
+                    </span>
                     <span>
                       {c.paused
                         ? "Gestoppt"
@@ -667,6 +766,7 @@ export function MailingsWorkspace() {
                       `/network/${network}/campaign`,
                       {
                         ...draft,
+                        recipientListId,
                         ...(campaign
                           ? { id: campaign.id, revision: campaign.revision }
                           : {}),
@@ -685,6 +785,43 @@ export function MailingsWorkspace() {
                     ? "Gespeichertes Mailing"
                     : "Mailing gestalten"}
                 </h3>
+                <label>
+                  Empfänger aus Kontaktliste
+                  <select
+                    required
+                    value={recipientListId}
+                    disabled={campaign?.locked || !!campaign?.stats.submitted}
+                    onChange={(e) => setRecipientListId(e.target.value)}
+                  >
+                    <option value="">Bitte eine Liste auswählen</option>
+                    {(data.lists || []).map((list) => (
+                      <option key={list.id} value={list.id}>
+                        {list.name} · {stamp(list.createdAt)} · {list.total}{" "}
+                        Kontakte
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {selectedList ? (
+                  <div className="mailingListSummary">
+                    <strong>{selectedList.name}</strong>
+                    <span>
+                      {selectedList.total} Kontakte in dieser Liste ·{" "}
+                      {selectedList.blocked} abgemeldet / gesperrt ·{" "}
+                      {selectedList.available} mit Versandfreigabe
+                    </span>
+                    <span>
+                      {listChanged
+                        ? "Listenauswahl bitte speichern, bevor du den Versand prüfst."
+                        : `${campaign?.eligible ?? selectedList.available} noch nicht in diesem Mailing angeschrieben.`}
+                    </span>
+                  </div>
+                ) : (
+                  <p>
+                    Jedes Mailing verwendet genau eine Kontaktliste. Neue
+                    Importe werden nicht automatisch hinzugefügt.
+                  </p>
+                )}
                 {campaign && campaign.stats.submitted > 0 && (
                   <p>
                     Änderungen gelten nur für noch nicht angeschriebene
@@ -771,7 +908,8 @@ export function MailingsWorkspace() {
                           busy ||
                           draft.name !== campaign.name ||
                           draft.subject !== campaign.subject ||
-                          draft.body !== campaign.body
+                          draft.body !== campaign.body ||
+                          listChanged
                         }
                         onClick={() =>
                           void action(async () => {
@@ -791,7 +929,8 @@ export function MailingsWorkspace() {
                           !data.readiness.mail ||
                           draft.name !== campaign.name ||
                           draft.subject !== campaign.subject ||
-                          draft.body !== campaign.body
+                          draft.body !== campaign.body ||
+                          listChanged
                         }
                         onClick={() => {
                           if (
@@ -821,6 +960,8 @@ export function MailingsWorkspace() {
                           draft.name !== campaign.name ||
                           draft.subject !== campaign.subject ||
                           draft.body !== campaign.body ||
+                          listChanged ||
+                          !recipientListId ||
                           !campaign.eligible ||
                           !data.readiness.mail ||
                           !data.readiness.tracking
@@ -866,10 +1007,12 @@ export function MailingsWorkspace() {
                 Aktualisieren
               </button>
               <p className="mailingExplanation">
-                Zustellung bedeutet: Der empfangende Mailserver hat die E-Mail angenommen, nicht zwingend der Posteingang. Bildabrufe sind keine sicheren Öffnungen. Mailprogramme,
-                Bild-Proxys und Sicherheitsprüfungen können Aufrufe auslösen.
-                Erkannte automatisierte Signale werden getrennt gezählt; nicht
-                alle sind erkennbar. Eine Registrierung wird nur bei passender
+                Zustellung bedeutet: Der empfangende Mailserver hat die E-Mail
+                angenommen, nicht zwingend der Posteingang. Bildabrufe sind
+                keine sicheren Öffnungen. Mailprogramme, Bild-Proxys und
+                Sicherheitsprüfungen können Aufrufe auslösen. Erkannte
+                automatisierte Signale werden getrennt gezählt; nicht alle sind
+                erkennbar. Eine Registrierung wird nur bei passender
                 E-Mail-Adresse und im selben Netzwerk zugeordnet.
                 Weitergeleitete Links erlauben keine sichere Personenzuordnung.
               </p>
@@ -878,22 +1021,75 @@ export function MailingsWorkspace() {
                   <div className="mailingStats">
                     {[
                       ["Übergeben", campaign.stats.submitted, "all"],
-                      ["Zugestellt · Mailserver", data.readiness.deliveryWebhook ? campaign.stats.delivered : "–", "delivered"],
-                      ["Öffnungssignal", campaign.stats.opened ?? campaign.recipients.filter(r => r.imageRequests > 0).length, "opened"],
+                      [
+                        "Zugestellt · Mailserver",
+                        data.readiness.deliveryWebhook
+                          ? campaign.stats.delivered
+                          : "–",
+                        "delivered",
+                      ],
+                      [
+                        "Öffnungssignal",
+                        campaign.stats.opened ??
+                          campaign.recipients.filter((r) => r.imageRequests > 0)
+                            .length,
+                        "opened",
+                      ],
                       ["Kontakte mit Klick", campaign.stats.clicked, "clicked"],
                       ["Registriert", campaign.stats.registered, "registered"],
-                      ["Abgemeldet", campaign.stats.unsubscribed ?? 0, "unsubscribed"],
+                      [
+                        "Abgemeldet",
+                        campaign.stats.unsubscribed ?? 0,
+                        "unsubscribed",
+                      ],
                     ].map(([label, count, filter]) => (
-                      <button type="button" className={reportFilter === filter ? "reportStat selected" : "reportStat"} key={label} onClick={() => setReportFilter(String(filter))}>
+                      <button
+                        type="button"
+                        className={
+                          reportFilter === filter
+                            ? "reportStat selected"
+                            : "reportStat"
+                        }
+                        key={label}
+                        onClick={() => setReportFilter(String(filter))}
+                      >
                         <strong>{count}</strong>
                         <span>{label}</span>
                       </button>
                     ))}
                   </div>
-                  {!data.readiness.deliveryWebhook && <p className="mailingExplanation">Zustellrückmeldungen sind noch nicht verbunden. Fehlende Rückmeldungen bedeuten nicht, dass die E-Mails unzustellbar sind.</p>}
+                  {!data.readiness.deliveryWebhook && (
+                    <p className="mailingExplanation">
+                      Zustellrückmeldungen sind noch nicht verbunden. Fehlende
+                      Rückmeldungen bedeuten nicht, dass die E-Mails
+                      unzustellbar sind.
+                    </p>
+                  )}
                   <div className="mailingReportTools">
-                    <label>Kontakt suchen<input type="search" placeholder="Unternehmen oder E-Mail-Adresse" value={reportSearch} onChange={e => setReportSearch(e.target.value)} /></label>
-                    <label>Ergebnisse filtern<select value={reportFilter} onChange={e => setReportFilter(e.target.value)}><option value="all">Alle Kontakte</option><option value="delivered">Zugestellt</option><option value="opened">Mit Öffnungssignal</option><option value="clicked">Mit Linkklick</option><option value="registered">Registriert</option><option value="failed">Versandprobleme</option><option value="unsubscribed">Abgemeldet</option></select></label>
+                    <label>
+                      Kontakt suchen
+                      <input
+                        type="search"
+                        placeholder="Unternehmen oder E-Mail-Adresse"
+                        value={reportSearch}
+                        onChange={(e) => setReportSearch(e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Ergebnisse filtern
+                      <select
+                        value={reportFilter}
+                        onChange={(e) => setReportFilter(e.target.value)}
+                      >
+                        <option value="all">Alle Kontakte</option>
+                        <option value="delivered">Zugestellt</option>
+                        <option value="opened">Mit Öffnungssignal</option>
+                        <option value="clicked">Mit Linkklick</option>
+                        <option value="registered">Registriert</option>
+                        <option value="failed">Versandprobleme</option>
+                        <option value="unsubscribed">Abgemeldet</option>
+                      </select>
+                    </label>
                   </div>
                   <div className="mailingTable mailingReportTable">
                     <table>
@@ -912,47 +1108,105 @@ export function MailingsWorkspace() {
                         </tr>
                       </thead>
                       <tbody>
-                        {reportRecipients.slice(safeReportPage * 25, safeReportPage * 25 + 25).map((r) => (
-                          <tr key={r.leadId}>
-                            <td>
-                              <strong>{r.company || r.email}</strong>
-                              {r.company && <small>{r.email}</small>}
-                            </td>
-                            <td>
-                              <span className={`mailingStatus ${r.bounced || r.dropped ? "bad" : r.delivered ? "good" : "pending"}`}>{r.bounced
-                                ? "Unzustellbar"
-                                : r.dropped ? "Nicht versendet" : r.spamReported ? "Spam gemeldet"
-                                : r.delivered
-                                  ? "Zugestellt"
-                                  : r.deferred ? "Zustellung verzögert"
-                                  : r.state === "submitted"
-                                    ? "Übergeben · Rückmeldung offen"
-                                    : "Versand unklar"}</span>
-                              <small>{stamp(r.submittedAt)}</small>
-                              {r.unsubscribed && <small>Abgemeldet</small>}
-                              {r.error && <p>{r.error}</p>}
-                            </td>
-                            <td>{r.imageRequests > 0 ? <span className="mailingStatus good">Signal erkannt · {r.imageRequests}</span> : r.tracking === false ? "Nicht erfasst" : "Kein Signal"}{r.automatedSignals > 0 && <small>{r.automatedSignals} automatische Signale</small>}</td>
-                            <td><div className="mailingClickChips"><span>Landingpage <b>{r.landingClicks}</b></span><span>Registrierung <b>{r.registerClicks}</b></span><span>Homepage <b>{r.homepageClicks}</b></span></div></td>
-                            <td>
-                              {r.verified
-                                ? "E-Mail bestätigt"
-                                : r.registered
-                                  ? "Registriert"
-                                  : "–"}
-                            </td>
-                            <td>
-                              <button onClick={() => setEvents(r)}>
-                                Details
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {reportRecipients
+                          .slice(safeReportPage * 25, safeReportPage * 25 + 25)
+                          .map((r) => (
+                            <tr key={r.leadId}>
+                              <td>
+                                <strong>{r.company || r.email}</strong>
+                                {r.company && <small>{r.email}</small>}
+                              </td>
+                              <td>
+                                <span
+                                  className={`mailingStatus ${r.bounced || r.dropped ? "bad" : r.delivered ? "good" : "pending"}`}
+                                >
+                                  {r.bounced
+                                    ? "Unzustellbar"
+                                    : r.dropped
+                                      ? "Nicht versendet"
+                                      : r.spamReported
+                                        ? "Spam gemeldet"
+                                        : r.delivered
+                                          ? "Zugestellt"
+                                          : r.deferred
+                                            ? "Zustellung verzögert"
+                                            : r.state === "submitted"
+                                              ? "Übergeben · Rückmeldung offen"
+                                              : "Versand unklar"}
+                                </span>
+                                <small>{stamp(r.submittedAt)}</small>
+                                {r.unsubscribed && <small>Abgemeldet</small>}
+                                {r.error && <p>{r.error}</p>}
+                              </td>
+                              <td>
+                                {r.imageRequests > 0 ? (
+                                  <span className="mailingStatus good">
+                                    Signal erkannt · {r.imageRequests}
+                                  </span>
+                                ) : r.tracking === false ? (
+                                  "Nicht erfasst"
+                                ) : (
+                                  "Kein Signal"
+                                )}
+                                {r.automatedSignals > 0 && (
+                                  <small>
+                                    {r.automatedSignals} automatische Signale
+                                  </small>
+                                )}
+                              </td>
+                              <td>
+                                <div className="mailingClickChips">
+                                  <span>
+                                    Landingpage <b>{r.landingClicks}</b>
+                                  </span>
+                                  <span>
+                                    Registrierung <b>{r.registerClicks}</b>
+                                  </span>
+                                  <span>
+                                    Homepage <b>{r.homepageClicks}</b>
+                                  </span>
+                                </div>
+                              </td>
+                              <td>
+                                {r.verified
+                                  ? "E-Mail bestätigt"
+                                  : r.registered
+                                    ? "Registriert"
+                                    : "–"}
+                              </td>
+                              <td>
+                                <button onClick={() => setEvents(r)}>
+                                  Details
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
-                  {reportRecipients.length === 0 && <p>Keine passenden Kontakte gefunden.</p>}
-                  <div className="mailingPagination"><span>{reportRecipients.length} Kontakte · Seite {safeReportPage + 1} von {reportPages}</span><div><button disabled={safeReportPage === 0} onClick={() => setReportPage(safeReportPage - 1)}>← Zurück</button><button disabled={safeReportPage + 1 >= reportPages} onClick={() => setReportPage(safeReportPage + 1)}>Weiter →</button></div></div>
+                  {reportRecipients.length === 0 && (
+                    <p>Keine passenden Kontakte gefunden.</p>
+                  )}
+                  <div className="mailingPagination">
+                    <span>
+                      {reportRecipients.length} Kontakte · Seite{" "}
+                      {safeReportPage + 1} von {reportPages}
+                    </span>
+                    <div>
+                      <button
+                        disabled={safeReportPage === 0}
+                        onClick={() => setReportPage(safeReportPage - 1)}
+                      >
+                        ← Zurück
+                      </button>
+                      <button
+                        disabled={safeReportPage + 1 >= reportPages}
+                        onClick={() => setReportPage(safeReportPage + 1)}
+                      >
+                        Weiter →
+                      </button>
+                    </div>
+                  </div>
                   <p>
                     * Nur bei dokumentierter Trackingfreigabe. Signale sind
                     keine Messung von Aufenthaltsdauer oder sicherer
@@ -1041,6 +1295,12 @@ export function MailingsWorkspace() {
                   <strong>
                     {current?.name} · {campaign.name}
                   </strong>
+                </p>
+                <p>
+                  Kontaktliste:{" "}
+                  <strong>{selectedList?.name || "Keine ausgewählt"}</strong> ·{" "}
+                  {selectedList?.total || 0} Kontakte insgesamt ·{" "}
+                  {selectedList?.blocked || 0} gesperrt.
                 </p>
                 <p>
                   {campaign.eligible} freigegebene Kontakte offen. Dieser Klick

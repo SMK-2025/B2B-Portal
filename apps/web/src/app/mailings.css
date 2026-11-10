@@ -346,32 +346,183 @@
     flex: 1 1 auto;
   }
 }
-.mailingsWorkspace .mailingStats { grid-template-columns:repeat(6,minmax(0,1fr)); }
-.mailingsWorkspace .reportStat { display:flex; flex-direction:column; align-items:flex-start; gap:8px; text-align:left; background:#f4f6fb; border:1px solid transparent; padding:20px 16px; color:#173346; }
-.mailingsWorkspace .reportStat.selected { border-color:var(--mailing-accent,#5364d9); background:#eef0ff; }
-.mailingsWorkspace .reportStat strong { font-size:28px; }
-.mailingsWorkspace .reportStat span { font-size:13px; }
-.mailingReportTools { display:grid; grid-template-columns:2fr 1fr; gap:20px; margin:20px 0; }
-.mailingsWorkspace .mailingReportTable td { vertical-align:top; padding:18px 12px; }
-.mailingReportTable td:first-child { min-width:220px; max-width:300px; overflow-wrap:anywhere; }
-.mailingReportTable td small { display:block; color:#68798e; font-size:12px; line-height:1.5; margin-top:6px; }
-.mailingReportTable td strong { display:block; font-weight:600; }
-.mailingStatus { display:inline-block; padding:5px 9px; border-radius:6px; background:#f0f3f8; font-size:12px; line-height:1.4; }
-.mailingStatus.good { background:#e9f6f0; color:#176344; }
-.mailingStatus.bad { background:#fff0ef; color:#a2302c; }
-.mailingClickChips { display:flex; flex-wrap:wrap; gap:5px; max-width:260px; }
-.mailingClickChips span { background:#f3f5fa; padding:4px 7px; border-radius:5px; white-space:nowrap; font-size:12px; }
-.mailingPagination { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:20px; color:#617287; }
-.mailingPagination div { display:flex; gap:8px; }
-@media(max-width:1100px) { .mailingsWorkspace .mailingStats {grid-template-columns:repeat(3,minmax(0,1fr));} }
-@media(max-width:700px) {
- .mailingsWorkspace .mailingStats {grid-template-columns:repeat(2,minmax(0,1fr));}
- .mailingReportTools {grid-template-columns:1fr;gap:0;}
- .mailingReportTable table,.mailingReportTable tbody,.mailingReportTable tr,.mailingReportTable td {display:block;width:100%;}
- .mailingReportTable thead {display:none;}
- .mailingsWorkspace .mailingReportTable tr {border:1px solid #dce3ee;border-radius:12px;padding:12px;margin-bottom:12px;box-sizing:border-box;}
- .mailingsWorkspace .mailingReportTable td {border:0;padding:6px;min-width:0;max-width:none;box-sizing:border-box;}
- .mailingReportTable td:nth-child(3)::before {content:'Öffnung: ';color:#68798e;}
- .mailingReportTable td:nth-child(5)::before {content:'Registrierung: ';color:#68798e;}
- .mailingPagination {flex-wrap:wrap;}
+.mailingsWorkspace .mailingStats {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.mailingsWorkspace .reportStat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  background: #f4f6fb;
+  border: 1px solid transparent;
+  padding: 20px 16px;
+  color: #173346;
+}
+.mailingsWorkspace .reportStat.selected {
+  border-color: var(--mailing-accent, #5364d9);
+  background: #eef0ff;
+}
+.mailingsWorkspace .reportStat strong {
+  font-size: 28px;
+}
+.mailingsWorkspace .reportStat span {
+  font-size: 13px;
+}
+.mailingReportTools {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin: 20px 0;
+}
+.mailingsWorkspace .mailingReportTable td {
+  vertical-align: top;
+  padding: 18px 12px;
+}
+.mailingReportTable td:first-child {
+  min-width: 220px;
+  max-width: 300px;
+  overflow-wrap: anywhere;
+}
+.mailingReportTable td small {
+  display: block;
+  color: #68798e;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+.mailingReportTable td strong {
+  display: block;
+  font-weight: 600;
+}
+.mailingStatus {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: #f0f3f8;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.mailingStatus.good {
+  background: #e9f6f0;
+  color: #176344;
+}
+.mailingStatus.bad {
+  background: #fff0ef;
+  color: #a2302c;
+}
+.mailingClickChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 260px;
+}
+.mailingClickChips span {
+  background: #f3f5fa;
+  padding: 4px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.mailingPagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  color: #617287;
+}
+.mailingPagination div {
+  display: flex;
+  gap: 8px;
+}
+.mailingListGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.mailingsWorkspace .mailingListTile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #dce3ee;
+  border-radius: 12px;
+  color: #173346;
+}
+.mailingsWorkspace .mailingListTile[aria-pressed="true"] {
+  border-color: var(--mailing-accent, #5364d9);
+  background: #f4f6fc;
+  box-shadow: inset 3px 0 var(--mailing-accent, #5364d9);
+}
+.mailingListTile span {
+  font-size: 13px;
+  color: #617287;
+}
+.mailingListSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  margin: 12px 0 22px;
+  background: #f4f6fb;
+  border-radius: 12px;
+  border-left: 3px solid var(--mailing-accent, #5364d9);
+}
+.mailingListSummary span {
+  font-size: 14px;
+  line-height: 1.5;
+}
+@media (max-width: 1100px) {
+  .mailingsWorkspace .mailingStats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .mailingsWorkspace .mailingStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mailingReportTools {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .mailingReportTable table,
+  .mailingReportTable tbody,
+  .mailingReportTable tr,
+  .mailingReportTable td {
+    display: block;
+    width: 100%;
+  }
+  .mailingReportTable thead {
+    display: none;
+  }
+  .mailingsWorkspace .mailingReportTable tr {
+    border: 1px solid #dce3ee;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+  }
+  .mailingsWorkspace .mailingReportTable td {
+    border: 0;
+    padding: 6px;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+  }
+  .mailingReportTable td:nth-child(3)::before {
+    content: "Öffnung: ";
+    color: #68798e;
+  }
+  .mailingReportTable td:nth-child(5)::before {
+    content: "Registrierung: ";
+    color: #68798e;
+  }
+  .mailingPagination {
+    flex-wrap: wrap;
+  }
 }

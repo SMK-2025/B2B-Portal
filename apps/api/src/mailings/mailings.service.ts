@@ -23,12 +23,14 @@ import {
   renderMailingTemplate,
 } from "./mailing-template";
 import { emailAddress, requiredText } from "../core/validation";
+import { mailingLists } from "./mailing-lists";
 import type {
   MailingCampaign,
   MailingConsent,
   MailingDelivery,
   MailingEvent,
   MailingLead,
+  MailingList,
 } from "./mailing.types";
 
 @Injectable()
@@ -144,10 +146,44 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
   private suppressed(lead: MailingLead) {
     return this.store.mailingSuppressions.has(tokenHash(lead.email));
   }
+  private lists(networkId: string) {
+    const lists = mailingLists(
+      [...this.store.mailingLeads.values()],
+      networkId,
+    );
+    for (const list of lists) {
+      const { leadIds, ...metadata } = list;
+      for (const id of leadIds) {
+        const lead = this.store.mailingLeads.get(id)!;
+        if (!lead.lists?.length) lead.lists = [metadata];
+      }
+    }
+    return lists;
+  }
+  private campaignListId(c: MailingCampaign) {
+    if (c.recipientListId) return c.recipientListId;
+    const previous = c.automatic?.recipientIds || Object.keys(c.deliveries);
+    if (!previous.length) return undefined;
+    const candidates = this.lists(c.networkId).filter((list) =>
+      previous.every((id) => list.leadIds.includes(id)),
+    );
+    return candidates.length === 1 ? candidates[0].id : undefined;
+  }
   list(authorization: string | undefined, networkId: string) {
     this.owner(authorization);
     this.network(networkId);
     return {
+      lists: this.lists(networkId).map((list) => ({
+        ...list,
+        total: list.leadIds.length,
+        blocked: list.leadIds.filter((id) =>
+          this.suppressed(this.store.mailingLeads.get(id)!),
+        ).length,
+        available: list.leadIds.filter((id) => {
+          const lead = this.store.mailingLeads.get(id)!;
+          return !!lead.marketing && !this.suppressed(lead);
+        }).length,
+      })),
       leads: [...this.store.mailingLeads.values()]
         .filter((l) => l.networkId === networkId)
         .map((l) => ({ ...l, suppressed: this.suppressed(l) })),
@@ -155,6 +191,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         .filter((c) => c.networkId === networkId)
         .map((c) => ({
           id: c.id,
+          recipientListId: this.campaignListId(c) || "",
           name: c.name,
           subject: c.subject,
           body: c.body,
@@ -208,20 +245,61 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     let imported = 0,
       duplicate = 0,
       blocked = 0;
+    const createdAt = new Date().toISOString();
+    const list: MailingList = {
+      id: randomUUID(),
+      name: requiredText(
+        input.listName || input.source || `Import ${createdAt.slice(0, 16)}`,
+        "Listenname",
+        1,
+        200,
+      ),
+      source: String(input.source || "CSV-Import")
+        .trim()
+        .slice(0, 200),
+      createdAt,
+    };
+    const existing = new Map(
+      [...this.store.mailingLeads.values()]
+        .filter((l) => l.networkId === networkId)
+        .map((l) => [l.email, l]),
+    );
+    // Materialize legacy memberships before attaching another import to an old
+    // contact; otherwise its original batch would be lost.
+    const oldMemberships = new Map<string, MailingList[]>();
+    for (const old of this.lists(networkId))
+      for (const id of old.leadIds) {
+        const { leadIds: _, ...meta } = old;
+        oldMemberships.set(id, [...(oldMemberships.get(id) || []), meta]);
+      }
+    for (const [id, memberships] of oldMemberships) {
+      const lead = this.store.mailingLeads.get(id)!;
+      if (!lead.lists?.length) lead.lists = memberships;
+    }
+    const seen = new Set<string>();
     for (const [index, row] of input.rows.entries()) {
       try {
         if (!row || typeof row !== "object") throw new Error("Ungültige Zeile");
         const r = row as Record<string, unknown>,
           email = emailAddress(r.email);
+        if (seen.has(email)) {
+          duplicate++;
+          continue;
+        }
+        seen.add(email);
+        const prior = existing.get(email);
+        if (prior)
+          prior.lists = [
+            ...(prior.lists?.length
+              ? prior.lists
+              : oldMemberships.get(prior.id) || []),
+            list,
+          ];
         if (this.store.mailingSuppressions.has(tokenHash(email))) {
           blocked++;
           continue;
         }
-        if (
-          [...this.store.mailingLeads.values()].some(
-            (l) => l.networkId === networkId && l.email === email,
-          )
-        ) {
+        if (prior) {
           duplicate++;
           continue;
         }
@@ -229,6 +307,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
           typeof v === "string" ? v.trim().slice(0, 200) : "";
         const now = new Date().toISOString();
         const lead: MailingLead = {
+          lists: [list],
           id: randomUUID(),
           networkId,
           email,
@@ -247,7 +326,14 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         issues.push(`Zeile ${index + 2}: ungültige E-Mail-Adresse oder Daten.`);
       }
     }
-    return { imported, duplicate, blocked, issues };
+    return {
+      imported,
+      duplicate,
+      blocked,
+      issues,
+      listId: list.id,
+      listName: list.name,
+    };
   }
   updateLead(
     authorization: string | undefined,
@@ -320,6 +406,28 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       " ",
     );
     const body = requiredText(input.body, "Mailtext", 30, 15000);
+    const lists = this.lists(networkId);
+    const requestedList =
+      input.recipientListId === undefined
+        ? this.campaignListId(campaign) ||
+          (lists.length === 1 ? lists[0].id : "")
+        : String(input.recipientListId);
+    if (requestedList && !lists.some((list) => list.id === requestedList))
+      throw new BadRequestException(
+        "Diese Kontaktliste gehört nicht zu diesem Netzwerk.",
+      );
+    if (!requestedList && lists.length)
+      throw new BadRequestException(
+        "Bitte eine Kontaktliste für dieses Mailing auswählen.",
+      );
+    if (
+      this.campaignListId(campaign) &&
+      requestedList !== this.campaignListId(campaign) &&
+      Object.keys(campaign.deliveries).length
+    )
+      throw new BadRequestException(
+        "Für eine andere Kontaktliste bitte ein neues Mailing anlegen. Der bisherige Versandverlauf bleibt erhalten.",
+      );
     if (input.id) {
       if (campaign.automatic?.enabled) {
         campaign.automatic.enabled = false;
@@ -335,7 +443,12 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       for (const delivery of Object.values(campaign.deliveries))
         delivery.revision ??= campaign.revision;
     }
-    Object.assign(campaign, { name, subject, body });
+    Object.assign(campaign, {
+      name,
+      subject,
+      body,
+      recipientListId: requestedList || undefined,
+    });
     campaign.revision++;
     campaign.updatedAt = new Date().toISOString();
     this.store.mailingCampaigns.set(campaign.id, campaign);
@@ -372,9 +485,17 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     };
   }
   private eligible(c: MailingCampaign) {
+    const listId = this.campaignListId(c);
+    const ids = new Set(
+      this.lists(c.networkId).find((list) => list.id === listId)?.leadIds || [],
+    );
+    // Previously approved automatic jobs retain their exact frozen audience.
+    if (!listId && c.automatic?.enabled)
+      for (const id of c.automatic.recipientIds) ids.add(id);
     return [...this.store.mailingLeads.values()].filter(
       (l) =>
         l.networkId === c.networkId &&
+        ids.has(l.id) &&
         l.marketing &&
         !this.suppressed(l) &&
         !c.deliveries[l.id],
@@ -822,7 +943,10 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         dropped: count("dropped") > 0,
         deferred: count("deferred") > 0,
         spamReported: count("spamreport") > 0,
-        unsubscribed: !!lead && this.store.mailingSuppressions.get(tokenHash(lead.email))?.reason === "recipient_unsubscribed",
+        unsubscribed:
+          !!lead &&
+          this.store.mailingSuppressions.get(tokenHash(lead.email))?.reason ===
+            "recipient_unsubscribed",
         automatedSignals: d.events.filter((e) => e.automated).length,
         events: d.events,
       };

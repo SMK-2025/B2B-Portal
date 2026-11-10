@@ -63,6 +63,7 @@ function setup() {
   function campaign() {
     return service.saveCampaign("owner", a.id, {
       name: "Erstes Mailing",
+      recipientListId: service.list("owner", a.id).lists[0]?.id,
       subject: "Vernetzen in Leverkusen",
       body: "Guten Tag {{firstName}},\nunsere Einladung zum lokalen Netzwerken.",
     }).id;
@@ -84,6 +85,136 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("owner mailing system", () => {
+  it("keeps two 500-contact imports separate instead of addressing all 998 permitted contacts", () => {
+    const s = setup();
+    const first = s.service.importLeads("owner", s.a.id, {
+      listName: "Köln 1",
+      rows: Array.from({ length: 500 }, (_, i) => ({
+        email: `first${i}@example.de`,
+      })),
+      marketing: evidence,
+    });
+    const second = s.service.importLeads("owner", s.a.id, {
+      listName: "Köln 2",
+      rows: Array.from({ length: 500 }, (_, i) => ({
+        email: `second${i}@example.de`,
+      })),
+      marketing: evidence,
+    });
+    for (let i = 0; i < 2; i++)
+      s.store.mailingSuppressions.set(tokenHash(`first${i}@example.de`), {
+        at: evidence.at,
+        reason: "recipient_unsubscribed",
+      });
+    const id = s.service.saveCampaign("owner", s.a.id, {
+      recipientListId: second.listId,
+      name: "Zweite Liste",
+      subject: "Netzwerken in Köln",
+      body: "Eine neue Einladung nur für die zweite Kontaktliste.",
+    }).id;
+    const workspace = s.service.list("owner", s.a.id);
+    expect(workspace.leads).toHaveLength(1000);
+    expect(workspace.lists.find((l) => l.id === first.listId)).toMatchObject({
+      total: 500,
+      blocked: 2,
+      available: 498,
+    });
+    expect(workspace.lists.find((l) => l.id === second.listId)).toMatchObject({
+      total: 500,
+      blocked: 0,
+      available: 500,
+    });
+    expect(s.service.report("owner", id).eligible).toBe(500);
+    expect(() =>
+      s.service.saveCampaign("owner", s.a.id, {
+        name: "Ohne Auswahl",
+        subject: "Kein Versand",
+        body: "Ohne Kontaktlistenauswahl darf nichts zusammengewürfelt werden.",
+      }),
+    ).toThrow(/Kontaktliste/);
+    s.store.hydrate(JSON.parse(s.store.snapshot()));
+    expect(s.service.report("owner", id).eligible).toBe(500);
+    expect(s.service.list("owner", s.a.id).lists).toHaveLength(2);
+    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+  });
+  it("retains overlapping list memberships without lifting a global unsubscribe or duplicating a contact", () => {
+    const s = setup();
+    const lead = s.lead();
+    s.store.mailingSuppressions.set(tokenHash(lead.email), {
+      at: evidence.at,
+      reason: "recipient_unsubscribed",
+    });
+    const result = s.service.importLeads("owner", s.a.id, {
+      listName: "Neue Liste",
+      rows: [
+        { email: lead.email },
+        { email: lead.email },
+        { email: "new@example.de" },
+      ],
+      marketing: evidence,
+    });
+    expect(result).toMatchObject({ imported: 1, duplicate: 1, blocked: 1 });
+    expect(
+      s.service.list("owner", s.a.id).lists.find((l) => l.id === result.listId),
+    ).toMatchObject({ total: 2, blocked: 1, available: 1 });
+    expect(lead.lists).toHaveLength(2);
+    expect(s.store.mailingLeads.size).toBe(2);
+  });
+  it("rejects another network's list and preserves a sent mailing's original audience", async () => {
+    const s = setup();
+    s.lead();
+    const id = s.campaign();
+    await s.send(id);
+    const result = s.service.importLeads("owner", s.a.id, {
+      listName: "Weitere Liste",
+      rows: [{ email: "new@example.de" }],
+      marketing: evidence,
+    });
+    const copy = {
+      id,
+      revision: 1,
+      name: "Erstes Mailing",
+      subject: "Netzwerken in Leverkusen",
+      body: "Diese ausreichend lange Nachricht darf ihre Liste nicht wechseln.",
+    };
+    expect(() =>
+      s.service.saveCampaign("owner", s.a.id, {
+        ...copy,
+        recipientListId: result.listId,
+      }),
+    ).toThrow(/neues Mailing/);
+    expect(() =>
+      s.service.saveCampaign("owner", s.b.id, {
+        ...copy,
+        id: undefined,
+        recipientListId: result.listId,
+      }),
+    ).toThrow(/nicht zu diesem Netzwerk/);
+  });
+  it("recovers old import boundaries and does not silently assign an unsent draft to all contacts", () => {
+    const s = setup();
+    s.lead();
+    const lead = [...s.store.mailingLeads.values()][0];
+    delete lead.lists;
+    lead.createdAt = "2026-11-06T10:00:00Z";
+    s.store.mailingLeads.set("legacy-second", {
+      ...lead,
+      id: "legacy-second",
+      email: "later@example.de",
+      createdAt: "2026-11-10T10:00:00Z",
+    });
+    const id = s.campaign();
+    const campaign = s.store.mailingCampaigns.get(id)!;
+    delete campaign.recipientListId;
+    const lists = s.service.list("owner", s.a.id).lists;
+    expect(lists).toHaveLength(2);
+    expect(lists.every((l) => l.total === 1)).toBe(true);
+    expect(s.service.report("owner", id).eligible).toBe(0);
+    s.store.hydrate(JSON.parse(s.store.snapshot()));
+    expect(s.service.list("owner", s.a.id).lists.map((l) => l.id)).toEqual(
+      lists.map((l) => l.id),
+    );
+  });
   it("automatically continues approved recipients, survives reload and excludes later imports", async () => {
     const s = setup();
     s.service.importLeads("owner", s.a.id, {
@@ -115,7 +246,7 @@ describe("owner mailing system", () => {
     await s.service.processAutomatic();
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(25);
     expect(c.automatic!.enabled).toBe(false);
-    expect(s.service.report("owner", id).eligible).toBe(1);
+    expect(s.service.report("owner", id).eligible).toBe(0);
   });
   it("stops automation on stop or edited copy and never resumes without a fresh approval", async () => {
     const s = setup();
@@ -456,10 +587,9 @@ describe("owner mailing system", () => {
       revision: 2,
       expectedCount: s.service.report("owner", id).eligible,
     });
-    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(s.email.sendCampaignMail).mock.calls[1][0].subject).toBe(
-      "Neuer Betreff",
-    );
+    // A separate import must never enlarge the recipients of this mailing.
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
+    expect(c.subject).toBe("Neuer Betreff");
   });
   it("keeps uncertain deliveries from automatic retries", async () => {
     const s = setup();
@@ -614,11 +744,26 @@ describe("owner mailing system", () => {
   it("acknowledges webhooks only after durable persistence", async () => {
     const service = { webhook: vi.fn(() => ({ accepted: true })) };
     const store = { persist: vi.fn(async () => {}) };
-    const controller = new MailingsController(service as unknown as MailingsService, store as unknown as PortalStore);
-    await expect(controller.webhook({rawBody: Buffer.from('[]')} as never, "signature", "timestamp")).resolves.toEqual({accepted:true});
+    const controller = new MailingsController(
+      service as unknown as MailingsService,
+      store as unknown as PortalStore,
+    );
+    await expect(
+      controller.webhook(
+        { rawBody: Buffer.from("[]") } as never,
+        "signature",
+        "timestamp",
+      ),
+    ).resolves.toEqual({ accepted: true });
     expect(store.persist).toHaveBeenCalledOnce();
     store.persist.mockRejectedValueOnce(new Error("storage unavailable"));
-    await expect(controller.webhook({rawBody: Buffer.from('[]')} as never, "signature", "timestamp")).rejects.toThrow("storage unavailable");
+    await expect(
+      controller.webhook(
+        { rawBody: Buffer.from("[]") } as never,
+        "signature",
+        "timestamp",
+      ),
+    ).rejects.toThrow("storage unavailable");
   });
 });
 describe("CSV import", () => {

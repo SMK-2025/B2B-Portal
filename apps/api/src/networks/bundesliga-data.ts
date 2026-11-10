@@ -179,7 +179,7 @@ const roundUrl = (day: number) =>
   `https://www.bundesliga.com/de/bundesliga/spieltag/2026-2027/${day}`;
 let round = {
   day: 9,
-  asOf: "2026-11-08",
+  asOf: "2026-11-10",
   url: roundUrl(9),
   games: [
     {
@@ -228,22 +228,22 @@ let round = {
       home: "1. FC Köln",
       away: "Bayer 04 Leverkusen",
       kickoff: "2026-11-08T14:30:00.000Z",
-      homeScore: null,
-      awayScore: null,
+      homeScore: 1,
+      awayScore: 2,
     },
     {
       home: "Sport-Club Freiburg",
       away: "1. FC Union Berlin",
       kickoff: "2026-11-08T16:30:00.000Z",
-      homeScore: null,
-      awayScore: null,
+      homeScore: 2,
+      awayScore: 0,
     },
     {
       home: "TSG Hoffenheim",
       away: "FC Schalke 04",
       kickoff: "2026-11-08T18:30:00.000Z",
-      homeScore: null,
-      awayScore: null,
+      homeScore: 2,
+      awayScore: 1,
     },
   ] as ResultRow[],
 };

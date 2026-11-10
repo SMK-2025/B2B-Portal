@@ -5,8 +5,8 @@ export const BUNDESLIGA_SOURCE =
   "https://www.bundesliga.com/de/bundesliga/spieltag/2026-2027/bayer-04-leverkusen";
 export const BUNDESLIGA_TABLE_SOURCE =
   "https://www.bundesliga.com/de/bundesliga/tabelle";
-export const BUNDESLIGA_AS_OF = "2026-11-08";
-// Official Bundesliga snapshot, checked 8 November 2026 before Sunday's games. Dates without a kickoff
+export const BUNDESLIGA_AS_OF = "2026-11-10";
+// Official Bundesliga snapshot, checked 10 November 2026 after matchday nine. Dates without a kickoff
 // remain matchday windows, never advertised as confirmed appointments.
 const clubs = [
   ["FCB", "FC Bayern München", "00000G"],
@@ -45,7 +45,7 @@ const fixtures: Fixture[] = [
   ["2026-10-18", "SCF", true, 2, 1],
   ["2026-10-25T14:30:00Z", "TSG", false, 0, 3],
   ["2026-10-31T14:30:00Z", "VFB", true, 2, 4],
-  ["2026-11-08T14:30:00Z", "KOE", false],
+  ["2026-11-08T14:30:00Z", "KOE", false, 2, 1],
   ["2026-11-21T14:30:00Z", "SCP", true],
   ["2026-11-29T18:30:00Z", "BVB", false],
   ["2026-12-04", "BMG", true, undefined, undefined, "2026-12-06"],
@@ -92,18 +92,18 @@ export const BUNDESLIGA_GAMES: BundesligaGame[] = fixtures.map(
 const standingsOrder = [
   "FCB",
   "BVB",
-  "RBL",
   "SCF",
-  "SVW",
+  "RBL",
   "B04",
+  "SVW",
   "ELV",
   "VFB",
+  "TSG",
   "SGE",
   "HSV",
   "M05",
   "SCP",
   "FCA",
-  "TSG",
   "KOE",
   "FCU",
   "S04",
@@ -112,21 +112,21 @@ const standingsOrder = [
 const rows = [
   [6, 3, 0, 29, 9, 21],
   [6, 3, 0, 16, 7, 21],
+  [6, 1, 2, 20, 10, 19],
   [6, 0, 3, 27, 13, 18],
-  [5, 1, 2, 18, 10, 16],
+  [5, 1, 3, 20, 17, 16],
   [4, 3, 2, 17, 15, 15],
-  [4, 1, 3, 18, 16, 13],
   [4, 1, 4, 17, 18, 13],
   [4, 0, 5, 15, 15, 12],
+  [4, 0, 5, 16, 17, 12],
   [3, 3, 3, 15, 20, 12],
   [4, 0, 5, 10, 20, 12],
   [3, 1, 5, 18, 19, 10],
   [2, 4, 3, 8, 11, 10],
   [2, 3, 4, 20, 20, 9],
-  [3, 0, 5, 14, 16, 9],
-  [2, 3, 3, 9, 12, 9],
-  [1, 4, 3, 7, 19, 7],
-  [1, 3, 4, 4, 9, 6],
+  [2, 3, 4, 10, 14, 9],
+  [1, 4, 4, 7, 21, 7],
+  [1, 3, 5, 5, 11, 6],
   [1, 1, 7, 12, 25, 4],
 ];
 export const BUNDESLIGA_TABLE = rows.map(

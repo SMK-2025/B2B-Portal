@@ -10,6 +10,17 @@ import { BUNDESLIGA_GAMES, BUNDESLIGA_TABLE } from "./bundesliga-schedule";
 const page = (value: unknown) =>
   `<script id="ng-state" type="application/json">${JSON.stringify({ response: { b: value } })}</script>`;
 describe("official Bundesliga data", () => {
+  it("keeps the completed ninth matchday and matching standings available without a source fetch", () => {
+    const snapshot = bundesligaSnapshot();
+    expect(snapshot.round.day).toBe(9);
+    expect(snapshot.round.games).toHaveLength(9);
+    expect(snapshot.round.games.every((game) => game.homeScore !== null && game.awayScore !== null)).toBe(true);
+    expect(snapshot.round.games.find((game) => game.away === "Bayer 04 Leverkusen")).toMatchObject({ homeScore: 1, awayScore: 2 });
+    expect(snapshot.games[8]).toMatchObject({ officialGiantsScore: 2, officialOpponentScore: 1 });
+    expect(snapshot.table.find((row) => row.team === "Bayer 04 Leverkusen")).toMatchObject({ rank: 5, played: 9, points: 16, goalsFor: 20, goalsAgainst: 17 });
+    expect(snapshot.table.every((row) => row.played === 9)).toBe(true);
+    expect(snapshot.table.reduce((sum, row) => sum + row.goalsFor - row.goalsAgainst, 0)).toBe(0);
+  });
   it("selects only the requested full league round and does not invent a final score", () => {
     const games = bundesligaSnapshot().round.games.map((g, index) => ({
       dflDatalibraryCompetitionId: "DFL-COM-000001",

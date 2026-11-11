@@ -48,10 +48,12 @@ export function removeNetworkUser(
       if (test(items[i])) items.splice(i, 1);
   }
   const removedContent = new Set<string>();
+  const affectedChats = new Set([...s.networkContents.values()].filter(c => c.networkId === n && c.type === 'conversation' && (c.createdByUserId === u || (Array.isArray(c.data.participantUserIds) && c.data.participantUserIds.includes(u)))).map(c=>c.id));
   for (const [id, c] of s.networkContents) {
     if (c.networkId !== n) continue;
     if (
       c.createdByUserId === u ||
+      (c.data.kind === 'network_cooperation' && affectedChats.has(String(c.data.cooperationThreadId))) ||
       (c.data.kind === "network_invitation" &&
         String(c.data.email).toLowerCase() === email)
     ) {
@@ -62,6 +64,7 @@ export function removeNetworkUser(
       continue;
     }
     if (c.assignedToUserId === u) c.assignedToUserId = null;
+    if (affectedChats.has(c.id)) delete c.data.networkPulse;
     for (const key of [
       "participantUserIds",
       "readBy",

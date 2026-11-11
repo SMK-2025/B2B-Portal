@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
 import { NetworksService } from "./networks.service";
+import { removeNetworkUser } from './remove-network-user';
 import { PortalStore } from "../core/portal.store";
 import { networkPulse, pulseState, updatePulse } from "./network-pulse";
 import type { NetworkContentRecord } from "../core/domain";
@@ -54,6 +55,15 @@ function fixture() {
   return { store, chat };
 }
 describe("network pulse", () => {
+  it('removes cooperation and private status data when either member is deleted',()=>{
+    const {store,chat}=fixture();
+    updatePulse(store,chat,'a',{revision:0,action:'status',stage:'accepted',comment:'PRIVATE',publicText:'Projekt'});
+    updatePulse(store,chat,'b',{revision:1,action:'confirm'});
+    removeNetworkUser(store,'network','b','b@test.invalid');
+    expect(store.networkContents.has('cooperation:chat')).toBe(false);
+    expect(pulseState(chat)).toBeUndefined();
+    expect(store.networkMemberships.some(m=>m.userId==='other')).toBe(true);
+  });
   it("enforces network access and rejects forged state through ordinary content edits", () => {
     const { store, chat } = fixture(),
       auth = new AuthService(store),

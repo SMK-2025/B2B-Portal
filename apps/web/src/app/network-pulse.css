@@ -425,6 +425,32 @@
 }
 .loungeBoardPagination button { width:40px;height:40px;border:1px solid #dce3ed;border-radius:10px;background:white;color:var(--network-primary);font:inherit;cursor:pointer; }
 .loungeBoardPagination button:disabled { opacity:.35;cursor:default; }
+/* The board is one enclosed card, matching the adjacent matchday card. */
+.networkPortal .loungeNoticeboard {
+  display:flex;flex-direction:column;overflow:hidden;
+  background:#191919;color:#fff;border:1px solid #303030;border-radius:18px;
+  box-shadow:0 6px 22px #2046570a;
+}
+.networkPortal .loungeNoticeboard .loungeBoardHeading {
+  box-sizing:border-box;min-height:84px;margin:0;padding:16px 22px;
+  background:#101010;border-top:4px solid var(--network-accent,#e60000);
+  border-bottom:1px solid #ffffff66;gap:16px;flex-direction:row;align-items:center;
+}
+.networkPortal .loungeNoticeboard .loungeBoardHeading h2 {
+  color:#fff;font-size:20px;line-height:1.3;margin:0;text-align:left;
+}
+.networkPortal .loungeNoticeboard .loungeBoardHeading p { display:none; }
+.networkPortal .loungeNoticeboard .loungeBoardHeading > a {
+  background:var(--network-accent,#e60000);color:var(--network-on-accent,#fff);
+  border-color:var(--network-accent,#e60000);padding:10px 14px;font-size:14px;
+}
+.networkPortal .loungeNoticeboard .loungeBoardSurface {
+  flex:1;border:0;border-radius:0;box-shadow:none;background:#191919;
+}
+.networkPortal .loungeNoticeboard .loungeBoardPagination { margin:0;padding:0 16px 16px; }
+@media(max-width:420px) {
+  .networkPortal .loungeNoticeboard .loungeBoardHeading { padding:14px 16px;gap:10px;flex-wrap:wrap; }
+}
 @media(max-width:620px) {
   .networkPortal .loungeBoardSurface { display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:20px; }
   .networkPortal .loungeBoardSurface > .loungeBoardNote { flex:0 0 100%;box-sizing:border-box;scroll-snap-align:center; }

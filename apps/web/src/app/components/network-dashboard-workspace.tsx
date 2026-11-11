@@ -404,11 +404,6 @@ export function NetworkDashboardWorkspace({
           >
             <header className="loungeBoardHeading">
               <div>
-                <span>
-                  <NetworkText id="ui.network-dashboard-workspace.fc58d6b4f8bbab36">
-                    DEIN NETZWERK LEBT
-                  </NetworkText>
-                </span>
                 <h2 id="noticeboard-title">
                   <NetworkText id="ui.network-dashboard-workspace.d456e70d0528b350">
                     Das schwarze Brett

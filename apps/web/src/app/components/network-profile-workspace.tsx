@@ -18,6 +18,7 @@ import { verifyPartnerMediaSave } from "../lib/partner-save-verification";
 import { companySetupProgress } from "../lib/company-setup-progress";
 import { PartnerEditablePreview } from "./partner-editable-preview";
 import type { PartnerPageProfile } from "./network-members-workspace";
+import { CompanyCardHero } from "./company-card-hero";
 
 type Profile = {
   documents?: PartnerDocument[];
@@ -95,14 +96,13 @@ export function NetworkProfileWorkspace({service}:{service?:{networkId:string;us
       <ol>{progress.checks.map(check=><li key={check.title} data-complete={check.complete}><span aria-hidden="true">{check.complete?'✓':'○'}</span>{check.title}</li>)}<li data-complete={published}><span aria-hidden="true">{published?'✓':'○'}</span>Veröffentlicht</li></ol>
       {published?<Link className="networkPrimary" href={`/portal/netzwerk/${access?.slug}/mitglieder`}>Netzwerk-Mitglieder entdecken →</Link>:<button type="button" className="networkPrimary" onClick={()=>setEditing({id:'main',action:progress.ready?'preview':'setup'})}>{progress.ready?'Vorschau prüfen & veröffentlichen':'Unternehmensseite vervollständigen'} →</button>}
     </section>}
-    <div className="companyPagesGrid">{cards.map(page=><article className="companyMiniCard" key={page.id} style={partnerBranding(page.profile)}>
-      <button type="button" className="companyMiniHero" aria-label={`Vorschau von ${page.companyName} öffnen und bearbeiten`} onClick={()=>setEditing({id:page.id,action:'preview'})}>
-        {page.profile?.heroImageUrl?<img src={page.profile.heroImageUrl} alt=""/>:<span className="companyMiniHeroPlaceholder">Dein Unternehmensauftritt</span>}
-        <span className="companyMiniStatus">{pageStates[page.reviewStatus]}</span>
-      </button>
-      <div className="companyMiniBody"><div className="companyMiniIdentity">{page.profile?.logoUrl?<img src={page.profile.logoUrl} alt=""/>:<span>{page.companyName.slice(0,2).toUpperCase()}</span>}<h3>{page.companyName}</h3></div>
-      <p>{page.profile?.tagline||'Zeig, was dein Unternehmen ausmacht.'}</p><small>{page.websiteUrl?new URL(page.websiteUrl).hostname:'Homepage noch ergänzen'}</small>
-      <div className="companyMiniActions"><button type="button" className="networkSecondary" onClick={()=>setEditing({id:page.id,action:'setup'})}>Einrichtung öffnen</button><button type="button" className="networkPrimary" onClick={()=>setEditing({id:page.id,action:'preview'})}>Vorschau öffnen & bearbeiten</button></div></div>
+    <div className="companyPagesGrid">{cards.map(page=><article className="networkPartnerCard networkMemberShowcase companyOwnerCard" key={page.id} style={partnerBranding(page.profile)}>
+      <CompanyCardHero image={page.profile?.heroImageUrl} companyName={page.companyName} services={page.profile?.services}/>
+      <div className="networkPartnerCardTop">{page.profile?.logoUrl?<img src={page.profile.logoUrl} alt=""/>:<span>{page.companyName.slice(0,2).toUpperCase()}</span>}<b className="networkMemberStatus">{pageStates[page.reviewStatus]}</b></div>
+      <small className="networkMemberPublication">{page.reviewStatus!=='approved'?'Noch nicht veröffentlicht':''}</small>
+      <p>{page.profile?.tagline||'Zeig, was dein Unternehmen ausmacht.'}</p>
+      <div className="networkPartnerCardActions companyOwnerActions"><button type="button" className="companySetupButton" onClick={()=>setEditing({id:page.id,action:'setup'})}>Einrichtung öffnen</button><button type="button" onClick={()=>setEditing({id:page.id,action:'preview'})}>Vorschau öffnen & bearbeiten</button></div>
+      <small className="companyOwnerWebsite">{page.websiteUrl?new URL(page.websiteUrl).hostname:'Homepage noch ergänzen'}</small>
     </article>)}
     {own?.canEdit&&cards.length<5&&<button type="button" className="companyAddCard" onClick={()=>setCreating(true)}><span>＋</span><strong>Weiteres eigenes Unternehmen</strong><small>Eigene Homepage · Freigabe durch den Betreiber</small></button>}</div>
     {creating&&<div className="networkModalBackdrop"><section className="networkModal companyCreateDialog" role="dialog" aria-modal="true" aria-labelledby="company-create-title"><h2 id="company-create-title">Eigenes Unternehmen ergänzen</h2><p>Nur eigene Unternehmen und Marken. Zusätzliche Seiten werden vor der Veröffentlichung vom Betreiber geprüft.</p><form onSubmit={create}><label>Unternehmen oder Marke<input name="companyName" required minLength={2} maxLength={160}/></label><label>Eigene Unternehmenshomepage<input name="websiteUrl" type="url" required placeholder="https://www.unternehmen.de"/></label><label className="companyOwnershipCheck"><input name="ownership" type="checkbox" required/><span>Ich bestätige, dass dieses Unternehmen oder diese Marke mir beziehungsweise meinem Unternehmen gehört. Ich lege keine Seite für fremde Unternehmen zur Umgehung eines eigenen Mitgliedszugangs an.</span></label><div><button type="button" className="networkSecondary" onClick={()=>setCreating(false)}>Abbrechen</button><button className="networkPrimary" disabled={busy}>{busy?'Wird angelegt …':'Seite einrichten'}</button></div></form>{notice&&<p role="alert">{notice}</p>}</section></div>}

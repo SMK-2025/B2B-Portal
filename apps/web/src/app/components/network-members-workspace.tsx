@@ -16,6 +16,7 @@ import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
 import { PartnerBusinessCard } from "./partner-business-card";
+import { CompanyCardHero } from "./company-card-hero";
 export type PartnerPageProfile = {
   documents?: PartnerDocument[];
   heroImageUrl?: string | null;
@@ -94,13 +95,7 @@ function MemberCardHero({networkId, memberId, companyName, services}: {networkId
     observer.observe(element);
     return()=>{active=false;observer.disconnect();};
   },[networkId,memberId]);
-  return <div ref={target} className={`networkMemberHero${image?' hasImage':''}`}>
-    {image?<img src={image} alt="" loading="lazy" decoding="async"/>:<span className="networkMemberHeroPattern"/>}
-    <div className="networkMemberHeroContent">
-      <h3>{companyName}</h3>
-      {services && <div className="networkMemberHeroFacts">{services.split(/[,;\n]/).map(value=>value.trim()).filter(Boolean).slice(0,3).map(value=><span key={value}>{value}</span>)}</div>}
-    </div>
-  </div>;
+  return <CompanyCardHero targetRef={target} image={image} companyName={companyName} services={services}/>;
 }
 export function NetworkMembersWorkspace() {
   const access = useNetworkAccess(),

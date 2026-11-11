@@ -1,4 +1,9 @@
-/* Shared member directory: image-led cards, scoped to avoid changing profile popups. */
+/* One company-card design across every tenant, directory and owner overview. */
+.networkPortal .companyPagesGrid{grid-auto-rows:1fr;align-items:stretch;}
+.networkPortal .companyOwnerCard .companyOwnerActions{gap:10px;}
+.networkPortal .companyOwnerCard .companyOwnerActions>.companySetupButton{background:#fff;color:var(--partner-primary,#173047);border:1px solid var(--partner-border,#dce3ed);}
+.networkPortal .companyOwnerCard .companyOwnerActions>.companySetupButton:hover{background:var(--partner-soft,#f0f4f8);}
+.networkPortal .companyOwnerCard>.companyOwnerWebsite{font-size:12px;letter-spacing:0;line-height:24px;min-height:24px;overflow-wrap:anywhere;}
 .networkPartnerGrid>.referralInline{display:flex;flex-direction:column;width:100%;height:100%;max-height:none;min-width:0;margin:0;box-shadow:0 6px 24px #142b4010;overflow:hidden;}
 .referralInline .referralHeader{flex:none;}
 .referralInline .referralBody{flex:1;align-content:center;}

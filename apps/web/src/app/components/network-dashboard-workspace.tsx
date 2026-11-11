@@ -1,6 +1,6 @@
 "use client";
 import { NetworkText } from "./network-text-editor";
-import { NetworkPulse } from './network-pulse';
+import { NetworkPulse, CooperationRevenue } from './network-pulse';
 import { useRouter } from "next/navigation";
 import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
@@ -252,6 +252,7 @@ export function NetworkDashboardWorkspace({
                   </NetworkText>
                 </Link>
               )}
+              {!preview && <CooperationRevenue />}
             </div>
           )}
         </div>
@@ -270,41 +271,8 @@ export function NetworkDashboardWorkspace({
           operator={access.role === "platform_admin"}
         />
       )}
-      {!preview && <NetworkPulse />}
-      <div
-        className={`loungeGrid${["bayer04leverkusen", "bayer-giants"].includes(slug) && enabled("events") ? " loungeGridWithMatchday" : ""}`}
-      >
-        {["bayer04leverkusen", "bayer-giants"].includes(slug) &&
-          enabled("events") &&
-          (preview ? (
-            <section
-              className="networkCard loungeCard"
-              style={{
-                background: preview.secondaryColor,
-                color: "white",
-                padding: 24,
-                textAlign: "center",
-              }}
-            >
-              <small>
-                <NetworkText id="ui.network-dashboard-workspace.0ac26d78bd69d1c8">
-                  {slug === "bayer04leverkusen" ? "Bundesliga" : "Bayer Giants"}
-                </NetworkText>
-              </small>
-              <h2>
-                <NetworkText id="ui.network-dashboard-workspace.b86b1055dbb9eb8a">
-                  Spieltag
-                </NetworkText>
-              </h2>
-              <p>
-                <NetworkText id="ui.network-dashboard-workspace.36f4f1f120ee8266">
-                  Ergebnisse und Tabelle
-                </NetworkText>
-              </p>
-            </section>
-          ) : (
-            <NetworkMatchdayCard />
-          ))}
+      <div className="loungePulseMembersRow">
+        {!preview && <NetworkPulse />}
         {enabled("profiles") && (
           <section className="networkCard loungeCard loungeMemberHighlight">
             <header>
@@ -383,6 +351,41 @@ export function NetworkDashboardWorkspace({
             </div>
           </section>
         )}
+      </div>
+      <div
+        className={`loungeGrid${["bayer04leverkusen", "bayer-giants"].includes(slug) && enabled("events") ? " loungeGridWithMatchday" : ""}`}
+      >
+        {["bayer04leverkusen", "bayer-giants"].includes(slug) &&
+          enabled("events") &&
+          (preview ? (
+            <section
+              className="networkCard loungeCard"
+              style={{
+                background: preview.secondaryColor,
+                color: "white",
+                padding: 24,
+                textAlign: "center",
+              }}
+            >
+              <small>
+                <NetworkText id="ui.network-dashboard-workspace.0ac26d78bd69d1c8">
+                  {slug === "bayer04leverkusen" ? "Bundesliga" : "Bayer Giants"}
+                </NetworkText>
+              </small>
+              <h2>
+                <NetworkText id="ui.network-dashboard-workspace.b86b1055dbb9eb8a">
+                  Spieltag
+                </NetworkText>
+              </h2>
+              <p>
+                <NetworkText id="ui.network-dashboard-workspace.36f4f1f120ee8266">
+                  Ergebnisse und Tabelle
+                </NetworkText>
+              </p>
+            </section>
+          ) : (
+            <NetworkMatchdayCard />
+          ))}
         {(enabled("community") || (enabled("events") && event)) && (
           <section
             className="loungeNoticeboard"

@@ -63,6 +63,38 @@ function fixture() {
   return { store, chat };
 }
 describe("network pulse", () => {
+  it("exposes revenue only after explicit amount sharing and bilateral confirmation", () => {
+    const { store, chat } = fixture();
+    updatePulse(store, chat, "a", {
+      action: "status",
+      revision: 0,
+      stage: "accepted",
+      comment: "Projekt",
+      publicText: "Projekt",
+      publish: true,
+      publishAmount: true,
+      amountNet: 1200,
+    });
+    expect(networkPulse(store, "network", 30)[0]).not.toHaveProperty(
+      "amountNet",
+    );
+    updatePulse(store, chat, "b", { action: "confirm", revision: 1 });
+    expect(networkPulse(store, "network", 30)[0]).toHaveProperty(
+      "amountNet",
+      1200,
+    );
+    expect(networkPulse(store, "other", 30)).toEqual([]);
+    updatePulse(store, chat, "a", {
+      action: "status",
+      revision: 2,
+      stage: "accepted",
+      comment: "Privat",
+      publish: false,
+    });
+    expect(networkPulse(store, "network", 30)[0]).not.toHaveProperty(
+      "amountNet",
+    );
+  });
   it("starts only after both participants reply and creates one private system note", () => {
     const { store, chat } = fixture();
     chat.data.messages = [{ userId: "a", kind: "message", body: "Hello" }];

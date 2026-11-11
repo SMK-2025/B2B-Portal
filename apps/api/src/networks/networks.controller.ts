@@ -307,6 +307,7 @@ export class NetworksController {
     @Param('networkId') id: string,
     @Query('days') days?: string,
   ) { return this.networks.pulse(auth, id, days); }
+  @Get(':networkId/pulse/revenue') pulseRevenue(@Headers('authorization') auth: string | undefined, @Param('networkId') id:string) {return this.networks.pulseRevenue(auth,id);}
   @Post(':networkId/content/:contentId/pulse') updateChatPulse(
     @Headers('authorization') auth: string | undefined,
     @Param('networkId') id: string,

@@ -329,3 +329,77 @@
     max-width: 92%;
   }
 }
+.networkPortal .loungePulseMembersRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  margin: 24px 0;
+  align-items: start;
+}
+.networkPortal .loungePulseMembersRow > .networkPulse {
+  margin: 0;
+  max-height: 390px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px !important;
+}
+.networkPortal .loungePulseMembersRow > .loungeMemberHighlight {
+  margin: 0;
+  min-width: 0;
+}
+.loungePulseMembersRow .pulseHeading {
+  gap: 12px;
+}
+.loungePulseMembersRow .pulseHeading p {
+  display: none;
+}
+.loungePulseMembersRow .pulseTimeline {
+  grid-template-columns:minmax(0,1fr);
+  overflow-y: auto;
+  max-height: 230px;
+  padding-right: 6px;
+}
+.loungePulseMembersRow .pulseTimeline article {
+  padding: 12px;
+  margin: 10px 0;
+}
+.pulsePartners .pulseProfileButton {
+  cursor: default;
+  border: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.networkPortal .loungeGrid > .bundesligaHomeCard {
+  grid-column: 1/-1;
+}
+.cooperationRevenue button {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 20px;
+  border: 1px solid #ffffff66;
+  border-radius: 10px;
+  background: var(--network-accent, #5260da);
+  color: white;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.cooperationRevenue button strong {
+  font-size: 22px;
+}
+.cooperationRevenue p {
+  max-width: 420px !important;
+  font-size: 13px !important;
+  margin: 10px 0 0 !important;
+}
+@media (max-width: 760px) {
+  .networkPortal .loungePulseMembersRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cooperationRevenue button {
+    width: 100%;
+  }
+}

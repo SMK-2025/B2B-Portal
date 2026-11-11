@@ -34,6 +34,8 @@ export function ChatCooperation({
     [stage, setStage] = useState("offer"),
     [comment, setComment] = useState(""),
     [privateOnly, setPrivateOnly] = useState(false),
+    [amount, setAmount] = useState(""),
+    [publishAmount, setPublishAmount] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const s = thread?.data.networkPulse;
@@ -86,6 +88,8 @@ export function ChatCooperation({
             setStage(e.target.value);
             setComment("");
             setPrivateOnly(false);
+            setAmount("");
+            setPublishAmount(false);
             setError("");
             setOpen(true);
           }}
@@ -141,6 +145,8 @@ export function ChatCooperation({
               comment,
               publish: !privateOnly,
               publicText: privateOnly || stage === "declined" ? "" : comment,
+              ...(amount ? { amountNet: Number(amount) } : {}),
+              publishAmount: !privateOnly && publishAmount,
             });
           }}
         >
@@ -171,6 +177,16 @@ export function ChatCooperation({
             <aside className="pulseProposal">
               <strong>Vorschlag des Gesprächspartners</strong>
               <p>{s?.publicText}</p>
+              {s?.publishAmount && s.amountNet !== undefined && (
+                <p>
+                  Zur Veröffentlichung freigegebener Umsatz:{" "}
+                  {s.amountNet.toLocaleString("de-DE", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}{" "}
+                  netto.
+                </p>
+              )}
               <button
                 type="button"
                 disabled={busy}
@@ -179,6 +195,30 @@ export function ChatCooperation({
                 Veröffentlichung bestätigen
               </button>
             </aside>
+          )}
+          {stage === "accepted" && (
+            <>
+              <label>
+                Umsatz netto in € (optional)
+                <input
+                  type="number"
+                  min="0"
+                  max="1000000000000"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </label>
+              <label className="pulseCheck">
+                <input
+                  type="checkbox"
+                  checked={publishAmount}
+                  disabled={privateOnly || !amount}
+                  onChange={(e) => setPublishAmount(e.target.checked)}
+                />
+                Diesen Umsatz gemeinsam zur Veröffentlichung freigeben
+              </label>
+            </>
           )}
           {error && <p role="alert">{error}</p>}
           <footer>

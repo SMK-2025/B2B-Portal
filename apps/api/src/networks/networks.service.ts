@@ -4543,6 +4543,12 @@ export class NetworksService {
     if (![30,60,90,180].includes(days)) throw new BadRequestException('Ungültiger Zeitraum.');
     return networkPulse(this.store, networkId, days);
   }
+  pulseRevenue(authorization: string | undefined, networkId: string) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireNetworkAccess(actor.id, networkId);
+    const entries = networkPulse(this.store, networkId, 365000).filter(e => e.amountNet !== undefined);
+    return {amountNet: Math.round(entries.reduce((sum,e)=>sum+(e.amountNet || 0),0)*100)/100, cooperations:entries.length};
+  }
   updateChatPulse(authorization: string | undefined, networkId: string, contentId: string, input: Record<string, unknown>) {
     const actor = this.auth.authenticate(authorization);
     this.requireWritableNetwork(actor.id, networkId);

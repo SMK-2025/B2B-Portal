@@ -88,6 +88,7 @@ export type PulseState = {
   approvals: string[];
   updatedAt: string;
   amountNet?: number;
+  publishAmount?: boolean;
   startedAt?: string;
   history: {
     stage: PulseStage;
@@ -210,6 +211,7 @@ export function updatePulse(
         ? state.amountNet
         : (input.amountNet as number);
     state.stage = stage;
+    state.publishAmount = stage === 'accepted' && input.publish === true && input.publishAmount === true && input.amountNet !== undefined;
     state.comment = comment;
     state.publicText =
       stage === "declined" || input.publish === false ? "" : publicText;
@@ -349,6 +351,7 @@ export function networkPulse(
           id: `pulse:${r.id}`,
           stage: approved ? s.stage : "chat",
           text: approved ? s.publicText : "",
+          ...(approved && s.stage === 'accepted' && s.publishAmount && s.amountNet !== undefined ? {amountNet:s.amountNet} : {}),
           at: s.updatedAt,
           partners: people.map(({ name, company, logoUrl, membershipId }) => ({
             name,

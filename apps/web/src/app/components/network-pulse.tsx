@@ -3,9 +3,9 @@ import "../network-pulse.css";
 import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
-import { ProfileDialog, type Member } from "./network-members-workspace";
 export type ChatPulseState = {
   amountNet?: number;
+  publishAmount?: boolean;
   revision: number;
   stage: string;
   publicText: string;
@@ -33,21 +33,6 @@ type Entry = {
   }[];
 };
 export function NetworkPulse() {
-  const [profile, setProfile] = useState<Member | null>(null);
-  async function openProfile(id?: string) {
-    if (!id || !access?.networkId) return;
-    try {
-      const member = await portalRequest<Member>(
-        `/networks/${access.networkId}/memberships/${encodeURIComponent(id)}`,
-        { token: getPortalSession() || "" },
-      );
-      if (member.organization?.networkProfile?.status === "published")
-        setProfile(member);
-      else setError("Dieses Unternehmen hat noch keine veröffentlichte Seite.");
-    } catch {
-      setError("Die Unternehmensseite ist derzeit nicht verfügbar.");
-    }
-  }
   const access = useNetworkAccess(),
     [days, setDays] = useState(30),
     [entries, setEntries] = useState<Entry[]>([]),
@@ -110,13 +95,10 @@ export function NetworkPulse() {
               <div className="pulsePartners">
                 {item.partners.map((p, i) => (
                   <span key={i}>
-                    <button
-                      className="pulseProfileButton"
-                      onClick={() => void openProfile(p.membershipId)}
-                    >
+                    <span className="pulseProfileButton">
                       {p.logoUrl && <img src={p.logoUrl} alt="" />}
                       <strong>{p.company || p.name}</strong>
-                    </button>
+                    </span>
                     {i === 0 && <b> × </b>}
                   </span>
                 ))}
@@ -138,9 +120,62 @@ export function NetworkPulse() {
         Nur Status und gemeinsam freigegebene Beschreibungen – keine
         Chat-Inhalte.
       </small>
-      {profile && (
-        <ProfileDialog member={profile} onClose={() => setProfile(null)} />
-      )}
     </section>
+  );
+}
+
+export function CooperationRevenue() {
+  const access = useNetworkAccess(),
+    [revenue, setRevenue] = useState<{
+      amountNet: number;
+      cooperations: number;
+    } | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (!access?.networkId) return;
+    let active = true;
+    const load = () =>
+      portalRequest<{ amountNet: number; cooperations: number }>(
+        `/networks/${access.networkId}/pulse/revenue`,
+        { token: getPortalSession() || "" },
+      )
+        .then((r) => {
+          if (active) setRevenue(r);
+        })
+        .catch(() => {
+          if (active) setRevenue(null);
+        });
+    void load();
+    const timer = setInterval(() => void load(), 30000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [access?.networkId]);
+  return (
+    <div className="cooperationRevenue">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Umsatz durch Kooperationen</span>
+        <strong>
+          {revenue
+            ? revenue.amountNet.toLocaleString("de-DE", {
+                style: "currency",
+                currency: "EUR",
+              })
+            : "–"}
+        </strong>
+      </button>
+      {expanded && (
+        <p>
+          {revenue
+            ? `${revenue.cooperations} gemeinsam bestätigte Kooperationen · Netto-Umsatz. Nur von beiden Gesprächspartnern ausdrücklich veröffentlichte Beträge in diesem Netzwerk.`
+            : "Die veröffentlichten Umsätze werden geladen."}
+        </p>
+      )}
+    </div>
   );
 }

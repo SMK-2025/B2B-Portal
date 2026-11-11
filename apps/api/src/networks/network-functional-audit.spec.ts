@@ -201,39 +201,32 @@ describe("functional audit with 50 partners", () => {
       }),
     ).toThrow();
     const future = new Date(Date.now() + 86400000 * 30).toISOString();
-    let thread = networks.reply(first.bearer, network.id, conversation.id, {
+    expect(() => networks.reply(first.bearer, network.id, conversation.id, {
       kind: "meeting",
       body: "Projekt besprechen",
       startsAt: future,
       durationMinutes: 30,
       location: "Online",
-    });
-    const meeting = (thread.data.messages as any[]).at(-1);
-    networks.respond(second.bearer, network.id, conversation.id, meeting.id, {
-      status: "accepted",
-    });
-    expect(
-      (
-        networks.thread(first.bearer, network.id, conversation.id).data
-          .messages as any[]
-      ).at(-1).responses[second.id],
-    ).toBe("accepted");
-    thread = networks.reply(first.bearer, network.id, conversation.id, {
+    })).toThrow("nicht mehr unterstützt");
+    expect(() => networks.reply(first.bearer, network.id, conversation.id, {
       kind: "action",
       body: "Angebot erstellen",
       assignedToUserId: second.id,
       deadline: future,
-    });
-    const action = (thread.data.messages as any[]).at(-1);
-    networks.respond(second.bearer, network.id, conversation.id, action.id, {
-      status: "completed",
-    });
-    expect(
-      (
-        networks.thread(first.bearer, network.id, conversation.id).data
-          .messages as any[]
-      ).at(-1).status,
-    ).toBe("completed");
+    })).toThrow("nicht mehr unterstützt");
+    // Historical entries remain readable, but obsolete mutations are rejected.
+    const storedConversation = store.networkContents.get(conversation.id)!;
+    const historical = [
+      { id: randomUUID(), userId: first.id, kind: "meeting", body: "Alter Termin", status: "proposed" },
+      { id: randomUUID(), userId: first.id, assignedToUserId: second.id, kind: "action", body: "Alte Aufgabe", status: "open" },
+    ];
+    storedConversation.data.messages = [...(storedConversation.data.messages as any[]), ...historical];
+    for (const entry of historical) {
+      expect(() => networks.respond(second.bearer, network.id, conversation.id, entry.id, {
+        status: entry.kind === "meeting" ? "accepted" : "completed",
+      })).toThrow("nicht mehr bearbeitet");
+      expect(entry.status).toBe(entry.kind === "meeting" ? "proposed" : "open");
+    }
     networks.updateContent(first.bearer, network.id, conversation.id, {
       data: { participantUserIds: [initiator.id], messages: [] },
     });

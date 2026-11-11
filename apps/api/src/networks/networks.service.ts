@@ -4574,6 +4574,10 @@ export class NetworksService {
         "Dieser Austausch ist noch nicht geöffnet oder bereits archiviert.",
       );
     const kind = String(input.kind || "message");
+    if (record.type === "conversation" && kind !== "message")
+      throw new BadRequestException(
+        "Termine und Aufgaben werden im Mitglieder-Chat nicht mehr unterstützt. Nutze Nachrichten oder den Gesprächsstatus.",
+      );
     if (record.type === "topic" && record.data.discussionOpen === false)
       throw new BadRequestException(
         "Für diesen Beitrag ist die Diskussion geschlossen.",
@@ -4668,6 +4672,10 @@ export class NetworksService {
         : [],
       message = messages.find((m) => m.id === messageId);
     if (!message) throw new NotFoundException("Beitrag nicht gefunden.");
+    if (record.type === "conversation" && message.kind !== "message")
+      throw new BadRequestException(
+        "Frühere Termine und Aufgaben bleiben nur als Verlauf erhalten und können nicht mehr bearbeitet werden.",
+      );
     if (message.kind === "meeting") {
       if (input.status === "cancelled") {
         if (message.userId !== actor.id)

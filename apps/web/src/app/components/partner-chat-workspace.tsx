@@ -8,7 +8,6 @@ import { useNetworkAccess } from "./network-shell";
 import {
   readPartnerFile,
   downloadPartnerFile,
-  NetworkThreadDialog,
 } from "./network-exchange-workspace";
 type Person = {
   userId: string;
@@ -83,8 +82,7 @@ export function PartnerChatWorkspace() {
     [notice, setNotice] = useState(""),
     [query, setQuery] = useState(""),
     [emojis, setEmojis] = useState(false),
-    [loadedNetwork, setLoadedNetwork] = useState(""),
-    [advanced, setAdvanced] = useState(false);
+    [loadedNetwork, setLoadedNetwork] = useState("");
   const scroll = useRef<HTMLDivElement>(null),
     input = useRef<HTMLTextAreaElement>(null),
     request = useRef(0),
@@ -188,6 +186,16 @@ export function PartnerChatWorkspace() {
   }
   useEffect(() => {
     if (loadedNetwork !== networkId) return;
+    const chatId = new URLSearchParams(window.location.search).get("chat");
+    if (chatId && consumed.current !== `${networkId}:chat:${chatId}`) {
+      const conversation = items.find((item) => item.id === chatId);
+      if (conversation) {
+        consumed.current = `${networkId}:chat:${chatId}`;
+        setSelected(conversation.id);
+        setPartner(ids(conversation).find((id) => id !== access?.currentUserId) || "");
+      }
+      return;
+    }
     const id = new URLSearchParams(window.location.search).get("partner");
     if (!id || consumed.current === `${networkId}:${id}`) return;
     consumed.current = `${networkId}:${id}`;
@@ -196,7 +204,7 @@ export function PartnerChatWorkspace() {
       return;
     }
     choosePerson(id);
-  }, [loadedNetwork, people, networkId]);
+  }, [loadedNetwork, people, items, networkId]);
   useEffect(() => {
     if (!selected) {
       setThread(null);
@@ -467,17 +475,6 @@ export function PartnerChatWorkspace() {
                   </NetworkText>
                 </p>
               </div>
-              {selected && (
-                <button
-                  type="button"
-                  className="partnerChatMore"
-                  onClick={() => setAdvanced(true)}
-                >
-                  <NetworkText id="ui.partner-chat-workspace.27e8598febe3fd51">
-                    Termine & Aufgaben
-                  </NetworkText>
-                </button>
-              )}
               {person?.logoUrl && (
                 <img
                   className="partnerChatCompanyLogo"
@@ -823,14 +820,6 @@ export function PartnerChatWorkspace() {
           </div>
         )}
       </div>
-      {advanced && selected && (
-        <NetworkThreadDialog
-          contentId={selected}
-          onClose={() => {
-            setAdvanced(false);
-          }}
-        />
-      )}
     </section>
   );
 }

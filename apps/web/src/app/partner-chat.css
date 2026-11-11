@@ -307,15 +307,6 @@
   font-size: 12px;
   line-height: 1.5;
 }
-.partnerChatMore {
-  border: 1px solid #dce3ed;
-  background: #fff;
-  padding: 9px 12px;
-  border-radius: 9px;
-  color: #435973;
-  cursor: pointer;
-  font-size: 12px;
-}
 .partnerChatBack {
   display: none;
 }
@@ -546,10 +537,6 @@
   .partnerChat {
     grid-template-columns: 250px minmax(0, 1fr);
   }
-  .partnerChatMore {
-    font-size: 10px;
-    padding: 8px;
-  }
   .partnerChatHeader {
     padding: 16px;
   }
@@ -604,9 +591,6 @@
     width: 36px;
     height: 36px;
     flex-basis: 36px;
-  }
-  .partnerChatMore {
-    max-width: 70px;
   }
   .partnerChatBubble {
     max-width: 88%;

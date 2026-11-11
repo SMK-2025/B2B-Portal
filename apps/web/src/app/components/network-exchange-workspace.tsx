@@ -1,6 +1,7 @@
 "use client";
 import { NetworkText } from "./network-text-editor";
 import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { PartnerChatWorkspace } from "./partner-chat-workspace";
@@ -128,6 +129,7 @@ export function NetworkThreadDialog({
   contentId: string;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const access = useNetworkAccess(),
     [thread, setThread] = useState<Thread | null>(null),
     [people, setPeople] = useState<Person[]>([]),
@@ -196,7 +198,13 @@ export function NetworkThreadDialog({
     const token = getPortalSession();
     if (!token || !access?.networkId) return;
     try {
-      setThread(await portalRequest<Thread>(path + "/thread", { token }));
+      const loaded = await portalRequest<Thread>(path + "/thread", { token });
+      if (loaded.type === "conversation") {
+        router.push(`/portal/netzwerk/${access.slug}/kommunikation?chat=${encodeURIComponent(contentId)}` as never);
+        onClose();
+        return;
+      }
+      setThread(loaded);
       setPeople(
         await portalRequest<Person[]>(
           "/networks/" + access.networkId + "/participants",

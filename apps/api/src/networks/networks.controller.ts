@@ -302,6 +302,17 @@ export class NetworksController {
   ) {
     return this.networks.thread(auth, id, contentId);
   }
+  @Get(':networkId/pulse') pulse(
+    @Headers('authorization') auth: string | undefined,
+    @Param('networkId') id: string,
+    @Query('days') days?: string,
+  ) { return this.networks.pulse(auth, id, days); }
+  @Post(':networkId/content/:contentId/pulse') updateChatPulse(
+    @Headers('authorization') auth: string | undefined,
+    @Param('networkId') id: string,
+    @Param('contentId') contentId: string,
+    @Body() body: Record<string, unknown>,
+  ) { return this.networks.updateChatPulse(auth, id, contentId, body); }
   @Post(":networkId/content/:contentId/replies") reply(
     @Headers("authorization") auth: string | undefined,
     @Param("networkId") id: string,

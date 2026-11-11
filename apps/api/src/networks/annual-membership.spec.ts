@@ -797,10 +797,8 @@ describe("personal annual membership billing", () => {
       action: "role",
       role: "network_admin",
     });
-    expect(() => f.networks.ownProfile(f.member, f.network.id)).toThrow(
-      /keine eigene Partnerseite/,
-    );
-    expect(f.networks.listMembers(f.owner, f.network.id)).toHaveLength(0);
+    expect(f.networks.ownProfile(f.member, f.network.id).canEdit).toBe(true);
+    expect(f.networks.listMembers(f.owner, f.network.id)).toHaveLength(1);
     await f.auth.register({
       email: "admin2@example.de",
       password: "Sicher-Portal-2026!",

@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import { networkPulse, updatePulse, visibleCooperation } from './network-pulse';
 import { companyDomain, sameCompanyDomain } from "./company-page-domain";
 import { publicLaunchOffer, launchSettings, validateLaunchBilling } from "./launch-promotion";
 import { attributeMailingRegistration } from "../mailings/mailing-attribution";
@@ -479,6 +480,7 @@ export class NetworksService {
   private canEditCompany(userId: string, organizationId: string, role: string) {
     return (
       role === "organization_admin" ||
+      role === "network_admin" ||
       this.store.memberships.some(
         (m) =>
           m.userId === userId &&
@@ -1001,7 +1003,7 @@ export class NetworksService {
         startsAt: order?.serviceStartsAt || null,
         endsAt: order?.serviceEndsAt || null,
         profile:
-          role === "network_admin" || role === "visitor"
+          role === "visitor"
             ? "Keine eigene Partnerseite"
             : complete
               ? "Vollständig & veröffentlicht"
@@ -2348,7 +2350,6 @@ export class NetworksService {
         (item) =>
           item.networkId === networkId &&
           (!ids||ids.has(item.id)) &&
-          item.role !== "network_admin" &&
           item.role !== "visitor" &&
           this.store.users.get(item.userId)?.accountRole !== "platform_admin" &&
           (manager || item.status === "active"),
@@ -2734,10 +2735,7 @@ export class NetworksService {
     );
     if (!membership)
       throw new ForbiddenException("Kein aktiver Netzwerkzugang.");
-    if (
-      membership.role === "network_admin" ||
-      user.accountRole === "platform_admin"
-    )
+    if (user.accountRole === "platform_admin")
       throw new ForbiddenException(
         "Initiatoren verwalten das Netzwerk und führen keine eigene Partnerseite.",
       );
@@ -2860,10 +2858,7 @@ export class NetworksService {
     );
     if (!membership)
       throw new ForbiddenException("Kein aktiver Netzwerkzugang.");
-    if (
-      membership.role === "network_admin" ||
-      user.accountRole === "platform_admin"
-    )
+    if (user.accountRole === "platform_admin")
       throw new ForbiddenException(
         "Initiatoren verwalten das Netzwerk und führen keine eigene Partnerseite.",
       );
@@ -3331,7 +3326,7 @@ export class NetworksService {
       data: {
         ...item.data,
         boardImageUrl: image,
-        boardImageIsLogo: Boolean(logo),
+        boardImageIsLogo: Boolean(logo || (item.data.kind === 'network_cooperation' && item.data.cooperationLogo)),
       },
     };
   }
@@ -3355,6 +3350,7 @@ export class NetworksService {
                 item.visibility === "members" &&
                 ["published", "active", "completed"].includes(item.status))
             : !type || item.type === type) &&
+          visibleCooperation(this.store, item) &&
           this.canReadContent(user.id, item) &&
           this.contentModuleAvailable(user.id, item),
       )
@@ -3416,6 +3412,9 @@ export class NetworksService {
     this.validateContentData(type, data, true);
     for (const key of [
       "messages",
+      "networkPulse",
+      "cooperationThreadId",
+      "cooperationPartners",
       "meetings",
       "votes",
       "participantUserIds",
@@ -3428,6 +3427,10 @@ export class NetworksService {
     ])
       delete data[key];
     if (type === "conversation") {
+      if (data.directChat === true && data.pulseVisible === true) {
+        data.networkPulse = { enabled: true, hiddenBy: [], revision: 0, stage: 'chat', comment: '', publicText: '', approvals: [], history: [], updatedAt: new Date().toISOString() };
+      }
+      delete data.pulseVisible;
       data.participantUserIds = this.validateParticipants(
         networkId,
         user.id,
@@ -3526,6 +3529,7 @@ export class NetworksService {
     const stored = this.store.networkContents.get(contentId);
     if (!stored || stored.networkId !== networkId)
       throw new NotFoundException("Netzwerkinhalt nicht gefunden.");
+    if (stored.data.kind === 'network_cooperation') throw new BadRequestException('Kooperationen bitte im zugehörigen Mitglieder-Chat gemeinsam bearbeiten und freigeben.');
     const record = { ...stored, data: { ...stored.data } };
     this.ensureModule(this.raw(networkId), record.type, user.id);
     this.requireContentUpdate(user.id, networkId, record);
@@ -3566,6 +3570,9 @@ export class NetworksService {
       const data = { ...(input.data as Record<string, unknown>) };
       for (const key of [
         "messages",
+        "networkPulse",
+        "cooperationThreadId",
+        "cooperationPartners",
         "meetings",
         "votes",
         "participantUserIds",
@@ -4060,7 +4067,6 @@ export class NetworksService {
       ),
       partners = members.filter(
         (item) =>
-          item.role !== "network_admin" &&
           this.store.users.get(item.userId)?.accountRole !== "platform_admin",
       ),
       contents = [...this.store.networkContents.values()].filter(
@@ -4068,6 +4074,7 @@ export class NetworksService {
           item.networkId === networkId &&
           item.data.kind !== "network_invitation" &&
           item.type !== "conversation" &&
+          visibleCooperation(this.store, item) &&
           this.canReadContent(user.id, item) &&
           this.contentModuleAvailable(user.id, item),
       );
@@ -4490,11 +4497,7 @@ export class NetworksService {
       )
       .map((m) => ({
         userId: m.userId,
-        logoUrl:
-          m.role === "network_admin"
-            ? null
-            : this.store.organizations.get(m.organizationId)?.networkProfile
-                ?.logoUrl || null,
+        logoUrl: this.store.organizations.get(m.organizationId)?.networkProfile?.logoUrl || null,
         role: m.role,
         name: [
           this.store.users.get(m.userId)?.firstName,
@@ -4502,10 +4505,7 @@ export class NetworksService {
         ]
           .filter(Boolean)
           .join(" "),
-        company:
-          m.role === "network_admin"
-            ? "Netzwerkleitung"
-            : this.store.organizations.get(m.organizationId)?.displayName || "",
+        company: this.store.organizations.get(m.organizationId)?.displayName || (m.role === 'network_admin' ? 'Netzwerkleitung' : ''),
       }));
   }
   thread(
@@ -4536,6 +4536,24 @@ export class NetworksService {
             )
           : [],
     };
+  }
+  pulse(authorization: string | undefined, networkId: string, daysValue?: string) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireNetworkAccess(actor.id, networkId);
+    const days = Number(daysValue || 30);
+    if (![30,60,90,180].includes(days)) throw new BadRequestException('Ungültiger Zeitraum.');
+    return networkPulse(this.store, networkId, days);
+  }
+  updateChatPulse(authorization: string | undefined, networkId: string, contentId: string, input: Record<string, unknown>) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireWritableNetwork(actor.id, networkId);
+    const record = this.readThread(actor.id, networkId, contentId);
+    const boardId = `cooperation:${record.id}`, wasPublished = this.store.networkContents.has(boardId);
+    updatePulse(this.store, record, actor.id, input);
+    const post = this.store.networkContents.get(boardId);
+    if (post && !wasPublished) this.notifyContent(post, actor.id, 'network.content.created');
+    if (!post) this.store.notifications.splice(0,this.store.notifications.length,...this.store.notifications.filter(n=>n.data.networkId!==networkId || n.data.contentId!==boardId));
+    return this.thread(authorization, networkId, contentId);
   }
   reply(
     authorization: string | undefined,
@@ -4621,6 +4639,7 @@ export class NetworksService {
       );
     record.data.messages = [...messages, message];
     record.updatedAt = new Date().toISOString();
+    if (record.type === 'conversation' && record.data.networkPulse && typeof record.data.networkPulse === 'object') (record.data.networkPulse as {updatedAt:string}).updatedAt = record.updatedAt;
     this.notifyContent(record, actor.id, "network.reply");
     return this.thread(authorization, networkId, contentId);
   }
@@ -4936,6 +4955,7 @@ export class NetworksService {
     ];
   }
   private canReadContent(userId: string, record: NetworkContentRecord) {
+    if (!visibleCooperation(this.store, record)) return false;
     if (record.data.kind === "network_invitation") return false;
     if (record.type === "conversation")
       return (

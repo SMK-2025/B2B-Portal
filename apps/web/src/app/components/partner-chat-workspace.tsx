@@ -1,5 +1,6 @@
 "use client";
 import { NetworkText } from "./network-text-editor";
+import { ChatCooperation, type ChatPulseState } from './network-pulse';
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
@@ -44,6 +45,7 @@ type Conversation = {
     participantUserIds?: string[];
     messages?: Message[];
     directChat?: boolean;
+    networkPulse?: ChatPulseState;
   };
 };
 const ids = (item: Conversation) => [
@@ -267,7 +269,7 @@ export function PartnerChatWorkspace() {
             description:
               "Vertraulicher Austausch zwischen zwei Netzwerkpartnern.",
             participantUserIds: [person.userId],
-            data: { category: "Sonstiger Austausch", directChat: true },
+            data: { category: "Sonstiger Austausch", directChat: true, pulseVisible: true },
           },
         });
         id = created.id;
@@ -482,6 +484,7 @@ export function PartnerChatWorkspace() {
                 />
               )}
             </header>
+            {thread && <ChatCooperation key={thread.id} networkId={networkId} thread={thread} onUpdate={() => { void portalRequest<Conversation>(`${base}/content/${thread.id}/thread`, { token: getPortalSession() || '' }).then(setThread).catch(() => setNotice('Status bitte erneut laden.')); }} />}
             <div
               className="partnerChatHistory"
               ref={scroll}
@@ -490,6 +493,7 @@ export function PartnerChatWorkspace() {
               aria-live="polite"
             >
               <p className="partnerChatPrivacy">
+                {!thread && 'Beim Start erscheint nur „Im gemeinsamen Chat“ mit euren Unternehmen im Netzwerk-Puls. Nachrichten bleiben vertraulich. Ihr könnt die Statusanzeige jederzeit ausblenden. '}
                 <NetworkText id="ui.partner-chat-workspace.807298e4d83a8a60">
                   Nur die Gesprächsteilnehmer können mitlesen. Die
                   Netzwerkleitung wird nicht automatisch hinzugefügt.

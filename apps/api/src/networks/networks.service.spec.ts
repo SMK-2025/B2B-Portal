@@ -203,7 +203,7 @@ describe("network tenancy", () => {
     expect(schedule.table).toHaveLength(18);
     expect(
       schedule.games.filter((game) => game.homeScore !== null),
-    ).toHaveLength(8);
+    ).toHaveLength(9);
     expect(schedule.games[5]).toMatchObject({
       homeTeam: "Bayer 04 Leverkusen",
       awayTeam: "Sport-Club Freiburg",
@@ -595,10 +595,8 @@ describe("network tenancy", () => {
       { email: "mitglied@example.de" },
     );
     expect(networkAdmin.role).toBe("network_admin");
-    expect(networks.listMembers(bearer, created.id)).toHaveLength(0);
-    expect(() => networks.ownProfile(bearer, created.id)).toThrow(
-      /keine eigene Partnerseite/,
-    );
+    expect(networks.listMembers(bearer, created.id)).toHaveLength(1);
+    expect(networks.ownProfile(bearer, created.id).canEdit).toBe(true);
     expect(networks.adminList(adminBearer)[0].administrator?.user?.email).toBe(
       "mitglied@example.de",
     );

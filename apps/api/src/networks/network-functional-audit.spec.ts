@@ -92,11 +92,9 @@ describe("functional audit with 50 partners", () => {
         role: "organization_admin",
       });
     }
-    expect(networks.listMembers(initiator.bearer, network.id)).toHaveLength(50);
-    expect(networks.listMembers(first.bearer, network.id)).toHaveLength(50);
-    expect(() => networks.ownProfile(initiator.bearer, network.id)).toThrow(
-      /keine eigene Partnerseite/,
-    );
+    expect(networks.listMembers(initiator.bearer, network.id)).toHaveLength(51);
+    expect(networks.listMembers(first.bearer, network.id)).toHaveLength(51);
+    expect(networks.ownProfile(initiator.bearer, network.id).canEdit).toBe(true);
     const other = networks.create(owner.bearer, {
       name: "Anderes Netzwerk",
       slug: "audit-other",

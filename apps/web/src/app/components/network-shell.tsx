@@ -165,12 +165,6 @@ const adminItems = [
     icon: "↗",
     module: "analytics",
   },
-  {
-    path: "umsaetze",
-    label: "Vermittelter Umsatz",
-    icon: "€",
-    module: "revenue",
-  },
 ];
 export function NetworkShell(props: {
   title: string;
@@ -554,7 +548,8 @@ function NetworkFrame({
                         Netzwerk-Verwaltung
                       </NetworkText>
                     </Link>
-                  ) : access.role !== "visitor" &&
+                  ) : null}
+                  {access.role !== "visitor" && access.role !== "platform_admin" &&
                     access.enabledModules.includes("profiles") ? (
                     <Link href={`${base}/profil` as never}>
                       <NetworkNavigationIcon path="profil"/>
@@ -665,7 +660,6 @@ function NetworkFrame({
                 </div>
                 {action ||
                   (pathname.replace(/\/$/, "") === base &&
-                  !access.isInitiator &&
                   access.role !== "visitor" &&
                   access.enabledModules.includes("profiles") ? (
                     <Link

@@ -1,0 +1,188 @@
+.networkPulse {
+  margin: 24px 0;
+  padding: 24px !important;
+  overflow: hidden;
+}
+.pulseHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.pulseHeading h2 {
+  margin: 5px 0;
+  font-size: 24px;
+}
+.pulseHeading p {
+  margin: 6px 0;
+  color: #52647a;
+}
+.pulseHeading small {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--network-accent, #5260da);
+}
+.pulseHeading strong {
+  display: block;
+}
+.pulseHeading label {
+  min-width: 115px;
+}
+.pulseHeading select {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dbe3ed;
+  border-radius: 10px;
+  background: #fff;
+}
+.pulseTimeline {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  max-height: 390px;
+  overflow: auto;
+  margin: 20px 0;
+}
+.pulseTimeline article {
+  border: 1px solid #dce3eb;
+  border-left: 3px solid var(--network-accent, #5260da);
+  border-radius: 12px;
+  padding: 18px;
+  background: #fff;
+}
+.pulseBadge {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--network-accent, #5260da);
+}
+.pulsePartners {
+  margin: 14px 0;
+  font-size: 16px;
+}
+.pulsePartners span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pulsePartners img {
+  width: 36px;
+  height: 32px;
+  object-fit: contain;
+}
+.pulseProfileButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.pulseEditor input[type="number"] {
+  display: block;
+  padding: 10px;
+  border: 1px solid #cbd7e5;
+  border-radius: 9px;
+  font: inherit;
+  width: 180px;
+  margin-top: 8px;
+}
+.pulseTimeline time,
+.networkPulse > small {
+  font-size: 12px;
+  color: #607086;
+}
+.chatCooperation {
+  flex: 0 0 auto;
+  background: #fff;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e2e7ef;
+  font-size: 14px;
+}
+.chatCooperation button {
+  border: 1px solid #d7e0eb;
+  border-radius: 9px;
+  padding: 9px 12px;
+  background: #fff;
+  color: #173044;
+  cursor: pointer;
+  font: inherit;
+}
+.pulseEditor {
+  max-height: 48vh;
+  overflow: auto;
+  padding: 12px 0;
+}
+.pulseEditor p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 12px 0;
+}
+.pulseEditor label {
+  display: block;
+  margin: 12px 0;
+}
+.pulseEditor .pulseCheck {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.pulseCheck input {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px;
+  flex: 0 0 18px;
+  margin: 2px 0 !important;
+  accent-color: var(--network-accent, #5260da);
+}
+.pulseEditor textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 75px;
+  padding: 12px;
+  border: 1px solid #cbd7e5;
+  border-radius: 10px;
+  margin-top: 8px;
+  font: inherit;
+}
+.pulseActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pulseActions button[aria-pressed="true"],
+.pulseEditor button[type="submit"] {
+  background: var(--network-accent, #5260da);
+  color: #fff;
+  border-color: transparent;
+}
+.pulseProposal {
+  padding: 14px;
+  background: #f3f6fa;
+  border-radius: 12px;
+}
+@media (max-width: 1000px) {
+  .pulseTimeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .pulseTimeline {
+    grid-template-columns: 1fr;
+  }
+  .networkPulse {
+    padding: 18px !important;
+  }
+  .pulseHeading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .chatCooperation {
+    padding: 10px 12px;
+  }
+}

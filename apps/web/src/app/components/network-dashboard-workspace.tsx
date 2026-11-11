@@ -1,5 +1,6 @@
 "use client";
 import { NetworkText } from "./network-text-editor";
+import { NetworkPulse } from './network-pulse';
 import { useRouter } from "next/navigation";
 import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
@@ -269,6 +270,7 @@ export function NetworkDashboardWorkspace({
           operator={access.role === "platform_admin"}
         />
       )}
+      {!preview && <NetworkPulse />}
       <div
         className={`loungeGrid${["bayer04leverkusen", "bayer-giants"].includes(slug) && enabled("events") ? " loungeGridWithMatchday" : ""}`}
       >

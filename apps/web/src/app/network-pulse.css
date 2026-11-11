@@ -346,13 +346,23 @@
   padding: 20px !important;
 }
 .networkPortal .loungePulseMembersRow > .loungeMemberHighlight {
+  display:flex;
+  flex-direction:column;
   margin: 0;
   min-width: 0;
   height:360px;
   box-sizing:border-box;
   overflow:hidden;
 }
-.loungePulseMembersRow .loungeMemberHighlight .loungeCardBody{min-height:0;overflow:auto}
+.loungePulseMembersRow .loungeMemberHighlight .loungeCardBody{min-height:0;overflow:hidden}
+.loungePulseMembersRow .loungeMemberHighlight>header{flex:0 0 auto}
+.loungePulseMembersRow .loungeMemberHighlight .loungePartners{min-height:0;overflow-y:auto;flex:1}
+.loungePulseMembersRow .loungeMemberHighlight .loungeOutlineButton{flex:0 0 auto}
+.networkPortal .loungeHeroRevenue{position:absolute;top:28px;right:28px;z-index:2;width:260px;max-width:calc(100% - 48px)}
+.loungeHeroRevenue .cooperationRevenue button{width:100%;background:#172a3ce6;backdrop-filter:blur(8px)}
+.networkPortal .loungeHeroRevenue p{color:white}
+@media(min-width:1101px){.networkPortal .loungeHero:has(.loungeHeroRevenue)>div{max-width:calc(100% - 320px);box-sizing:border-box}}
+@media(max-width:1100px){.networkPortal .loungeHeroRevenue{position:relative;top:auto;right:auto;margin:0 24px 28px;width:260px}.networkPortal .loungeHero:has(.loungeHeroRevenue){display:flex;flex-direction:column;align-items:stretch}}
 .networkPortal .loungeHeroActions{align-items:center}
 .loungePulseMembersRow .pulseHeading {
   gap: 12px;

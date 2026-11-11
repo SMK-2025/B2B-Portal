@@ -252,10 +252,10 @@ export function NetworkDashboardWorkspace({
                   </NetworkText>
                 </Link>
               )}
-              {!preview && <CooperationRevenue />}
             </div>
           )}
         </div>
+        {!preview && <aside className="loungeHeroRevenue"><CooperationRevenue /></aside>}
         {!data.network.settings?.bannerImageUrl && (
           <small>
             <NetworkText id="ui.network-dashboard-workspace.4ac20bf8f99a0af1">

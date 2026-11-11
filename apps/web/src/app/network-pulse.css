@@ -417,6 +417,12 @@
   .networkPortal .loungeGridWithMatchday > .loungeNoticeboard { grid-column:1/-1; }
 }
 .loungeBoardPagination { display:flex;justify-content:center;align-items:center;gap:16px;margin-top:14px; }
+/* One dashboard layout across all tenants, independent of enabled modules. */
+.networkPortal .loungeGrid.loungeGrid { grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch; }
+.networkPortal .loungeGrid.loungeGrid > * { grid-column:span 1;min-width:0; }
+@media(max-width:760px) {
+  .networkPortal .loungeGrid.loungeGrid { grid-template-columns:minmax(0,1fr); }
+}
 .loungeBoardPagination button { width:40px;height:40px;border:1px solid #dce3ed;border-radius:10px;background:white;color:var(--network-primary);font:inherit;cursor:pointer; }
 .loungeBoardPagination button:disabled { opacity:.35;cursor:default; }
 @media(max-width:620px) {

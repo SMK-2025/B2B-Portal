@@ -64,7 +64,7 @@ export function removeNetworkUser(
       continue;
     }
     if (c.assignedToUserId === u) c.assignedToUserId = null;
-    if (affectedChats.has(c.id)) delete c.data.networkPulse;
+    if (affectedChats.has(c.id)) { delete c.data.networkPulse; delete c.data.pulseNotes; }
     for (const key of [
       "participantUserIds",
       "readBy",

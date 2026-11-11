@@ -2,9 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 import { AuthService } from "../auth/auth.service";
 import { EmailService } from "../auth/email.service";
 import { NetworksService } from "./networks.service";
-import { removeNetworkUser } from './remove-network-user';
+import { removeNetworkUser } from "./remove-network-user";
 import { PortalStore } from "../core/portal.store";
-import { networkPulse, pulseState, updatePulse } from "./network-pulse";
+import {
+  networkPulse,
+  pulseState,
+  updatePulse,
+  activatePulseOnReply,
+} from "./network-pulse";
 import type { NetworkContentRecord } from "../core/domain";
 function fixture() {
   const store = new PortalStore(),
@@ -48,21 +53,73 @@ function fixture() {
     data: {
       directChat: true,
       participantUserIds: ["a", "b"],
-      messages: [{ body: "SECRET MESSAGE" }],
+      messages: [
+        { userId: "a", kind: "message", body: "SECRET MESSAGE" },
+        { userId: "b", kind: "message", body: "PRIVATE REPLY" },
+      ],
     },
   };
   store.networkContents.set(chat.id, chat);
   return { store, chat };
 }
 describe("network pulse", () => {
-  it('removes cooperation and private status data when either member is deleted',()=>{
-    const {store,chat}=fixture();
-    updatePulse(store,chat,'a',{revision:0,action:'status',stage:'accepted',comment:'PRIVATE',publicText:'Projekt'});
-    updatePulse(store,chat,'b',{revision:1,action:'confirm'});
-    removeNetworkUser(store,'network','b','b@test.invalid');
-    expect(store.networkContents.has('cooperation:chat')).toBe(false);
+  it("starts only after both participants reply and creates one private system note", () => {
+    const { store, chat } = fixture();
+    chat.data.messages = [{ userId: "a", kind: "message", body: "Hello" }];
+    activatePulseOnReply(store, chat);
     expect(pulseState(chat)).toBeUndefined();
-    expect(store.networkMemberships.some(m=>m.userId==='other')).toBe(true);
+    expect(networkPulse(store, "network", 30)).toEqual([]);
+    expect(() =>
+      updatePulse(store, chat, "a", {
+        action: "status",
+        revision: 0,
+        stage: "offer",
+        comment: "x",
+      }),
+    ).toThrow(/Antwort/);
+    (chat.data.messages as unknown[]).push({
+      userId: "b",
+      kind: "message",
+      body: "Reply",
+    });
+    activatePulseOnReply(store, chat);
+    activatePulseOnReply(store, chat);
+    expect(pulseState(chat)?.stage).toBe("chat");
+    expect(chat.data.pulseNotes).toHaveLength(1);
+    expect(networkPulse(store, "network", 30)).toHaveLength(1);
+  });
+  it("keeps private acceptance and its comment out of all public projections", () => {
+    const { store, chat } = fixture();
+    updatePulse(store, chat, "a", {
+      action: "status",
+      revision: 0,
+      stage: "accepted",
+      comment: "SECRET ACCEPTANCE",
+      publish: false,
+    });
+    expect(chat.data.pulseNotes).toHaveLength(1);
+    expect(JSON.stringify(chat.data.pulseNotes)).toContain("SECRET ACCEPTANCE");
+    expect(JSON.stringify(networkPulse(store, "network", 30))).not.toContain(
+      "SECRET",
+    );
+    expect(store.networkContents.has("cooperation:chat")).toBe(false);
+  });
+  it("removes cooperation and private status data when either member is deleted", () => {
+    const { store, chat } = fixture();
+    updatePulse(store, chat, "a", {
+      revision: 0,
+      action: "status",
+      stage: "accepted",
+      comment: "PRIVATE",
+      publicText: "Projekt",
+    });
+    updatePulse(store, chat, "b", { revision: 1, action: "confirm" });
+    removeNetworkUser(store, "network", "b", "b@test.invalid");
+    expect(store.networkContents.has("cooperation:chat")).toBe(false);
+    expect(pulseState(chat)).toBeUndefined();
+    expect(store.networkMemberships.some((m) => m.userId === "other")).toBe(
+      true,
+    );
   });
   it("enforces network access and rejects forged state through ordinary content edits", () => {
     const { store, chat } = fixture(),

@@ -1,6 +1,7 @@
 "use client";
 import { NetworkText } from "./network-text-editor";
-import { ChatCooperation, type ChatPulseState } from './network-pulse';
+import { type ChatPulseState } from './network-pulse';
+import { ChatCooperation } from './chat-status';
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
@@ -46,6 +47,7 @@ type Conversation = {
     messages?: Message[];
     directChat?: boolean;
     networkPulse?: ChatPulseState;
+    pulseNotes?: Message[];
   };
 };
 const ids = (item: Conversation) => [
@@ -241,7 +243,7 @@ export function PartnerChatWorkspace() {
       scroll.current.scrollTop = scroll.current.scrollHeight;
       autoScroll.current = false;
     }
-  }, [thread?.id, thread?.data.messages?.length]);
+  }, [thread?.id, thread?.data.messages?.length, thread?.data.pulseNotes?.length]);
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const token = getPortalSession();
@@ -483,8 +485,8 @@ export function PartnerChatWorkspace() {
                   alt={`Logo ${person.company || person.name}`}
                 />
               )}
+              <ChatCooperation key={thread?.id || partner} networkId={networkId} thread={thread} onUpdate={() => { if(thread) void portalRequest<Conversation>(`${base}/content/${thread.id}/thread`, { token: getPortalSession() || '' }).then(setThread).catch(() => setNotice('Status bitte erneut laden.')); }} />
             </header>
-            {thread && <ChatCooperation key={thread.id} networkId={networkId} thread={thread} onUpdate={() => { void portalRequest<Conversation>(`${base}/content/${thread.id}/thread`, { token: getPortalSession() || '' }).then(setThread).catch(() => setNotice('Status bitte erneut laden.')); }} />}
             <div
               className="partnerChatHistory"
               ref={scroll}
@@ -493,7 +495,7 @@ export function PartnerChatWorkspace() {
               aria-live="polite"
             >
               <p className="partnerChatPrivacy">
-                {!thread && 'Beim Start erscheint nur „Im gemeinsamen Chat“ mit euren Unternehmen im Netzwerk-Puls. Nachrichten bleiben vertraulich. Ihr könnt die Statusanzeige jederzeit ausblenden. '}
+                {!thread && 'Nach der ersten Antwort des Gesprächspartners erscheint der Status „Im Gespräch“. Nachrichten bleiben vertraulich. '}
                 <NetworkText id="ui.partner-chat-workspace.807298e4d83a8a60">
                   Nur die Gesprächsteilnehmer können mitlesen. Die
                   Netzwerkleitung wird nicht automatisch hinzugefügt.
@@ -585,10 +587,11 @@ export function PartnerChatWorkspace() {
                   </small>
                 </div>
               ) : null}
-              {thread?.data.messages?.map((message, index, all) => {
+              {[...(thread?.data.messages || []), ...(thread?.data.pulseNotes || []).map(n => ({...n, kind:'status-note'}))].sort((a,b)=>a.createdAt.localeCompare(b.createdAt)).map((message, index, all) => {
+                if(message.kind === 'status-note') return <aside className="partnerChatSystemNote" key={message.id}><strong>Status aktualisiert</strong><p>{message.body}</p><time>{new Date(message.createdAt).toLocaleString('de-DE')}</time></aside>;
                 const own =
                     message.userId ===
-                    (thread.currentUserId || access?.currentUserId),
+                    (thread?.currentUserId || access?.currentUserId),
                   date = new Date(message.createdAt).toLocaleDateString(
                     "de-DE",
                   );
@@ -603,7 +606,7 @@ export function PartnerChatWorkspace() {
                     <article
                       className={`partnerChatBubble${own ? " own" : ""}`}
                     >
-                      {ids(thread).length > 2 && !own && (
+                      {thread && ids(thread).length > 2 && !own && (
                         <b>{message.author}</b>
                       )}
                       {message.kind !== "message" && (

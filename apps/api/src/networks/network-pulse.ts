@@ -5,6 +5,76 @@ import {
 } from "@nestjs/common";
 import type { NetworkContentRecord } from "../core/domain";
 import { PortalStore } from "../core/portal.store";
+import { randomUUID } from "node:crypto";
+
+export function reciprocalChat(record: NetworkContentRecord) {
+  const ids = new Set([
+    record.createdByUserId,
+    ...(Array.isArray(record.data.participantUserIds)
+      ? record.data.participantUserIds.map(String)
+      : []),
+  ]);
+  const authors = new Set(
+    (Array.isArray(record.data.messages) ? record.data.messages : [])
+      .filter((m: any) => m.kind === "message" && ids.has(m.userId))
+      .map((m: any) => m.userId),
+  );
+  return (
+    record.data.directChat === true && ids.size === 2 && authors.size === 2
+  );
+}
+function statusNote(record: NetworkContentRecord, body: string, stage: string) {
+  const labels: Record<string, string> = {
+    chat: "Im Gespräch",
+    offer: "Angebot",
+    negotiation: "Verhandlungen",
+    accepted: "Kooperation vereinbart",
+    declined: "Angebot abgelehnt",
+  };
+  const notes = Array.isArray(record.data.pulseNotes)
+    ? record.data.pulseNotes
+    : [];
+  record.data.pulseNotes = [
+    ...notes,
+    {
+      id: randomUUID(),
+      body: `${labels[stage] || stage}\n${body}`,
+      stage,
+      createdAt: new Date().toISOString(),
+    },
+  ].slice(-200);
+}
+export function activatePulseOnReply(
+  store: PortalStore,
+  record: NetworkContentRecord,
+) {
+  if (
+    !reciprocalChat(record) ||
+    pulsePeople(store, record).some((p) => !p.active)
+  )
+    return;
+  const previous = pulseState(record);
+  if (previous?.startedAt) return;
+  const now = new Date().toISOString();
+  record.data.networkPulse = {
+    enabled: true,
+    hiddenBy: [],
+    revision: 0,
+    stage: "chat",
+    comment: "",
+    publicText: "",
+    approvals: [],
+    history: [],
+    ...previous,
+    startedAt: now,
+    updatedAt: now,
+  };
+  statusNote(
+    record,
+    "Im Gespräch – ihr habt beide im Chat geantwortet.",
+    "chat",
+  );
+}
 
 export type PulseStage =
   "chat" | "offer" | "negotiation" | "accepted" | "declined";
@@ -18,6 +88,7 @@ export type PulseState = {
   approvals: string[];
   updatedAt: string;
   amountNet?: number;
+  startedAt?: string;
   history: {
     stage: PulseStage;
     comment: string;
@@ -107,8 +178,14 @@ export function updatePulse(
       );
     state.approvals = [...new Set([...state.approvals, actorId])];
   } else if (input.action === "status") {
+    if (!reciprocalChat(record))
+      throw new BadRequestException(
+        "Der Status kann nach der ersten Antwort des Gesprächspartners geändert werden.",
+      );
     const stage = String(input.stage) as PulseStage;
-    if (!["offer", "negotiation", "accepted", "declined"].includes(stage))
+    if (
+      !["chat", "offer", "negotiation", "accepted", "declined"].includes(stage)
+    )
       throw new BadRequestException("Bitte einen gültigen Status wählen.");
     const comment = String(input.comment || "").trim(),
       publicText = String(input.publicText || "").trim();
@@ -116,7 +193,7 @@ export function updatePulse(
       throw new BadRequestException(
         "Bitte einen Kommentar eingeben (maximal 2.000 Zeichen).",
       );
-    if (stage === "accepted" && !publicText)
+    if (stage === "accepted" && input.publish !== false && !publicText)
       throw new BadRequestException(
         "Bitte eine kurze gemeinsame Beschreibung für die Kooperation eingeben.",
       );
@@ -134,13 +211,29 @@ export function updatePulse(
         : (input.amountNet as number);
     state.stage = stage;
     state.comment = comment;
-    state.publicText = stage === "declined" ? "" : publicText;
+    state.publicText =
+      stage === "declined" || input.publish === false ? "" : publicText;
     state.approvals = state.publicText ? [actorId] : [];
     state.history.push({ stage, comment, actorId, at: now });
     state.history = state.history.slice(-100);
+    statusNote(
+      record,
+      `${comment}\n${state.publicText ? "Veröffentlichung vorgeschlagen – Bestätigung des Gesprächspartners erforderlich." : "Nicht veröffentlicht. Nur für euch beide sichtbar."}`,
+      stage,
+    );
   } else throw new BadRequestException("Unbekannte Statusaktion.");
   state.revision++;
   state.updatedAt = now;
+  if (input.action === "confirm")
+    statusNote(record, "Veröffentlichung gemeinsam bestätigt.", state.stage);
+  if (input.action === "visibility")
+    statusNote(
+      record,
+      input.visible === true
+        ? "Netzwerk-Anzeige wieder freigegeben."
+        : "Netzwerk-Anzeige ausgeblendet.",
+      state.stage,
+    );
   record.data.networkPulse = state;
   record.updatedAt = now;
   syncCooperation(store, record);
@@ -243,7 +336,7 @@ export function networkPulse(
         people.length !== 2 ||
         people.some((p) => !p.active) ||
         !Array.isArray(r.data.messages) ||
-        !r.data.messages.length ||
+        !reciprocalChat(r) ||
         Date.parse(s.updatedAt) < cutoff
       )
         return [];

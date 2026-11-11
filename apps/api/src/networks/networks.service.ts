@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import { networkPulse, updatePulse, visibleCooperation } from './network-pulse';
+import { networkPulse, updatePulse, visibleCooperation, activatePulseOnReply } from './network-pulse';
 import { companyDomain, sameCompanyDomain } from "./company-page-domain";
 import { publicLaunchOffer, launchSettings, validateLaunchBilling } from "./launch-promotion";
 import { attributeMailingRegistration } from "../mailings/mailing-attribution";
@@ -3413,6 +3413,7 @@ export class NetworksService {
     for (const key of [
       "messages",
       "networkPulse",
+      "pulseNotes",
       "cooperationThreadId",
       "cooperationPartners",
       "meetings",
@@ -3427,9 +3428,6 @@ export class NetworksService {
     ])
       delete data[key];
     if (type === "conversation") {
-      if (data.directChat === true && data.pulseVisible === true) {
-        data.networkPulse = { enabled: true, hiddenBy: [], revision: 0, stage: 'chat', comment: '', publicText: '', approvals: [], history: [], updatedAt: new Date().toISOString() };
-      }
       delete data.pulseVisible;
       data.participantUserIds = this.validateParticipants(
         networkId,
@@ -3571,6 +3569,7 @@ export class NetworksService {
       for (const key of [
         "messages",
         "networkPulse",
+        "pulseNotes",
         "cooperationThreadId",
         "cooperationPartners",
         "meetings",
@@ -4638,6 +4637,7 @@ export class NetworksService {
         "Bitte für weitere Beiträge ein neues Thema beginnen.",
       );
     record.data.messages = [...messages, message];
+    if (record.type === 'conversation' && kind === 'message') activatePulseOnReply(this.store, record);
     record.updatedAt = new Date().toISOString();
     if (record.type === 'conversation' && record.data.networkPulse && typeof record.data.networkPulse === 'object') (record.data.networkPulse as {updatedAt:string}).updatedAt = record.updatedAt;
     this.notifyContent(record, actor.id, "network.reply");

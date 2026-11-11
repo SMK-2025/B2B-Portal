@@ -1338,7 +1338,7 @@
 .networkPortal .loungeBoardHeading h2 { font-size:28px; line-height:1.25; margin:6px 0 8px; color:var(--network-primary); }
 .networkPortal .loungeBoardHeading p { font-size:16px; margin:0; }
 .networkPortal .loungeBoardHeading > a { flex-shrink:0; width:auto; padding:12px 20px; background:white; }
-.networkPortal .loungeBoardSurface { display:grid; width:100%; box-sizing:border-box; grid-template-columns:repeat(3,minmax(0,1fr)); gap:26px; padding:30px 24px; border:8px solid #465159; border-radius:20px; background:linear-gradient(135deg,#263239,#151d22); box-shadow:inset 0 0 0 1px #ffffff20,inset 0 3px 14px #0005,0 6px 18px #17232b18; }
+.networkPortal .loungeBoardSurface { display:grid; width:100%; box-sizing:border-box; grid-template-columns:repeat(2,minmax(0,1fr)); gap:26px; padding:30px 24px; border:8px solid #465159; border-radius:20px; background:linear-gradient(135deg,#263239,#151d22); box-shadow:inset 0 0 0 1px #ffffff20,inset 0 3px 14px #0005,0 6px 18px #17232b18; }
 .networkPortal .loungeBoardNote { position:relative; display:flex; flex-direction:column; min-width:0; width:100%; font:inherit; text-align:left; cursor:pointer; appearance:none; background:#fffefa; color:#213b4f; border:1px solid #e4e3dc; padding:26px 20px 18px; border-radius:3px 3px 12px 3px; box-shadow:0 8px 18px #253c4f15; text-decoration:none; transition:transform .18s,box-shadow .18s; }
 .networkPortal .loungeBoardNote0 { transform:rotate(-1deg); }
 .networkPortal .loungeBoardNote1 { transform:rotate(1deg); background:#f7fbff; }

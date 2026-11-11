@@ -391,6 +391,39 @@
 .networkPortal .loungeGrid > .bundesligaHomeCard {
   grid-column: 1/-1;
 }
+/* Matchday and news share one compact desktop row; other networks keep a full-width board. */
+@media (min-width: 1101px) {
+  .networkPortal .loungeGridWithMatchday > .bundesligaHomeCard,
+  .networkPortal .loungeGridWithMatchday > .loungeNoticeboard {
+    grid-column: span 3;
+    order: 0;
+    min-width: 0;
+  }
+  .networkPortal .loungeGridWithMatchday { grid-template-columns:repeat(6,minmax(0,1fr));align-items:stretch; }
+  .networkPortal .loungeGridWithMatchday > .loungeNoticeboard { order:1; }
+  .networkPortal .loungeGridWithMatchday .loungeBoardHeading { gap:12px;padding-top:0; }
+  .networkPortal .loungeGridWithMatchday .loungeBoardHeading h2 { font-size:24px; }
+  .networkPortal .loungeGridWithMatchday .loungeBoardHeading p { display:none; }
+  .networkPortal .loungeGridWithMatchday .loungeBoardHeading > a { padding:10px 12px; }
+  .networkPortal .loungeGridWithMatchday .loungeBoardSurface { gap:16px;padding:24px 16px; }
+  .networkPortal .loungeGridWithMatchday .loungeBoardNote { padding:20px 12px 14px; }
+  .networkPortal .loungeGridWithMatchday .loungeBoardNote > img { height:110px; }
+  .networkPortal .loungeGridWithMatchday .loungeBoardNote h3 { font-size:18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+  .networkPortal .loungeGridWithMatchday .loungeBoardNote > p { -webkit-line-clamp:2;font-size:14px; }
+  .networkPortal .loungeGridWithMatchday .loungeNoteMeta { flex-wrap:wrap; }
+}
+@media (max-width:1100px) {
+  .networkPortal .loungeGridWithMatchday > .bundesligaHomeCard,
+  .networkPortal .loungeGridWithMatchday > .loungeNoticeboard { grid-column:1/-1; }
+}
+.loungeBoardPagination { display:flex;justify-content:center;align-items:center;gap:16px;margin-top:14px; }
+.loungeBoardPagination button { width:40px;height:40px;border:1px solid #dce3ed;border-radius:10px;background:white;color:var(--network-primary);font:inherit;cursor:pointer; }
+.loungeBoardPagination button:disabled { opacity:.35;cursor:default; }
+@media(max-width:620px) {
+  .networkPortal .loungeBoardSurface { display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:20px; }
+  .networkPortal .loungeBoardSurface > .loungeBoardNote { flex:0 0 100%;box-sizing:border-box;scroll-snap-align:center; }
+  .networkPortal .loungeBoardSurface > .loungeBoardEmpty { flex:0 0 100%;box-sizing:border-box; }
+}
 .cooperationRevenue button {
   display: flex;
   flex-direction: column;

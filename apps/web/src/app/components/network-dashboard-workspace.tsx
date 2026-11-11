@@ -84,9 +84,11 @@ export function NetworkDashboardWorkspace({
     [loaded, setData] = useState<Dashboard | null>(null),
     [partners, setPartners] = useState<Partner[]>([]),
     [threadId, setThreadId] = useState<string | null>(null),
+    [boardPage, setBoardPage] = useState(0),
     [message, setMessage] = useState("");
   const router = useRouter();
   const base = `/portal/netzwerk/${slug}`;
+  useEffect(() => setBoardPage(0), [slug]);
   useEffect(() => {
     if (preview) return;
     let active = true;
@@ -155,6 +157,15 @@ export function NetworkDashboardWorkspace({
     recap = data.eventRecaps[0],
     eventImage = itemImage(event),
     recapImage = itemImage(recap);
+  const boardHasEvent = Boolean(enabled("events") && event);
+  const boardAnnouncements = enabled("community") ? data.announcements.slice(0, 6) : [];
+  const boardPages = Math.max(1, Math.ceil((boardAnnouncements.length + Number(boardHasEvent)) / 2));
+  const currentBoardPage = Math.min(boardPage, boardPages - 1);
+  const boardStart = currentBoardPage * 2;
+  const visibleAnnouncements = boardAnnouncements.slice(
+    Math.max(0, boardStart - Number(boardHasEvent)),
+    boardStart + 2 - Number(boardHasEvent),
+  );
   const partnerOffset = partners.length
     ? Math.floor(Date.now() / 86400000) % partners.length
     : 0;
@@ -420,7 +431,7 @@ export function NetworkDashboardWorkspace({
               </Link>
             </header>
             <div className="loungeBoardSurface">
-              {enabled("events") && event && (
+              {enabled("events") && event && currentBoardPage === 0 && (
                 <Link
                   className="loungeBoardNote loungeBoardNote0"
                   href={`${base}/veranstaltungen?event=${encodeURIComponent(event.id)}` as never}
@@ -440,7 +451,7 @@ export function NetworkDashboardWorkspace({
                 </Link>
               )}
               {enabled("community") && data.announcements.length ? (
-                data.announcements.slice(0, 6).map((item, index) => (
+                visibleAnnouncements.map((item, index) => (
                   <button
                     type="button"
                     className={`loungeBoardNote loungeBoardNote${index % 3}`}
@@ -527,6 +538,13 @@ export function NetworkDashboardWorkspace({
                 </div>
               ) : null}
             </div>
+            {boardPages > 1 && (
+              <nav className="loungeBoardPagination" aria-label="Beiträge am schwarzen Brett">
+                <button type="button" aria-label="Vorherige Beiträge" disabled={currentBoardPage === 0} onClick={() => setBoardPage(currentBoardPage - 1)}>←</button>
+                <span aria-live="polite">{currentBoardPage + 1} / {boardPages}</span>
+                <button type="button" aria-label="Weitere Beiträge" disabled={currentBoardPage === boardPages - 1} onClick={() => setBoardPage(currentBoardPage + 1)}>→</button>
+              </nav>
+            )}
           </section>
         )}
         {enabled("events") && recap && (

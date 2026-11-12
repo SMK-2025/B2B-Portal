@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
+import { useNetworkAccess } from "./network-shell";
 const fields = {
   members: [
     "title",
@@ -68,15 +69,16 @@ type Item = {
   preview: Record<string, unknown> | null;
 };
 export function HomepagePublications() {
+  const access = useNetworkAccess();
   const [data, setData] = useState<Partial<Record<Kind, Item[]>>>({}),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
   async function load() {
     const token = getPortalSession();
-    if (!token) return;
+    if (!token || !access?.features?.publicHomepage) return;
     try {
       setData(
-        await portalRequest("/networks/homepage/unternehmerfreunde/manage", {
+        await portalRequest(`/networks/homepage/${access.slug}/manage`, {
           token,
         }),
       );
@@ -86,14 +88,14 @@ export function HomepagePublications() {
   }
   useEffect(() => {
     void load();
-  }, []);
+  }, [access?.slug, access?.features?.publicHomepage]);
   async function moderate(id: string, hidden: boolean) {
     const token = getPortalSession();
     if (!token || busy) return;
     setBusy(true);
     try {
       await portalRequest(
-        "/networks/homepage/unternehmerfreunde/members/" + id + "/moderation",
+        `/networks/homepage/${access?.slug}/members/` + id + "/moderation",
         { token, body: { hidden } },
       );
       await load();
@@ -115,7 +117,7 @@ export function HomepagePublications() {
     setBusy(true);
     try {
       await portalRequest(
-        `/networks/homepage/unternehmerfreunde/${kind}/${id}`,
+        `/networks/homepage/${access?.slug}/${kind}/${id}`,
         {
           token,
           body: {

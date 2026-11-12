@@ -43,7 +43,7 @@ export function assertContract(feed: any): void {
     for (const item of feed[kind]) {
       if (
         !matches(item, (schema.properties as any)[kind].items) ||
-        ids.has(item.id)
+        ids.has(item.id) || item.network !== feed.network
       )
         throw Error("PUBLIC_FEED_RECORD_INVALID");
       ids.add(item.id);

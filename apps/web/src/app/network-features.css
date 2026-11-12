@@ -1,0 +1,119 @@
+.networkFeatures {
+  display: grid;
+  gap: 24px;
+}
+.featureIntro,
+.featureSave {
+  padding: 24px;
+}
+.featureIntro h2 {
+  margin: 0 0 10px;
+  font-size: 26px;
+}
+.featureIntro p,
+.featureCard p {
+  font-size: 16px;
+  line-height: 1.65;
+  color: #506579;
+}
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.featureCard {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+}
+.featureCard h3 {
+  font-size: 20px;
+  margin: 0 0 8px;
+  color: var(--network-accent);
+}
+.featureCard p {
+  margin: 0 0 8px;
+}
+.featureCard small {
+  color: #607588;
+  line-height: 1.5;
+}
+.featureSwitch {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  background: #edf1f5 !important;
+  color: #30475b !important;
+  border: 1px solid #ccd7e2 !important;
+  border-radius: 22px !important;
+  padding: 8px 12px !important;
+  min-width: 88px;
+  cursor: pointer;
+}
+.featureSwitch span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #93a4b3;
+}
+.featureSwitch[aria-checked="true"] {
+  background: var(--network-accent) !important;
+  color: white !important;
+}
+.featureSwitch[aria-checked="true"] span {
+  background: white;
+}
+.featureSwitch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.featureSwitch:focus-visible {
+  outline: 3px solid var(--network-accent);
+  outline-offset: 3px;
+}
+.featureSports {
+  grid-column: 1/-1;
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+}
+.featureSports label {
+  display: grid;
+  gap: 6px;
+  font-size: 15px;
+}
+.featureSports select {
+  padding: 12px;
+  border: 1px solid #ccd7e2;
+  border-radius: 10px;
+  background: white;
+  width: 100%;
+  font: inherit;
+}
+.featureSave {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+}
+.featureSave p {
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+  .featureCard {
+    padding: 20px;
+  }
+  .featureSave {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .featureSave button {
+    width: 100%;
+  }
+}

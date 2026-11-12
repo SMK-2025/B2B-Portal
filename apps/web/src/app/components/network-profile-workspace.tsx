@@ -523,7 +523,7 @@ function CompanyPageEditor({
           </nav>
           <div className="setupOrientation"><span>Schritt {step + 1} von 4</span><progress max={4} value={step + 1} aria-label="Aktueller Einrichtungsschritt"/><p>{['Deine Homepage kann PagePilot AI als Grundlage nutzen. Ergänze anschließend die Angaben zu deinem Unternehmen.','Zeige, was du anbietest und für wen deine Leistungen interessant sind.','Gib deinem Auftritt ein Gesicht. Logo und Titelbild sind empfohlen, aber keine Pflicht.','So erreichen dich die Mitglieder. Prüfe danach deine Vorschau und veröffentliche deine Seite.'][step]}</p></div>
         </header>
-        {data.canEdit && (
+        {data.canEdit && access?.features?.pagePilot !== false && (
           <details
             className="networkCard networkCompanyImport pagePilotStudio"
             open
@@ -781,8 +781,8 @@ function CompanyPageEditor({
                           <option value="about">Vorstellung</option>
                           <option value="services">Leistungen</option>
                           <option value="personal">Persönlich</option>
-                          <option value="offers">Angebote</option>
-                          <option value="looking">Gesuche</option>
+                          {access?.features?.offers !== false && <option value="offers">Angebote</option>}
+                          {access?.features?.offers !== false && <option value="looking">Gesuche</option>}
                         </select>
                       </label>
                       <label>
@@ -1158,7 +1158,7 @@ function CompanyPageEditor({
                   </label>
                 </div>
               </section>
-              <section className="networkCard" hidden={step !== 1}>
+              <section className="networkCard" hidden={step !== 1 || access?.features?.documents === false}>
                 <header><div><h2>Präsentationen & Unterlagen</h2><p>Ergänze deine Leistungen mit PDF-Dokumenten auf deiner Unternehmensseite.</p></div></header>
                 <div className="networkCardBody"><PartnerDocumentsEditor value={documents} onChange={setDocuments} disabled={busy || !data.canEdit} onBusyChange={setReadingDocuments}/></div>
               </section>
@@ -1282,7 +1282,7 @@ function CompanyPageEditor({
                       disabled={!data.canEdit}
                     />
                   </label>
-                  <label className="wide">
+                  <label className="wide" hidden={access?.features?.offers === false}>
                     <NetworkText id="ui.network-profile-workspace.0947baa797351e27">
                       Das biete ich an
                     </NetworkText>
@@ -1295,7 +1295,7 @@ function CompanyPageEditor({
                       disabled={!data.canEdit}
                     />
                   </label>
-                  <label className="wide">
+                  <label className="wide" hidden={access?.features?.offers === false}>
                     <NetworkText id="ui.network-profile-workspace.d14d578f2c84342d">
                       Das suche ich
                     </NetworkText>

@@ -72,6 +72,8 @@ function NetworkNavigationIcon({ path }: { path: string }) {
   );
 }
 type Access = {
+  features: Record<string, boolean>;
+  sportSelection?: string;
   homeTexts?: { welcomeTitle?: string | null; welcomeIntro?: string | null };
   membershipYear?: {
     startsAt: string;
@@ -140,6 +142,7 @@ const primaryPartnerItems = [
   },
 ];
 const adminItems = [
+  { path: "funktionen", label: "Funktionen", icon: "⚙" },
   { path: "einstellungen", label: "Branding & Einstellungen", icon: "⚙" },
   {
     path: "mitglieder",
@@ -227,6 +230,7 @@ function NetworkFrame({
     [mobileOpen, setMobileOpen] = useState(false),
     [navPanel, setNavPanel] = useState<"admin" | null>(null),
     [access, setAccess] = useState<Access | null>(null),
+    [featureRefresh, setFeatureRefresh] = useState(0),
     [error, setError] = useState(""),
     [trialAcknowledged, setTrialAcknowledged] = useState(false),
     base = `/portal/netzwerk/${slug}`;
@@ -259,6 +263,8 @@ function NetworkFrame({
             name: string;
             status: string;
             enabledModules: string[];
+            features: Record<string, boolean>;
+            sportSelection?: string;
             offeredModules: string[];
             logoUrl: string | null;
             primaryColor: string;
@@ -301,6 +307,8 @@ function NetworkFrame({
                 session.accountRole !== "platform_admin"),
             status: network.status,
             enabledModules: network.enabledModules,
+            features: network.features,
+            sportSelection: network.sportSelection,
             offeredModules: network.offeredModules,
             logoUrl: network.logoUrl,
             companyLogoUrl:
@@ -321,7 +329,13 @@ function NetworkFrame({
     return () => {
       active = false;
     };
-  }, [router, slug]);
+  }, [router, slug, featureRefresh]);
+  useEffect(() => {
+    const refresh = () => setFeatureRefresh(v => v + 1);
+    window.addEventListener("network-features-changed", refresh);
+    window.addEventListener("focus", refresh);
+    return () => { window.removeEventListener("network-features-changed", refresh); window.removeEventListener("focus", refresh); };
+  }, []);
   useEffect(() => {
     setMobileOpen(false);
     setAccount(false);
@@ -329,6 +343,7 @@ function NetworkFrame({
     if (
       [
         "einstellungen",
+        "funktionen",
         "auswertungen",
         "umsaetze",
         "veroeffentlichungen",
@@ -386,12 +401,12 @@ function NetworkFrame({
   const shownName = access.networkName || networkName,
     initials = shownName.slice(0, 2).toUpperCase(),
     moduleVisible = (item: { path: string; module?: string }) =>
-      (!item.module ||
+      access.features?.[({themen:"board",mitglieder:"profiles",profil:"profiles",spielplan:"sports",veranstaltungen:"events",kommunikation:"chat",rueckblicke:"recaps"} as Record<string,string>)[item.path]] !== false &&
+      (item.path === "spielplan" || !item.module ||
         access.enabledModules.includes(item.module) ||
         (item.path === "spielplan" &&
           access.offeredModules.includes("events"))) &&
-      (item.path !== "spielplan" ||
-        ["bayer-giants", "bayer04leverkusen"].includes(slug)),
+      (item.path !== "spielplan" || access.features?.sports === true),
     visiblePrimary = primaryPartnerItems.filter(
       (item) =>
         moduleVisible(item) &&
@@ -402,7 +417,7 @@ function NetworkFrame({
         ),
     ),
     visibleAdmin = adminItems.filter(
-      (item) => !item.module || access.enabledModules.includes(item.module),
+      (item) => item.path === "mitglieder" || !item.module || access.enabledModules.includes(item.module),
     ),
     href = (path: string) => (path ? `${base}/${path}` : base),
     isActive = (path: string) => pathname === href(path),
@@ -426,7 +441,7 @@ function NetworkFrame({
       }}
       href={href(item.path) as never}
       title={
-        item.path === "spielplan" && slug === "bayer04leverkusen"
+        item.path === "spielplan" && (access.sportSelection || slug) === "bayer04leverkusen"
           ? "Bundesliga"
           : item.label
       }
@@ -435,7 +450,7 @@ function NetworkFrame({
         <NetworkNavigationIcon path={item.path} />
       </span>
       <NetworkText id={`ui.nav.${item.path || "home"}`}>
-        {item.path === "spielplan" && slug === "bayer04leverkusen"
+        {item.path === "spielplan" && (access.sportSelection || slug) === "bayer04leverkusen"
           ? "Bundesliga"
           : item.label}
       </NetworkText>
@@ -559,7 +574,7 @@ function NetworkFrame({
                     </Link>
                   ) : null}
                   <a href="mailto:service@b2b-matching.de"><NetworkNavigationIcon path="hilfe"/><NetworkText id="ui.network-shell.5109b38afaef193f">Hilfe & Kontakt</NetworkText></a>
-                  {!access.readOnly && access.role !== "platform_admin" && <NetworkReferralButton key={access.networkId} networkId={access.networkId}/>}
+                  {!access.readOnly && access.role !== "platform_admin" && access.features?.referrals !== false && <NetworkReferralButton key={access.networkId} networkId={access.networkId}/>}
                   <button type="button" className="networkAccountLogout" onClick={logout}>
                     <NetworkNavigationIcon path="abmelden"/>
                     <NetworkText id="ui.network-shell.545f8be33bf06a1c">
@@ -601,7 +616,7 @@ function NetworkFrame({
                 aria-label="Netzwerkverwaltung"
               >
                 {visibleAdmin.map(itemLink)}
-                {navPanel === "admin" && slug === "unternehmerfreunde" && (
+                {navPanel === "admin" && access.features?.publicHomepage === true && (
                   <Link
                     href={`${base}/veroeffentlichungen` as never}
                     className={isActive("veroeffentlichungen") ? "active" : ""}
@@ -701,7 +716,7 @@ function NetworkFrame({
                 operator={access.role === "platform_admin"}
               />
             )}
-            {children}
+            {access.features?.[({mitglieder:"profiles",profil:"profiles",kommunikation:"chat",themen:"board",veranstaltungen:"events",rueckblicke:"recaps",spielplan:"sports",auswertungen:"analytics",veroeffentlichungen:"publicHomepage"} as Record<string,string>)[pathname.split("/").pop() || ""]] === false ? <section className="networkCard networkLoading"><h2>Funktion ausgeschaltet</h2><p>Die Netzwerkleitung hat diesen Bereich derzeit deaktiviert.</p><Link href={base as never}>Zur Startseite</Link></section> : children}
           </div>
         </section>
       </main>

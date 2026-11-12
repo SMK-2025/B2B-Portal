@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import { networkPulse, updatePulse, visibleCooperation, activatePulseOnReply } from './network-pulse';
+import { NETWORK_FEATURES, MODULE_FEATURES, featureEnabled, networkFeatures, type NetworkFeature } from './network-features';
 import { companyDomain, sameCompanyDomain } from "./company-page-domain";
 import { publicLaunchOffer, launchSettings, validateLaunchBilling } from "./launch-promotion";
 import { attributeMailingRegistration } from "../mailings/mailing-attribution";
@@ -494,6 +495,7 @@ export class NetworksService {
     networkId: string,
     input: Record<string, unknown>,
   ) {
+    this.requireFeature(networkId, "pagePilot");
     const own = this.ownProfile(authorization, networkId);
     if (!own.canEdit)
       throw new ForbiddenException(
@@ -1130,6 +1132,7 @@ export class NetworksService {
       );
     if (!m || n.status !== "active")
       throw new ForbiddenException("Nur aktive Mitglieder können empfehlen.");
+    this.requireFeature(id, "referrals");
     const key = "ref:" + m.id,
       now = new Date().toISOString();
     let r = this.store.networkContents.get(key);
@@ -2176,8 +2179,10 @@ export class NetworksService {
         primary: network.primaryColor,
         secondary: network.secondaryColor,
       },
-      enabledModules: this.userModules(user.id, network.id),
-      offeredModules: network.enabledModules,
+      enabledModules: this.userModules(user.id, network.id).filter(m => !MODULE_FEATURES[m] || featureEnabled(network, MODULE_FEATURES[m])),
+      features: networkFeatures(network),
+      sportSelection: network.settings.sportSelection || network.slug,
+      offeredModules: network.enabledModules.filter(m => !MODULE_FEATURES[m] || featureEnabled(network, MODULE_FEATURES[m])),
       settings: network.settings,
       selfRegistration: network.settings.selfRegistration,
     };
@@ -2324,7 +2329,7 @@ export class NetworksService {
       const membership=this.store.networkMemberships.find(m=>m.id===membershipId && m.networkId===networkId)!;
       const page=this.store.organizations.get(membership.organizationId)?.additionalCompanyPages?.find(p=>p.id===pageId && p.networkId===networkId && p.reviewStatus==='approved' && p.profile?.status==='published');
       if(!page)throw new NotFoundException('Diese Unternehmensseite ist nicht verfügbar.');
-      return {...member,organization:{...member.organization!,displayName:page.profile!.companyName,legalName:page.companyName,websiteUrl:page.websiteUrl,networkProfile:page.profile!}};
+      return {...member,organization:{...member.organization!,displayName:page.profile!.companyName,legalName:page.companyName,websiteUrl:page.websiteUrl,networkProfile:this.visibleProfile(networkId,page.profile!)}};
     }
     const actor=this.auth.authenticate(authorization);
     if(member.organization?.networkProfile?.status!=='published' && !this.isNetworkManager(actor.id,networkId))throw new NotFoundException('Diese Unternehmensseite ist noch nicht veröffentlicht.');
@@ -2338,6 +2343,7 @@ export class NetworksService {
   listMembers(authorization: string | undefined, networkId: string, ids?:Set<string>, summary=false) {
     const user = this.auth.authenticate(authorization);
     this.requireNetworkAccess(user.id, networkId);
+    if (!this.isNetworkInitiator(user.id, networkId)) this.requireFeature(networkId, "profiles");
     const showBilling = this.isNetworkInitiator(user.id, networkId),
       manager = this.isNetworkManager(user.id, networkId),
       ownOrganizationIds = new Set(
@@ -2387,7 +2393,7 @@ export class NetworksService {
                   status:profile!.status,logoUrl:profile!.logoUrl,companyName:profile!.companyName,
                   tagline:profile!.tagline,services:profile!.services,contactName:profile!.contactName,
                   primaryColor:profile!.primaryColor,secondaryColor:profile!.secondaryColor,
-                }:profile) : null,
+                }:this.visibleProfile(networkId,profile!)) : null,
               }
             : null,
           ...(showBilling
@@ -2537,7 +2543,7 @@ export class NetworksService {
       );
     const org = this.store.organizations.get(setup.organizationId)!;
     return input
-      ? this.writePartnerProfile(org, { ...input, publish: false })
+      ? this.writePartnerProfile(org, { ...input, publish: false }, id)
       : {
           organization: {
             displayName: org.displayName,
@@ -2555,6 +2561,7 @@ export class NetworksService {
     input: Record<string, unknown>,
   ) {
     const { actor } = this.serviceTarget(auth, id, uid);
+    this.requireFeature(id, "pagePilot");
     this.serviceProfile(auth, id, uid);
     if (input.consent !== true)
       throw new BadRequestException("Bitte die Analyse bestätigen.");
@@ -2812,7 +2819,7 @@ export class NetworksService {
     if([organization.displayName,...(organization.additionalCompanyPages||[]).filter(p=>p.networkId===networkId&&p.id!==pageId).map(p=>p.companyName)].some(n=>normalize(n)===name))throw new ConflictException('Für dieses Unternehmen existiert bereits eine Seite.');
     const temp={...organization,displayName:page.companyName,websiteUrl:website,networkProfile:page.profile||undefined};
     // Validate every publication field, but never let members bypass owner approval.
-    const profile=this.writePartnerProfile(temp,{...input,websiteUrl:website});
+    const profile=this.writePartnerProfile(temp,{...input,websiteUrl:website},networkId);
     profile.status='draft';profile.publishedAt=null;
     page.profile=profile;page.companyName=profile.companyName;page.websiteUrl=website;
     page.reviewStatus=input.publish===true?'pending':'draft';delete page.reviewedAt;delete page.reviewedBy;
@@ -2875,7 +2882,7 @@ export class NetworksService {
       throw new NotFoundException("Unternehmen nicht gefunden.");
     if(input.websiteUrl)this.checkCompanyHomepage(networkId,input.websiteUrl,organization.id);
     const wasPublished = organization.networkProfile?.status === "published";
-    const profile = this.writePartnerProfile(organization, input);
+    const profile = this.writePartnerProfile(organization, input, networkId);
     const key = "welcome:" + networkId + ":" + organization.id;
     if (
       !wasPublished &&
@@ -2916,6 +2923,7 @@ export class NetworksService {
     return profile;
   }
   private syncProfileOffer(networkId: string, membershipId: string, organizationId: string, userId: string, profile: NetworkPartnerProfile) {
+    if (!featureEnabled(this.raw(networkId), "offers")) return;
     const key = "profile-offer:" + networkId + ":" + organizationId;
     const description = [profile.offers || "", ...(profile.sections || []).filter(s => s.area === "offers").map(s => s.title + "\n" + s.body)].filter(Boolean).join("\n\n");
     const existing = this.store.networkContents.get(key);
@@ -2935,10 +2943,30 @@ export class NetworksService {
       notification.data.profileArea = "offers";
     }
   }
+  private visibleProfile(networkId: string, profile: NetworkPartnerProfile): NetworkPartnerProfile {
+    const network = this.raw(networkId);
+    return { ...profile,
+      ...(!featureEnabled(network, "documents") ? { documents: [] } : {}),
+      ...(!featureEnabled(network, "offers") ? { offers: "", lookingFor: "", sections: (profile.sections || []).filter(s => !["offers", "looking"].includes(s.area || "")) } : {}),
+    };
+  }
   private writePartnerProfile(
     organization: OrganizationRecord,
     input: Record<string, unknown>,
+    networkId?: string,
   ) {
+    if (networkId) {
+      const previous = organization.networkProfile, network = this.raw(networkId);
+      input = { ...input };
+      if (!featureEnabled(network, "documents")) input.documents = previous?.documents || [];
+      if (!featureEnabled(network, "offers")) {
+        input.offers = previous?.offers || ""; input.lookingFor = previous?.lookingFor || "";
+        if (Array.isArray(input.sections)) input.sections = [
+          ...input.sections.filter(s => !["offers", "looking"].includes(String(s?.area))),
+          ...(previous?.sections || []).filter(s => ["offers", "looking"].includes(s.area || "")),
+        ];
+      }
+    }
     const publish = input.publish === true,
       logoUrl =
         typeof input.logoUrl === "string" && input.logoUrl.trim()
@@ -3531,6 +3559,12 @@ export class NetworksService {
     const record = { ...stored, data: { ...stored.data } };
     this.ensureModule(this.raw(networkId), record.type, user.id);
     this.requireContentUpdate(user.id, networkId, record);
+    if (record.type === "event" && input.data && typeof input.data === "object" && !featureEnabled(this.raw(networkId), "recaps")) {
+      for (const [key, value] of Object.entries(input.data)) {
+        if (key.startsWith("recap") && JSON.stringify(value) !== JSON.stringify(record.data[key]) && value !== "" && value !== null && JSON.stringify(value) !== "[]")
+          throw new ForbiddenException("Veranstaltungsrückblicke sind in diesem Netzwerk ausgeschaltet.");
+      }
+    }
     if (input.visibility === "members" || input.visibility === "administrators")
       record.visibility = input.visibility;
     if (
@@ -3639,7 +3673,7 @@ export class NetworksService {
     if (!Object.hasOwn(input, "homepagePublish")) return;
     if (
       typeof input.homepagePublish !== "boolean" ||
-      network.slug !== "unternehmerfreunde" ||
+      !featureEnabled(network, "publicHomepage") ||
       record.type !== "event"
     )
       throw new BadRequestException(
@@ -3835,7 +3869,7 @@ export class NetworksService {
   async sportsSchedule(authorization: string | undefined, networkId: string) {
     // Authenticate and enforce tenancy before any external data request.
     this.proBSchedule(authorization, networkId);
-    if (this.raw(networkId).slug === "bayer04leverkusen")
+    if (this.sportSelection(networkId) === "bayer04leverkusen")
       await refreshBundesliga();
     return this.proBSchedule(authorization, networkId);
   }
@@ -3843,9 +3877,8 @@ export class NetworksService {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkAccess(actor.id, networkId);
     this.requireGiantsNetwork(networkId);
-    this.requireEnabledModule(networkId, "events", actor.id);
     const canManage = this.isNetworkInitiator(actor.id, networkId);
-    const football = this.raw(networkId).slug === "bayer04leverkusen";
+    const football = this.sportSelection(networkId) === "bayer04leverkusen";
     return {
       season: football ? BUNDESLIGA_SEASON : PROB_SEASON,
       sourceUrl: football ? BUNDESLIGA_SOURCE : PROB_SOURCE_URL,
@@ -3873,7 +3906,6 @@ export class NetworksService {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkManagement(actor.id, networkId);
     this.requireGiantsNetwork(networkId);
-    this.requireEnabledModule(networkId, "events", actor.id);
     const game = this.proBGame(gameId, networkId);
     const score = (value: unknown) => {
       if (value === null || value === "") return null;
@@ -3906,7 +3938,6 @@ export class NetworksService {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkManagement(actor.id, networkId);
     this.requireGiantsNetwork(networkId);
-    this.requireEnabledModule(networkId, "events", actor.id);
     const game = this.proBGame(gameId, networkId),
       record = this.proBRecord(networkId, game, true, actor.id)!;
     record.data.discussionOpen = input.open === true;
@@ -3927,12 +3958,11 @@ export class NetworksService {
     const actor = this.auth.authenticate(authorization);
     this.requireWritableNetwork(actor.id, networkId);
     this.requireGiantsNetwork(networkId);
-    this.requireEnabledModule(networkId, "events", actor.id);
     const game = this.proBGame(gameId, networkId),
       record = this.proBRecord(
         networkId,
         game,
-        this.raw(networkId).slug === "bayer04leverkusen",
+        this.sportSelection(networkId) === "bayer04leverkusen",
         actor.id,
       );
     if (!record || record.data.discussionOpen !== true)
@@ -4085,7 +4115,7 @@ export class NetworksService {
       events = visible.filter((item) => item.type === "event"),
       now = new Date().toISOString();
     const recentMembers = partners
-      .filter((item) => item.status === "active")
+      .filter((item) => featureEnabled(network, "profiles") && item.status === "active")
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .slice(0, 5)
       .flatMap((item) => {
@@ -4145,7 +4175,7 @@ export class NetworksService {
       eventRecaps: events
         .filter(
           (item) =>
-            typeof item.data.recapSummary === "string" &&
+            featureEnabled(network, "recaps") && typeof item.data.recapSummary === "string" &&
             item.data.recapSummary,
         )
         .sort((a, b) =>
@@ -4483,9 +4513,55 @@ export class NetworksService {
     return network;
   }
 
+  features(authorization: string | undefined, networkId: string) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireNetworkInitiator(actor.id, networkId);
+    const n = this.raw(networkId);
+    return {
+      catalog: NETWORK_FEATURES,
+      enabled: networkFeatures(n),
+      defaults: networkFeatures({ ...n, settings: { ...n.settings, features: {} } }),
+      configured: n.settings.features || {},
+      revision: n.settings.featureRevision || 0,
+      sportSelection: n.settings.sportSelection || (["bayer04leverkusen", "bayer-giants"].includes(n.slug) ? n.slug : null),
+      sports: [
+        { id: "bayer04leverkusen", sport: "Fußball", league: "Bundesliga", team: "Bayer 04 Leverkusen", update: "Automatische Aktualisierung beim Abruf; letzter Datenstand wird angezeigt." },
+        { id: "bayer-giants", sport: "Basketball", league: "ProB Süd", team: "Bayer Giants", update: "Gepflegter Spielplan; Ergebnisse durch die Netzwerkleitung ergänzbar. Noch keine automatische Datenquelle." },
+      ],
+    };
+  }
+  async updateFeatures(authorization: string | undefined, networkId: string, input: Record<string, unknown>) {
+    const actor = this.auth.authenticate(authorization);
+    this.requireNetworkInitiator(actor.id, networkId);
+    const n = this.raw(networkId);
+    if (input.revision !== (n.settings.featureRevision || 0))
+      throw new ConflictException("Die Funktionsauswahl wurde zwischenzeitlich geändert. Bitte neu laden.");
+    if (!input.features || typeof input.features !== 'object' || Array.isArray(input.features))
+      throw new BadRequestException("Bitte gültige Funktionsschalter übergeben.");
+    const next = { ...n.settings.features };
+    for (const [key, value] of Object.entries(input.features)) {
+      if (!NETWORK_FEATURES.some(f => f.id === key) || typeof value !== 'boolean')
+        throw new BadRequestException("Unbekannte Funktion oder ungültiger Schalter.");
+      next[key as NetworkFeature] = value;
+    }
+    const selection = input.sportSelection ?? n.settings.sportSelection ?? (["bayer04leverkusen", "bayer-giants"].includes(n.slug) ? n.slug : null);
+    if (selection !== null && !["bayer04leverkusen", "bayer-giants"].includes(String(selection)))
+      throw new BadRequestException("Diese Sportdatenquelle wird noch nicht unterstützt.");
+    if (next.sports && !selection)
+      throw new BadRequestException("Bitte zuerst Sportart, Liga und Verein auswählen.");
+    n.settings.features = next;
+    if (selection) n.settings.sportSelection = selection as "bayer04leverkusen" | "bayer-giants";
+    n.settings.featureRevision = (n.settings.featureRevision || 0) + 1;
+    n.updatedAt = new Date().toISOString();
+    this.operatorAudit(actor.id, networkId, "network.features.updated", { features: next, sportSelection: selection });
+    await this.store.persist();
+    return this.features(authorization, networkId);
+  }
+
   participants(authorization: string | undefined, networkId: string) {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkAccess(actor.id, networkId);
+    this.requireFeature(networkId, "chat");
     return this.store.networkMemberships
       .filter(
         (m) =>
@@ -4539,6 +4615,7 @@ export class NetworksService {
   pulse(authorization: string | undefined, networkId: string, daysValue?: string) {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkAccess(actor.id, networkId);
+    this.requireFeature(networkId, "pulse");
     const days = Number(daysValue || 30);
     if (![30,60,90,180].includes(days)) throw new BadRequestException('Ungültiger Zeitraum.');
     return networkPulse(this.store, networkId, days);
@@ -4546,6 +4623,7 @@ export class NetworksService {
   pulseRevenue(authorization: string | undefined, networkId: string) {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkAccess(actor.id, networkId);
+    this.requireFeature(networkId, "cooperationRevenue");
     const entries = networkPulse(this.store, networkId, 365000).filter(e => e.amountNet !== undefined);
     return {amountNet: Math.round(entries.reduce((sum,e)=>sum+(e.amountNet || 0),0)*100)/100, cooperations:entries.length};
   }
@@ -4710,6 +4788,7 @@ export class NetworksService {
   connections(authorization: string | undefined, networkId: string) {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkAccess(actor.id, networkId);
+    this.requireFeature(networkId, "connections");
     return [...this.store.networkConnections.values()]
       .filter(
         (c) =>
@@ -4729,6 +4808,7 @@ export class NetworksService {
       });
   }
   private connectionMember(userId: string, networkId: string) {
+    this.requireFeature(networkId, "connections");
     const user = this.store.users.get(userId);
     if (
       !user ||
@@ -4851,6 +4931,7 @@ export class NetworksService {
         (n) =>
           n.userId === actor.id &&
           n.data.networkId === networkId &&
+          (!n.data.connectionId || featureEnabled(this.raw(networkId), "connections")) &&
           (!n.data.contentId ||
             (() => {
               const r = this.store.networkContents.get(
@@ -4989,7 +5070,9 @@ export class NetworksService {
   }
   private contentModuleAvailable(userId: string, record: NetworkContentRecord) {
     try {
-      this.ensureModule(this.raw(record.networkId), record.type, userId);
+      if (["bundesliga_game", "prob_game"].includes(String(record.data.kind))) this.requireFeature(record.networkId, "sports");
+      else this.ensureModule(this.raw(record.networkId), record.type, userId);
+      if (record.data.profileArea === "offers") this.requireFeature(record.networkId, "offers");
       return true;
     } catch {
       return false;
@@ -5004,7 +5087,8 @@ export class NetworksService {
       !this.canReadContent(userId, record)
     )
       throw new NotFoundException("Dieser Austausch ist nicht verfügbar.");
-    this.ensureModule(this.raw(networkId), record.type, userId);
+    if (["bundesliga_game", "prob_game"].includes(String(record.data.kind))) this.requireFeature(networkId, "sports");
+    else this.ensureModule(this.raw(networkId), record.type, userId);
     return record;
   }
   private checkedAttachment(input: unknown) {
@@ -5341,6 +5425,8 @@ export class NetworksService {
     userId?: string,
   ) {
     const network = this.raw(networkId);
+    const feature = MODULE_FEATURES[module];
+    if (feature) this.requireFeature(networkId, feature);
     if (network.status !== "active") return;
     if (!network.enabledModules.includes(module))
       throw new ForbiddenException(
@@ -5350,6 +5436,10 @@ export class NetworksService {
       throw new ForbiddenException(
         "Dieses Modul ist für Ihren Zugang nicht gebucht.",
       );
+  }
+  private requireFeature(networkId: string, feature: NetworkFeature) {
+    if (!featureEnabled(this.raw(networkId), feature))
+      throw new ForbiddenException("Diese Funktion ist in diesem Netzwerk ausgeschaltet.");
   }
   private normalizeOrder(order: NetworkOrderRecord) {
     if (order.kind === "member_annual") return order;
@@ -5629,16 +5719,21 @@ export class NetworksService {
   }
   private proBGame(gameId: string, networkId: string) {
     const games =
-      this.raw(networkId).slug === "bayer04leverkusen"
+      this.sportSelection(networkId) === "bayer04leverkusen"
         ? bundesligaSnapshot().games
         : PROB_GAMES;
     const game = games.find((item) => item.id === gameId);
     if (!game) throw new NotFoundException("Spiel nicht gefunden.");
     return game;
   }
+  private sportSelection(networkId: string) {
+    const network = this.raw(networkId);
+    return network.settings.sportSelection || network.slug;
+  }
   private requireGiantsNetwork(networkId: string) {
+    this.requireFeature(networkId, "sports");
     if (
-      !["bayer-giants", "bayer04leverkusen"].includes(this.raw(networkId).slug)
+      !["bayer-giants", "bayer04leverkusen"].includes(this.sportSelection(networkId))
     )
       throw new NotFoundException(
         "Der Spielplan ist für dieses Netzwerk nicht verfügbar.",
@@ -5650,7 +5745,7 @@ export class NetworksService {
     create: boolean,
     creatorId?: string,
   ) {
-    const football = this.raw(networkId).slug === "bayer04leverkusen";
+    const football = this.sportSelection(networkId) === "bayer04leverkusen";
     const teamName = football ? "Bayer 04 Leverkusen" : "Bayer Giants";
     let record = [...this.store.networkContents.values()].find(
       (item) =>
@@ -5693,7 +5788,7 @@ export class NetworksService {
     return record;
   }
   private proBGameView(networkId: string, game: ProBGame) {
-    const football = this.raw(networkId).slug === "bayer04leverkusen";
+    const football = this.sportSelection(networkId) === "bayer04leverkusen";
     const teamName = football ? "Bayer 04 Leverkusen" : "Bayer Giants";
     const record = this.proBRecord(networkId, game, false),
       number = (value: unknown, fallback: number | null) =>

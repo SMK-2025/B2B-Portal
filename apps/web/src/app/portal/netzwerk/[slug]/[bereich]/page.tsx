@@ -10,7 +10,9 @@ import { NetworkEventRecapWorkspace } from "../../../../components/network-event
 import { NetworkGameScheduleWorkspace } from "../../../../components/network-game-schedule-workspace";
 import { NetworkConversationsWorkspace } from "../../../../components/network-exchange-workspace";
 import { AccountSettingsWorkspace } from "../../../../components/account-settings-workspace";
+import { NetworkFeaturesWorkspace } from "../../../../components/network-features-workspace";
 const pages: Record<string, [string, string]> = {
+  funktionen: ["Funktionen", "Bestimmen Sie selbst, welche Funktionen Ihr Netzwerk nutzt."],
   konto: [
     "Mein Konto & Sicherheit",
     "Dein Zugang, deine Mitgliedschaften und Rechnungen – übersichtlich an einem Ort.",
@@ -84,7 +86,8 @@ export default async function Page({
     .map((x) => x.charAt(0).toUpperCase() + x.slice(1))
     .join(" ");
   let body;
-  if (bereich === "mitglieder") body = <NetworkMembersWorkspace />;
+  if (bereich === "funktionen") body = <NetworkFeaturesWorkspace />;
+  else if (bereich === "mitglieder") body = <NetworkMembersWorkspace />;
   else if (bereich === "konto")
     body = <AccountSettingsWorkspace networkSlug={slug} />;
   else if (bereich === "kommunikation")
@@ -93,7 +96,7 @@ export default async function Page({
     body = (
       <>
         <NetworkProfileWorkspace />
-        {slug === "unternehmerfreunde" && <HomepageProfileConsent />}
+        <HomepageProfileConsent />
       </>
     );
   else if (bereich === "auswertungen")

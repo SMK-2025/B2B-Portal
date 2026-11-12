@@ -65,6 +65,7 @@ export function projectHomepage(
   kind: keyof typeof homepageFields,
   record: NetworkContentRecord | NetworkMembershipRecord,
   profile?: NetworkPartnerProfile | null,
+  networkSlug = "unternehmerfreunde",
 ) {
   const grants = (
     record as typeof record & {
@@ -100,7 +101,7 @@ export function projectHomepage(
     return null;
   const data = content.data || {};
   const image = (v: unknown, field = "image") =>
-    publicImageUrl(v, kind, record.id, field);
+    publicImageUrl(v, kind, record.id, field, networkSlug);
   const fields: Record<string, unknown> =
     kind === "members"
       ? {
@@ -171,7 +172,7 @@ export function projectHomepage(
     .sort((a, b) => Date.parse(b) - Date.parse(a))[0];
   const output: Record<string, unknown> = {
     id: record.id,
-    network: "unternehmerfreunde",
+    network: networkSlug,
     publication: { enabled: true },
     ...(changed ? { updatedAt: changed } : {}),
   };

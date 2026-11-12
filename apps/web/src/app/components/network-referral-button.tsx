@@ -2,7 +2,9 @@
 import { NetworkText } from "./network-text-editor";
 import { useId, useRef, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
+import { useNetworkAccess } from "./network-shell";
 export function NetworkReferralButton({ networkId, embedded=false }: { networkId: string; embedded?: boolean }) {
+  const access = useNetworkAccess();
   const ReferralSurface = embedded ? "article" : "dialog";
   const [busy, setBusy] = useState(false);
   const referralDialog = useRef<HTMLDialogElement>(null);
@@ -45,6 +47,7 @@ export function NetworkReferralButton({ networkId, embedded=false }: { networkId
       setBusy(false);
     }
   }
+  if (access?.features?.referrals === false) return null;
   return (
     <>
       {!embedded && <button

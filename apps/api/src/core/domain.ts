@@ -187,6 +187,9 @@ export interface NetworkRecord {
   trialEndsAt: string | null;
   enabledModules: NetworkModule[];
   settings: {
+    features?: Partial<Record<import("../networks/network-features").NetworkFeature, boolean>>;
+    featureRevision?: number;
+    sportSelection?: "bayer04leverkusen" | "bayer-giants";
     closedNetwork: boolean;
     selfRegistration: boolean;
     crossNetworkMatching: boolean;

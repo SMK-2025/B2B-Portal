@@ -14,7 +14,7 @@
       "const": 1
     },
     "network": {
-      "const": "unternehmerfreunde"
+      "type": "string", "pattern": "^[a-z0-9-]{1,100}$"
     },
     "generatedAt": {
       "type": "string",
@@ -38,7 +38,7 @@
             "pattern": "^[a-zA-Z0-9_-]{1,100}$"
           },
           "network": {
-            "const": "unternehmerfreunde"
+            "type": "string", "pattern": "^[a-z0-9-]{1,100}$"
           },
           "publication": {
             "type": "object",
@@ -130,7 +130,7 @@
             "pattern": "^[a-zA-Z0-9_-]{1,100}$"
           },
           "network": {
-            "const": "unternehmerfreunde"
+            "type": "string", "pattern": "^[a-z0-9-]{1,100}$"
           },
           "publication": {
             "type": "object",
@@ -275,7 +275,7 @@
             "pattern": "^[a-zA-Z0-9_-]{1,100}$"
           },
           "network": {
-            "const": "unternehmerfreunde"
+            "type": "string", "pattern": "^[a-z0-9-]{1,100}$"
           },
           "publication": {
             "type": "object",

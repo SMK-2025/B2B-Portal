@@ -25,10 +25,14 @@ import {
   type HomepageGrant,
 } from "./homepage-publication";
 import { randomUUID } from "node:crypto";
+import { featureEnabled } from "./network-features";
 type Kind = keyof typeof homepageFields;
 @Controller("networks/homepage")
 export class HomepagePublicationController {
   private requests = new Map<string, { count: number; until: number }>();
+  private project(kind: Kind, record: Parameters<typeof projectHomepage>[1], profile?: Parameters<typeof projectHomepage>[2]) {
+    return projectHomepage(kind, record, profile, this.store.networks.get(record.networkId)?.slug);
+  }
   constructor(
     @Inject(PortalStore) private readonly store: PortalStore,
     @Inject(AuthService) private readonly auth: AuthService,
@@ -38,10 +42,9 @@ export class HomepagePublicationController {
       throw new ServiceUnavailableException(
         "Öffentliche Inhalte sind vorübergehend nicht verfügbar.",
       );
-    if (slug !== "unternehmerfreunde") throw new NotFoundException();
     const id = this.store.networkBySlug.get(slug),
       network = id ? this.store.networks.get(id) : null;
-    if (!network || (!allowInactive && network.status !== "active"))
+    if (!network || (!allowInactive && (network.status !== "active" || !featureEnabled(network, "publicHomepage"))))
       throw new NotFoundException();
     return network;
   }
@@ -125,7 +128,7 @@ export class HomepagePublicationController {
           m.homepageGrants.members.consentMembershipId === m.id
             ? m.homepageGrants.members
             : { enabled: false, fields: [], rightsConfirmed: false },
-        preview: projectHomepage(
+        preview: this.project(
           "members",
           m,
           this.store.organizations.get(m.organizationId)?.networkProfile,
@@ -149,7 +152,7 @@ export class HomepagePublicationController {
     const profile = this.store.organizations.get(
       member.organizationId,
     )?.networkProfile;
-    const preview = projectHomepage(
+    const preview = this.project(
       "members",
       { ...member, homepageHidden: false, homepageGrants: { members: grant } },
       profile,
@@ -174,8 +177,8 @@ export class HomepagePublicationController {
     const grant = this.consentGrant(body, user.id, member.id);
     if (
       grant.enabled &&
-      (network.status !== "active" ||
-        !projectHomepage(
+      (network.status !== "active" || !featureEnabled(network, "publicHomepage") ||
+        !this.project(
           "members",
           {
             ...member,
@@ -255,7 +258,7 @@ export class HomepagePublicationController {
       "organizationId" in record
         ? this.store.organizations.get(record.organizationId)?.networkProfile
         : null;
-    const projected = projectHomepage(kind, record, profile);
+    const projected = this.project(kind, record, profile);
     const index = /^images-([0-5])$/.exec(field);
     if (
       !projected ||
@@ -286,6 +289,8 @@ export class HomepagePublicationController {
   }
 
   private records(networkId: string, kind: Kind) {
+    const network = this.store.networks.get(networkId);
+    if (!network || !featureEnabled(network, kind === "members" ? "profiles" : kind === "recaps" ? "recaps" : "events")) return [];
     return kind === "members"
       ? this.store.networkMemberships.filter((m) => m.networkId === networkId)
       : [...this.store.networkContents.values()].filter(
@@ -312,7 +317,7 @@ export class HomepagePublicationController {
     const list = (kind: Kind) =>
       this.records(network.id, kind)
         .map((record) =>
-          projectHomepage(
+          this.project(
             kind,
             record,
             "organizationId" in record
@@ -356,7 +361,7 @@ export class HomepagePublicationController {
             fields: [],
             rightsConfirmed: false,
           },
-          preview: projectHomepage(
+          preview: this.project(
             kind,
             record,
             "organizationId" in record
@@ -420,7 +425,7 @@ export class HomepagePublicationController {
     };
     if (
       body.enabled &&
-      !projectHomepage(
+      !this.project(
         kind,
         candidate,
         "organizationId" in record

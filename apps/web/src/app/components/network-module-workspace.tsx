@@ -429,7 +429,7 @@ export function NetworkModuleWorkspace({
             visibility: form.get("visibility"),
             data,
             ...(module === "veranstaltungen" &&
-            slug === "unternehmerfreunde" &&
+            access?.features?.publicHomepage === true &&
             access?.isInitiator
               ? { homepagePublish: form.get("homepagePublish") === "on" }
               : {}),
@@ -443,7 +443,7 @@ export function NetworkModuleWorkspace({
       );
       if (
         module === "veranstaltungen" &&
-        slug === "unternehmerfreunde" &&
+        access?.features?.publicHomepage === true &&
         access?.isInitiator &&
         Boolean(created.homepageGrants?.events?.enabled) !==
           (form.get("homepagePublish") === "on")
@@ -1446,18 +1446,18 @@ export function NetworkModuleWorkspace({
                     </label>
                     <label>
                       <NetworkText id="ui.network-module-workspace.fd9659070e03dc6b">
-                        {slug === "unternehmerfreunde"
+                        {access?.features?.publicHomepage === true
                           ? "Adresse / Veranstaltungsort"
                           : "Adresse / Veranstaltungsort"}
                       </NetworkText>
                       <input
                         name={
-                          slug === "unternehmerfreunde"
+                          access?.features?.publicHomepage === true
                             ? "publicLocation"
                             : "location"
                         }
                         defaultValue={String(
-                          slug === "unternehmerfreunde"
+                          access?.features?.publicHomepage === true
                             ? editing?.data.publicLocation ||
                                 editing?.data.location ||
                                 ""
@@ -1653,7 +1653,7 @@ export function NetworkModuleWorkspace({
                 </label>
               </div>
               {module === "veranstaltungen" &&
-                slug === "unternehmerfreunde" &&
+                access?.features?.publicHomepage === true &&
                 access?.isInitiator && (
                   <label className="networkEventPublishConsent">
                     <input

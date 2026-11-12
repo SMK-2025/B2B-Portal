@@ -482,7 +482,7 @@ export function ProfileDialog({
     { id: "offers", label: "Angebote" },
     { id: "looking", label: "Gesuche" },
     { id: "contact", label: "Kontakt" },
-  ];
+  ].filter(area => access?.features?.offers !== false || !["offers", "looking"].includes(area.id));
   function showArea(id: string) {
     setActiveArea(id);
     setMenuOpen(false);
@@ -716,7 +716,7 @@ export function ProfileDialog({
                 </p>
               )}
             </section>
-            {((p.documents?.length || 0) > 0 || editControls) && <section hidden={activeArea !== "services"}>
+            {access?.features?.documents !== false && ((p.documents?.length || 0) > 0 || editControls) && <section hidden={activeArea !== "services"}>
               {editControls?.("documents")}
               <h3>Präsentationen & Unterlagen</h3>
               <PartnerDocuments documents={p.documents || []}/>
@@ -737,7 +737,7 @@ export function ProfileDialog({
                 <p>{p.personalMessage}</p>
               </section>
             )}
-            {(p.offers || editControls) && (
+            {access?.features?.offers !== false && (p.offers || editControls) && (
               <section hidden={activeArea !== "offers"}>
                 {editControls?.("offers")}
                 <small>
@@ -753,7 +753,7 @@ export function ProfileDialog({
                 <p>{p.offers}</p>
               </section>
             )}
-            {(p.lookingFor || editControls) && (
+            {access?.features?.offers !== false && (p.lookingFor || editControls) && (
               <section hidden={activeArea !== "looking"}>
                 {editControls?.("lookingFor")}
                 <small>
@@ -769,7 +769,7 @@ export function ProfileDialog({
                 <p>{p.lookingFor}</p>
               </section>
             )}
-            {p.sections?.map((section, index) => (
+            {p.sections?.map((section, index) => access?.features?.offers === false && ["offers", "looking"].includes(section.area || "") ? null : (
               <section
                 className="partnerOnepagerSection"
                 id={`partner-section-${index}`}

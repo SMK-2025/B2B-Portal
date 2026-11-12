@@ -157,7 +157,9 @@ export function NetworkDashboardWorkspace({
     recap = data.eventRecaps[0],
     eventImage = itemImage(event),
     recapImage = itemImage(recap);
-  const boardHasEvent = Boolean(enabled("events") && event);
+  const feature = (key: string) => access?.features?.[key] !== false;
+  const sportsEnabled = preview ? ["bayer04leverkusen", "bayer-giants"].includes(slug) : access?.features?.sports === true;
+  const boardHasEvent = Boolean(feature("board") && enabled("events") && event);
   const boardAnnouncements = enabled("community") ? data.announcements.slice(0, 6) : [];
   const boardPages = Math.max(1, Math.ceil((boardAnnouncements.length + Number(boardHasEvent)) / 2));
   const currentBoardPage = Math.min(boardPage, boardPages - 1);
@@ -266,7 +268,7 @@ export function NetworkDashboardWorkspace({
             </div>
           )}
         </div>
-        {!preview && <aside className="loungeHeroRevenue"><CooperationRevenue /></aside>}
+        {!preview && feature("cooperationRevenue") && <aside className="loungeHeroRevenue"><CooperationRevenue /></aside>}
         {!data.network.settings?.bannerImageUrl && (
           <small>
             <NetworkText id="ui.network-dashboard-workspace.4ac20bf8f99a0af1">
@@ -283,7 +285,7 @@ export function NetworkDashboardWorkspace({
         />
       )}
       <div className="loungePulseMembersRow">
-        {!preview && <NetworkPulse />}
+        {!preview && feature("pulse") && <NetworkPulse />}
         {enabled("profiles") && (
           <section className="networkCard loungeCard loungeMemberHighlight">
             <header>
@@ -364,10 +366,9 @@ export function NetworkDashboardWorkspace({
         )}
       </div>
       <div
-        className={`loungeGrid${["bayer04leverkusen", "bayer-giants"].includes(slug) && enabled("events") ? " loungeGridWithMatchday" : ""}`}
+        className={`loungeGrid${sportsEnabled ? " loungeGridWithMatchday" : ""}`}
       >
-        {["bayer04leverkusen", "bayer-giants"].includes(slug) &&
-          enabled("events") &&
+        {sportsEnabled &&
           (preview ? (
             <section
               className="networkCard loungeCard"
@@ -397,7 +398,7 @@ export function NetworkDashboardWorkspace({
           ) : (
             <NetworkMatchdayCard />
           ))}
-        {(enabled("community") || (enabled("events") && event)) && (
+        {feature("board") && (enabled("community") || (enabled("events") && event)) && (
           <section
             className="loungeNoticeboard"
             aria-labelledby="noticeboard-title"
@@ -542,7 +543,7 @@ export function NetworkDashboardWorkspace({
             )}
           </section>
         )}
-        {enabled("events") && recap && (
+        {feature("recaps") && enabled("events") && recap && (
           <section className="networkCard loungeCard loungeRecapCard">
             <header>
               <h2>

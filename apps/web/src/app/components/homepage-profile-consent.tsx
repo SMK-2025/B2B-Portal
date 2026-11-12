@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
+import { useNetworkAccess } from "./network-shell";
 const fields = {
   title: "Unternehmensname",
   description: "Beschreibung",
@@ -68,6 +69,7 @@ function Consent({
   item: Item;
   onSaved: () => Promise<void>;
 }) {
+  const access = useNetworkAccess();
   const [selected, setSelected] = useState(item.grant.fields),
     [enabled, setEnabled] = useState(item.grant.enabled),
     [rights, setRights] = useState(false),
@@ -82,7 +84,7 @@ function Consent({
     try {
       const result = await portalRequest<{
         preview: Record<string, unknown> | null;
-      }>(`/networks/homepage/unternehmerfreunde/members/${item.id}/${action}`, {
+      }>(`/networks/homepage/${access?.slug}/members/${item.id}/${action}`, {
         token,
         body: {
           enabled: !revoke && enabled,
@@ -208,15 +210,16 @@ function Consent({
   );
 }
 export function HomepageProfileConsent() {
+  const access = useNetworkAccess();
   const [items, setItems] = useState<Item[]>([]),
     [notice, setNotice] = useState("");
   async function load() {
     const token = getPortalSession();
-    if (!token) return;
+    if (!token || !access?.features?.publicHomepage) return;
     try {
       setItems(
         await portalRequest(
-          "/networks/homepage/unternehmerfreunde/my-profiles",
+          `/networks/homepage/${access.slug}/my-profiles`,
           { token },
         ),
       );
@@ -226,7 +229,8 @@ export function HomepageProfileConsent() {
   }
   useEffect(() => {
     void load();
-  }, []);
+  }, [access?.slug, access?.features?.publicHomepage]);
+  if (!access?.features?.publicHomepage) return null;
   return (
     <section className="homepageConsentPanel">
       <h2>Mein Profil auf der öffentlichen Homepage</h2>

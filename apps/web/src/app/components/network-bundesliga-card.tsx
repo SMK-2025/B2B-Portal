@@ -8,7 +8,7 @@ import { Team, type Schedule } from "./network-game-schedule-workspace";
 
 export function NetworkMatchdayCard() {
   const access = useNetworkAccess();
-  const football = access?.slug === "bayer04leverkusen";
+  const football = (access?.sportSelection || access?.slug) === "bayer04leverkusen";
   const [data, setData] = useState<Schedule | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {

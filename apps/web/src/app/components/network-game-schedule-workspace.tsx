@@ -252,7 +252,7 @@ function BundesligaTable({ data }: { data: Schedule }) {
 export function NetworkGameScheduleWorkspace() {
   const access = useNetworkAccess(),
     networkId = access?.networkId || "",
-    football = access?.slug === "bayer04leverkusen",
+    football = (access?.sportSelection || access?.slug) === "bayer04leverkusen",
     endpoint = football ? "bundesliga-schedule" : "prob-schedule",
     [data, setData] = useState<Schedule | null>(null),
     [filter, setFilter] = useState<"upcoming" | "results" | "all">("upcoming"),

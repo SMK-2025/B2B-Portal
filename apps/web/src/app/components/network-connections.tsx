@@ -17,7 +17,7 @@ function useConnections() {
     [busy, setBusy] = useState(false);
   const base = `/networks/${access?.networkId}/connections`;
   async function load() {
-    if (!access?.networkId) return;
+    if (!access?.networkId || access.features?.connections === false) { setItems([]); return; }
     try {
       setItems(
         await portalRequest<Connection[]>(base, {
@@ -38,7 +38,7 @@ function useConnections() {
     window.addEventListener("network-connections-updated", refresh);
     return () =>
       window.removeEventListener("network-connections-updated", refresh);
-  }, [access?.networkId]);
+  }, [access?.networkId, access?.features?.connections]);
   async function act(path: string, body: Record<string, unknown>) {
     setBusy(true);
     setError("");
@@ -66,7 +66,7 @@ export function NetworkConnectionButton({
 }) {
   const { access, items, error, busy, act } = useConnections();
   if (
-    !access ||
+    !access || access.features?.connections === false ||
     access.readOnly ||
     access.role === "platform_admin" ||
     userId === access.currentUserId
@@ -99,7 +99,7 @@ export function NetworkConnectionButton({
 }
 export function NetworkConnectionInbox() {
   const { access, items, error, busy, act } = useConnections();
-  if (!access || access.readOnly || access.role === "platform_admin")
+  if (!access || access.features?.connections === false || access.readOnly || access.role === "platform_admin")
     return null;
   const received = items.filter(
     (i) => i.recipientId === access.currentUserId && i.status === "pending",

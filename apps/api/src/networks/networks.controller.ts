@@ -17,6 +17,15 @@ export class NetworksController {
     private readonly networks: NetworksService,
     private readonly billing: AutomaticBillingService,
   ) {}
+  @Get(":networkId/features") features(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+  ) { return this.networks.features(auth, id); }
+  @Post(":networkId/features") updateFeatures(
+    @Headers("authorization") auth: string | undefined,
+    @Param("networkId") id: string,
+    @Body() body: Record<string, unknown>,
+  ) { return this.networks.updateFeatures(auth, id, body); }
   @Get("admin/:id/activity") operatorActivity(
     @Headers("authorization") authorization: string | undefined,
     @Param("id") id: string,

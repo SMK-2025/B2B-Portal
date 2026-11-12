@@ -55,9 +55,10 @@ export function publicImageUrl(
   kind: string,
   id: string,
   field: string,
+  networkSlug = "unternehmerfreunde",
 ) {
   const origin = mediaOrigin();
   return origin && /^[a-zA-Z0-9_-]{1,100}$/.test(id) && decodePublicImage(input)
-    ? `${origin}/api/networks/homepage/unternehmerfreunde/${kind}/${id}/media/${field}`
+    ? `${origin}/api/networks/homepage/${encodeURIComponent(networkSlug)}/${kind}/${id}/media/${field}`
     : null;
 }

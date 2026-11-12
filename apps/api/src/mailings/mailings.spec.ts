@@ -221,6 +221,7 @@ describe("owner mailing system", () => {
       rows: Array.from({ length: 55 }, (_, i) => ({
         email: `auto${i}@example.de`,
       })),
+      tracking: evidence,
       marketing: evidence,
     });
     const id = s.campaign();
@@ -308,6 +309,7 @@ describe("owner mailing system", () => {
       rows: Array.from({ length: 3 }, (_, i) => ({
         email: `stop${i}@example.de`,
       })),
+      tracking: evidence,
       marketing: evidence,
     });
     const id = s.campaign();
@@ -381,6 +383,7 @@ describe("owner mailing system", () => {
       rows: Array.from({ length: 150 }, (_, i) => ({
         email: `lead${i}@example.de`,
       })),
+      tracking: evidence,
       marketing: evidence,
     });
     const id = s.campaign();
@@ -420,6 +423,7 @@ describe("owner mailing system", () => {
         rows: Array.from({ length: 500 }, (_, i) => ({
           email: `full-list${i}@example.de`,
         })),
+        tracking: { ...evidence, at: "2026-11-11T10:00:00Z" },
       });
       const id = s.campaign();
       await s.service.startAutomatic("owner", id, {
@@ -556,7 +560,7 @@ describe("owner mailing system", () => {
   });
   it("allows operator-selected contacts without a separate marketing release and without inventing evidence", async () => {
     const s = setup();
-    const lead = s.lead(false, false);
+    const lead = s.lead(true, false);
     const id = s.campaign();
     expect(s.service.report("owner", id).eligible).toBe(1);
     expect(lead.marketing).toBeUndefined();
@@ -564,8 +568,8 @@ describe("owner mailing system", () => {
     await s.send(id);
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
     const mail = vi.mocked(s.email.sendCampaignMail).mock.calls[0][0];
-    expect(mail.html).not.toContain("/public/image/");
-    expect(mail.html).not.toContain("/public/click/");
+    expect(mail.html).toContain("/public/image/");
+    expect(mail.html).toContain("/public/click/");
   });
   it("keeps optional tracking evidence independent of the removed marketing gate", () => {
     const s = setup();
@@ -595,18 +599,38 @@ describe("owner mailing system", () => {
     });
     expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
   });
-  it("uses direct links and no pixel without tracking permission", async () => {
+  it("blocks manual and automatic sending without tracking permission without inventing evidence", async () => {
     const s = setup();
     const lead = s.lead(false);
     const id = s.campaign();
-    await s.send(id);
-    const mail = vi.mocked(s.email.sendCampaignMail).mock.calls[0][0];
-    expect(mail.html).not.toContain("/public/image/");
-    expect(mail.html).not.toContain("/public/click/");
-    expect(mail.text).toContain("https://b2b-matching.de/Leverkusen");
-    const token = s.store.mailingCampaigns.get(id)!.deliveries[lead.id].token;
-    s.service.click(token, "landing", false);
-    expect(s.service.report("owner", id).recipients[0].landingClicks).toBe(0);
+    await expect(s.send(id)).rejects.toThrow(/Trackingfreigabe/);
+    await expect(
+      s.service.startAutomatic("owner", id, {
+        confirmName: "Erstes Mailing",
+        revision: 1,
+        expectedCount: 1,
+      }),
+    ).rejects.toThrow(/Trackingfreigabe/);
+    expect(lead.tracking).toBeUndefined();
+    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+    expect(s.store.mailingCampaigns.get(id)!.deliveries).toEqual({});
+  });
+  it("pauses an existing automatic job when tracking is withdrawn before dispatch", async () => {
+    const s = setup();
+    const lead = s.lead();
+    const id = s.campaign();
+    await s.service.startAutomatic("owner", id, {
+      confirmName: "Erstes Mailing",
+      revision: 1,
+      expectedCount: 1,
+    });
+    lead.tracking = undefined;
+    await s.service.processAutomatic();
+    const campaign = s.store.mailingCampaigns.get(id)!;
+    expect(campaign.paused).toBe(true);
+    expect(campaign.automatic?.enabled).toBe(false);
+    expect(campaign.automatic?.lastError).toMatch(/Trackingfreigabe/);
+    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
   });
   it("requires current confirmation, preserves sent versions and edits remaining recipients", async () => {
     const s = setup();
@@ -805,13 +829,13 @@ describe("owner mailing system", () => {
   });
   it("records whether measurement was included at sending, independently of later consent changes", async () => {
     const s = setup();
-    const lead = s.lead(false);
+    const lead = s.lead();
     const id = s.campaign();
     await s.send(id);
-    expect(s.service.report("owner", id).stats.trackingExcluded).toBe(1);
-    lead.tracking = evidence;
+    expect(s.service.report("owner", id).stats.trackingIncluded).toBe(1);
+    lead.tracking = undefined;
     expect(s.service.report("owner", id).recipients[0].trackingIncluded).toBe(
-      false,
+      true,
     );
     const delivery = s.store.mailingCampaigns.get(id)!.deliveries[lead.id];
     delete delivery.trackingIncluded;

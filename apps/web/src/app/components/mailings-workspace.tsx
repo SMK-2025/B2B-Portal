@@ -1321,9 +1321,8 @@ export function MailingsWorkspace() {
                   <p className="mailingExplanation" role="status">
                     Achtung: Für {pendingWithoutTracking} noch nicht
                     angeschriebene Kontakte ist Tracking ausgeschaltet. Diese
-                    E-Mails werden ohne persönliche Öffnungs- und Klickmessung
-                    versendet. Eine Trackingfreigabe muss vor dem Versand unter
-                    „Kontakte & Import“ hinterlegt sein.
+                    E-Mails werden nicht versendet. Eine Trackingfreigabe muss
+                    vor dem Versand unter „Kontakte & Import“ hinterlegt sein.
                   </p>
                 )}
                 <label>
@@ -1335,7 +1334,11 @@ export function MailingsWorkspace() {
                 </label>
                 <button
                   className="mailingPrimary"
-                  disabled={busy || confirmName !== campaign.name}
+                  disabled={
+                    busy ||
+                    confirmName !== campaign.name ||
+                    pendingWithoutTracking > 0
+                  }
                   onClick={() =>
                     void action(async () => {
                       setSendConfirm(false);

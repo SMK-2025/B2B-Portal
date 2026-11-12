@@ -181,7 +181,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         ).length,
         available: list.leadIds.filter((id) => {
           const lead = this.store.mailingLeads.get(id)!;
-          return !!lead.marketing && !this.suppressed(lead);
+          return !this.suppressed(lead);
         }).length,
       })),
       leads: [...this.store.mailingLeads.values()]
@@ -237,10 +237,6 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       );
     const marketing = this.consent(input.marketing),
       tracking = this.consent(input.tracking);
-    if (tracking && !marketing)
-      throw new BadRequestException(
-        "Tracking ersetzt keine Versandzustimmung.",
-      );
     const issues: string[] = [];
     let imported = 0,
       duplicate = 0,
@@ -345,11 +341,8 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     if (!lead) throw new NotFoundException();
     const marketing = this.consent(input.marketing),
       tracking = this.consent(input.tracking);
-    if (tracking && !marketing)
-      throw new BadRequestException(
-        "Bitte beide Freigaben getrennt dokumentieren.",
-      );
-    lead.marketing = marketing;
+    // Preserve historical evidence when the tracking-only editor omits it.
+    if (input.marketing !== undefined) lead.marketing = marketing;
     lead.tracking = tracking;
     lead.updatedAt = new Date().toISOString();
     return { updated: true };
@@ -496,7 +489,6 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       (l) =>
         l.networkId === c.networkId &&
         ids.has(l.id) &&
-        l.marketing &&
         !this.suppressed(l) &&
         !c.deliveries[l.id],
     );
@@ -856,7 +848,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     try {
       for (const lead of rows) {
         if (c.paused) break;
-        if (!lead.marketing || this.suppressed(lead)) continue;
+        if (this.suppressed(lead)) continue;
         const d: MailingDelivery = {
           revision: c.revision,
           token: opaqueToken(),

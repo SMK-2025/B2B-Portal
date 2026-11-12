@@ -517,22 +517,39 @@ describe("owner mailing system", () => {
       s.service.saveCampaign("owner", s.b.id, { id, revision: 1 }),
     ).toThrow();
   });
-  it("accepts imports without consent but never sends them", async () => {
+  it("allows operator-selected contacts without a separate marketing release and without inventing evidence", async () => {
     const s = setup();
-    s.lead(false, false);
+    const lead = s.lead(false, false);
     const id = s.campaign();
-    expect(s.service.report("owner", id).eligible).toBe(0);
-    await s.send(id);
+    expect(s.service.report("owner", id).eligible).toBe(1);
+    expect(lead.marketing).toBeUndefined();
     expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+    await s.send(id);
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
+    const mail = vi.mocked(s.email.sendCampaignMail).mock.calls[0][0];
+    expect(mail.html).not.toContain("/public/image/");
+    expect(mail.html).not.toContain("/public/click/");
   });
-  it("rejects tracking evidence without marketing evidence", () => {
+  it("keeps optional tracking evidence independent of the removed marketing gate", () => {
     const s = setup();
-    expect(() =>
-      s.service.importLeads("owner", s.a.id, {
-        rows: [{ email: "a@example.de" }],
-        tracking: evidence,
-      }),
-    ).toThrow();
+    const lead = s.lead(true, false);
+    expect(lead.marketing).toBeUndefined();
+    expect(lead.tracking).toEqual(evidence);
+  });
+  it("makes all 500 imported contacts available without individual approval but still excludes suppressions", () => {
+    const s = setup();
+    s.service.importLeads("owner", s.a.id, {
+      listName: "500 ohne Einzel-Freigabe",
+      rows: Array.from({ length: 500 }, (_, i) => ({ email: `lead${i}@example.de` })),
+    });
+    const id = s.campaign();
+    expect(s.service.report("owner", id).eligible).toBe(500);
+    s.store.mailingSuppressions.set(tokenHash("lead0@example.de"), {
+      at: evidence.at, reason: "recipient_unsubscribed",
+    });
+    expect(s.service.report("owner", id).eligible).toBe(499);
+    expect(s.service.list("owner", s.a.id).lists[0]).toMatchObject({ total: 500, available: 499, blocked: 1 });
+    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
   });
   it("uses direct links and no pixel without tracking permission", async () => {
     const s = setup();

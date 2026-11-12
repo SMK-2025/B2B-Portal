@@ -115,10 +115,7 @@ export function MailingsWorkspace() {
   const [stopping, setStopping] = useState(false);
   const [csv, setCsv] = useState<ReturnType<typeof parseMailingCsv>>([]),
     [source, setSource] = useState(""),
-    [marketing, setMarketing] = useState(false),
     [tracking, setTracking] = useState(false),
-    [at, setAt] = useState(""),
-    [proof, setProof] = useState(""),
     [trackAt, setTrackAt] = useState(""),
     [trackProof, setTrackProof] = useState("");
   const [preview, setPreview] = useState<string | null>(null),
@@ -268,19 +265,13 @@ export function MailingsWorkspace() {
   }
   function evidence() {
     return {
-      marketing: marketing
-        ? { at: new Date(at).toISOString(), source: proof }
-        : null,
       tracking: tracking
         ? { at: new Date(trackAt).toISOString(), source: trackProof }
         : null,
     };
   }
   function resetEvidence(lead?: Lead) {
-    setMarketing(!!lead?.marketing);
     setTracking(!!lead?.tracking);
-    setAt(lead?.marketing?.at.slice(0, 16) || "");
-    setProof(lead?.marketing?.source || "");
     setTrackAt(lead?.tracking?.at.slice(0, 16) || "");
     setTrackProof(lead?.tracking?.source || "");
   }
@@ -289,45 +280,10 @@ export function MailingsWorkspace() {
       <label className="mailingCheck">
         <input
           type="checkbox"
-          checked={marketing}
-          onChange={(e) => {
-            setMarketing(e.target.checked);
-            if (!e.target.checked) setTracking(false);
-          }}
-        />
-        <span>Zustimmung zu Werbe-E-Mails dokumentieren</span>
-      </label>
-      {marketing && (
-        <div className="mailingPair">
-          <label>
-            Zeitpunkt
-            <input
-              required
-              type="datetime-local"
-              value={at}
-              onChange={(e) => setAt(e.target.value)}
-            />
-          </label>
-          <label>
-            Nachweis / Quelle
-            <input
-              required
-              minLength={5}
-              value={proof}
-              onChange={(e) => setProof(e.target.value)}
-              placeholder="z. B. Formular, Datum, Belegreferenz"
-            />
-          </label>
-        </div>
-      )}
-      <label className="mailingCheck">
-        <input
-          type="checkbox"
           checked={tracking}
-          disabled={!marketing}
           onChange={(e) => setTracking(e.target.checked)}
         />
-        <span>Zusätzliche Zustimmung zur personenbezogenen Auswertung</span>
+        <span>Personenbezogenes Tracking aktivieren (optional)</span>
       </label>
       {tracking && (
         <div className="mailingPair">
@@ -352,7 +308,7 @@ export function MailingsWorkspace() {
         </div>
       )}
       <p>
-        Ohne Versandfreigabe bleibt der Kontakt gesperrt. Ohne Trackingfreigabe
+        Ohne Trackingfreigabe
         werden keine persönlichen Öffnungs-, Klick- oder Registrierungsdaten
         erfasst. Zustimmungen können später ergänzt oder entfernt werden.
       </p>
@@ -399,7 +355,7 @@ export function MailingsWorkspace() {
               <small>BETREIBER-WERKZEUG · {current?.name}</small>
               <h2>Aus Kontakten wird ein Netzwerk.</h2>
               <p>
-                Mailings vorbereiten, Freigaben dokumentieren und
+                Mailings vorbereiten, Kontaktlisten verwalten und
                 nachvollziehen, welche Wege zur Anmeldung führen.
               </p>
             </div>
@@ -627,7 +583,7 @@ export function MailingsWorkspace() {
                       <strong>{list.name}</strong>
                       <span>{stamp(list.createdAt)}</span>
                       <span>
-                        {list.total} Kontakte · {list.available} freigegeben ·{" "}
+                        {list.total} Kontakte · {list.available} versendbar ·{" "}
                         {list.blocked} gesperrt
                       </span>
                     </button>
@@ -681,9 +637,7 @@ export function MailingsWorkspace() {
                           <td>
                             {l.suppressed
                               ? "Abgemeldet / gesperrt"
-                              : l.marketing
-                                ? "Freigegeben"
-                                : "Keine Freigabe"}
+                              : "Versendbar"}
                           </td>
                           <td>
                             {l.tracking && !l.suppressed
@@ -697,7 +651,7 @@ export function MailingsWorkspace() {
                                 setConsentLead(l);
                               }}
                             >
-                              Freigaben
+                              Tracking
                             </button>
                             <button
                               onClick={() => {
@@ -808,7 +762,7 @@ export function MailingsWorkspace() {
                     <span>
                       {selectedList.total} Kontakte in dieser Liste ·{" "}
                       {selectedList.blocked} abgemeldet / gesperrt ·{" "}
-                      {selectedList.available} mit Versandfreigabe
+                      {selectedList.available} versendbar
                     </span>
                     <span>
                       {listChanged
@@ -1260,11 +1214,11 @@ export function MailingsWorkspace() {
                     );
                     await load();
                     setConsentLead(null);
-                    setNotice("Freigaben gespeichert.");
+                    setNotice("Tracking-Einstellungen gespeichert.");
                   });
                 }}
               >
-                <h2>Freigaben dokumentieren</h2>
+                <h2>Optionales Tracking</h2>
                 <p>{consentLead.email}</p>
                 {evidenceForm}
                 <button className="mailingPrimary" disabled={busy}>
@@ -1303,9 +1257,9 @@ export function MailingsWorkspace() {
                   {selectedList?.blocked || 0} gesperrt.
                 </p>
                 <p>
-                  {campaign.eligible} freigegebene Kontakte offen. Dieser Klick
+                  {campaign.eligible} versendbare Kontakte offen. Dieser Klick
                   startet den automatischen Versand: bis zu 20 Mails alle 30
-                  Minuten, bis die freigegebene Liste fertig ist oder du
+                  Minuten, bis die ausgewählte Liste fertig ist oder du
                   stoppst. Insgesamt höchstens 40 Mails pro 60 Minuten und 200
                   pro Tag über alle Netzwerke hinweg; danach geht es am nächsten
                   Tag weiter. Später neu importierte Empfänger benötigen eine
@@ -1338,7 +1292,7 @@ export function MailingsWorkspace() {
                         await load();
                         setSendConfirm(false);
                         setNotice(
-                          `Automatischer Versand gestartet: ${r.remaining} freigegebene Kontakte. Du kannst jederzeit stoppen.`,
+                          `Automatischer Versand gestartet: ${r.remaining} versendbare Kontakte. Du kannst jederzeit stoppen.`,
                         );
                       } finally {
                         setSendingId("");

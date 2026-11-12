@@ -57,6 +57,8 @@ describe("personal letter template", () => {
     expect(html).toContain("token=a&amp;kind=landing");
     expect(html).toContain("token=a&amp;kind=register");
     expect(html).toContain('href="https://example.de/unsubscribe"');
+    expect(html).toContain("Keine weiteren Netzwerk-E-Mails erhalten");
+    expect(html).not.toContain("Keine weiteren Werbe-E-Mails erhalten");
   });
   it("starts the general template with the agreed networking greeting", () => {
     expect(STORY_BODY.split("\n")[0]).toBe(

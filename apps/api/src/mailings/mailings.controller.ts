@@ -204,7 +204,7 @@ export class MailingsController {
     return res
       .type("html")
       .send(
-        `<!doctype html><html lang="de"><meta name="viewport" content="width=device-width"><title>E-Mail-Abmeldung</title><body style="font:18px Arial;padding:40px;max-width:600px;margin:auto"><h1>Keine weiteren Werbe-E-Mails?</h1><p>Die Abmeldung gilt für Werbe-Mailings von B2B Matching. Notwendige Konto- und Vertragsnachrichten bleiben davon unberührt.</p><form method="post"><button style="padding:15px">Abmeldung bestätigen</button></form></body></html>`,
+        `<!doctype html><html lang="de"><meta name="viewport" content="width=device-width"><title>E-Mail-Abmeldung</title><body style="font:18px Arial;padding:40px;max-width:600px;margin:auto"><h1>Keine weiteren Netzwerk-E-Mails?</h1><p>Die Abmeldung gilt für Netzwerk-Mailings von B2B Matching. Notwendige Konto- und Vertragsnachrichten bleiben davon unberührt.</p><form method="post"><button style="padding:15px">Abmeldung bestätigen</button></form></body></html>`,
       );
   }
   @Post("public/unsubscribe/:token") @HttpCode(200) async unsubscribe(

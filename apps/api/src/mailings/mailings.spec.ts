@@ -693,7 +693,8 @@ describe("owner mailing system", () => {
     const p = s.service.preview("owner", id);
     expect(p.html).not.toContain("Datenschutz zu Mailings und Auswertung");
     expect(p.html).not.toContain("/datenschutz/mailings");
-    expect(p.html).toContain("Keine weiteren Werbe-E-Mails erhalten");
+    expect(p.html).toContain("Keine weiteren Netzwerk-E-Mails erhalten");
+    expect(p.html).not.toContain("Keine weiteren Werbe-E-Mails erhalten");
     expect(p.html).not.toContain("<script>");
     expect(p.html).toContain("&lt;script&gt;");
     expect(p.html).not.toContain("/public/image/");

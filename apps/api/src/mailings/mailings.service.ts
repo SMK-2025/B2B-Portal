@@ -830,10 +830,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       );
     const rows = this.eligible(c)
       .filter((lead) => !scope || scope.has(lead.id))
-      .slice(
-        0,
-        Math.min(50 - startedInHalfHour, 100 - startedInHour),
-      );
+      .slice(0, Math.min(50 - startedInHalfHour, 100 - startedInHour));
     this.sending.add(id);
     let submitted = 0,
       uncertain = 0;
@@ -842,6 +839,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         if (c.paused) break;
         if (this.suppressed(lead)) continue;
         const d: MailingDelivery = {
+          trackingIncluded: !!lead.tracking,
           revision: c.revision,
           token: opaqueToken(),
           state: "sending",
@@ -914,6 +912,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         submittedAt: d.submittedAt || null,
         error: d.error,
         tracking: !!lead?.tracking,
+        trackingIncluded: d.trackingIncluded ?? null,
         suppressed: lead ? this.suppressed(lead) : true,
         imageRequests: count("image"),
         homepageClicks: count("click", "homepage"),
@@ -939,6 +938,12 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       eligible: this.eligible(c).length,
       stats: {
         submitted: recipients.filter((r) => r.state === "submitted").length,
+        trackingIncluded: recipients.filter((r) => r.trackingIncluded === true)
+          .length,
+        trackingExcluded: recipients.filter((r) => r.trackingIncluded === false)
+          .length,
+        trackingUnknown: recipients.filter((r) => r.trackingIncluded === null)
+          .length,
         delivered: recipients.filter((r) => r.delivered).length,
         opened: recipients.filter((r) => r.imageRequests > 0).length,
         failed: recipients.filter((r) => r.bounced || r.dropped).length,

@@ -417,21 +417,33 @@ describe("owner mailing system", () => {
     try {
       const s = setup();
       s.service.importLeads("owner", s.a.id, {
-        rows: Array.from({ length: 500 }, (_, i) => ({ email: `full-list${i}@example.de` })),
+        rows: Array.from({ length: 500 }, (_, i) => ({
+          email: `full-list${i}@example.de`,
+        })),
       });
       const id = s.campaign();
       await s.service.startAutomatic("owner", id, {
-        confirmName: "Erstes Mailing", revision: 1, expectedCount: 500,
+        confirmName: "Erstes Mailing",
+        revision: 1,
+        expectedCount: 500,
       });
       for (let batch = 0; batch < 10; batch++) {
         if (batch) vi.setSystemTime(Date.now() + 1_800_001);
         await s.service.processAutomatic();
-        expect(s.email.sendCampaignMail).toHaveBeenCalledTimes((batch + 1) * 50);
+        expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(
+          (batch + 1) * 50,
+        );
         if (batch === 5) s.store.hydrate(JSON.parse(s.store.snapshot()));
       }
       expect(s.service.report("owner", id).eligible).toBe(0);
       expect(s.store.mailingCampaigns.get(id)!.automatic!.enabled).toBe(false);
-      expect(new Set(vi.mocked(s.email.sendCampaignMail).mock.calls.map(([mail]) => mail.to)).size).toBe(500);
+      expect(
+        new Set(
+          vi
+            .mocked(s.email.sendCampaignMail)
+            .mock.calls.map(([mail]) => mail.to),
+        ).size,
+      ).toBe(500);
     } finally {
       vi.useRealTimers();
     }
@@ -565,15 +577,22 @@ describe("owner mailing system", () => {
     const s = setup();
     s.service.importLeads("owner", s.a.id, {
       listName: "500 ohne Einzel-Freigabe",
-      rows: Array.from({ length: 500 }, (_, i) => ({ email: `lead${i}@example.de` })),
+      rows: Array.from({ length: 500 }, (_, i) => ({
+        email: `lead${i}@example.de`,
+      })),
     });
     const id = s.campaign();
     expect(s.service.report("owner", id).eligible).toBe(500);
     s.store.mailingSuppressions.set(tokenHash("lead0@example.de"), {
-      at: evidence.at, reason: "recipient_unsubscribed",
+      at: evidence.at,
+      reason: "recipient_unsubscribed",
     });
     expect(s.service.report("owner", id).eligible).toBe(499);
-    expect(s.service.list("owner", s.a.id).lists[0]).toMatchObject({ total: 500, available: 499, blocked: 1 });
+    expect(s.service.list("owner", s.a.id).lists[0]).toMatchObject({
+      total: 500,
+      available: 499,
+      blocked: 1,
+    });
     expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
   });
   it("uses direct links and no pixel without tracking permission", async () => {
@@ -783,6 +802,21 @@ describe("owner mailing system", () => {
     expect(report.stats.opened).toBe(1);
     expect(report.stats.unsubscribed).toBe(1);
     expect(report.stats.delivered).toBe(0);
+  });
+  it("records whether measurement was included at sending, independently of later consent changes", async () => {
+    const s = setup();
+    const lead = s.lead(false);
+    const id = s.campaign();
+    await s.send(id);
+    expect(s.service.report("owner", id).stats.trackingExcluded).toBe(1);
+    lead.tracking = evidence;
+    expect(s.service.report("owner", id).recipients[0].trackingIncluded).toBe(
+      false,
+    );
+    const delivery = s.store.mailingCampaigns.get(id)!.deliveries[lead.id];
+    delete delivery.trackingIncluded;
+    expect(s.service.report("owner", id).stats.trackingUnknown).toBe(1);
+    expect(s.service.report("owner", id).stats.trackingIncluded).toBe(0);
   });
   it("acknowledges webhooks only after durable persistence", async () => {
     const service = { webhook: vi.fn(() => ({ accepted: true })) };

@@ -37,6 +37,8 @@ export type MailingEvent = {
   providerId?: string;
 };
 export type MailingDelivery = {
+  /** Whether tracking links/pixel were included at the time of sending. */
+  trackingIncluded?: boolean;
   revision?: number;
   token: string;
   state: "sending" | "submitted" | "uncertain";

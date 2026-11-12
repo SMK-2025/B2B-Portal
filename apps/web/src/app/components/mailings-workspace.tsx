@@ -40,6 +40,7 @@ type Recipient = {
   spamReported?: boolean;
   unsubscribed?: boolean;
   tracking?: boolean;
+  trackingIncluded?: boolean | null;
   automatedSignals: number;
   error?: string;
   events: Array<{
@@ -126,6 +127,23 @@ export function MailingsWorkspace() {
   const current = networks.find((n) => n.id === network),
     campaign = data?.campaigns.find((c) => c.id === selected);
   const selectedList = data?.lists?.find((list) => list.id === recipientListId);
+  const measurable = (r: Recipient) =>
+    r.trackingIncluded === true ||
+    (r.trackingIncluded !== false &&
+      (r.imageRequests > 0 ||
+        r.homepageClicks + r.landingClicks + r.registerClicks > 0 ||
+        r.registered));
+  const measuredRecipients =
+    campaign?.recipients.filter(measurable).length || 0;
+  const unmeasuredRecipients =
+    (campaign?.recipients.length || 0) - measuredRecipients;
+  const pendingWithoutTracking = (data?.leads || []).filter(
+    (l) =>
+      selectedList?.leadIds.includes(l.id) &&
+      !l.suppressed &&
+      !l.tracking &&
+      !campaign?.recipients.some((r) => r.leadId === l.id),
+  ).length;
   const contactList = data?.lists?.find((list) => list.id === contactListId);
   const visibleLeads = (data?.leads || []).filter(
     (lead) => !contactList || contactList.leadIds.includes(lead.id),
@@ -308,9 +326,9 @@ export function MailingsWorkspace() {
         </div>
       )}
       <p>
-        Ohne Trackingfreigabe
-        werden keine persönlichen Öffnungs-, Klick- oder Registrierungsdaten
-        erfasst. Zustimmungen können später ergänzt oder entfernt werden.
+        Ohne Trackingfreigabe werden keine persönlichen Öffnungs-, Klick- oder
+        Registrierungsdaten erfasst. Zustimmungen können später ergänzt oder
+        entfernt werden.
       </p>
     </div>
   );
@@ -371,8 +389,9 @@ export function MailingsWorkspace() {
             <p>
               Nach deiner Startfreigabe: automatisch bis zu 50 Mails alle 30
               Minuten, bis die Liste fertig ist oder du stoppst. Höchstens 100
-              Mails pro 60 Minuten über alle Netzwerke hinweg, ohne zusätzliche Tagesgrenze. Bereits übergebene Mails
-              können nicht zurückgerufen werden.
+              Mails pro 60 Minuten über alle Netzwerke hinweg, ohne zusätzliche
+              Tagesgrenze. Bereits übergebene Mails können nicht zurückgerufen
+              werden.
             </p>
             {data.campaigns
               .filter(
@@ -984,13 +1003,26 @@ export function MailingsWorkspace() {
                       ],
                       [
                         "Öffnungssignal",
-                        campaign.stats.opened ??
-                          campaign.recipients.filter((r) => r.imageRequests > 0)
-                            .length,
+                        measuredRecipients === 0
+                          ? "–"
+                          : (campaign.stats.opened ??
+                            campaign.recipients.filter(
+                              (r) => r.imageRequests > 0,
+                            ).length),
                         "opened",
                       ],
-                      ["Kontakte mit Klick", campaign.stats.clicked, "clicked"],
-                      ["Registriert", campaign.stats.registered, "registered"],
+                      [
+                        "Kontakte mit Klick",
+                        measuredRecipients === 0 ? "–" : campaign.stats.clicked,
+                        "clicked",
+                      ],
+                      [
+                        "Registriert",
+                        measuredRecipients === 0
+                          ? "–"
+                          : campaign.stats.registered,
+                        "registered",
+                      ],
                       [
                         "Abgemeldet",
                         campaign.stats.unsubscribed ?? 0,
@@ -1012,6 +1044,19 @@ export function MailingsWorkspace() {
                       </button>
                     ))}
                   </div>
+                  {unmeasuredRecipients > 0 && (
+                    <p className="mailingExplanation" role="status">
+                      Bei {unmeasuredRecipients} von{" "}
+                      {campaign.recipients.length} Empfängern ist keine
+                      persönliche Messung nachweisbar aktiv. Öffnungen, Klicks
+                      und zugeordnete Registrierungen sind dafür nicht
+                      auswertbar – fehlende Messungen sind keine null
+                      Reaktionen. Bereits ohne Tracking versendete E-Mails
+                      können nachträglich nicht messbar gemacht werden.
+                      Zustellmeldungen und Abmeldungen werden unabhängig davon
+                      erfasst.
+                    </p>
+                  )}
                   {!data.readiness.deliveryWebhook && (
                     <p className="mailingExplanation">
                       Zustellrückmeldungen sind noch nicht verbunden. Fehlende
@@ -1097,7 +1142,7 @@ export function MailingsWorkspace() {
                                   <span className="mailingStatus good">
                                     Signal erkannt · {r.imageRequests}
                                   </span>
-                                ) : r.tracking === false ? (
+                                ) : !measurable(r) ? (
                                   "Nicht erfasst"
                                 ) : (
                                   "Kein Signal"
@@ -1109,24 +1154,30 @@ export function MailingsWorkspace() {
                                 )}
                               </td>
                               <td>
-                                <div className="mailingClickChips">
-                                  <span>
-                                    Landingpage <b>{r.landingClicks}</b>
-                                  </span>
-                                  <span>
-                                    Registrierung <b>{r.registerClicks}</b>
-                                  </span>
-                                  <span>
-                                    Homepage <b>{r.homepageClicks}</b>
-                                  </span>
-                                </div>
+                                {!measurable(r) ? (
+                                  "Nicht erfasst"
+                                ) : (
+                                  <div className="mailingClickChips">
+                                    <span>
+                                      Landingpage <b>{r.landingClicks}</b>
+                                    </span>
+                                    <span>
+                                      Registrierung <b>{r.registerClicks}</b>
+                                    </span>
+                                    <span>
+                                      Homepage <b>{r.homepageClicks}</b>
+                                    </span>
+                                  </div>
+                                )}
                               </td>
                               <td>
                                 {r.verified
                                   ? "E-Mail bestätigt"
                                   : r.registered
                                     ? "Registriert"
-                                    : "–"}
+                                    : !measurable(r)
+                                      ? "Nicht zuordenbar"
+                                      : "–"}
                               </td>
                               <td>
                                 <button onClick={() => setEvents(r)}>
@@ -1259,12 +1310,22 @@ export function MailingsWorkspace() {
                 <p>
                   {campaign.eligible} versendbare Kontakte offen. Dieser Klick
                   startet den automatischen Versand: bis zu 50 Mails alle 30
-                  Minuten, bis die ausgewählte Liste fertig ist oder du
-                  stoppst. Insgesamt höchstens 100 Mails pro 60 Minuten über alle
-                  Netzwerke hinweg, ohne zusätzliche Tagesgrenze. Später neu importierte Empfänger benötigen eine
-                  neue Freigabe. Abgemeldete und bereits angeschriebene Kontakte
-                  werden übersprungen.
+                  Minuten, bis die ausgewählte Liste fertig ist oder du stoppst.
+                  Insgesamt höchstens 100 Mails pro 60 Minuten über alle
+                  Netzwerke hinweg, ohne zusätzliche Tagesgrenze. Später neu
+                  importierte Empfänger benötigen eine neue Freigabe.
+                  Abgemeldete und bereits angeschriebene Kontakte werden
+                  übersprungen.
                 </p>
+                {pendingWithoutTracking > 0 && (
+                  <p className="mailingExplanation" role="status">
+                    Achtung: Für {pendingWithoutTracking} noch nicht
+                    angeschriebene Kontakte ist Tracking ausgeschaltet. Diese
+                    E-Mails werden ohne persönliche Öffnungs- und Klickmessung
+                    versendet. Eine Trackingfreigabe muss vor dem Versand unter
+                    „Kontakte & Import“ hinterlegt sein.
+                  </p>
+                )}
                 <label>
                   Zur Bestätigung den Mailingnamen eingeben
                   <input

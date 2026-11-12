@@ -218,7 +218,7 @@ describe("owner mailing system", () => {
   it("automatically continues approved recipients, survives reload and excludes later imports", async () => {
     const s = setup();
     s.service.importLeads("owner", s.a.id, {
-      rows: Array.from({ length: 25 }, (_, i) => ({
+      rows: Array.from({ length: 55 }, (_, i) => ({
         email: `auto${i}@example.de`,
       })),
       marketing: evidence,
@@ -227,7 +227,7 @@ describe("owner mailing system", () => {
     await s.service.startAutomatic("owner", id, {
       confirmName: "Erstes Mailing",
       revision: 1,
-      expectedCount: 25,
+      expectedCount: 55,
     });
     expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
     s.service.importLeads("owner", s.a.id, {
@@ -235,16 +235,16 @@ describe("owner mailing system", () => {
       marketing: evidence,
     });
     await s.service.processAutomatic();
-    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(20);
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(50);
     await s.service.processAutomatic();
-    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(20);
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(50);
     s.store.hydrate(JSON.parse(s.store.snapshot()));
     const c = s.store.mailingCampaigns.get(id)!;
     c.automatic!.nextAt = new Date(Date.now() - 1).toISOString();
     for (const d of Object.values(c.deliveries))
       d.startedAt = new Date(Date.now() - 1_800_001).toISOString();
     await s.service.processAutomatic();
-    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(25);
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(55);
     expect(c.automatic!.enabled).toBe(false);
     expect(s.service.report("owner", id).eligible).toBe(0);
   });
@@ -375,16 +375,16 @@ describe("owner mailing system", () => {
     await expect(s.service.stopCampaign("owner", other)).rejects.toThrow();
     await expect(s.service.resumeCampaign("owner", id)).rejects.toThrow();
   });
-  it("limits all campaigns to 20 attempts per rolling half-hour and 40 per rolling hour", async () => {
+  it("limits all campaigns to 50 attempts per rolling half-hour and 100 per rolling hour", async () => {
     const s = setup();
     s.service.importLeads("owner", s.a.id, {
-      rows: Array.from({ length: 60 }, (_, i) => ({
+      rows: Array.from({ length: 150 }, (_, i) => ({
         email: `lead${i}@example.de`,
       })),
       marketing: evidence,
     });
     const id = s.campaign();
-    expect((await s.send(id)).submitted).toBe(20);
+    expect((await s.send(id)).submitted).toBe(50);
     await expect(s.send(id)).rejects.toThrow("Halbstundenlimit");
     const second = s.service.saveCampaign("owner", s.a.id, {
       name: "Andere Kampagne",
@@ -402,14 +402,39 @@ describe("owner mailing system", () => {
       s.store.mailingCampaigns.get(id)!.deliveries,
     ))
       delivery.startedAt = new Date(Date.now() - 1_800_001).toISOString();
-    expect((await s.send(id)).submitted).toBe(20);
+    expect((await s.send(id)).submitted).toBe(50);
     await expect(s.send(id)).rejects.toThrow("Stundenlimit");
     for (const delivery of Object.values(
       s.store.mailingCampaigns.get(id)!.deliveries,
     ))
       delivery.startedAt = new Date(Date.now() - 3_600_001).toISOString();
-    expect((await s.send(id)).submitted).toBe(20);
-    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(60);
+    expect((await s.send(id)).submitted).toBe(50);
+    expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(150);
+  });
+  it("automatically completes 500 selected contacts in ten half-hour batches without the old daily cap", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-12T10:00:00Z"));
+    try {
+      const s = setup();
+      s.service.importLeads("owner", s.a.id, {
+        rows: Array.from({ length: 500 }, (_, i) => ({ email: `full-list${i}@example.de` })),
+      });
+      const id = s.campaign();
+      await s.service.startAutomatic("owner", id, {
+        confirmName: "Erstes Mailing", revision: 1, expectedCount: 500,
+      });
+      for (let batch = 0; batch < 10; batch++) {
+        if (batch) vi.setSystemTime(Date.now() + 1_800_001);
+        await s.service.processAutomatic();
+        expect(s.email.sendCampaignMail).toHaveBeenCalledTimes((batch + 1) * 50);
+        if (batch === 5) s.store.hydrate(JSON.parse(s.store.snapshot()));
+      }
+      expect(s.service.report("owner", id).eligible).toBe(0);
+      expect(s.store.mailingCampaigns.get(id)!.automatic!.enabled).toBe(false);
+      expect(new Set(vi.mocked(s.email.sendCampaignMail).mock.calls.map(([mail]) => mail.to)).size).toBe(500);
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it.each([
     [

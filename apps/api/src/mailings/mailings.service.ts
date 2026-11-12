@@ -810,14 +810,6 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       );
     if (this.sending.size)
       throw new BadRequestException("Ein Versandlauf läuft bereits.");
-    const sentToday = [...this.store.mailingCampaigns.values()]
-      .flatMap((x) => Object.values(x.deliveries))
-      .filter(
-        (d) =>
-          d.startedAt.slice(0, 10) === new Date().toISOString().slice(0, 10),
-      ).length;
-    if (sentToday >= 200)
-      throw new BadRequestException("Tageslimit von 200 Empfängern erreicht.");
     // Persisted attempts across ALL networks/campaigns count, including uncertain
     // provider outcomes. A sliding window prevents a double burst at the hour.
     const attempts = [...this.store.mailingCampaigns.values()]
@@ -828,19 +820,19 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     const startedInHalfHour = attempts.filter(
       (at) => at > now - 1_800_000,
     ).length;
-    if (startedInHour >= 40)
+    if (startedInHour >= 100)
       throw new BadRequestException(
-        "Stundenlimit erreicht: maximal 40 Mailing-E-Mails innerhalb von 60 Minuten. Bitte später erneut freigeben.",
+        "Stundenlimit erreicht: maximal 100 Mailing-E-Mails innerhalb von 60 Minuten. Der automatische Versand wartet auf das nächste freie Zeitfenster.",
       );
-    if (startedInHalfHour >= 20)
+    if (startedInHalfHour >= 50)
       throw new BadRequestException(
-        "Halbstundenlimit erreicht: maximal 20 Mailing-E-Mails innerhalb von 30 Minuten. Bitte später erneut freigeben.",
+        "Halbstundenlimit erreicht: maximal 50 Mailing-E-Mails innerhalb von 30 Minuten. Der automatische Versand wartet auf das nächste freie Zeitfenster.",
       );
     const rows = this.eligible(c)
       .filter((lead) => !scope || scope.has(lead.id))
       .slice(
         0,
-        Math.min(20 - startedInHalfHour, 40 - startedInHour, 200 - sentToday),
+        Math.min(50 - startedInHalfHour, 100 - startedInHour),
       );
     this.sending.add(id);
     let submitted = 0,

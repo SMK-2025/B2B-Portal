@@ -369,9 +369,9 @@ export function MailingsWorkspace() {
           <div className="mailingCard" aria-label="Versandsteuerung">
             <h3>Versandsteuerung</h3>
             <p>
-              Nach deiner Startfreigabe: automatisch bis zu 20 Mails alle 30
-              Minuten, bis die Liste fertig ist oder du stoppst. Höchstens 40
-              Mails pro 60 Minuten und 200 pro Tag. Bereits übergebene Mails
+              Nach deiner Startfreigabe: automatisch bis zu 50 Mails alle 30
+              Minuten, bis die Liste fertig ist oder du stoppst. Höchstens 100
+              Mails pro 60 Minuten über alle Netzwerke hinweg, ohne zusätzliche Tagesgrenze. Bereits übergebene Mails
               können nicht zurückgerufen werden.
             </p>
             {data.campaigns
@@ -1258,11 +1258,10 @@ export function MailingsWorkspace() {
                 </p>
                 <p>
                   {campaign.eligible} versendbare Kontakte offen. Dieser Klick
-                  startet den automatischen Versand: bis zu 20 Mails alle 30
+                  startet den automatischen Versand: bis zu 50 Mails alle 30
                   Minuten, bis die ausgewählte Liste fertig ist oder du
-                  stoppst. Insgesamt höchstens 40 Mails pro 60 Minuten und 200
-                  pro Tag über alle Netzwerke hinweg; danach geht es am nächsten
-                  Tag weiter. Später neu importierte Empfänger benötigen eine
+                  stoppst. Insgesamt höchstens 100 Mails pro 60 Minuten über alle
+                  Netzwerke hinweg, ohne zusätzliche Tagesgrenze. Später neu importierte Empfänger benötigen eine
                   neue Freigabe. Abgemeldete und bereits angeschriebene Kontakte
                   werden übersprungen.
                 </p>

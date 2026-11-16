@@ -139,6 +139,26 @@ describe("network launch promotion", () => {
       limit: 2,
     });
   });
+  it("combines 20 variable free places with a fixed billing period without changing regular settings", async () => {
+    const { store, network } = fixture(20, 7);
+    Object.assign(network.settings.memberBilling!, {
+      months: 5, freeUntil: "2027-01-31", paidFrom: "2027-02-01", paidThrough: "2027-06-30",
+    });
+    const before = structuredClone(network.settings.memberBilling);
+    expect(() => validateLaunchBilling(network)).not.toThrow();
+    const grants = await Promise.allSettled(Array.from({ length: 21 }, (_, i) =>
+      store.claimLaunchPlace(network.id, `fixed-${i}`, `Fixed Company ${i}`)));
+    expect(grants.filter(g => g.status === "fulfilled")).toHaveLength(20);
+    expect(publicLaunchOffer(network, store.launchUsed(network.id))?.available).toBe(false);
+    const free = order();
+    applyLaunch(free, { slot: 1, startsOn: "2026-11-16", campaignId: KOELN_LAUNCH, freeMonths: 7 });
+    expect(free.serviceEndsAt).toBe("2027-06-15T22:00:00.000Z");
+    expect(free).toMatchObject({ grossCents: 0, minimumTermMonths: 7, paymentDueAt: null,
+      billingPolicy: { autoRenew: false, automaticInvoices: false } });
+    expect(network.settings.memberBilling).toEqual(before);
+    expect(launchSettings({enabled:true,limit:20,freeMonths:3},network.settings.launchPromotion,20).freeMonths).toBe(3);
+    expect(free.minimumTermMonths).toBe(7);
+  });
   it("preserves allocated counters, rejects incompatible billing and leaves existing networks untouched", () => {
     const { store, network } = fixture();
     const other = {

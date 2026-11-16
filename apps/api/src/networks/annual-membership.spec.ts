@@ -1221,6 +1221,21 @@ describe("personal annual membership billing", () => {
     expect(f.networks.myBilling(f.member,f.network.id)).toHaveLength(1);
     expect(f.store.users.has(f.registered.user.id)).toBe(true);
   });
+  it("combines fixed dates with a variable free start and preserves regular paid bookings", async () => {
+    const f=await fixture();
+    const billing={months:5,freeUntil:"2027-01-31",paidFrom:"2027-02-01",paidThrough:"2027-06-30",automaticInvoices:true};
+    f.networks.memberPricing(f.owner,f.network.id,{monthlyNetCents:6900,memberPaymentModel:"individual",billing,launchPromotion:{enabled:true,limit:20,freeMonths:7}});
+    const quote=f.networks.invitationQuote({invite:f.invite});
+    const input={...f.input,acceptedMonthlyNetCents:6900,acceptedBillingVersion:quote.billing!.version,pdfInvoiceAccepted:true,launchPromotionAccepted:quote.launchPromotion!.version};
+    const regular=annualOrder(f.network,f.registered.user.id,input);
+    expect(regular).toMatchObject({minimumTermMonths:5,annualNetCents:34500,grossCents:41055});
+    expect(regular.serviceStartsAt).toContain("2027-01-31T23:00");
+    expect(regular.serviceEndsAt).toContain("2027-06-30T22:00");
+    await f.orgs.createNetwork(f.member,{...input,pdfInvoiceAccepted:false,paymentObligationAccepted:false});
+    const free=[...f.store.networkOrders.values()][0];
+    expect(free).toMatchObject({grossCents:0,minimumTermMonths:7,launchPromotion:{slot:1},billingPolicy:{autoRenew:false,automaticInvoices:false}});
+    expect(f.network.settings.memberBilling?.paidThrough).toBe("2027-06-30");
+  });
   it("requires new acceptance if the promotion changes and never silently charges an exhausted free offer",async()=>{
     const f=await fixture();
     f.networks.memberPricing(f.owner,f.network.id,{monthlyNetCents:1900,memberPaymentModel:"individual",billing:{months:12,autoRenew:true,automaticInvoices:true,renewalMonths:12},launchPromotion:{enabled:true,limit:1,freeMonths:6}});

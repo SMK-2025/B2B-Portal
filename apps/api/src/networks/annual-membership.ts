@@ -96,7 +96,7 @@ export function annualOrder(
     month: "2-digit",
     day: "2-digit",
   }).format(now);
-  if (policy?.paidThrough && today > policy.paidThrough)
+  if (!freeLaunch && policy?.paidThrough && today > policy.paidThrough)
     throw new BadRequestException(
       "Dieser Abrechnungszeitraum ist abgelaufen. Bitte den Betreiber kontaktieren.",
     );

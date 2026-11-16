@@ -61,7 +61,10 @@ export function LaunchPromotionSettings({
         Aktionsplatz frei.
       </p>
       <small>
-        Für individuell zahlende Netzwerke ohne feste Datumszeiträume.
+        Auch mit festen Zahlungszeiträumen kombinierbar: Aktionsplätze gelten
+        für die eingestellten kostenlosen Monate ab dem jeweiligen Beitritt,
+        unabhängig vom regulären Zahlungszeitraum. Für alle anderen Mitglieder
+        gelten die oben eingestellten Konditionen. Keine automatische Verlängerung.
         Änderungen gelten ausschließlich für neue Buchungen.
       </small>
     </fieldset>

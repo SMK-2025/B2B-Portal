@@ -172,10 +172,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
         live.freeMonths !== promotion.freeMonths ||
         !settings?.memberBilling ||
         settings.memberPaymentModel === "network" ||
-        settings.billingMode === "cooperation_free" ||
-        settings.memberBilling.freeUntil ||
-        settings.memberBilling.paidFrom ||
-        settings.memberBilling.paidThrough
+        settings.billingMode === "cooperation_free"
       )
         throw new ConflictException(
           "Die Startaktion wurde geändert. Bitte lade die aktuellen Konditionen erneut.",

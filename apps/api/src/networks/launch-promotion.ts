@@ -77,13 +77,10 @@ export function validateLaunchBilling(n: NetworkRecord) {
   if (
     n.settings.memberPaymentModel === "network" ||
     n.settings.billingMode === "cooperation_free" ||
-    !b ||
-    b.freeUntil ||
-    b.paidFrom ||
-    b.paidThrough
+    !b
   )
     throw new BadRequestException(
-      "Für die Startaktion bitte individuelle Zahlung ohne feste Datumszeiträume wählen.",
+      "Für die Startaktion bitte individuelle Mitgliederzahlung und eine Laufzeit einstellen.",
     );
 }
 

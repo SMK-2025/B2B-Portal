@@ -355,20 +355,27 @@
 }
 .loungePulseMembersRow .loungeMemberHighlight .loungeCardBody{min-height:0;container-type:inline-size;gap:16px}
 .loungePulseMembersRow .loungeMemberHighlight>header{flex:0 0 auto}
-.networkPortal .loungeMemberTiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
+.networkPortal .loungeMemberTiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-content:start}
 .networkPortal .loungeMemberTiles>.loungeEmpty{grid-column:1/-1}
-.networkPortal .networkLoungeHome .loungeMemberTile{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0;padding:14px 10px;border:1px solid #e0e6ed;border-radius:9px;background:#fff;color:#23394b;text-align:center;text-decoration:none;box-sizing:border-box;transition:border-color .15s,background .15s}
-.networkPortal .loungeMemberTile:hover{border-color:var(--network-accent);background:var(--network-soft)}
+.networkPortal .networkLoungeHome .loungeMemberTile{display:flex;flex-direction:column;min-width:0;padding:0;border:1px solid #dfe5eb;border-radius:12px;overflow:hidden;background:#fff;color:#23394b;text-align:left;text-decoration:none;box-sizing:border-box;box-shadow:0 3px 8px #23394b0a,0 1px 2px #23394b06;transition:border-color .15s,box-shadow .15s}
+.networkPortal .loungeMemberTile:hover{border-color:#aab8c6;box-shadow:0 6px 16px #23394b15}
 .networkPortal .loungeMemberTile:focus-visible{outline:2px solid var(--network-accent);outline-offset:3px}
-.networkPortal .loungeMemberTileLogo{position:relative;display:grid;place-items:center;flex:0 0 64px;width:100%;height:64px;min-height:0;min-width:0;overflow:hidden}
-.networkPortal .loungeMemberTileLogo>img{position:absolute;inset:0;display:block;box-sizing:border-box;width:100%;height:64px;min-height:0;max-height:64px;max-width:100%;margin:0;object-fit:contain}
+.networkPortal .loungeMemberTileLogo{position:relative;display:grid;place-items:center;flex:0 0 110px;width:100%;height:110px;min-height:0;min-width:0;overflow:hidden;background:linear-gradient(155deg,#fafbfc 0%,#f1f3f6 55%,#e7ecf0 100%);border-bottom:1px solid #e0e5ea;box-shadow:inset 0 1px 0 #fff}
+.networkPortal .loungeMemberTileLogo>img{position:absolute;inset:0;display:block;box-sizing:border-box;width:100%;height:110px;min-height:0;max-height:110px;max-width:100%;padding:16px 20px;margin:0;object-fit:contain}
 .loungeMemberTileLogo>b{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:#eef2f6;color:#536779;font-size:20px}
-.loungeMemberTileText{display:grid;gap:3px;width:100%;min-width:0}
+.networkPortal .loungeMemberTileText{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0;padding:16px 18px;flex:1;background:linear-gradient(#fff,#fcfdfe)}
+.loungeMemberTileText>span:first-child{display:grid;gap:4px;min-width:0}
+.loungeMemberTileArrow{flex:none;color:#657786}
 .networkPortal .networkLoungeHome .loungeMemberTileText strong,.networkPortal .networkLoungeHome .loungeMemberTileText small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;margin:0;line-height:1.4!important}
-.networkPortal .networkLoungeHome .loungeMemberTileText strong{font-size:14px!important;font-weight:700;min-height:2.8em}
-.networkPortal .networkLoungeHome .loungeMemberTileText small{font-size:12px!important;color:#617487;min-height:2.8em}
-@container(min-width:480px){.networkPortal .loungeMemberTiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.loungePulseMembersRow .loungeMemberHighlight .loungeOutlineButton{flex:0 0 auto}
+.networkPortal .networkLoungeHome .loungeMemberTileText strong{font-size:16px!important;font-weight:700}
+.networkPortal .networkLoungeHome .loungeMemberTileText small{font-size:13px!important;color:#617487}
+@container(min-width:480px){.networkPortal .loungeMemberTiles:not(.loungeMemberTilesFew){grid-template-columns:repeat(4,minmax(0,1fr))}}
+.networkPortal .loungeMemberFooter{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;flex:0 0 auto;border-top:1px solid #e8edf1;background:#f8fafb;padding:12px 24px}
+.loungeMemberFooter>span{font-size:12px;color:#657786}
+.networkPortal .networkLoungeHome .loungeMemberFooter .loungeMemberAllLink{display:inline-flex;align-items:center;min-height:36px;padding:8px 0;color:#23394b;text-decoration:none;font-size:13px!important;font-weight:600}
+.loungeMemberAllLink:hover{text-decoration:underline!important}
+@container(max-width:440px){.networkPortal .loungeMemberTileText{padding:13px 10px}.networkPortal .networkLoungeHome .loungeMemberTileText strong{font-size:14px!important}.networkPortal .networkLoungeHome .loungeMemberTileText small{font-size:12px!important}}
+@media(max-width:760px){.networkPortal .loungeMemberFooter>span{display:none}.networkPortal .loungeMemberFooter .loungeMemberAllLink{margin-left:auto;min-height:44px!important}}
 .networkPortal .loungeHeroRevenue{position:absolute;top:28px;right:28px;z-index:2;width:260px;max-width:calc(100% - 48px)}
 .loungeHeroRevenue .cooperationRevenue button{width:100%;background:#172a3ce6;backdrop-filter:blur(8px)}
 .networkPortal .loungeHeroRevenue p{color:white}

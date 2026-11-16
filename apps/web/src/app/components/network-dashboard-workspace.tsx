@@ -308,7 +308,7 @@ export function NetworkDashboardWorkspace({
               </Link>
             </header>
             <div className="loungeCardBody">
-              <div className="loungeMemberTiles">
+              <div className={`loungeMemberTiles${cards.length <= 2 ? " loungeMemberTilesFew" : ""}`}>
                 {cards.length ? (
                   cards.map((member) => (
                       <Link
@@ -326,8 +326,11 @@ export function NetworkDashboardWorkspace({
                           )}
                         </span>
                         <span className="loungeMemberTileText">
-                          <strong>{member.name}</strong>
-                          <small>{member.company}</small>
+                          <span>
+                            <strong>{member.company}</strong>
+                            <small>{member.name}</small>
+                          </span>
+                          <span className="loungeMemberTileArrow" aria-hidden="true">↗</span>
                         </span>
                       </Link>
                   ))
@@ -347,15 +350,18 @@ export function NetworkDashboardWorkspace({
                   </div>
                 )}
               </div>
+            </div>
+            <footer className="loungeMemberFooter">
+              <span><NetworkText id="dashboard.members.footer">Menschen und Unternehmen kennenlernen</NetworkText></span>
               <Link
-                className="loungeOutlineButton"
+                className="loungeMemberAllLink"
                 href={`${base}/mitglieder` as never}
               >
                 <NetworkText id="ui.network-dashboard-workspace.9866dbd37e9587a8">
                   Alle Partner entdecken →
                 </NetworkText>
               </Link>
-            </div>
+            </footer>
           </section>
         )}
       </div>

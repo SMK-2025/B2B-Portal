@@ -172,7 +172,7 @@ export function NetworkDashboardWorkspace({
     : 0;
   const cards = partners.length
     ? [...partners.slice(partnerOffset), ...partners.slice(0, partnerOffset)]
-        .slice(0, 4)
+        .slice(0, 3)
         .map((member) => ({
           id: member.id,
           userId: member.userId,
@@ -186,7 +186,7 @@ export function NetworkDashboardWorkspace({
           logo: member.organization!.networkProfile!.logoUrl,
           tagline: member.organization!.networkProfile!.tagline,
         }))
-    : data.recentMembers.slice(0, 4).map((member) => ({
+    : data.recentMembers.slice(0, 3).map((member) => ({
         id: member.id,
         userId: "",
         name: member.name,
@@ -308,7 +308,7 @@ export function NetworkDashboardWorkspace({
               </Link>
             </header>
             <div className="loungeCardBody">
-              <div className={`loungeMemberTiles${cards.length <= 2 ? " loungeMemberTilesFew" : ""}`}>
+              <div className="loungeMemberTiles">
                 {cards.length ? (
                   cards.map((member) => (
                       <Link

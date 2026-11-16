@@ -360,7 +360,11 @@
 .networkPortal .networkLoungeHome .loungeMemberTile{display:flex;flex-direction:column;min-width:0;padding:0;border:1px solid #dfe5eb;border-radius:12px;overflow:hidden;background:#fff;color:#23394b;text-align:left;text-decoration:none;box-sizing:border-box;box-shadow:0 3px 8px #23394b0a,0 1px 2px #23394b06;transition:border-color .15s,box-shadow .15s}
 .networkPortal .loungeMemberTile:hover{border-color:#aab8c6;box-shadow:0 6px 16px #23394b15}
 .networkPortal .loungeMemberTile:focus-visible{outline:2px solid var(--network-accent);outline-offset:3px}
-.networkPortal .loungeMemberTileLogo{position:relative;display:grid;place-items:center;flex:0 0 110px;width:100%;height:110px;min-height:0;min-width:0;overflow:hidden;background:linear-gradient(155deg,#fafbfc 0%,#f1f3f6 55%,#e7ecf0 100%);border-bottom:1px solid #e0e5ea;box-shadow:inset 0 1px 0 #fff}
+.networkPortal .loungeMemberVisual{position:relative;display:block;isolation:isolate;flex:0 0 110px;width:100%;height:110px;min-width:0;overflow:hidden;background:linear-gradient(155deg,#fafbfc 0%,#f1f3f6 55%,#e7ecf0 100%);border-bottom:1px solid #e0e5ea;box-shadow:inset 0 1px 0 #fff}
+.networkPortal .loungeMemberVisual>.loungeMemberHeroImage{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;object-fit:cover}
+.networkPortal .loungeMemberHeroOverlay{position:absolute;inset:0;z-index:1;background:linear-gradient(135deg,#ffffff50,#142b4540)}
+.networkPortal .loungeMemberTileLogo{position:relative;z-index:2;display:grid;place-items:center;width:100%;height:110px;min-height:0;min-width:0;overflow:hidden}
+.networkPortal .hasHero .loungeMemberTileLogo{width:min(180px,calc(100% - 24px));height:80px;margin:15px auto;border:1px solid #ffffffb3;border-radius:9px;background:#fffffff2;box-shadow:0 3px 12px #13283b20}
 .networkPortal .loungeMemberTileLogo>img{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);display:block;box-sizing:border-box;width:160px;height:64px;min-height:0;max-height:64px;max-width:calc(100% - 40px);padding:0;margin:0;object-fit:contain}
 .loungeMemberTileLogo>b{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:#eef2f6;color:#536779;font-size:20px}
 .networkPortal .loungeMemberTileText{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0;padding:16px 18px;flex:1;background:linear-gradient(#fff,#fcfdfe)}

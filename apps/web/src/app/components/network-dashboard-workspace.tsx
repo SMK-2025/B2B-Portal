@@ -9,6 +9,7 @@ import { useNetworkAccess } from "./network-shell";
 import { NetworkMatchdayCard } from "./network-bundesliga-card";
 import { NetworkSystemMessages } from "./network-system-messages";
 import { NetworkThreadDialog } from "./network-exchange-workspace";
+import { DashboardMemberVisual } from "./dashboard-member-visual";
 type Item = {
   id: string;
   title: string;
@@ -43,6 +44,7 @@ type Partner = {
   organization: {
     displayName: string;
     networkProfile: {
+      status: "draft" | "published";
       contactName: string;
       logoUrl: string | null;
       tagline?: string;
@@ -112,8 +114,7 @@ export function NetworkDashboardWorkspace({
             members.filter(
               (member) =>
                 member.status === "active" &&
-                member.userId !== access?.currentUserId &&
-                member.organization?.networkProfile,
+                member.organization?.networkProfile?.status === "published",
             ),
           );
         }
@@ -318,13 +319,12 @@ export function NetworkDashboardWorkspace({
                         aria-label={`${member.name} – ${member.company}: Unternehmensseite öffnen`}
                         title={`${member.name} – ${member.company}`}
                       >
-                        <span className="loungeMemberTileLogo">
-                          {member.logo ? (
-                            <img src={member.logo} alt="" />
-                          ) : (
-                            <b>{member.company.slice(0, 2)}</b>
-                          )}
-                        </span>
+                        <DashboardMemberVisual
+                          networkId={data.network.id}
+                          membershipId={member.userId ? member.id : undefined}
+                          logo={member.logo}
+                          company={member.company}
+                        />
                         <span className="loungeMemberTileText">
                           <span>
                             <strong>{member.company}</strong>

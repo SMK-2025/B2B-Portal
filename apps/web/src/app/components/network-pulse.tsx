@@ -62,13 +62,11 @@ export function NetworkPulse() {
   }, [access?.networkId, days]);
   return (
     <section className="networkPulse networkCard">
-      <header className="pulseHeading">
+      <header className="pulseHeading dashboardTileHeading">
         <div>
-          <small>GEMEINSAM MEHR ERREICHEN</small>
           <h2>Netzwerk-Puls</h2>
           <p>
-            Hier kommen Mitglieder ins Gespräch und bringen Zusammenarbeit auf
-            den Weg.
+            Gespräche und Kooperationen in deinem Netzwerk.
           </p>
         </div>
         <label>

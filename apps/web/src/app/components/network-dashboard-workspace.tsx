@@ -287,7 +287,7 @@ export function NetworkDashboardWorkspace({
         {!preview && feature("pulse") && <NetworkPulse />}
         {enabled("profiles") && (
           <section className="networkCard loungeCard loungeMemberHighlight">
-            <header>
+            <header className="dashboardTileHeading">
               <div>
                 <h2>
                   <NetworkText id="ui.network-dashboard-workspace.001b224fb9b1593b">

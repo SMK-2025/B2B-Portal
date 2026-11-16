@@ -338,8 +338,7 @@
 }
 .networkPortal .loungePulseMembersRow > .networkPulse {
   margin: 0;
-  height: 360px;
-  max-height: 360px;
+  min-height: 360px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -350,13 +349,25 @@
   flex-direction:column;
   margin: 0;
   min-width: 0;
-  height:360px;
+  min-height:360px;
   box-sizing:border-box;
   overflow:hidden;
 }
-.loungePulseMembersRow .loungeMemberHighlight .loungeCardBody{min-height:0;overflow:hidden}
+.loungePulseMembersRow .loungeMemberHighlight .loungeCardBody{min-height:0;container-type:inline-size;gap:16px}
 .loungePulseMembersRow .loungeMemberHighlight>header{flex:0 0 auto}
-.loungePulseMembersRow .loungeMemberHighlight .loungePartners{min-height:0;overflow-y:auto;flex:1}
+.networkPortal .loungeMemberTiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
+.networkPortal .loungeMemberTiles>.loungeEmpty{grid-column:1/-1}
+.networkPortal .networkLoungeHome .loungeMemberTile{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0;padding:14px 10px;border:1px solid #e0e6ed;border-radius:9px;background:#fff;color:#23394b;text-align:center;text-decoration:none;box-sizing:border-box;transition:border-color .15s,background .15s}
+.networkPortal .loungeMemberTile:hover{border-color:var(--network-accent);background:var(--network-soft)}
+.networkPortal .loungeMemberTile:focus-visible{outline:2px solid var(--network-accent);outline-offset:3px}
+.loungeMemberTileLogo{display:grid;place-items:center;width:100%;height:64px;min-width:0}
+.loungeMemberTileLogo img{display:block;width:100%;height:100%;object-fit:contain}
+.loungeMemberTileLogo>b{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:#eef2f6;color:#536779;font-size:20px}
+.loungeMemberTileText{display:grid;gap:3px;width:100%;min-width:0}
+.networkPortal .networkLoungeHome .loungeMemberTileText strong,.networkPortal .networkLoungeHome .loungeMemberTileText small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;margin:0;line-height:1.4!important}
+.networkPortal .networkLoungeHome .loungeMemberTileText strong{font-size:14px!important;font-weight:700;min-height:2.8em}
+.networkPortal .networkLoungeHome .loungeMemberTileText small{font-size:12px!important;color:#617487;min-height:2.8em}
+@container(min-width:480px){.networkPortal .loungeMemberTiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .loungePulseMembersRow .loungeMemberHighlight .loungeOutlineButton{flex:0 0 auto}
 .networkPortal .loungeHeroRevenue{position:absolute;top:28px;right:28px;z-index:2;width:260px;max-width:calc(100% - 48px)}
 .loungeHeroRevenue .cooperationRevenue button{width:100%;background:#172a3ce6;backdrop-filter:blur(8px)}

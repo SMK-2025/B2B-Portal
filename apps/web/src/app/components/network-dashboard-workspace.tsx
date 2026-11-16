@@ -2,7 +2,6 @@
 import { NetworkText } from "./network-text-editor";
 import { NetworkPulse, CooperationRevenue } from './network-pulse';
 import { useRouter } from "next/navigation";
-import { NetworkConnectionButton } from "./network-connections";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
@@ -173,7 +172,7 @@ export function NetworkDashboardWorkspace({
     : 0;
   const cards = partners.length
     ? [...partners.slice(partnerOffset), ...partners.slice(0, partnerOffset)]
-        .slice(0, 3)
+        .slice(0, 4)
         .map((member) => ({
           id: member.id,
           userId: member.userId,
@@ -187,7 +186,7 @@ export function NetworkDashboardWorkspace({
           logo: member.organization!.networkProfile!.logoUrl,
           tagline: member.organization!.networkProfile!.tagline,
         }))
-    : data.recentMembers.slice(0, 3).map((member) => ({
+    : data.recentMembers.slice(0, 4).map((member) => ({
         id: member.id,
         userId: "",
         name: member.name,
@@ -309,33 +308,28 @@ export function NetworkDashboardWorkspace({
               </Link>
             </header>
             <div className="loungeCardBody">
-              <div className="loungePartners">
+              <div className="loungeMemberTiles">
                 {cards.length ? (
                   cards.map((member) => (
-                    <div key={member.id} className="loungePartnerConnection">
-                      <Link href={`${base}/mitglieder` as never}>
-                        <span className="loungePartnerLogo">
+                      <Link
+                        key={member.id}
+                        className="loungeMemberTile"
+                        href={`${base}/mitglieder${member.userId ? `?profil=${encodeURIComponent(member.id)}` : ""}` as never}
+                        aria-label={`${member.name} – ${member.company}: Unternehmensseite öffnen`}
+                        title={`${member.name} – ${member.company}`}
+                      >
+                        <span className="loungeMemberTileLogo">
                           {member.logo ? (
                             <img src={member.logo} alt="" />
                           ) : (
                             <b>{member.company.slice(0, 2)}</b>
                           )}
                         </span>
-                        <span>
+                        <span className="loungeMemberTileText">
                           <strong>{member.name}</strong>
                           <small>{member.company}</small>
-                          {member.tagline && (
-                            <small className="loungePartnerTagline">
-                              {member.tagline}
-                            </small>
-                          )}
                         </span>
-                        <b aria-hidden="true">↗</b>
                       </Link>
-                      {member.userId && (
-                        <NetworkConnectionButton userId={member.userId} />
-                      )}
-                    </div>
                   ))
                 ) : (
                   <div className="loungeEmpty">

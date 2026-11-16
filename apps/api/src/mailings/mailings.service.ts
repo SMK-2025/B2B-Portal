@@ -493,13 +493,6 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         !c.deliveries[l.id],
     );
   }
-  private requireTracking(leads: MailingLead[]) {
-    const missing = leads.filter((lead) => !lead.tracking).length;
-    if (missing)
-      throw new BadRequestException(
-        `Versand angehalten: Für ${missing} Kontakte fehlt die Trackingfreigabe. Bitte unter Kontakte & Import hinterlegen. Ohne Messung wird kein Mailing versendet.`,
-      );
-  }
   private render(
     c: MailingCampaign,
     lead: MailingLead,
@@ -670,7 +663,6 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       throw new ServiceUnavailableException(
         "Mailversand ist noch nicht eingerichtet.",
       );
-    this.requireTracking(this.eligible(c));
     const recipientIds = this.eligible(c).map((lead) => lead.id);
     if (!recipientIds.length)
       throw new BadRequestException(
@@ -768,9 +760,8 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         } else {
           auto.enabled = false;
           c.paused = true;
-          auto.lastError = message.includes("Trackingfreigabe")
-            ? message
-            : "Automatik angehalten. Bitte Versandkonfiguration und Status prüfen.";
+          auto.lastError =
+            "Automatik angehalten. Bitte Versandkonfiguration und Status prüfen.";
         }
         await this.store.persist();
       }
@@ -837,9 +828,6 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       throw new BadRequestException(
         "Halbstundenlimit erreicht: maximal 50 Mailing-E-Mails innerhalb von 30 Minuten. Der automatische Versand wartet auf das nächste freie Zeitfenster.",
       );
-    this.requireTracking(
-      this.eligible(c).filter((lead) => !scope || scope.has(lead.id)),
-    );
     const rows = this.eligible(c)
       .filter((lead) => !scope || scope.has(lead.id))
       .slice(0, Math.min(50 - startedInHalfHour, 100 - startedInHour));
@@ -862,10 +850,9 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         await this.store.persist();
         // A stop can arrive while the reservation is being persisted. No provider
         // request has started yet, so release this recipient for a later run.
-        if (c.paused || !lead.tracking) {
+        if (c.paused) {
           delete c.deliveries[lead.id];
           await this.store.persist();
-          if (!lead.tracking) this.requireTracking([lead]);
           break;
         }
         try {

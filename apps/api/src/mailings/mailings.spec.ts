@@ -599,23 +599,19 @@ describe("owner mailing system", () => {
     });
     expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
   });
-  it("blocks manual and automatic sending without tracking permission without inventing evidence", async () => {
+  it("allows sending without tracking permission without inventing evidence or including personal measurement", async () => {
     const s = setup();
     const lead = s.lead(false);
     const id = s.campaign();
-    await expect(s.send(id)).rejects.toThrow(/Trackingfreigabe/);
-    await expect(
-      s.service.startAutomatic("owner", id, {
-        confirmName: "Erstes Mailing",
-        revision: 1,
-        expectedCount: 1,
-      }),
-    ).rejects.toThrow(/Trackingfreigabe/);
+    await s.send(id);
     expect(lead.tracking).toBeUndefined();
-    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
-    expect(s.store.mailingCampaigns.get(id)!.deliveries).toEqual({});
+    expect(s.email.sendCampaignMail).toHaveBeenCalledOnce();
+    const mail = vi.mocked(s.email.sendCampaignMail).mock.calls[0][0];
+    expect(mail.html).not.toContain("/public/image/");
+    expect(mail.html).not.toContain("/public/click/");
+    expect(s.service.report("owner", id).stats.trackingExcluded).toBe(1);
   });
-  it("pauses an existing automatic job when tracking is withdrawn before dispatch", async () => {
+  it("continues an automatic job without tracking and respects a withdrawal before dispatch", async () => {
     const s = setup();
     const lead = s.lead();
     const id = s.campaign();
@@ -627,10 +623,11 @@ describe("owner mailing system", () => {
     lead.tracking = undefined;
     await s.service.processAutomatic();
     const campaign = s.store.mailingCampaigns.get(id)!;
-    expect(campaign.paused).toBe(true);
+    expect(campaign.paused).toBe(false);
     expect(campaign.automatic?.enabled).toBe(false);
-    expect(campaign.automatic?.lastError).toMatch(/Trackingfreigabe/);
-    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+    expect(campaign.automatic?.lastError).toBeUndefined();
+    expect(s.email.sendCampaignMail).toHaveBeenCalledOnce();
+    expect(s.service.report("owner", id).stats.trackingExcluded).toBe(1);
   });
   it("requires current confirmation, preserves sent versions and edits remaining recipients", async () => {
     const s = setup();

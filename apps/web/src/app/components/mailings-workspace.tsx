@@ -137,13 +137,6 @@ export function MailingsWorkspace() {
     campaign?.recipients.filter(measurable).length || 0;
   const unmeasuredRecipients =
     (campaign?.recipients.length || 0) - measuredRecipients;
-  const pendingWithoutTracking = (data?.leads || []).filter(
-    (l) =>
-      selectedList?.leadIds.includes(l.id) &&
-      !l.suppressed &&
-      !l.tracking &&
-      !campaign?.recipients.some((r) => r.leadId === l.id),
-  ).length;
   const contactList = data?.lists?.find((list) => list.id === contactListId);
   const visibleLeads = (data?.leads || []).filter(
     (lead) => !contactList || contactList.leadIds.includes(lead.id),
@@ -1317,14 +1310,6 @@ export function MailingsWorkspace() {
                   Abgemeldete und bereits angeschriebene Kontakte werden
                   übersprungen.
                 </p>
-                {pendingWithoutTracking > 0 && (
-                  <p className="mailingExplanation" role="status">
-                    Achtung: Für {pendingWithoutTracking} noch nicht
-                    angeschriebene Kontakte ist Tracking ausgeschaltet. Diese
-                    E-Mails werden nicht versendet. Eine Trackingfreigabe muss
-                    vor dem Versand unter „Kontakte & Import“ hinterlegt sein.
-                  </p>
-                )}
                 <label>
                   Zur Bestätigung den Mailingnamen eingeben
                   <input
@@ -1334,11 +1319,7 @@ export function MailingsWorkspace() {
                 </label>
                 <button
                   className="mailingPrimary"
-                  disabled={
-                    busy ||
-                    confirmName !== campaign.name ||
-                    pendingWithoutTracking > 0
-                  }
+                  disabled={busy || confirmName !== campaign.name}
                   onClick={() =>
                     void action(async () => {
                       setSendConfirm(false);

@@ -132,7 +132,7 @@ describe("owner mailing system", () => {
         body: "Ohne Kontaktlistenauswahl darf nichts zusammengewürfelt werden.",
       }),
     ).toThrow(/Kontaktliste/);
-    s.store.hydrate(JSON.parse(s.store.snapshot()));
+    (s.store as unknown as { hydrate(value: unknown): void }).hydrate(JSON.parse(s.store.snapshot()));
     expect(s.service.report("owner", id).eligible).toBe(500);
     expect(s.service.list("owner", s.a.id).lists).toHaveLength(2);
     expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
@@ -210,7 +210,7 @@ describe("owner mailing system", () => {
     expect(lists).toHaveLength(2);
     expect(lists.every((l) => l.total === 1)).toBe(true);
     expect(s.service.report("owner", id).eligible).toBe(0);
-    s.store.hydrate(JSON.parse(s.store.snapshot()));
+    (s.store as unknown as { hydrate(value: unknown): void }).hydrate(JSON.parse(s.store.snapshot()));
     expect(s.service.list("owner", s.a.id).lists.map((l) => l.id)).toEqual(
       lists.map((l) => l.id),
     );
@@ -239,7 +239,7 @@ describe("owner mailing system", () => {
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(50);
     await s.service.processAutomatic();
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(50);
-    s.store.hydrate(JSON.parse(s.store.snapshot()));
+    (s.store as unknown as { hydrate(value: unknown): void }).hydrate(JSON.parse(s.store.snapshot()));
     const c = s.store.mailingCampaigns.get(id)!;
     c.automatic!.nextAt = new Date(Date.now() - 1).toISOString();
     for (const d of Object.values(c.deliveries))
@@ -339,7 +339,7 @@ describe("owner mailing system", () => {
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
     await expect(s.send(id)).rejects.toThrow(/gestoppt/);
     const restored = new PortalStore();
-    restored.hydrate(JSON.parse(s.store.snapshot()));
+    (restored as unknown as { hydrate(value: unknown): void }).hydrate(JSON.parse(s.store.snapshot()));
     expect(restored.mailingCampaigns.get(id)?.paused).toBe(true);
     await s.service.resumeCampaign("owner", id);
     expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(1);
@@ -437,7 +437,7 @@ describe("owner mailing system", () => {
         expect(s.email.sendCampaignMail).toHaveBeenCalledTimes(
           (batch + 1) * 50,
         );
-        if (batch === 5) s.store.hydrate(JSON.parse(s.store.snapshot()));
+        if (batch === 5) (s.store as unknown as { hydrate(value: unknown): void }).hydrate(JSON.parse(s.store.snapshot()));
       }
       expect(s.service.report("owner", id).eligible).toBe(0);
       expect(s.store.mailingCampaigns.get(id)!.automatic!.enabled).toBe(false);
@@ -599,7 +599,7 @@ describe("owner mailing system", () => {
     });
     expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
   });
-  it("allows sending without tracking permission without inventing evidence or including personal measurement", async () => {
+  it("always instruments new mail without inventing historical consent evidence", async () => {
     const s = setup();
     const lead = s.lead(false);
     const id = s.campaign();
@@ -607,11 +607,17 @@ describe("owner mailing system", () => {
     expect(lead.tracking).toBeUndefined();
     expect(s.email.sendCampaignMail).toHaveBeenCalledOnce();
     const mail = vi.mocked(s.email.sendCampaignMail).mock.calls[0][0];
-    expect(mail.html).not.toContain("/public/image/");
-    expect(mail.html).not.toContain("/public/click/");
-    expect(s.service.report("owner", id).stats.trackingExcluded).toBe(1);
+    expect(mail.html).toContain("/public/image/");
+    expect(mail.html).toContain("/public/click/");
+    expect(s.service.report("owner", id).stats.trackingIncluded).toBe(1);
+    const token = s.store.mailingCampaigns.get(id)!.deliveries[lead.id].token;
+    s.service.image(token, false);
+    s.service.click(token, "register", false);
+    attributeMailingRegistration(s.store, token, lead.email, s.a.id, "new-user");
+    attributeMailingVerification(s.store, "new-user");
+    expect(s.service.report("owner", id).stats).toMatchObject({ opened: 1, clicked: 1, registered: 1, verified: 1 });
   });
-  it("continues an automatic job without tracking and respects a withdrawal before dispatch", async () => {
+  it("keeps automatic measurement independent of legacy consent fields", async () => {
     const s = setup();
     const lead = s.lead();
     const id = s.campaign();
@@ -627,7 +633,7 @@ describe("owner mailing system", () => {
     expect(campaign.automatic?.enabled).toBe(false);
     expect(campaign.automatic?.lastError).toBeUndefined();
     expect(s.email.sendCampaignMail).toHaveBeenCalledOnce();
-    expect(s.service.report("owner", id).stats.trackingExcluded).toBe(1);
+    expect(s.service.report("owner", id).stats.trackingIncluded).toBe(1);
   });
   it("requires current confirmation, preserves sent versions and edits remaining recipients", async () => {
     const s = setup();
@@ -838,6 +844,60 @@ describe("owner mailing system", () => {
     delete delivery.trackingIncluded;
     expect(s.service.report("owner", id).stats.trackingUnknown).toBe(1);
     expect(s.service.report("owner", id).stats.trackingIncluded).toBe(0);
+  });
+  it("keeps historical untracked mail unmeasured even when lead metadata changes", async () => {
+    const s = setup(); const l = s.lead(false); const id = s.campaign();
+    await s.send(id);
+    const d = s.store.mailingCampaigns.get(id)!.deliveries[l.id];
+    d.trackingIncluded = false;
+    l.tracking = evidence;
+    s.service.image(d.token, false); s.service.click(d.token, "landing", false);
+    attributeMailingRegistration(s.store, d.token, l.email, s.a.id, "old-user");
+    expect(s.service.report("owner", id).stats).toMatchObject({ trackingExcluded: 1, opened: 0, clicked: 0, registered: 0 });
+  });
+  it("tracks fresh deliveries in old campaigns and survives storage reloads", async () => {
+    const s = setup(); const l = s.lead(false); const id = s.campaign();
+    s.store.mailingCampaigns.get(id)!.createdAt = new Date(Date.now() - 200 * 86400000).toISOString();
+    await s.send(id);
+    (s.store as unknown as { hydrate(value: unknown): void }).hydrate(JSON.parse(s.store.snapshot()));
+    const d = s.store.mailingCampaigns.get(id)!.deliveries[l.id];
+    s.service.image(d.token, false); s.service.click(d.token, "landing", false);
+    attributeMailingRegistration(s.store, d.token, l.email, s.a.id, "fresh-user");
+    attributeMailingVerification(s.store, "fresh-user");
+    expect(s.service.report("owner", id).stats).toMatchObject({ trackingIncluded: 1, opened: 1, clicked: 1, registered: 1, verified: 1 });
+  });
+  it("refuses to hand over mail whose instrumentation is missing", async () => {
+    const s = setup(); s.lead(false); const id = s.campaign();
+    vi.spyOn(s.service as unknown as { render: () => object }, "render").mockReturnValue({ html: "broken", text: "broken" });
+    await s.send(id);
+    expect(s.email.sendCampaignMail).not.toHaveBeenCalled();
+    expect(s.service.report("owner", id).stats.uncertain).toBe(1);
+  });
+  it("tests the real instrumentation separately without adding recipients or changing opt-out", async () => {
+    const s = setup(); const l = s.lead(false); const id = s.campaign();
+    await s.service.test("owner", id);
+    const probe = s.store.mailingCampaigns.get(id)!.trackingTest!;
+    expect(vi.mocked(s.email.sendCampaignMail).mock.calls[0][0]).toMatchObject({ to: s.actor.email });
+    s.service.image(probe.delivery.token, false);
+    s.service.click(probe.delivery.token, "landing", false);
+    s.service.unsubscribe(probe.delivery.token);
+    const report = s.service.report("owner", id);
+    expect(report.trackingTest).toMatchObject({ opened: true, clicked: true, state: "submitted" });
+    expect(report.recipients).toHaveLength(0);
+    expect(report.eligible).toBe(1);
+    expect(s.store.mailingLeads.size).toBe(1);
+    expect(l.tracking).toBeUndefined();
+    expect(s.store.mailingSuppressions.size).toBe(0);
+    expect(JSON.stringify(report)).not.toContain(probe.delivery.token);
+  });
+  it("durably stores landing page signals before acknowledging them", async () => {
+    const service = { view: vi.fn(() => ({ recorded: true })) };
+    const store = { persist: vi.fn(async () => {}) };
+    const controller = new MailingsController(service as unknown as MailingsService, store as unknown as PortalStore);
+    await expect(controller.view({ token: opaqueToken(), path: "/Koeln" }, { method: "POST", headers: {} } as never)).resolves.toEqual({ recorded: true });
+    expect(store.persist).toHaveBeenCalledOnce();
+    store.persist.mockRejectedValueOnce(new Error("storage unavailable"));
+    await expect(controller.view({ token: opaqueToken(), path: "/Koeln" }, { method: "POST", headers: {} } as never)).rejects.toThrow("storage unavailable");
   });
   it("acknowledges webhooks only after durable persistence", async () => {
     const service = { webhook: vi.fn(() => ({ accepted: true })) };

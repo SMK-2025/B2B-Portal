@@ -72,7 +72,7 @@ describe("personal annual membership billing", () => {
     expect(page.items).toHaveLength(12);expect(page.total).toBe(30);
     expect(JSON.stringify(page.items)).not.toContain('data:image/webp');expect(JSON.stringify(page.items)).not.toContain('Nur im Profil');
     expect(f.networks.memberDetail(f.member,f.network.id,page.items[0].id).organization?.networkProfile).toHaveProperty('heroImageUrl');
-    expect(f.networks.memberHero(f.member,f.network.id,page.items[0].id).heroImageUrl).toBe(org.networkProfile.heroImageUrl);
+    expect(f.networks.memberHero(f.member,f.network.id,page.items[0].id).heroImageUrl).toBe(org.networkProfile!.heroImageUrl);
     expect(()=>f.networks.memberHero(undefined,f.network.id,page.items[0].id)).toThrow();
     expect(f.networks.memberPage(f.member,f.network.id,{q:'PRIVATE_SEARCH'}).items).toHaveLength(0);
     const other=f.networks.create(f.owner,{name:'Other network',slug:'other-network'});f.networks.setAccess(f.owner,other.id,{status:'active'});

@@ -49,6 +49,8 @@ export type MailingDelivery = {
   events: MailingEvent[];
 };
 export type MailingCampaign = {
+  /** Operator-only probe; excluded from recipient counts and campaign totals. */
+  trackingTest?: { lead: MailingLead; delivery: MailingDelivery };
   recipientListId?: string;
   automatic?: {
     enabled: boolean;

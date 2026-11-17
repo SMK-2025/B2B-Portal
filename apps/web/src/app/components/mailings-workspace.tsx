@@ -51,6 +51,7 @@ type Recipient = {
   }>;
 };
 type Campaign = {
+  trackingTest?: { email: string; state: string; sentAt: string; delivered: boolean; opened: boolean; clicked: boolean } | null;
   recipientListId: string;
   id: string;
   name: string;
@@ -115,12 +116,9 @@ export function MailingsWorkspace() {
   );
   const [stopping, setStopping] = useState(false);
   const [csv, setCsv] = useState<ReturnType<typeof parseMailingCsv>>([]),
-    [source, setSource] = useState(""),
-    [tracking, setTracking] = useState(false),
-    [trackAt, setTrackAt] = useState(""),
-    [trackProof, setTrackProof] = useState("");
+    [source, setSource] = useState("");
+  const [previewMeasured, setPreviewMeasured] = useState(false);
   const [preview, setPreview] = useState<string | null>(null),
-    [consentLead, setConsentLead] = useState<Lead | null>(null),
     [events, setEvents] = useState<Recipient | null>(null),
     [sendConfirm, setSendConfirm] = useState(false),
     [confirmName, setConfirmName] = useState("");
@@ -245,7 +243,6 @@ export function MailingsWorkspace() {
     setContactListId("");
     setListName("");
     setCsv([]);
-    setConsentLead(null);
     setPreview(null);
     setSendConfirm(false);
     setEvents(null);
@@ -274,57 +271,6 @@ export function MailingsWorkspace() {
     );
     setTab("campaigns");
   }
-  function evidence() {
-    return {
-      tracking: tracking
-        ? { at: new Date(trackAt).toISOString(), source: trackProof }
-        : null,
-    };
-  }
-  function resetEvidence(lead?: Lead) {
-    setTracking(!!lead?.tracking);
-    setTrackAt(lead?.tracking?.at.slice(0, 16) || "");
-    setTrackProof(lead?.tracking?.source || "");
-  }
-  const evidenceForm = (
-    <div className="mailingEvidence">
-      <label className="mailingCheck">
-        <input
-          type="checkbox"
-          checked={tracking}
-          onChange={(e) => setTracking(e.target.checked)}
-        />
-        <span>Personenbezogenes Tracking aktivieren (optional)</span>
-      </label>
-      {tracking && (
-        <div className="mailingPair">
-          <label>
-            Zeitpunkt
-            <input
-              required
-              type="datetime-local"
-              value={trackAt}
-              onChange={(e) => setTrackAt(e.target.value)}
-            />
-          </label>
-          <label>
-            Nachweis / Quelle
-            <input
-              required
-              minLength={5}
-              value={trackProof}
-              onChange={(e) => setTrackProof(e.target.value)}
-            />
-          </label>
-        </div>
-      )}
-      <p>
-        Ohne Trackingfreigabe werden keine persönlichen Öffnungs-, Klick- oder
-        Registrierungsdaten erfasst. Zustimmungen können später ergänzt oder
-        entfernt werden.
-      </p>
-    </div>
-  );
   return (
     <section
       className="mailingsWorkspace"
@@ -509,7 +455,6 @@ export function MailingsWorkspace() {
                       rows: csv,
                       source,
                       listName,
-                      ...evidence(),
                     });
                     await load();
                     setCsv([]);
@@ -574,7 +519,7 @@ export function MailingsWorkspace() {
                     ))}
                   </div>
                 )}
-                {evidenceForm}
+                <p>Neue Mailings enthalten automatisch Messlinks und einen Messpixel. Abgemeldete oder gesperrte Kontakte werden nicht angeschrieben.</p>
                 <button
                   className="mailingPrimary"
                   disabled={busy || !csv.length}
@@ -652,19 +597,9 @@ export function MailingsWorkspace() {
                               : "Versendbar"}
                           </td>
                           <td>
-                            {l.tracking && !l.suppressed
-                              ? "Freigegeben"
-                              : "Aus"}
+                            {l.suppressed ? "Gesperrt" : "Automatisch bei neuem Versand"}
                           </td>
                           <td>
-                            <button
-                              onClick={() => {
-                                resetEvidence(l);
-                                setConsentLead(l);
-                              }}
-                            >
-                              Tracking
-                            </button>
                             <button
                               onClick={() => {
                                 if (
@@ -883,6 +818,7 @@ export function MailingsWorkspace() {
                               `/campaign/${campaign.id}/preview`,
                             );
                             setPreview(p.html);
+                            setPreviewMeasured(false);
                           })
                         }
                       >
@@ -905,11 +841,13 @@ export function MailingsWorkspace() {
                             )
                           )
                             void action(async () => {
-                              const r = await request<{ sentTo: string }>(
+                              const r = await request<{ sentTo: string; html: string }>(
                                 `/campaign/${campaign.id}/test`,
                                 {},
                               );
                               setNotice(`Testmail an ${r.sentTo} übergeben.`);
+                              setPreview(r.html);
+                              setPreviewMeasured(true);
                             });
                         }}
                       >
@@ -942,6 +880,12 @@ export function MailingsWorkspace() {
                     </>
                   )}
                 </div>
+                <p className="mailingExplanation">Neue Mailings enthalten automatisch persönliche Messlinks und einen Messpixel. Abmeldungen bleiben wirksam. Öffnungssignale sind keine sicheren Lesebestätigungen.</p>
+                {campaign?.trackingTest && <section className="mailingExplanation" aria-label="Getrennte Tracking-Testauswertung" aria-live="polite">
+                  <strong>Letzte Testmail · {campaign.trackingTest.email} · {stamp(campaign.trackingTest.sentAt)}</strong>
+                  <p>Übergabe: {campaign.trackingTest.state === "submitted" ? "bestätigt" : "unklar"} · Zustellung: {campaign.trackingTest.delivered ? "Mailserver bestätigt" : "noch keine Rückmeldung"} · Öffnungssignal: {campaign.trackingTest.opened ? "gemessen" : "noch keines"} · Linkklick: {campaign.trackingTest.clicked ? "gemessen" : "noch keiner"}</p>
+                  <small>Diese Testsignale sind von den echten Empfängerzahlen getrennt. Die Testvorschau kann ein Öffnungssignal auslösen.</small>
+                </section>}
               </form>
             </div>
           )}
@@ -1206,7 +1150,7 @@ export function MailingsWorkspace() {
                     </div>
                   </div>
                   <p>
-                    * Nur bei dokumentierter Trackingfreigabe. Signale sind
+                    * Neue Mailings werden automatisch instrumentiert. Signale sind
                     keine Messung von Aufenthaltsdauer oder sicherer
                     Lesebestätigung. „E-Mail bestätigt“ bedeutet noch keine
                     Freigabe als Netzwerkmitglied.
@@ -1217,7 +1161,7 @@ export function MailingsWorkspace() {
           )}
         </>
       )}
-      {(preview !== null || consentLead || events || sendConfirm) && (
+      {(preview !== null || events || sendConfirm) && (
         <div className="mailingOverlay" role="presentation">
           <section
             className="mailingModal"
@@ -1230,7 +1174,6 @@ export function MailingsWorkspace() {
               aria-label="Schließen"
               onClick={() => {
                 setPreview(null);
-                setConsentLead(null);
                 setEvents(null);
                 setSendConfirm(false);
               }}
@@ -1241,34 +1184,10 @@ export function MailingsWorkspace() {
               <>
                 <h2>So sieht deine Mail aus</h2>
                 <p>
-                  Vorschau ohne personenbezogenes Tracking. Es wird nichts
-                  versendet.
+                  {previewMeasured ? "Kopie der gesendeten Testmail mit aktiven Messlinks. Das Laden kann ein Test-Öffnungssignal auslösen; Linkklicks werden ausschließlich im Test protokolliert." : "Vorschau ohne personenbezogenes Tracking. Es wird nichts versendet."}
                 </p>
                 <iframe title="E-Mail-Vorschau" sandbox="" srcDoc={preview} />
               </>
-            )}
-            {consentLead && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void action(async () => {
-                    await request(
-                      `/lead/${consentLead.id}/consent`,
-                      evidence(),
-                    );
-                    await load();
-                    setConsentLead(null);
-                    setNotice("Tracking-Einstellungen gespeichert.");
-                  });
-                }}
-              >
-                <h2>Optionales Tracking</h2>
-                <p>{consentLead.email}</p>
-                {evidenceForm}
-                <button className="mailingPrimary" disabled={busy}>
-                  Speichern
-                </button>
-              </form>
             )}
             {events && (
               <>

@@ -148,6 +148,7 @@ export class MailingsController {
     this.limit(token);
     const target = this.service.click(token, link, this.automated(req));
     await this.store.persist();
+    res.setHeader("Cache-Control", "no-store, max-age=0");
     res.redirect(302, target);
   }
   @Get("public/brand/:id") brandLogo(
@@ -169,6 +170,7 @@ export class MailingsController {
     const before = this.store.fingerprint();
     if (req.method !== "HEAD") this.service.image(token, this.automated(req));
     if (before !== this.store.fingerprint()) await this.store.persist();
+    res.setHeader("Cache-Control", "no-store, max-age=0");
     res
       .type("image/gif")
       .send(
@@ -178,17 +180,19 @@ export class MailingsController {
         ),
       );
   }
-  @Post("public/view") view(
+  @Post("public/view") async view(
     @Body() body: Record<string, unknown>,
     @Req() req: Request,
   ) {
     const token = String(body.token || "").slice(0, 100);
     this.limit(token);
-    return this.service.view(
+    const result = this.service.view(
       token,
       String(body.path || "").slice(0, 200),
       this.automated(req),
     );
+    await this.store.persist();
+    return result;
   }
   @Get("public/unsubscribe/:token") unsubscribePage(
     @Param("token") token: string,

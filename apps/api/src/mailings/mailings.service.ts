@@ -24,6 +24,7 @@ import {
 } from "./mailing-template";
 import { emailAddress, requiredText } from "../core/validation";
 import { mailingLists } from "./mailing-lists";
+import { deliveryTracks, withinMeasurementWindow } from "./mailing-measurement";
 import type {
   MailingCampaign,
   MailingConsent,
@@ -43,7 +44,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     const sweep = async () => {
       let changed = false;
       for (const c of this.store.mailingCampaigns.values())
-        for (const d of Object.values(c.deliveries)) {
+        for (const d of [...Object.values(c.deliveries), ...(c.trackingTest ? [c.trackingTest.delivery] : [])]) {
           const events = d.events.filter(
             (e) => Date.parse(e.at) > Date.now() - 180 * 86400000,
           );
@@ -504,7 +505,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     const links = Object.fromEntries(
       Object.entries(targets).map(([kind, target]) => [
         kind,
-        delivery && lead.tracking
+        delivery && deliveryTracks(lead, delivery)
           ? `${api}/api/mailings/public/click/${delivery.token}/${kind}`
           : target,
       ]),
@@ -548,7 +549,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       links,
       unsubscribe,
       pixel:
-        lead.tracking && delivery
+        delivery && deliveryTracks(lead, delivery)
           ? api + "/api/mailings/public/image/" + delivery.token + ".gif"
           : undefined,
     });
@@ -597,13 +598,38 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     };
   }
   async test(authorization: string | undefined, id: string) {
-    const actor = this.owner(authorization);
-    await this.email.sendCampaignMail({
-      to: actor.email,
-      ...this.preview(authorization, id),
-      subject: "[Test] " + this.campaign(id).subject,
-    });
-    return { sentTo: actor.email };
+    const actor = this.owner(authorization), c = this.campaign(id);
+    const now = new Date().toISOString();
+    const lead: MailingLead = { id: "__tracking_test", networkId: c.networkId,
+      email: actor.email, firstName: "", lastName: "", company: "Tracking-Test",
+      source: "Betreiber-Test", createdAt: now, updatedAt: now };
+    const delivery: MailingDelivery = { trackingIncluded: true, token: opaqueToken(),
+      revision: c.revision, state: "sending", startedAt: now, events: [] };
+    c.trackingTest = { lead, delivery };
+    const mail = this.render(c, lead, delivery);
+    this.assertInstrumented(mail, delivery);
+    await this.store.persist();
+    try {
+      await this.email.sendCampaignMail({ to: actor.email, ...mail,
+        subject: "[Test] " + mail.subject,
+        customArgs: { mailingCampaignId: id, mailingLeadId: lead.id, mailingTestToken: delivery.token } });
+      delivery.state = "submitted";
+      delivery.submittedAt = new Date().toISOString();
+    } catch (error) {
+      delivery.state = "uncertain";
+      await this.store.persist();
+      throw error;
+    }
+    await this.store.persist();
+    return { sentTo: actor.email, html: mail.html };
+  }
+  private assertInstrumented(mail: { html: string; text: string }, delivery: MailingDelivery) {
+    const base = this.api() + "/api/mailings/public/";
+    if (!delivery.trackingIncluded || !mail.html.includes(base + "image/" + delivery.token + ".gif") ||
+      ["homepage", "landing", "register"].some(kind =>
+        !mail.html.includes(base + "click/" + delivery.token + "/" + kind) ||
+        !mail.text.includes(base + "click/" + delivery.token + "/" + kind)))
+      throw new ServiceUnavailableException("Tracking-Prüfung fehlgeschlagen. Diese Nachricht wurde nicht versendet.");
   }
   async stopCampaign(authorization: string | undefined, id: string) {
     const actor = this.owner(authorization);
@@ -839,7 +865,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         if (c.paused) break;
         if (this.suppressed(lead)) continue;
         const d: MailingDelivery = {
-          trackingIncluded: !!lead.tracking,
+          trackingIncluded: true,
           revision: c.revision,
           token: opaqueToken(),
           state: "sending",
@@ -856,9 +882,11 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
           break;
         }
         try {
+          const mail = this.render(c, lead, d);
+          this.assertInstrumented(mail, d);
           await this.email.sendCampaignMail({
             to: lead.email,
-            ...this.render(c, lead, d),
+            ...mail,
             customArgs: { mailingCampaignId: c.id, mailingLeadId: lead.id },
             unsubscribe: `${this.api()}/api/mailings/public/unsubscribe/${d.token}`,
           });
@@ -911,7 +939,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         state: d.state,
         submittedAt: d.submittedAt || null,
         error: d.error,
-        tracking: !!lead?.tracking,
+        tracking: !!lead && deliveryTracks(lead, d) && !this.suppressed(lead),
         trackingIncluded: d.trackingIncluded ?? null,
         suppressed: lead ? this.suppressed(lead) : true,
         imageRequests: count("image"),
@@ -936,6 +964,14 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     });
     return {
       eligible: this.eligible(c).length,
+      trackingTest: c.trackingTest ? {
+        email: c.trackingTest.lead.email,
+        state: c.trackingTest.delivery.state,
+        sentAt: c.trackingTest.delivery.submittedAt || c.trackingTest.delivery.startedAt,
+        delivered: c.trackingTest.delivery.events.some(e => e.kind === "delivered"),
+        opened: c.trackingTest.delivery.events.some(e => e.kind === "image" && !e.automated),
+        clicked: c.trackingTest.delivery.events.some(e => e.kind === "click" && !e.automated),
+      } : null,
       stats: {
         submitted: recipients.filter((r) => r.state === "submitted").length,
         trackingIncluded: recipients.filter((r) => r.trackingIncluded === true)
@@ -964,20 +1000,23 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
   }
   private findToken(token: string) {
     if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) throw new NotFoundException();
-    for (const c of this.store.mailingCampaigns.values())
+    for (const c of this.store.mailingCampaigns.values()) {
+      if (c.trackingTest?.delivery.token === token)
+        return { c, d: c.trackingTest.delivery, lead: c.trackingTest.lead };
       for (const [leadId, d] of Object.entries(c.deliveries))
         if (d.token === token) {
           const lead = this.store.mailingLeads.get(leadId);
           if (lead) return { c, d, lead };
         }
+    }
     throw new NotFoundException();
   }
   private event(token: string, event: MailingEvent) {
     const found = this.findToken(token);
     if (
-      found.lead.tracking &&
+      deliveryTracks(found.lead, found.d) &&
       !this.suppressed(found.lead) &&
-      Date.parse(found.c.createdAt) > Date.now() - 180 * 86400000
+      withinMeasurementWindow(found.d)
     ) {
       found.d.events = found.d.events
         .filter((e) => Date.parse(e.at) > Date.now() - 180 * 86400000)
@@ -1006,10 +1045,10 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
     });
     const target = new URL(this.targets(found.c)[link as "homepage"]);
     if (
-      found.lead.tracking &&
+      deliveryTracks(found.lead, found.d) &&
       !this.suppressed(found.lead) &&
       !automated &&
-      Date.parse(found.c.createdAt) > Date.now() - 180 * 86400000
+      withinMeasurementWindow(found.d)
     )
       target.searchParams.set("ml", token);
     return target.toString();
@@ -1040,6 +1079,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
   }
   unsubscribe(token: string) {
     const { lead } = this.findToken(token);
+    if (lead.id === "__tracking_test") return { unsubscribed: true };
     this.store.mailingSuppressions.set(tokenHash(lead.email), {
       at: new Date().toISOString(),
       reason: "recipient_unsubscribed",
@@ -1090,7 +1130,9 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
       const c = this.store.mailingCampaigns.get(
           String(e.mailingCampaignId || ""),
         ),
-        d = c?.deliveries[String(e.mailingLeadId || "")];
+        d = e.mailingLeadId === "__tracking_test"
+          ? (c?.trackingTest && c.trackingTest.delivery.token === e.mailingTestToken ? c.trackingTest.delivery : undefined)
+          : c?.deliveries[String(e.mailingLeadId || "")];
       if (
         !d ||
         !["delivered", "bounce", "dropped", "spamreport", "deferred"].includes(

@@ -568,7 +568,7 @@ export class MailingsService implements OnModuleInit, OnModuleDestroy {
         unsubscribe +
         "\nDatenschutz: " +
         this.web() +
-        "/datenschutz/unternehmen",
+        "/datenschutz/mailings",
     };
   }
   brandLogo(id: string) {

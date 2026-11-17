@@ -6,6 +6,19 @@ import {
   STORY_BODY,
 } from "./mailing-template";
 describe("personal letter template", () => {
+  it("keeps measurement intact without a technical footer paragraph and retains privacy and opt-out links", () => {
+    const html = renderMailingTemplate({ body: "Einladung", networkName: "Köln", color: "#c8102e",
+      logo: "https://example.de/logo.png", web: "https://example.de",
+      links: { landing: "https://example.de/click/landing", register: "https://example.de/click/register", homepage: "https://example.de/click/homepage" },
+      unsubscribe: "https://example.de/unsubscribe", pixel: "https://example.de/image/test.gif" });
+    expect(html).not.toContain("Bei dieser Nachricht");
+    expect(html).not.toContain("Bildabrufe sind keine sichere Lesebestätigung");
+    expect(html).toContain('src="https://example.de/image/test.gif"');
+    expect(html).toContain('href="https://example.de/click/landing"');
+    expect(html).toContain('href="https://example.de/click/register"');
+    expect(html).toContain('href="https://example.de/datenschutz/mailings"');
+    expect(html).toContain('href="https://example.de/unsubscribe"');
+  });
   it("uses a right-aligned network heading with a narrow-screen fallback", () => {
     const html = renderMailingTemplate({
       body: "Guten Tag,",

@@ -11,7 +11,11 @@ https://www.staedtetag.de/ueber-uns/statistik-der-staedte
 https://www.staedtetag.de/files/dst/docs/Wir-ueber-uns/Statistik-der-Staedte/2026/1-abc-311225.pdf
 
 Köln und Leverkusen behalten ihre Kennungen und URLs. Weitere Standorte erhalten
-`/netzwerke/{stadt}` und eine eigene Netzwerkkennung. Registrierung und Login
+`/{stadt}` (z. B. `/bremen`, `/muenchen`) und eine eigene Netzwerkkennung. Diese
+Adressen rendern direkt mit HTTP 200 ohne Weiterleitung. Auch Großschreibung
+wie `/Bonn` funktioniert ohne Adresswechsel; der SEO-Canonical bleibt eindeutig.
+Frühere `/netzwerke/{stadt}`-Links rendern weiterhin direkt, mit Canonical zur
+kurzen Stadtadresse. Registrierung und Login
 verwenden immer genau diese Kennung. Die technische Anmeldung ist gemeinsam,
 Mitgliedschaft und interne Daten bleiben netzwerkbezogen.
 

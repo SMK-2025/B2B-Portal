@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
-export default function sitemap(): MetadataRoute.Sitemap {
+import { activeCityNetworks } from "./lib/active-city-networks";
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://b2b-matching.de";
-  return [
+  const fixed = [
     ["/eigenes-portal", "monthly", .95],
     ["/Leverkusen", "monthly", .9],
     ["/Koeln", "monthly", .9],
@@ -12,4 +13,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/impressum", "yearly", .3], ["/agb", "yearly", .3],
     ["/datenschutz/unternehmen", "yearly", .3], ["/cookies", "yearly", .3], ["/barrierefreiheit", "yearly", .3]
   ].map(([path, changeFrequency, priority]) => ({ url: `${base}${path}`, changeFrequency, priority })) as MetadataRoute.Sitemap;
+  return [...fixed,{url:`${base}/netzwerke`,changeFrequency:"weekly",priority:.9},...(await activeCityNetworks()).filter(city=>!["koeln","leverkusen"].includes(city.key)).map(city=>({url:`${base}${city.route}`,changeFrequency:"monthly" as const,priority:.8}))];
 }

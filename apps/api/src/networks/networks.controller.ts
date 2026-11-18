@@ -340,6 +340,11 @@ export class NetworksController {
   ) {
     return this.networks.respond(auth, id, contentId, messageId, body);
   }
+  @Get("cities/public") publicCities() { return this.networks.publicCityNetworks(); }
+  @Post("admin/city-networks/provision") provisionCities(
+    @Headers("authorization") authorization: string | undefined,
+  ) { return this.networks.provisionCityNetworks(authorization); }
+
   @Post() create(
     @Headers("authorization") authorization: string | undefined,
     @Body() body: Record<string, unknown>,

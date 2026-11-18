@@ -1111,6 +1111,31 @@ describe("personal annual membership billing", () => {
       ),
     ).toHaveLength(0);
   });
+  it("provisions 50 isolated city networks once, copies only Cologne conditions and preserves existing access", async () => {
+    const f = await fixture();
+    const source = f.networks.create(f.owner, {name:"Unternehmernetzwerk Köln",slug:"unternehmernetzwerkkoeln",memberMonthlyNetCents:2900,billing:{months:12,automaticInvoices:true},launchPromotion:{enabled:true,limit:100,freeMonths:6}});
+    f.networks.setAccess(f.owner,source.id,{status:"active"});
+    const original = JSON.stringify(source), users=f.store.users.size, memberships=f.store.networkMemberships.length, orders=f.store.networkOrders.size;
+    await expect(f.networks.provisionCityNetworks(f.member)).rejects.toThrow();
+    const result=await f.networks.provisionCityNetworks(f.owner);
+    expect(result.created).toHaveLength(49);
+    expect(result.existing).toEqual([source.slug]);
+    expect(f.networks.publicCityNetworks()).toHaveLength(50);
+    const berlin = [...f.store.networks.values()].find(n=>n.slug==="unternehmernetzwerkberlin")!;
+    expect(berlin.settings).toMatchObject({closedNetwork:true,selfRegistration:false,crossNetworkMatching:false,memberMonthlyNetCents:2900,memberBilling:source.settings.memberBilling});
+    expect(berlin.settings.memberBilling).not.toBe(source.settings.memberBilling);
+    expect(berlin.settings.launchPromotion?.id).not.toBe(source.settings.launchPromotion?.id);
+    expect(f.networks.participationQuote(berlin.slug).monthlyNetCents).toBe(2900);
+    expect(()=>f.networks.publicBySlug(f.member,berlin.slug)).toThrow();
+    expect(f.store.users.size).toBe(users);
+    expect(f.store.networkMemberships).toHaveLength(memberships);
+    expect(f.store.networkOrders.size).toBe(orders);
+    expect(JSON.stringify(source)).toBe(original);
+    expect((await f.networks.provisionCityNetworks(f.owner)).created).toHaveLength(0);
+    expect(f.networks.publicCityNetworks()).toHaveLength(50);
+    expect(f.auth.authenticate(f.member)).toBeTruthy();
+  });
+
   async function fixture() {
     const store = new PortalStore(),
       email = new EmailService();

@@ -115,6 +115,18 @@ export function AdminNetworkWorkspace() {
     setDialog(next);
   }
 
+  async function provisionCities() {
+    if (!confirm("Die 50 Stadtnetzwerke einrichten? Fehlende Netzwerke werden mit den aktuellen Konditionen von Köln angelegt und aktiviert. Bestehende Netzwerke, Mitglieder und Inhalte bleiben unverändert. Es werden keine Mails gesendet.")) return;
+    const token = getPortalSession();
+    if (!token) return setNotice("Bitte als Plattformadministrator anmelden.");
+    setBusy(true);
+    try {
+      const result = await portalRequest<{created: string[]; existing: string[]}>("/networks/admin/city-networks/provision", {token, body: {}});
+      await refreshNetworks();
+      setNotice(`${result.created.length} Stadtnetzwerke neu angelegt. ${result.existing.length} bestehende Netzwerke unverändert beibehalten.`);
+    } catch(error) { showError(error); } finally { setBusy(false); }
+  }
+
   async function createNetwork(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const token = getPortalSession();
@@ -356,6 +368,7 @@ export function AdminNetworkWorkspace() {
         >
           + Netzwerk anlegen
         </button>
+        <button className="portalSecondary" type="button" disabled={busy} onClick={provisionCities}>50 Stadtnetzwerke einrichten</button>
       </div>
       <label className="adminNetworkSearch">
         <span>Netzwerk finden</span>

@@ -1,6 +1,7 @@
 "use client";
 import "./registration-header.css";
 import { NetworkText } from "../components/network-text-editor";
+import { cityNetwork as resolveCityNetwork, acceptsParticipation } from "../lib/city-networks";
 import { authorizedMailingToken } from "../lib/mailing-token";
 import { FormEvent, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
@@ -41,18 +42,10 @@ export default function RegistrationPage() {
     [networkInviteToken, setNetworkInviteToken] = useState(""),
     [freeStart, setFreeStart] = useState(false),
     [ready, setReady] = useState(false);
-  const acceptsRequests = [
-    "unternehmerfreunde",
-    "bayer04leverkusen",
-    "unternehmernetzwerkleverkusen",
-    "unternehmernetzwerkkoeln",
-  ].includes(networkSlug);
-  const cityNetwork = [
-    "unternehmernetzwerkleverkusen",
-    "unternehmernetzwerkkoeln",
-  ].includes(networkSlug);
-  const cityName =
-    networkSlug === "unternehmernetzwerkkoeln" ? "Köln" : "Leverkusen";
+  const acceptsRequests = acceptsParticipation(networkSlug);
+  const localCity = resolveCityNetwork(networkSlug);
+  const cityNetwork = Boolean(localCity);
+  const cityName = localCity?.city || "";
   const networkRegistration = Boolean(networkSlug && networkInviteToken),
     networkBrand = useNetworkBrand(networkSlug);
   useEffect(() => {

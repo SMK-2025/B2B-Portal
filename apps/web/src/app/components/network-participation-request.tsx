@@ -1,5 +1,6 @@
 "use client";
 import { NetworkText } from "./network-text-editor";
+import { cityNetwork } from "../lib/city-networks";
 import { useEffect, useState, type FormEvent, type ChangeEvent } from "react";
 import Link from "next/link";
 import { portalRequest } from "../lib/portal-api";
@@ -33,11 +34,8 @@ const money = (cents: number) =>
 const date = (value?: string) =>
   value ? value.split("-").reverse().join(".") : "–";
 export function NetworkParticipationRequest({ network }: { network: string }) {
-  const local = [
-    "unternehmernetzwerkleverkusen",
-    "unternehmernetzwerkkoeln",
-  ].includes(network);
-  const city = network === "unternehmernetzwerkkoeln" ? "Köln" : "Leverkusen";
+  const local = Boolean(cityNetwork(network));
+  const city = cityNetwork(network)?.city || "";
   const [step, setStep] = useState(1),
     [busy, setBusy] = useState(false),
     [sent, setSent] = useState(false),
@@ -129,21 +127,16 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
       <section role="status">
         <h1>
           <NetworkText id="ui.network-participation-request.4e69eef931053457">
-            Danke für deine Teilnahmeanfrage.
+            {local ? "Vielen Dank für Ihre Teilnahmeanfrage." : "Danke für deine Teilnahmeanfrage."}
           </NetworkText>
         </h1>
         <p>
           <NetworkText id="ui.network-participation-request.ab2699c4d79ce245">
-            Falls noch nicht erfolgt, bestätige bitte deine E-Mail-Adresse über
-            den zugesandten Link. Wir prüfen deine Zugehörigkeit und informieren
-            dich über die Freigabe.
+            {local ? "Falls noch nicht erfolgt, bestätigen Sie bitte Ihre E-Mail-Adresse über den zugesandten Link. Wir prüfen Ihre Zugehörigkeit und informieren Sie über die Freigabe." : "Falls noch nicht erfolgt, bestätige bitte deine E-Mail-Adresse über den zugesandten Link. Wir prüfen deine Zugehörigkeit und informieren dich über die Freigabe."}
           </NetworkText>
         </p>
         <p>
-          Deine Bestätigungen sind gespeichert. Bis zur Freigabe bleiben
-          Netzwerkinhalte und Unternehmensanlage gesperrt. Danach schließt du
-          die Buchung mit deinen Rechnungsangaben ab und richtest deine
-          Unternehmensseite ein.
+          {local ? "Ihre Bestätigungen sind gespeichert. Bis zur Freigabe bleiben Netzwerkinhalte und Unternehmensanlage gesperrt. Danach schließen Sie die Buchung mit Ihren Rechnungsangaben ab und richten Ihre Unternehmensseite ein." : "Deine Bestätigungen sind gespeichert. Bis zur Freigabe bleiben Netzwerkinhalte und Unternehmensanlage gesperrt. Danach schließt du die Buchung mit deinen Rechnungsangaben ab und richtest deine Unternehmensseite ein."}
         </p>
       </section>
     );
@@ -159,9 +152,9 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
         </NetworkText>{" "}
         <NetworkText id="ui.network-participation-request.eaf72dd099f9ced8">
           {step === 1
-            ? "Du und dein Unternehmen"
+            ? (local ? "Sie und Ihr Unternehmen" : "Du und dein Unternehmen")
             : step === 2
-              ? "Dein Zugang"
+              ? (local ? "Ihr Zugang" : "Dein Zugang")
               : "Kosten & Bestätigung"}
         </NetworkText>
       </p>
@@ -176,7 +169,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
           {step === 1
             ? "Lernen wir uns kennen."
             : step === 2
-              ? "Dein persönlicher Zugang."
+              ? (local ? "Ihr persönlicher Zugang." : "Dein persönlicher Zugang.")
               : "Alles auf einen Blick."}
         </NetworkText>
       </h1>
@@ -288,9 +281,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
             </label>
             <p className="full">
               <NetworkText id="ui.network-participation-request.d63a30244cc71284">
-                Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und
-                Sonderzeichen. Hast du bereits ein Konto, verwende dein
-                bestehendes Passwort.
+                {local ? "Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen. Haben Sie bereits ein Konto, verwenden Sie Ihr bestehendes Passwort." : "Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen. Hast du bereits ein Konto, verwende dein bestehendes Passwort."}
               </NetworkText>
             </p>
           </>
@@ -323,15 +314,14 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
                 >
                   <h2>
                     <NetworkText id="ui.network-participation-request.3bcb8224fc622522">
-                      Deine Portalnutzung
+                      {local ? "Ihre Portalnutzung" : "Deine Portalnutzung"}
                     </NetworkText>
                   </h2>
                   <LaunchPromotionNotice promotion={offer.launchPromotion} monthlyNetCents={offer.monthlyNetCents}/>
                   {offer.centrallyFunded ? (
                     <p>
                       <NetworkText id="ui.network-participation-request.d9ded7717e76f81b">
-                        Das Netzwerk übernimmt die Kosten. Für dich entstehen
-                        keine Mitgliedsgebühren.
+                        {local ? "Das Netzwerk übernimmt die Kosten. Für Sie entstehen keine Mitgliedsgebühren." : "Das Netzwerk übernimmt die Kosten. Für dich entstehen keine Mitgliedsgebühren."}
                       </NetworkText>
                     </p>
                   ) : (

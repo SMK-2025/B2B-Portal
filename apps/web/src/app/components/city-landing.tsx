@@ -68,6 +68,8 @@ export function CityLanding({
   image,
   districts,
   primary,
+  newCity = false,
+  region,
 }: {
   city: string;
   slug: string;
@@ -75,6 +77,8 @@ export function CityLanding({
   image: string;
   districts: string[];
   primary: string;
+  newCity?: boolean;
+  region?: string;
 }) {
   const request = `/registrieren?network=${slug}`;
   const login = `${request}&mode=login`;
@@ -153,13 +157,13 @@ export function CityLanding({
             <span className="eyebrow">
               Ihre Stadt. Ihre Kontakte. Ihr Netzwerk.
             </span>
-            <h1>
+            {newCity ? <h1>Unternehmernetzwerk<br />{city}.<br /><em>Kontakte vor Ort.</em></h1> : <h1>
               Eine Stadt voller
               <br />
               Unternehmen.
               <br />
               <em>Und Sie mittendrin.</em>
-            </h1>
+            </h1>}
             <p>
               Unternehmen aus {city} kennenlernen, Kontakte knüpfen und im
               Mitglieder-Chat direkt austauschen. Teilen Sie Angebote und finden
@@ -210,11 +214,12 @@ export function CityLanding({
                 Ein Auftrag winkt. Die Zeit drängt. Und Ihnen fehlt genau der
                 richtige Kontakt.
               </p>
-              <p>
+              {newCity ? <p>Ihr nächster Auftrag braucht Unterstützung in {city}? Beschreiben Sie, welche Leistung fehlt, und suchen Sie gezielt im eigenen Stadtnetzwerk. Statt ungezielter Kontakte zählt, wer zu Ihrem konkreten Vorhaben passt.</p> : <p>
                 Vielleicht sitzt die passende Unterstützung in {districts[0]},
                 in {districts[1]} oder nur wenige Straßen weiter. Sie wissen nur
                 noch nichts voneinander.
-              </p>
+              </p>}
+              {newCity && <p><strong>Das Netzwerk befindet sich im Aufbau.</strong> Sie können Ihre Mitgliedschaft bereits anfragen. Mitgliederzahl, verfügbare Angebote und Veranstaltungen wachsen mit den teilnehmenden Unternehmen. Wir versprechen keine Aufträge oder bereits vorhandenen Kontakte.</p>}
               <p>
                 Genau das wollen wir ändern. Das{" "}
                 <strong>Unternehmernetzwerk {city} auf B2B-Matching.de</strong>{" "}
@@ -400,7 +405,7 @@ export function CityLanding({
             </div>
             <div className="cityline">
               <strong>In Ihrer Stadt steckt mehr, als Sie denken.</strong>{" "}
-              {districts.join(" · ")}
+              {newCity ? `${city} · ${region} · Eigener, geschützter Mitgliederbereich` : districts.join(" · ")}
             </div>
           </div>
         </section>

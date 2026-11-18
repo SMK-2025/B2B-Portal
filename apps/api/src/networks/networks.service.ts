@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import { CITY_NETWORKS, cityNetwork, acceptsParticipation } from "./city-networks";
 import { networkPulse, updatePulse, visibleCooperation, activatePulseOnReply } from './network-pulse';
 import { NETWORK_FEATURES, MODULE_FEATURES, featureEnabled, networkFeatures, type NetworkFeature } from './network-features';
 import { companyDomain, sameCompanyDomain } from "./company-page-domain";
@@ -584,6 +585,69 @@ export class NetworksService {
     return network;
   }
 
+  publicCityNetworks() {
+    return CITY_NETWORKS.filter(city => {
+      const id = this.store.networkBySlug.get(city.slug);
+      return id && this.store.networks.get(id)?.status === "active";
+    });
+  }
+  private cityRolloutRunning = false;
+  async provisionCityNetworks(authorization: string | undefined) {
+    const actor = this.auth.authenticate(authorization);
+    this.requirePlatformAdmin(actor.id);
+    if (this.cityRolloutRunning) throw new ConflictException("Die Stadtnetzwerke werden bereits eingerichtet.");
+    const source = this.bySlug("unternehmernetzwerkkoeln");
+    if (source.status !== "active" || !source.settings.memberBilling)
+      throw new BadRequestException("Köln muss aktiv sein und vollständige Konditionen haben.");
+    this.cityRolloutRunning = true;
+    const created: NetworkRecord[] = [];
+    const existing: string[] = [];
+    try {
+      const now = new Date().toISOString();
+      // Only configuration is copied. Never copy members, orders, messages,
+      // invitation tokens, promotion usage, or edited Cologne content.
+      for (const city of CITY_NETWORKS) {
+        if (this.store.networkBySlug.has(city.slug)) { existing.push(city.slug); continue; }
+        const id = randomUUID();
+        const network: NetworkRecord = {
+          id, slug: city.slug, name: `Unternehmernetzwerk ${city.city}`,
+          legalName: source.legalName, websiteUrl: `https://b2b-matching.de${city.route}`,
+          logoUrl: source.logoUrl, primaryColor: source.primaryColor, secondaryColor: source.secondaryColor,
+          status: "active", trialEndsAt: null, enabledModules: fullPortalModules(),
+          settings: {
+            closedNetwork: true, selfRegistration: false, crossNetworkMatching: false,
+            admissionRules: `Für Unternehmen mit Sitz in ${city.city}. Aufnahme nach Prüfung.`,
+            setupCompletedAt: now, billingMode: source.settings.billingMode,
+            memberPaymentModel: source.settings.memberPaymentModel,
+            memberMonthlyNetCents: source.settings.memberMonthlyNetCents,
+            memberBilling: structuredClone(source.settings.memberBilling),
+            ...(source.settings.launchPromotion ? {launchPromotion: {...source.settings.launchPromotion, id:`city-launch-${id}`}} : {}),
+            welcomeTitle: `Willkommen im Unternehmernetzwerk ${city.city}`,
+            welcomeIntro: `Unternehmen in ${city.city} kennenlernen und direkt miteinander ins Gespräch kommen.`,
+            bannerTitle: `Ihr Unternehmernetzwerk ${city.city}`,
+            bannerDescription: "Leistungen entdecken. Kontakte knüpfen. Gemeinsam weiterkommen.",
+          }, createdAt: now, updatedAt: now,
+        };
+        validateLaunchBilling(network);
+        created.push(network);
+      }
+      for (const network of created) {
+        this.store.networks.set(network.id, network);
+        this.store.networkBySlug.set(network.slug, network.id);
+      }
+      await this.store.persist();
+      return { created: created.map(n => n.slug), existing, total: CITY_NETWORKS.length };
+    } catch (error) {
+      for (const network of created) {
+        if (this.store.networks.get(network.id) === network) {
+          this.store.networks.delete(network.id);
+          this.store.networkBySlug.delete(network.slug);
+        }
+      }
+      throw error;
+    } finally { this.cityRolloutRunning = false; }
+  }
+
   private operatorActivityItems(networkId: string, seenAt: string | undefined) {
     const items: Array<{
       id: string;
@@ -1138,12 +1202,7 @@ export class NetworksService {
     let r = this.store.networkContents.get(key);
     if (!r || !r.endsAt || Date.parse(r.endsAt) <= Date.now()) {
       const token = opaqueToken(),
-        isRequest = [
-          "unternehmerfreunde",
-          "bayer04leverkusen",
-          "unternehmernetzwerkleverkusen",
-          "unternehmernetzwerkkoeln",
-        ].includes(n.slug);
+        isRequest = acceptsParticipation(n.slug);
       r = {
         id: key,
         networkId: id,
@@ -1174,12 +1233,7 @@ export class NetworksService {
       "/registrieren?network=" +
       encodeURIComponent(n.slug) +
       "&" +
-      ([
-        "unternehmerfreunde",
-        "bayer04leverkusen",
-        "unternehmernetzwerkleverkusen",
-        "unternehmernetzwerkkoeln",
-      ].includes(n.slug)
+      (acceptsParticipation(n.slug)
         ? "ref"
         : "invite") +
       "=" +
@@ -1277,12 +1331,7 @@ export class NetworksService {
       (n) => n.slug === slug && n.status === "active",
     );
     if (
-      ![
-        "unternehmerfreunde",
-        "bayer04leverkusen",
-        "unternehmernetzwerkleverkusen",
-        "unternehmernetzwerkkoeln",
-      ].includes(slug) ||
+      !acceptsParticipation(slug) ||
       !network
     )
       throw new BadRequestException(
@@ -1308,12 +1357,7 @@ export class NetworksService {
   async refreshLaunchCounter() { await this.store.refreshLaunchPlaces(); }
   async requestParticipation(input: Record<string, unknown>) {
     if (
-      ![
-        "unternehmerfreunde",
-        "bayer04leverkusen",
-        "unternehmernetzwerkleverkusen",
-        "unternehmernetzwerkkoeln",
-      ].includes(String(input.network))
+      !acceptsParticipation(String(input.network))
     )
       throw new ForbiddenException(
         "Teilnahmeanfragen sind für dieses Netzwerk nicht verfügbar.",
@@ -1348,14 +1392,8 @@ export class NetworksService {
     );
     if (
       !(
-        ["unternehmernetzwerkleverkusen", "unternehmernetzwerkkoeln"].includes(
-          network.slug,
-        )
-          ? [
-              network.slug === "unternehmernetzwerkkoeln"
-                ? "Unternehmenssitz in Köln"
-                : "Unternehmenssitz in Leverkusen",
-            ]
+        cityNetwork(network.slug)
+          ? [`Unternehmenssitz in ${cityNetwork(network.slug)!.city}`]
           : network.slug === "unternehmerfreunde"
             ? ["Mitglied der Unternehmerfreunde", "Interesse an einer Mitgliedschaft", "Sonstiger Bezug"]
           : [

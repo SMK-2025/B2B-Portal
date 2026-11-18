@@ -221,6 +221,10 @@ describe("personal annual membership billing", () => {
     await expect(
       f.networks.claimService({ ...claim, confirmation: "anders" }),
     ).rejects.toThrow();
+    for (const invalid of ["BeispielKunde2026", "Password-Test-2026!", "Abcdef!!!!!!2026"]) {
+      await expect(f.networks.claimService({ ...claim, password: invalid, confirmation: invalid })).rejects.toMatchObject({ status: 400 });
+    }
+    // Invalid passwords must not consume the link; a valid retry still succeeds.
     await f.networks.claimService(claim);
     await expect(f.networks.claimService(claim)).rejects.toThrow();
     expect(

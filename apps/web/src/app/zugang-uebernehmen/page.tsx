@@ -6,12 +6,17 @@ import {
   useNetworkBrand,
 } from "../components/network-auth-brand";
 import { portalRequest } from "../lib/portal-api";
+import { PasswordRequirements } from "../components/password-requirements";
+import { passwordReady } from "../lib/password-requirements";
 export default function Handover() {
   const token = useRef("");
   const [slug, setSlug] = useState(""),
     [done, setDone] = useState(false),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [password, setPassword] = useState(""),
+    [confirmation, setConfirmation] = useState("");
+  const canSave = passwordReady(password, confirmation);
   useEffect(() => {
     const u = new URL(location.href);
     setSlug(u.searchParams.get("network") || "");
@@ -30,6 +35,18 @@ export default function Handover() {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     setError("");
+    if (
+      !token.current ||
+      !passwordReady(
+        String(f.get("password") || ""),
+        String(f.get("confirmation") || ""),
+      )
+    ) {
+      setError(
+        "Bitte erfülle alle Passwortkriterien und verwende den aktuellen Übergabelink.",
+      );
+      return;
+    }
     if (f.get("password") !== f.get("confirmation")) {
       setError("Die Passwörter stimmen nicht überein.");
       return;
@@ -91,11 +108,26 @@ export default function Handover() {
                 required
                 minLength={12}
                 maxLength={200}
+                value={key === "password" ? password : confirmation}
+                onChange={(event) =>
+                  key === "password"
+                    ? setPassword(event.target.value)
+                    : setConfirmation(event.target.value)
+                }
+                aria-describedby="handover-password-requirements"
               />
             </label>
           ))}
-          <button className="primary full" disabled={!token.current || busy}>
-            Passwort speichern
+          <PasswordRequirements
+            id="handover-password-requirements"
+            password={password}
+            confirmation={confirmation}
+          />
+          <button
+            className="primary full"
+            disabled={!token.current || busy || !canSave}
+          >
+            {busy ? "Passwort wird gespeichert …" : "Passwort speichern"}
           </button>
         </form>
       )}

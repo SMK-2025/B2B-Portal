@@ -9,6 +9,7 @@ import { addCalendarDays, berlinMidnight } from "./invoice-schedule";
 export const KOELN_LAUNCH = "koeln-first-100-six-months-v1";
 export const launchEnabled = (n: NetworkRecord) =>
   n.settings.launchPromotion?.enabled === true &&
+  n.settings.launchPromotion.freeMonths > 0 &&
   n.settings.memberPaymentModel !== "network" &&
   n.settings.billingMode !== "cooperation_free";
 
@@ -58,15 +59,15 @@ export function launchSettings(
     limit > 100000 ||
     limit < used ||
     !Number.isInteger(freeMonths) ||
-    freeMonths < 1 ||
+    freeMonths < 0 ||
     freeMonths > 24
   )
     throw new BadRequestException(
-      "Bitte 1 bis 100.000 Plätze (mindestens bereits vergeben) und 1 bis 24 kostenlose Monate angeben.",
+      "Bitte 1 bis 100.000 Plätze (mindestens bereits vergeben) und 0 bis 24 kostenlose Monate angeben. 0 Monate deaktiviert die Startaktion.",
     );
   return {
     id: previous?.id || "network-launch-v1",
-    enabled: p.enabled === true,
+    enabled: p.enabled === true && freeMonths > 0,
     limit,
     freeMonths,
   };
@@ -167,6 +168,7 @@ export function configureKoelnLaunch(store: {
     (n) => n.slug === "unternehmernetzwerkkoeln",
   );
   if (!n) return false;
+  if (n.settings.memberContribution !== undefined) return false;
   n.settings.memberMonthlyNetCents = 1900;
   n.settings.launchPromotion = {
     id: KOELN_LAUNCH,

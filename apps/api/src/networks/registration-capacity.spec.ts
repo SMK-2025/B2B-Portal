@@ -24,9 +24,10 @@ describe("registration burst and tenant boundaries", () => {
     const duration:number[]=[];const start=performance.now();
     const results=await Promise.all(Array.from({length:100},async(_,i)=>{
       const n=net[i%4],t=performance.now();
+      const quote=networks.participationQuote(n.slug);
       await networks.requestParticipation({network:n.slug,email:"audit-"+i+"@example.test",password:"Audit-Sicher-2026!",firstName:"Audit",lastName:"Mitglied"+i,company:"Audit Betrieb "+i,
         affiliation:n.slug==="unternehmerfreunde"?"Interesse an einer Mitgliedschaft":n.slug==="bayer04leverkusen"?"Hospitality-/VIP-Gast":n.slug==="unternehmernetzwerkkoeln"?"Unternehmenssitz in Köln":"Unternehmenssitz in Leverkusen",
-        accurate:true,costsAccepted:true,termsAccepted:true,privacyAcknowledged:true,offerVersion:networks.participationQuote(n.slug).version});
+        accurate:true,costsAccepted:true,termsAccepted:true,privacyAcknowledged:true,offerVersion:quote.version,...(quote.contribution?{selectedMonthlyNetCents:990}:{})});
       duration.push(performance.now()-t);return n;
     }));
     expect(mails).toHaveLength(100);expect(store.users.size).toBe(101);expect(store.networkMemberships).toHaveLength(0);

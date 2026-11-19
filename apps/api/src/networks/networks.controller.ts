@@ -341,6 +341,9 @@ export class NetworksController {
     return this.networks.respond(auth, id, contentId, messageId, body);
   }
   @Get("cities/public") publicCities() { return this.networks.publicCityNetworks(); }
+  @Post("admin/city-networks/contributions") cityContributions(@Headers("authorization") authorization:string|undefined) {
+    return this.networks.activateCityContributions(authorization);
+  }
   @Post("admin/city-networks/provision") provisionCities(
     @Headers("authorization") authorization: string | undefined,
   ) { return this.networks.provisionCityNetworks(authorization); }

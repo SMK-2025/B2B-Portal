@@ -2,6 +2,7 @@ import { BadRequestException } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import type { NetworkRecord, NetworkOrderRecord } from "../core/domain";
 import { emailAddress, requiredText } from "../core/validation";
+import {contributionPolicy,contributionPrice} from "./member-contribution";
 import {
   addCalendarDays,
   invoiceSchedule,
@@ -19,8 +20,9 @@ export function memberPrice(network: NetworkRecord) {
     (network.slug === "bayer-giants" ? 4400 : 6900)
   );
 }
-export function pricing(network: NetworkRecord) {
-  const monthlyNetCents = memberPrice(network),
+export function pricing(network: NetworkRecord, selected?:unknown) {
+  const contribution=contributionPolicy(network);
+  const monthlyNetCents = contributionPrice(network,selected) ?? memberPrice(network),
     annualNetCents =
       monthlyNetCents * (network.settings.memberBilling?.months || 12),
     vatCents = Math.round((annualNetCents * 19) / 100);
@@ -33,6 +35,7 @@ export function pricing(network: NetworkRecord) {
     billing: network.settings.memberBilling || null,
     vatPercent: 19,
     currency: "EUR",
+    ...(contribution ? {contribution:{minimumMonthlyNetCents:contribution.minimumMonthlyNetCents,selectedMonthlyNetCents:monthlyNetCents,version:contribution.version}} : {}),
   };
 }
 export function validMemberPrice(value: unknown) {
@@ -58,7 +61,10 @@ export function annualOrder(
     throw new BadRequestException(
       "Das Partnernetzwerk muss vor einer kostenpflichtigen Mitgliederbuchung vollständig aktiviert sein.",
     );
-  const quote = pricing(network);
+  const contribution=contributionPolicy(network);
+  const quote = pricing(network,contribution ? input.acceptedMonthlyNetCents : undefined);
+  if(contribution && !operatorMandate && input.acceptedContributionVersion!==contribution.version)
+    throw new BadRequestException("Das Beitragsmodell wurde geändert. Bitte die Konditionen neu laden und bestätigen.");
   const policy = network.settings.memberBilling;
   if (
     !operatorMandate && !freeLaunch &&
@@ -153,6 +159,7 @@ export function annualOrder(
     pricingMode: "complete",
     moduleUnitPrices: {},
     monthlyNetCents: quote.monthlyNetCents,
+    ...(contribution?{voluntaryContribution:{networkId:network.id,minimumMonthlyNetCents:contribution.minimumMonthlyNetCents,selectedMonthlyNetCents:quote.monthlyNetCents,version:contribution.version}}:{}),
     annualNetCents: quote.annualNetCents,
     vatCents: quote.vatCents,
     grossCents: quote.grossCents,
@@ -178,7 +185,7 @@ export function annualOrder(
           },
         }
       : {}),
-      termsVersion: "agb-2026-11-05",
+      termsVersion: "agb-2026-11-19",
     pricingVersion: "member-flat-annual-2026-10-19",
     // The operator's documented mandate is not a member's online acceptance.
     authorityConfirmed: !operatorMandate,

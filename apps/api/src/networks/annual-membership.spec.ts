@@ -1122,10 +1122,10 @@ describe("personal annual membership billing", () => {
     expect(result.existing).toEqual([source.slug]);
     expect(f.networks.publicCityNetworks()).toHaveLength(50);
     const berlin = [...f.store.networks.values()].find(n=>n.slug==="unternehmernetzwerkberlin")!;
-    expect(berlin.settings).toMatchObject({closedNetwork:true,selfRegistration:false,crossNetworkMatching:false,memberMonthlyNetCents:2900,memberBilling:source.settings.memberBilling});
+    expect(berlin.settings).toMatchObject({closedNetwork:true,selfRegistration:false,crossNetworkMatching:false,memberMonthlyNetCents:990,memberBilling:{months:12,automaticInvoices:true},memberContribution:{enabled:true,minimumMonthlyNetCents:990}});
     expect(berlin.settings.memberBilling).not.toBe(source.settings.memberBilling);
     expect(berlin.settings.launchPromotion?.id).not.toBe(source.settings.launchPromotion?.id);
-    expect(f.networks.participationQuote(berlin.slug).monthlyNetCents).toBe(2900);
+    expect(f.networks.participationQuote(berlin.slug).monthlyNetCents).toBe(990);
     expect(()=>f.networks.publicBySlug(f.member,berlin.slug)).toThrow();
     expect(f.store.users.size).toBe(users);
     expect(f.store.networkMemberships).toHaveLength(memberships);
@@ -1212,13 +1212,139 @@ describe("personal annual membership billing", () => {
       registered,
     };
   }
+  it("activates city contributions only for cities and protects existing bookings and pending promises", async()=>{
+    const f=await fixture();
+    f.orgs.create(f.member,f.input,true);
+    const existing=structuredClone([...f.store.networkOrders.values()][0]);
+    const city=f.networks.create(f.owner,{name:"Unternehmernetzwerk Köln",slug:"unternehmernetzwerkkoeln"});
+    f.networks.setAccess(f.owner,city.id,{status:"active"});
+    // Simulate an existing, pre-default network being migrated.
+    delete city.settings.memberContribution;
+    f.networks.memberPricing(f.owner,city.id,{monthlyNetCents:2900,billing:{months:12,automaticInvoices:true},launchPromotion:{enabled:true,limit:100,freeMonths:6}});
+    await f.networks.provisionCityNetworks(f.owner);
+    const promise=structuredClone([...f.store.networkContents.values()].find(i=>i.data.kind==="network_invitation")!);
+    promise.id="old-promise";promise.networkId=city.id;promise.data.usedAt=null;promise.data.participationConsent={acceptedAt:"2026-11-01"};
+    f.store.networkContents.set(promise.id,promise);
+    await expect(f.networks.activateCityContributions(f.member)).rejects.toThrow();
+    expect(await f.networks.activateCityContributions(f.owner)).toMatchObject({updated:1,protectedRequests:1,freeMonths:0});
+    expect([...f.store.networkOrders.values()][0]).toEqual(existing);
+    expect(f.network.settings.memberContribution).toBeUndefined();
+    const cities=[...f.store.networks.values()].filter(n=>n.settings.memberContribution);
+    expect(cities).toHaveLength(50);
+    for(const n of cities) {
+      expect(pricing(n)).toMatchObject({monthlyNetCents:990,months:12,annualNetCents:11880,vatCents:2257,grossCents:14137});
+      expect(n.settings.launchPromotion).toMatchObject({enabled:false,freeMonths:0});
+    }
+    expect(promise.data.priorBillingSettings).toMatchObject({memberMonthlyNetCents:2900,launchPromotion:{freeMonths:6,enabled:true}});
+    // Later manual promotion changes must not be reset by another rollout click.
+    f.networks.memberPricing(f.owner,city.id,{monthlyNetCents:990,launchPromotion:{enabled:true,limit:100,freeMonths:3}});
+    expect((await f.networks.activateCityContributions(f.owner)).updated).toBe(0);
+    expect(city.settings.launchPromotion?.freeMonths).toBe(3);
+  });
+  it("preserves Bayer 04 settings, existing login and booking while denying access to every new city network",async()=>{
+    const f=await fixture();
+    f.network.slug="bayer04leverkusen";
+    f.store.networkBySlug.set(f.network.slug,f.network.id);
+    f.network.primaryColor="#c8102e";
+    f.network.settings.welcomeTitle="Bestehender Bayer-04-Auftritt";
+    f.orgs.create(f.member,f.input,true);
+    const independent=[f.network,...["bayer-giants","unternehmerfreunde"].map(slug=>{
+      const n=f.networks.create(f.owner,{name:slug,slug});
+      f.networks.setAccess(f.owner,n.id,{status:"active"});return n;
+    })];
+    const snapshots=independent.map(n=>structuredClone(n));
+    const orders=structuredClone([...f.store.networkOrders.values()]);
+    const passwordHash=f.store.users.get(f.registered.user.id)!.passwordHash;
+    const source=f.networks.create(f.owner,{name:"Unternehmernetzwerk Köln",slug:"unternehmernetzwerkkoeln",memberMonthlyNetCents:2900,billing:{months:12}});
+    f.networks.setAccess(f.owner,source.id,{status:"active"});
+    await f.networks.provisionCityNetworks(f.owner);
+    await f.networks.activateCityContributions(f.owner);
+    independent.forEach((n,index)=>expect(n).toEqual(snapshots[index]));
+    expect([...f.store.networkOrders.values()]).toEqual(orders);
+    expect(f.store.users.get(f.registered.user.id)!.passwordHash).toBe(passwordHash);
+    expect(f.auth.authenticate(f.member).id).toBe(f.registered.user.id);
+    const loggedIn=`Bearer ${(await f.auth.login({email:"partner@example.de",password:"Sicher-Portal-2026!"})).token}`;
+    expect(f.networks.publicBySlug(loggedIn,f.network.slug).slug).toBe(f.network.slug);
+    expect(f.networks.dashboard(loggedIn,f.network.id)).toBeTruthy();
+    const cities=[...f.store.networks.values()].filter(n=>n.settings.memberContribution);
+    expect(cities).toHaveLength(50);
+    for(const city of cities){
+      expect(()=>f.networks.publicBySlug(loggedIn,city.slug)).toThrow();
+      expect(()=>f.networks.dashboard(loggedIn,city.id)).toThrow();
+      expect(()=>f.networks.listMembers(loggedIn,city.id)).toThrow();
+      expect(()=>f.networks.ownProfile(loggedIn,city.id)).toThrow();
+    }
+  });
+  it("books the freely selected city contribution immutably and rejects invalid or stale amounts", async()=>{
+    const f=await fixture();
+    f.network.slug="unternehmernetzwerkkoeln";
+    // This test exercises a new invitation issued under the new model.
+    const invitation=[...f.store.networkContents.values()].find(i=>i.data.kind==="network_invitation")!;
+    invitation.endsAt=new Date(Date.now()-1).toISOString();
+    await f.networks.activateCityContributions(f.owner);
+    invitation.endsAt=new Date(Date.now()+86400000).toISOString();
+    const q=pricing(f.network);
+    const input={...f.input,acceptedBillingVersion:q.billing!.version,acceptedContributionVersion:q.contribution!.version,acceptedMonthlyNetCents:2500};
+    for(const amount of [0,989,-1,1000.5,NaN,Infinity,"2500",100_000_001])
+      expect(()=>annualOrder(f.network,"member",{...input,acceptedMonthlyNetCents:amount})).toThrow();
+    expect(()=>annualOrder(f.network,"member",{...input,acceptedContributionVersion:"stale"})).toThrow(/geändert/);
+    f.orgs.create(f.member,input,true);
+    const order=[...f.store.networkOrders.values()][0];
+    expect(order).toMatchObject({monthlyNetCents:2500,annualNetCents:30000,vatCents:5700,grossCents:35700,minimumTermMonths:12,voluntaryContribution:{networkId:f.network.id,minimumMonthlyNetCents:990,selectedMonthlyNetCents:2500}});
+    const saved=structuredClone(order);
+    f.networks.memberPricing(f.owner,f.network.id,{monthlyNetCents:990,launchPromotion:{enabled:false,limit:100,freeMonths:0}});
+    expect(order).toEqual(saved);
+    expect(()=>f.networks.memberPricing(f.owner,f.network.id,{monthlyNetCents:990,billing:{months:5}})).toThrow(/zwölf/);
+  });
+  it("carries the selected landing-page contribution through request, invitation and booking", async()=>{
+    const f=await fixture();
+    f.network.slug="unternehmernetzwerkkoeln";
+    f.store.networkBySlug.set(f.network.slug,f.network.id);
+    const request={network:f.network.slug,email:"selected-price@example.de",password:"Sicher-Portal-2026!",firstName:"Robin",lastName:"Beitrag",company:"Beitrag GmbH",affiliation:"Unternehmenssitz in Köln",accurate:true,costsAccepted:true,termsAccepted:true,privacyAcknowledged:true,selectedMonthlyNetCents:2500,offerVersion:f.networks.participationQuote(f.network.slug).version};
+    await expect(f.networks.requestParticipation(request)).rejects.toThrow(/nicht aktiviert/);
+    expect(f.store.userByEmail.has(request.email)).toBe(false);
+    await f.networks.activateCityContributions(f.owner);
+    request.offerVersion=f.networks.participationQuote(f.network.slug).version;
+    await f.networks.requestParticipation(request);
+    const stored=[...f.store.networkContents.values()].find(i=>i.data.email===request.email)!;
+    expect(stored.data.participationConsent).toMatchObject({offer:{monthlyNetCents:2500,contribution:{selectedMonthlyNetCents:2500}}});
+    const mail=vi.mocked(f.email.sendVerification).mock.calls.at(-1)![0];
+    f.auth.verifyEmail(mail.token);
+    const session=`Bearer ${(await f.auth.login({email:request.email,password:request.password})).token}`;
+    await f.networks.adminUserAction(f.owner,f.network.id,{email:request.email,action:"approveRequest"});
+    const approved=f.networks.participationStatus(session,f.network.slug);
+    const quote=f.networks.invitationQuote({invite:approved.invite});
+    expect(quote).toMatchObject({monthlyNetCents:2500,annualNetCents:30000,grossCents:35700});
+    f.orgs.create(session,{...f.input,networkInviteToken:approved.invite,acceptedMonthlyNetCents:2500,acceptedContributionVersion:quote.contribution!.version,acceptedBillingVersion:quote.billing!.version},true);
+    expect([...f.store.networkOrders.values()][0]).toMatchObject({monthlyNetCents:2500,annualNetCents:30000,grossCents:35700,voluntaryContribution:{selectedMonthlyNetCents:2500}});
+  });
+  it("honors an already sent invitation including its free months after the rollout",async()=>{
+    const f=await fixture();f.network.slug="unternehmernetzwerkkoeln";
+    f.networks.memberPricing(f.owner,f.network.id,{monthlyNetCents:2900,billing:{months:12,automaticInvoices:true},launchPromotion:{enabled:true,limit:100,freeMonths:6}});
+    await f.networks.activateCityContributions(f.owner);
+    const quote=f.networks.invitationQuote({invite:f.invite});
+    expect(quote).toMatchObject({monthlyNetCents:2900,launchPromotion:{freeMonths:6}});
+    expect(quote).not.toHaveProperty("contribution");
+    await f.orgs.createNetwork(f.member,{...f.input,acceptedMonthlyNetCents:2900,acceptedBillingVersion:quote.billing!.version,launchPromotionAccepted:quote.launchPromotion!.version});
+    expect([...f.store.networkOrders.values()][0]).toMatchObject({minimumTermMonths:6,grossCents:0,launchPromotion:{slot:1}});
+    expect(f.network.settings.launchPromotion?.freeMonths).toBe(0);
+  });
+  it("serves the platform brand for existing red city records without changing independent brands",async()=>{
+    const f=await fixture();
+    f.network.slug="unternehmernetzwerkkoeln";f.network.primaryColor="#ff0000";f.network.secondaryColor="#110000";
+    f.store.networkBySlug.set(f.network.slug,f.network.id);
+    expect(f.networks.branding(f.network.slug)).toMatchObject({primaryColor:"#536bdb",secondaryColor:"#30264f",logoUrl:"/images/b2b-matching-logo-full.png"});
+    expect(f.networks.publicBySlug(f.owner,f.network.slug)).toMatchObject({primaryColor:"#536bdb",colors:{primary:"#536bdb"}});
+    f.network.slug="bayer04leverkusen";f.store.networkBySlug.set(f.network.slug,f.network.id);
+    expect(f.networks.branding(f.network.slug).primaryColor).toBe("#ff0000");
+  });
   it("allows rolling business terms without a season and preserves fixed sports renewals", async()=>{
     const f=await fixture(), billing={months:6,autoRenew:true,renewalMonths:12,automaticInvoices:true};
     for(const slug of ["bayer04leverkusen","bayer-giants"])
       expect(f.networks.create(f.owner,{name:slug,slug,billing}).settings.memberBilling!.autoRenew).toBe(false);
     const n=f.networks.create(f.owner,{name:"Unternehmernetzwerk Leverkusen",slug:"unternehmernetzwerkleverkusen",billing});
     f.networks.setAccess(f.owner,n.id,{status:"active"});
-    f.networks.memberPricing(f.owner,n.id,{monthlyNetCents:6900,billing});
+    f.networks.memberPricing(f.owner,n.id,{monthlyNetCents:6900,billing,memberContributionEnabled:false});
     const order=annualOrder(n,f.registered.user.id,{...f.input,acceptedBillingVersion:n.settings.memberBilling!.version,pdfInvoiceAccepted:true,renewalAccepted:true});
     expect(order.minimumTermMonths).toBe(6);
     expect(order.billingPolicy!.autoRenew).toBe(false);

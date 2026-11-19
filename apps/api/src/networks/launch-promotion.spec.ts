@@ -59,6 +59,18 @@ function order(): NetworkOrderRecord {
 }
 afterEach(() => vi.useRealTimers());
 describe("network launch promotion", () => {
+  it("supports zero free months without deleting the promotion or previous grants",async()=>{
+    const {network,store}=fixture();
+    const free=order();applyLaunch(free,{slot:1,startsOn:"2026-11-05",campaignId:KOELN_LAUNCH,freeMonths:6});
+    const before=structuredClone(free);
+    network.settings.launchPromotion=launchSettings({enabled:true,limit:100,freeMonths:0},network.settings.launchPromotion,1);
+    expect(network.settings.launchPromotion).toMatchObject({enabled:false,freeMonths:0,id:KOELN_LAUNCH});
+    expect(publicLaunchOffer(network,1)).toBeNull();
+    await expect(store.claimLaunchPlace(network.id,"new","New GmbH")).rejects.toThrow();
+    network.settings.launchPromotion=launchSettings({enabled:true,limit:100,freeMonths:4},network.settings.launchPromotion,1);
+    expect(publicLaunchOffer(network,1)).toMatchObject({available:true,freeMonths:4});
+    expect(free).toEqual(before);
+  });
   it("disables all existing renewals once, preserving terms and issued invoices", () => {
     const {store,network}=fixture();
     const other=structuredClone(network);other.id="other";store.networks.set(other.id,other);

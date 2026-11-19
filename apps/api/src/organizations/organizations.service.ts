@@ -18,6 +18,7 @@ import { emailAddress, requiredText, safeUrl } from "../core/validation";
 import { opaqueToken, tokenHash } from "../auth/password";
 import { EmailService } from "../auth/email.service";
 import { annualOrder, fullPortalModules } from "../networks/annual-membership";
+import {bookingNetwork} from "../networks/member-contribution";
 import { enqueueOperatorMail } from "../core/operator-mail";
 import { applyLaunch, launchEnabled, launchSummary } from "../networks/launch-promotion";
 
@@ -31,13 +32,14 @@ export class OrganizationsService {
   async createNetwork(authorization: string | undefined, input: Record<string, unknown>) {
     const user=this.auth.authenticate(authorization);
     const invite=[...this.store.networkContents.values()].find(i=>i.data.kind==="network_invitation" && i.data.inviteTokenHash===tokenHash(String(input.networkInviteToken || "")) && i.data.email===user.email && !i.data.usedAt && i.endsAt && Date.parse(i.endsAt)>Date.now());
-    const network=invite && this.store.networks.get(invite.networkId);
+    const storedNetwork=invite && this.store.networks.get(invite.networkId);
+    const network=storedNetwork?bookingNetwork(storedNetwork,invite):undefined;
     const launch=network && launchSummary(network,this.store.launchUsed(network.id));
     if(input.launchPromotionAccepted && input.launchPromotionAccepted!==launch?.version)
       throw new BadRequestException("Die Startaktion wurde geändert. Bitte Konditionen neu laden; es wurde keine kostenpflichtige Buchung ausgelöst.");
     if(launch && (launch.remaining>0 || this.store.launchReserved(network!.id,user.id)) && !input.launchPromotionAccepted)
       throw new BadRequestException("Bitte die aktuellen Konditionen der kostenlosen Startaktion laden und bestätigen.");
-    if (!network || !launchEnabled(network) || !input.launchPromotionAccepted)
+    if (!invite || !network || !launchEnabled(network) || !input.launchPromotionAccepted)
       return this.create(authorization,input,true);
     if (!user.emailVerifiedAt || (invite.data.admissionStatus && invite.data.admissionStatus!=="approved") || network.status!=="active")
       throw new ForbiddenException("Bitte E-Mail bestätigen und die Freigabe abwarten.");
@@ -50,7 +52,7 @@ export class OrganizationsService {
     if(input.role!=="network") throw new BadRequestException("Ungültige Unternehmensrolle.");
     const company=requiredText(input.legalName,"Rechtlicher Firmenname",2,200);
     requiredText(input.displayName,"Anzeigename",2,200); safeUrl(input.websiteUrl);
-    const grant=await this.store.claimLaunchPlace(network.id,user.id,company);
+    const grant=await this.store.claimLaunchPlace(network.id,user.id,company,invite.data.priorBillingSettings ? network.settings.launchPromotion : undefined);
     return this.create(authorization,input,true,grant);
   }
   create(
@@ -95,9 +97,10 @@ export class OrganizationsService {
       (!invitation && role === "network")
     )
       throw new BadRequestException("Ungültige Unternehmensrolle.");
-    const requestedNetwork = invitation
+    const storedRequestedNetwork = invitation
       ? this.store.networks.get(invitation.networkId)
       : undefined;
+    const requestedNetwork=storedRequestedNetwork?bookingNetwork(storedRequestedNetwork,invitation):undefined;
     const networkAccessible =
       requestedNetwork &&
       (requestedNetwork.status === "active" ||

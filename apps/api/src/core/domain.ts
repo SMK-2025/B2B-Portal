@@ -205,6 +205,7 @@ export interface NetworkRecord {
     billingMode?: "standard" | "cooperation_free";
     memberPaymentModel?: "individual" | "network";
     memberMonthlyNetCents?: number;
+    memberContribution?: { enabled: boolean; minimumMonthlyNetCents: number; version: string; activatedAt: string };
     launchPromotion?: { id: string; enabled: boolean; limit: number; freeMonths: number };
     memberBilling?: {
       months: number;
@@ -397,6 +398,7 @@ export interface NetworkOrderRecord {
   };
   termsVersion: string;
   pricingVersion: string;
+  voluntaryContribution?: { networkId: string; minimumMonthlyNetCents: number; selectedMonthlyNetCents: number; version: string };
   authorityConfirmed: boolean;
   termsAccepted: boolean;
   paymentObligationAccepted: boolean;

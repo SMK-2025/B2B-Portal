@@ -7,7 +7,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import { CITY_NETWORKS, cityNetwork, acceptsParticipation } from "./city-networks";
+import { CITY_NETWORKS, cityNetwork, acceptsParticipation, cityBrand, CITY_BRAND } from "./city-networks";
+import {bookingNetwork,contributionPolicy,CONTRIBUTION_MINIMUM,defaultCityContributionSettings} from "./member-contribution";
 import { networkPulse, updatePulse, visibleCooperation, activatePulseOnReply } from './network-pulse';
 import { NETWORK_FEATURES, MODULE_FEATURES, featureEnabled, networkFeatures, type NetworkFeature } from './network-features';
 import { companyDomain, sameCompanyDomain } from "./company-page-domain";
@@ -231,7 +232,7 @@ export class NetworksService {
       throw new BadRequestException(
         "Die Einladung ist ungültig oder abgelaufen.",
       );
-    const network = this.raw(invite.networkId);
+    const network = bookingNetwork(this.raw(invite.networkId),invite);
     if (
       invite.data.admissionStatus &&
       invite.data.admissionStatus !== "approved"
@@ -251,7 +252,7 @@ export class NetworksService {
       launchPromotion: publicLaunchOffer(network,this.store.launchUsed(network.id),this.store.launchReserved(network.id,this.store.userByEmail.get(String(invite.data.email)) || "")),
       ...(network.settings.memberPaymentModel === "network"
         ? {}
-        : pricing(network)),
+        : pricing(network,contributionPolicy(network) ? (invite.data.participationConsent as {offer?:{contribution?:{selectedMonthlyNetCents?:number}}}|undefined)?.offer?.contribution?.selectedMonthlyNetCents : undefined)),
     };
   }
   memberPricing(
@@ -269,6 +270,11 @@ export class NetworksService {
       throw new BadRequestException("Ungültiges Zahlungsmodell.");
     const cents = validMemberPrice(input.monthlyNetCents);
     const nextSettings = {...network.settings,memberMonthlyNetCents:cents};
+    if(input.memberContributionEnabled !== undefined) {
+      if(!cityNetwork(network.slug) || typeof input.memberContributionEnabled!=="boolean") throw new BadRequestException("Das freie Beitragsmodell ist nur für eigene Stadtnetzwerke verfügbar.");
+      const defaults=defaultCityContributionSettings(network).memberContribution!;
+      nextSettings.memberContribution={...(network.settings.memberContribution || defaults),enabled:input.memberContributionEnabled};
+    }
     if (input.billing && typeof input.billing === "object") {
       nextSettings.memberBilling = memberBillingSettings(
         input.billing,
@@ -279,6 +285,8 @@ export class NetworksService {
       nextSettings.memberPaymentModel = input.memberPaymentModel as
         "individual" | "network";
     if(input.launchPromotion) nextSettings.launchPromotion=launchSettings(input.launchPromotion,network.settings.launchPromotion,this.store.launchUsed(id));
+    if(contributionPolicy({...network,settings:nextSettings}) && (cents!==CONTRIBUTION_MINIMUM || nextSettings.memberBilling?.months!==12 || nextSettings.memberBilling?.freeUntil || nextSettings.memberBilling?.paidFrom || nextSettings.memberBilling?.paidThrough))
+      throw new BadRequestException("Das freie Beitragsmodell gilt ab 9,90 € netto für zwölf Monate ohne feste Datumszeiträume. Kostenlose Startmonate stellen Sie separat in der Startaktion ein.");
     validateLaunchBilling({...network,settings:nextSettings});
     network.settings=nextSettings;
     network.updatedAt = new Date().toISOString();
@@ -291,6 +299,8 @@ export class NetworksService {
     const network = this.raw(networkId);
     return {
       networkName: network.name,
+      cityNetwork: !!cityNetwork(network.slug),
+      memberContributionEnabled: network.settings.memberContribution?.enabled === true,
       memberPaymentModel: network.settings.memberPaymentModel || "individual",
       cooperationFree: network.settings.billingMode === "cooperation_free",
       launchPromotion: network.settings.launchPromotion || null,
@@ -579,6 +589,7 @@ export class NetworksService {
       createdAt: now,
       updatedAt: now,
     };
+    if(cityNetwork(slug)) network.settings=defaultCityContributionSettings(network);
     validateLaunchBilling(network);
     this.store.networks.set(network.id, network);
     this.store.networkBySlug.set(network.slug, network.id);
@@ -590,6 +601,37 @@ export class NetworksService {
       const id = this.store.networkBySlug.get(city.slug);
       return id && this.store.networks.get(id)?.status === "active";
     });
+  }
+  private contributionRolloutRunning=false;
+  async activateCityContributions(authorization:string|undefined) {
+    const actor=this.auth.authenticate(authorization);this.requirePlatformAdmin(actor.id);
+    if(this.contributionRolloutRunning) throw new ConflictException("Das Beitragsmodell wird bereits eingerichtet.");
+    this.contributionRolloutRunning=true;
+    const originals=new Map<NetworkRecord,NetworkRecord["settings"]>();
+    const protectedRequests: NetworkContentRecord[]=[];
+    const version="city-contribution-990-12m-v1";
+    try {
+      for(const network of this.store.networks.values()) {
+        if(!cityNetwork(network.slug)||network.settings.memberContribution !== undefined) continue;
+        originals.set(network,network.settings);
+        const before=network.settings;
+        for(const request of this.store.networkContents.values()) {
+          if(request.networkId!==network.id || request.data.kind!=="network_invitation" || request.data.role!=="member" || request.data.usedAt || request.data.priorBillingSettings || !request.endsAt || Date.parse(request.endsAt)<=Date.now()) continue;
+          request.data.priorBillingSettings=structuredClone({memberMonthlyNetCents:before.memberMonthlyNetCents,memberBilling:before.memberBilling,memberPaymentModel:before.memberPaymentModel,billingMode:before.billingMode,launchPromotion:before.launchPromotion});
+          protectedRequests.push(request);
+        }
+        network.settings={...before,memberPaymentModel:"individual",billingMode:"standard",memberMonthlyNetCents:CONTRIBUTION_MINIMUM,
+          memberContribution:{enabled:true,minimumMonthlyNetCents:CONTRIBUTION_MINIMUM,version,activatedAt:new Date().toISOString()},
+          memberBilling:memberBillingSettings({months:12,automaticInvoices:before.memberBilling?.automaticInvoices===true},network.slug),
+          launchPromotion:{id:before.launchPromotion?.id||`city-launch-${network.id}`,enabled:false,limit:before.launchPromotion?.limit||100,freeMonths:0}};
+      }
+      await this.store.persist();
+      return {updated:originals.size,protectedRequests:protectedRequests.length,minimumMonthlyNetCents:CONTRIBUTION_MINIMUM,months:12,freeMonths:0};
+    } catch(error) {
+      for(const [network,settings] of originals) network.settings=settings;
+      for(const request of protectedRequests) delete request.data.priorBillingSettings;
+      throw error;
+    } finally {this.contributionRolloutRunning=false;}
   }
   private cityRolloutRunning = false;
   async provisionCityNetworks(authorization: string | undefined) {
@@ -612,7 +654,7 @@ export class NetworksService {
         const network: NetworkRecord = {
           id, slug: city.slug, name: `Unternehmernetzwerk ${city.city}`,
           legalName: source.legalName, websiteUrl: `https://b2b-matching.de${city.route}`,
-          logoUrl: source.logoUrl, primaryColor: source.primaryColor, secondaryColor: source.secondaryColor,
+          ...CITY_BRAND,
           status: "active", trialEndsAt: null, enabledModules: fullPortalModules(),
           settings: {
             closedNetwork: true, selfRegistration: false, crossNetworkMatching: false,
@@ -620,6 +662,7 @@ export class NetworksService {
             setupCompletedAt: now, billingMode: source.settings.billingMode,
             memberPaymentModel: source.settings.memberPaymentModel,
             memberMonthlyNetCents: source.settings.memberMonthlyNetCents,
+            ...(source.settings.memberContribution?{memberContribution:structuredClone(source.settings.memberContribution)}:{}),
             memberBilling: structuredClone(source.settings.memberBilling),
             ...(source.settings.launchPromotion ? {launchPromotion: {...source.settings.launchPromotion, id:`city-launch-${id}`}} : {}),
             welcomeTitle: `Willkommen im Unternehmernetzwerk ${city.city}`,
@@ -628,6 +671,7 @@ export class NetworksService {
             bannerDescription: "Leistungen entdecken. Kontakte knüpfen. Gemeinsam weiterkommen.",
           }, createdAt: now, updatedAt: now,
         };
+        network.settings=defaultCityContributionSettings(network);
         validateLaunchBilling(network);
         created.push(network);
       }
@@ -1349,8 +1393,8 @@ export class NetworksService {
         quote.billing?.autoRenew && quote.billing.paidThrough
           ? addCalendarDays(quote.billing.paidThrough, -15)
           : null,
-      termsVersion: "agb-2026-11-05",
-      privacyVersion: "datenschutz-2026-11-03",
+      termsVersion: "agb-2026-11-19",
+      privacyVersion: "datenschutz-2026-11-19",
     };
     return { ...offer, version: tokenHash(JSON.stringify(offer)) };
   }
@@ -1370,11 +1414,16 @@ export class NetworksService {
         "Das Netzwerk ist derzeit nicht verfügbar.",
       );
     const email = emailAddress(input.email);
-    const offer = this.participationQuote(String(input.network));
-    if (input.offerVersion !== offer.version)
+    const baseOffer = this.participationQuote(String(input.network));
+    if(input.selectedMonthlyNetCents !== undefined && !contributionPolicy(network))
+      throw new BadRequestException("Der gewählte Beitrag kann noch nicht gebucht werden. Das Beitragsmodell ist für dieses Netzwerk nicht aktiviert. Es wird kein anderer Preis übernommen.");
+    if (input.offerVersion !== baseOffer.version)
       throw new BadRequestException(
         "Die Konditionen wurden aktualisiert. Bitte lade die Kostenübersicht erneut und bestätige sie.",
       );
+    const offer={...baseOffer,...pricing(network,contributionPolicy(network)?input.selectedMonthlyNetCents:undefined)};
+    if(contributionPolicy(network) && input.selectedMonthlyNetCents===undefined)
+      throw new BadRequestException("Bitte Ihren monatlichen Beitrag auswählen und bestätigen.");
     if (
       input.costsAccepted !== true ||
       input.termsAccepted !== true ||
@@ -1806,7 +1855,7 @@ export class NetworksService {
   }
 
   branding(slug: string) {
-    const network = this.bySlug(slug);
+    const network = cityBrand(this.bySlug(slug));
     const accessible =
       network.status === "active" ||
       (network.status === "trial" &&
@@ -2168,8 +2217,8 @@ export class NetworksService {
     const user = this.auth.authenticate(authorization);
     const id = this.store.networkBySlug.get(slug);
     if (!id) throw new NotFoundException("Netzwerk nicht gefunden.");
-    const network =
-      user.accountRole === "platform_admin" ? this.raw(id) : this.bySlug(slug);
+    const network = cityBrand(
+      user.accountRole === "platform_admin" ? this.raw(id) : this.bySlug(slug));
     if (
       user.accountRole === "platform_admin" &&
       !this.store.activities
@@ -4378,7 +4427,7 @@ export class NetworksService {
       monthlyNetCents,
       setupNetCents: 0,
       minimumTermMonths: 12,
-      termsVersion: "agb-2026-11-05",
+      termsVersion: "agb-2026-11-19",
       pricingVersion: "network-user-modules-2026-10",
       authorityConfirmed: true,
       termsAccepted: true,

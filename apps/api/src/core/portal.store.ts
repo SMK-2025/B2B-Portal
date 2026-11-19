@@ -45,6 +45,7 @@ import {
 } from "./retire-legacy-initiator";
 import type { MailingCampaign, MailingLead } from "../mailings/mailing.types";
 import { provisionKoeln, replaceKoelnLogo } from "./provision-koeln";
+import { applyCityContributionDefaults } from "../networks/member-contribution";
 import {
   configureKoelnLaunch,
   disableAutomaticRenewals,
@@ -97,8 +98,8 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
         "SELECT campaign,network_id,user_id,company_hash,slot,starts_on FROM b2b_launch_places",
       )) as typeof this.launchPlaces;
   }
-  async claimLaunchPlace(networkId: string, userId: string, company: string) {
-    const promotion = this.networks.get(networkId)?.settings.launchPromotion;
+  async claimLaunchPlace(networkId: string, userId: string, company: string, preservedPromotion?: NetworkRecord["settings"]["launchPromotion"]) {
+    const promotion = preservedPromotion || this.networks.get(networkId)?.settings.launchPromotion;
     if (!promotion?.enabled)
       throw new ConflictException("Die Startaktion ist nicht mehr aktiv.");
     const companyHash = createHash("sha256")
@@ -165,7 +166,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       const rawSettings = (persisted as { settings: NetworkRecord["settings"] | string }[])[0]?.settings;
       const settings: NetworkRecord["settings"] | undefined = typeof rawSettings === "string" ? JSON.parse(rawSettings) : rawSettings;
       const live = settings?.launchPromotion;
-      if (
+      if (!preservedPromotion && (
         !live?.enabled ||
         live.id !== promotion.id ||
         live.limit !== promotion.limit ||
@@ -173,7 +174,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
         !settings?.memberBilling ||
         settings.memberPaymentModel === "network" ||
         settings.billingMode === "cooperation_free"
-      )
+      ))
         throw new ConflictException(
           "Die Startaktion wurde geändert. Bitte lade die aktuellen Konditionen erneut.",
         );
@@ -268,6 +269,7 @@ export class PortalStore implements OnModuleInit, OnApplicationShutdown {
       await this.persist();
     }
     if (process.env.NODE_ENV === 'production' && replaceKoelnLogo(this)) await this.persist();
+    if (applyCityContributionDefaults(this).updated) await this.persist();
     if (process.env.NODE_ENV === "production" && configureKoelnLaunch(this))
       await this.persist();
     const billingUpdate = "bayer04-season-january-2027-v1";

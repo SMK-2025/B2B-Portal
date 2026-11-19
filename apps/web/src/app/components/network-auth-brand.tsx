@@ -3,6 +3,9 @@ import { NetworkText } from "./network-text-editor";
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { portalRequest } from "../lib/portal-api";
+import { CITY_BRAND, ownCityBrand } from "../lib/city-brand";
+import { cityNetwork } from "../lib/city-networks";
+import "./city-auth-brand.css";
 
 export type NetworkBrand = {
   slug: string;
@@ -22,7 +25,7 @@ export function useNetworkBrand(slug: string) {
       `/networks/branding/${encodeURIComponent(slug)}`,
     )
       .then((value) => {
-        if (active) setBrand(value);
+        if (active) setBrand(ownCityBrand(value));
       })
       .catch(() => {
         if (active) setBrand(null);
@@ -31,7 +34,10 @@ export function useNetworkBrand(slug: string) {
       active = false;
     };
   }, [slug]);
-  return brand;
+  const city=cityNetwork(slug);
+  // Public branding is available immediately, even before the API responds.
+  // Account validation and access checks always remain on the server.
+  return brand?.slug===slug ? brand : city ? {slug,name:`Unternehmernetzwerk ${city.city}`,websiteUrl:city.route,...CITY_BRAND} : null;
 }
 export function NetworkAuthFrame({
   brand,
@@ -47,7 +53,7 @@ export function NetworkAuthFrame({
     "--auth-secondary": brand.secondaryColor,
   } as CSSProperties;
   return (
-    <main className="networkAuthPortal" style={style}>
+    <main className={`networkAuthPortal${cityNetwork(brand.slug)?" cityNetworkAuth":""}`} style={style}>
       <header>
         <Link
           href={`/anmelden?network=${encodeURIComponent(brand.slug)}` as never}

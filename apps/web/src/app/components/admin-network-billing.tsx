@@ -9,6 +9,9 @@ export type BillingInvoice = {
   downloadable: boolean;
 };
 type Billing = {
+  cityNetwork?: boolean;
+  memberContributionEnabled?: boolean;
+  contribution?: {minimumMonthlyNetCents:number};
   launchPromotion?: {enabled:boolean;limit:number;freeMonths:number}|null;
   launchCounter?: {used:number}|null;
   memberPaymentModel: "individual" | "network";
@@ -104,16 +107,17 @@ export function AdminNetworkBilling({
   onSaved: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const [contributionEnabled,setContributionEnabled]=useState(false);
   const [data, setData] = useState<Billing | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
   async function load() {
-    setData(
-      await portalRequest<Billing>(`/networks/admin/${id}/billing`, {
+    const result=await portalRequest<Billing>(`/networks/admin/${id}/billing`, {
         token: getPortalSession() || "",
-      }),
-    );
+      });
+    setData(result);
+    setContributionEnabled(result.memberContributionEnabled===true);
   }
   async function open() {
     dialog.current?.showModal();
@@ -142,6 +146,7 @@ export function AdminNetworkBilling({
         body: {
           monthlyNetCents: Math.round(Number(f.get("price")) * 100),
           memberPaymentModel: f.get("model"),
+          ...(data?.cityNetwork?{memberContributionEnabled:contributionEnabled}:{}),
           launchPromotion: {enabled:f.get("launchEnabled")==="on",limit:Number(f.get("launchLimit")),freeMonths:Number(f.get("launchMonths"))},
           billing: {
             months: Number(f.get("months")),
@@ -212,6 +217,7 @@ export function AdminNetworkBilling({
         {data && (
           <>
             <form className="formGrid" onSubmit={save}>
+              {data.cityNetwork && <label className="legalConsent full"><input type="checkbox" checked={contributionEnabled} onChange={event=>setContributionEnabled(event.target.checked)}/><span>Standardmodell: Mitglieder wählen ihren Beitrag ab 9,90 € netto pro Monat bei zwölf Monaten Laufzeit. Zum Verwenden eigener fester Konditionen deaktivieren. Ihre Änderung bleibt gespeichert.</span></label>}
               <label>
                 Wer bezahlt?
                 <select name="model" defaultValue={data.memberPaymentModel}>
@@ -220,13 +226,14 @@ export function AdminNetworkBilling({
                 </select>
               </label>
               <label>
-                Monatspreis je Mitglied (netto, €)
+                {data.contribution ? "Mindestbeitrag (netto, €) – Mitglieder wählen selbst" : "Monatspreis je Mitglied (netto, €)"}
                 <input
                   name="price"
                   type="number"
                   min="0"
                   step="0.01"
                   required
+                  readOnly={!!data.contribution && contributionEnabled}
                   defaultValue={data.monthlyNetCents / 100}
                 />
               </label>
@@ -239,6 +246,7 @@ export function AdminNetworkBilling({
                   max="36"
                   required
                   defaultValue={data.months}
+                  readOnly={!!data.contribution && contributionEnabled}
                 />
               </label>
               <label>
@@ -247,6 +255,7 @@ export function AdminNetworkBilling({
                   name="freeUntil"
                   type="date"
                   defaultValue={data.billing?.freeUntil || ""}
+                  readOnly={!!data.contribution && contributionEnabled}
                 />
               </label>
               <label>
@@ -255,6 +264,7 @@ export function AdminNetworkBilling({
                   name="paidFrom"
                   type="date"
                   defaultValue={data.billing?.paidFrom || ""}
+                  readOnly={!!data.contribution && contributionEnabled}
                 />
               </label>
               <label>
@@ -263,6 +273,7 @@ export function AdminNetworkBilling({
                   name="paidThrough"
                   type="date"
                   defaultValue={data.billing?.paidThrough || ""}
+                  readOnly={!!data.contribution && contributionEnabled}
                 />
               </label>
               <label className="legalConsent full">
@@ -278,7 +289,7 @@ export function AdminNetworkBilling({
               </label>
               <LaunchPromotionSettings value={data.launchPromotion} used={data.launchCounter?.used || 0}/>
               <p className="full">
-                Aktuell gespeichert: {data.months} ×{" "}
+                {data.contribution ? "Mindestbeitrag: " : "Aktuell gespeichert: "}{data.months} ×{" "}
                 {money(data.monthlyNetCents)} ={" "}
                 {money(data.months * data.monthlyNetCents)} netto pro Mitglied.{" "}
                 {data.schedule &&

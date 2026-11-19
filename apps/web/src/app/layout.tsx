@@ -16,6 +16,7 @@ import "./admin-network-overview.css";
 import { NetworkTextProvider } from "./components/network-text-editor";
 import { PwaRegister } from "./pwa-register";
 import { CookieConsent } from "./components/cookie-consent";
+import {MarketingAnalytics} from "./components/marketing-analytics";
 import { AccessibilityRuntime } from "./components/accessibility-runtime";
 import { PublicCardArtwork } from "./components/public-card-artwork";
 import { shareImage } from "./components/public-metadata";
@@ -28,6 +29,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://b2b-matching.de";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  verification: { google: "naLaUy_bM5uxOf3-LxZtgZLbVyaEmxqK5edo_oSPNks" },
   title: {
     default: "Partnerportal für Netzwerke – B2B Matching",
     template: "%s | B2B Matching",
@@ -117,6 +119,7 @@ export default function RootLayout({
         <PublicNavigation />
         <MailingAttributionBridge />
         <CookieConsent />
+        <MarketingAnalytics />
       </body>
     </html>
   );

@@ -13,16 +13,17 @@ test('city landing pages share formal copy and the approved hero', () => {
   assert.match(source, /networkSlug=\{slug\}\s+formal/);
 });
 test('city branding, images and registration destinations remain isolated', () => {
-  for (const [route, slug, color, image] of [
-    ['Koeln', 'unternehmernetzwerkkoeln', '#c8102e', 'koeln-network-blue-hour.webp'],
-    ['Leverkusen', 'unternehmernetzwerkleverkusen', '#0723f2', 'leverkusen-network-blue-hour-v2.webp'],
+  for (const [route, key] of [
+    ['Koeln', 'koeln'],
+    ['Leverkusen', 'leverkusen'],
   ]) {
     const page = read(`${route}/page.tsx`);
-    assert.ok(page.includes(`slug="${slug}"`));
-    assert.ok(page.includes(`primary="${color}"`));
-    assert.ok(page.includes(image));
-    assert.ok(page.includes(`canonical: "/${route}"`));
+    assert.ok(page.includes(`cityKey="${key}"`));
+    assert.ok(page.includes(`publishedMetadata("${key}")`));
+    assert.ok(page.includes('PublishedMarketing'));
   }
+  const published=read('components/published-marketing.tsx');
+  assert.match(published,/city\.slug/);assert.match(published,/city\?\.route/);
   assert.match(source, /\/registrieren\?network=\$\{slug\}/);
   assert.match(source, /\$\{request\}&mode=login/);
   assert.match(source, /<LeverkusenOffer/);

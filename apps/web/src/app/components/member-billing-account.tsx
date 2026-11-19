@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
 import { AccountIcon } from "./account-icon";
+import { MemberContributionField } from "./member-contribution-field";
+import { contributionTotals, parseMonthlyContribution, type ContributionOffer } from "../lib/member-contribution";
 type Order = {
   launchPromotion?:{id:string;slot:number;limit?:number;paidFrom:string};
   hasPdf?:boolean;paymentStatus?:string;paidAt?:string;id:string;monthlyNetCents:number;grossCents:number;
@@ -11,7 +13,7 @@ type Order = {
   invoiceReference?:string|null;invoiceSentAt?:string|null;
   billingPolicy?:{freeUntil:string|null;invoiceDate:string;paymentDueDate:string};
 };
-type Offer = {networkName?:string;monthlyNetCents:number;grossCents:number;months:number;centrallyFunded:boolean;complimentaryAccess?:boolean;
+type Offer = {contribution?:ContributionOffer;annualNetCents:number;vatCents:number;networkName?:string;monthlyNetCents:number;grossCents:number;months:number;centrallyFunded:boolean;complimentaryAccess?:boolean;
   billing:{version:string;freeUntil:string|null;paidFrom:string|null;paidThrough:string|null;automaticInvoices:boolean}|null};
 const money=(n:number)=>(n/100).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
 const date=(v?:string|null)=>{
@@ -21,8 +23,11 @@ const date=(v?:string|null)=>{
 };
 const lastDay=(v:string)=>Number.isFinite(Date.parse(v))?date(new Date(Date.parse(v)-1).toISOString()):"–";
 export function MemberBillingAccount({historyNetwork}: {historyNetwork?:{id:string;name:string}}={}) {
-  const access=useNetworkAccess(),[orders,setOrders]=useState<Order[]>([]),[offer,setOffer]=useState<Offer|null>(null),
+  const access=useNetworkAccess(),[orders,setOrders]=useState<Order[]>([]),[baseOffer,setOffer]=useState<Offer|null>(null),
     [networks,setNetworks]=useState<{id:string;name:string}[]>([]),[notice,setNotice]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
+  const [contribution,setContribution]=useState("9,90");
+  const selectedCents=parseMonthlyContribution(contribution,baseOffer?.contribution?.minimumMonthlyNetCents ?? 990);
+  const offer=contributionTotals(baseOffer,selectedCents);
   const networkId=access?.networkId||historyNetwork?.id;
   const name=historyNetwork?.name||access?.networkName||offer?.networkName;
   async function load(){
@@ -42,10 +47,11 @@ export function MemberBillingAccount({historyNetwork}: {historyNetwork?:{id:stri
   }
   useEffect(()=>{void load();},[networkId]);
   async function accept(e:FormEvent<HTMLFormElement>,o:Order){
-    e.preventDefault();if(!offer?.billing)return;setBusy(true);setNotice("");
+    e.preventDefault();if(!offer?.billing || (offer.contribution && selectedCents===null))return;setBusy(true);setNotice("");
     try{
       await portalRequest("/networks/"+networkId+"/my-billing/"+encodeURIComponent(o.id)+"/accept-policy",{token:getPortalSession()||"",body:{
         acceptedBillingVersion:offer.billing.version,acceptedMonthlyNetCents:offer.monthlyNetCents,termsAccepted:true,
+        ...(offer.contribution?{acceptedContributionVersion:offer.contribution.version}:{}),
         authorityConfirmed:true,paymentObligationAccepted:true,pdfInvoiceAccepted:true
       }});
       await load();setNotice("Die neuen Abrechnungsbedingungen wurden bestätigt.");
@@ -87,10 +93,11 @@ export function MemberBillingAccount({historyNetwork}: {historyNetwork?:{id:stri
       {orders.length>1&&<details className="accountHistory"><summary>Frühere Buchungen ({orders.length-1})</summary>{orders.slice(1).map(orderCard)}</details>}
       {offer?.billing&&!offer.centrallyFunded&&!orders[0].billingPolicy&&!orders[0].invoiceReference&&orders[0].paymentStatus!=="paid"&&<details className="accountAgreement"><summary>Neue Abrechnungsvereinbarung ansehen</summary><form className="accountForm" onSubmit={e=>void accept(e,orders[0])}>
         <h3>Freiwillige Umstellung</h3><p>{money(offer.monthlyNetCents)} netto pro Monat × {offer.months} Monate · {money(offer.grossCents)} inklusive MwSt.</p>
+        {offer.contribution && <MemberContributionField value={contribution} onChange={setContribution} minimum={offer.contribution.minimumMonthlyNetCents}/>}
         {offer.billing.freeUntil&&<p>Kostenlos bis {date(offer.billing.freeUntil)}. Rechnung 15 Tage vor Ende der kostenlosen Nutzung, zahlbar innerhalb von 14 Tagen. Bei späterer Zustimmung nach Bestätigung.</p>}
         {offer.billing.paidFrom&&offer.billing.paidThrough&&<p>Leistungszeitraum: {date(offer.billing.paidFrom)} – {date(offer.billing.paidThrough)}.</p>}
-        <label className="accountConsent"><input type="checkbox" required/><span>Ich bin zur Buchung für mein Unternehmen berechtigt und stimme dem Gesamtpreis, den <a href="/agb" target="_blank" rel="noopener noreferrer">AGB</a> und dem Rechnungsversand als E-Rechnung mit PDF-Darstellung zu. Meine bestehende Buchung wird erst nach dieser Bestätigung umgestellt.</span></label>
-        <button className="accountButton" disabled={busy||!!access?.readOnly}>Vereinbarung verbindlich bestätigen</button>
+        <label className="accountConsent"><input key={offer.monthlyNetCents} type="checkbox" required/><span>Ich bin zur Buchung für mein Unternehmen berechtigt und stimme dem Gesamtpreis, den <a href="/agb" target="_blank" rel="noopener noreferrer">AGB</a> und dem Rechnungsversand als E-Rechnung mit PDF-Darstellung zu. Meine bestehende Buchung wird erst nach dieser Bestätigung umgestellt.</span></label>
+        <button className="accountButton" disabled={busy||!!access?.readOnly|| (!!offer.contribution && selectedCents===null)}>Vereinbarung verbindlich bestätigen</button>
       </form></details>}
     </>:!notice&&<div className="accountEmpty"><span className="accountPanelIcon"><AccountIcon name="receipt"/></span><h3>{offer?.complimentaryAccess?"Dein Zugang ist beitragsfrei":offer?.centrallyFunded?"Dein Netzwerk übernimmt die Kosten":"Keine persönlichen Buchungen"}</h3><p>{offer?.complimentaryAccess||offer?.centrallyFunded?"Für diesen Zugang gibt es keine persönliche Rechnung.":"Sobald eine Mitgliedschaft gebucht ist, findest du hier deine Laufzeit und die zugehörigen Rechnungen."}</p></div>}
   </section>;

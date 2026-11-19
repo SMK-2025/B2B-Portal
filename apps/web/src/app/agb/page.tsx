@@ -1,2 +1,3 @@
-export { default } from "./stand-2026-11-05/page";
+import {AgbContent} from "../components/legal-terms";
+export default function Page(){return <AgbContent current/>;}
 export const metadata = { title: "Allgemeine Geschäftsbedingungen", description: "Bedingungen für die geschäftliche Nutzung der B2B-Matching-Partnerportale." };

@@ -49,9 +49,9 @@ export function LaunchPromotionSettings({
           <input
             type="number"
             name="launchMonths"
-            min={1}
+            min={0}
             max={24}
-            defaultValue={value?.freeMonths || 6}
+            defaultValue={value?.freeMonths ?? 6}
             required
           />
         </label>
@@ -61,6 +61,7 @@ export function LaunchPromotionSettings({
         Aktionsplatz frei.
       </p>
       <small>
+        0 kostenlose Monate deaktiviert die Startaktion für neue Buchungen. Bereits zugesagte Freimonate bleiben erhalten.{" "}
         Auch mit festen Zahlungszeiträumen kombinierbar: Aktionsplätze gelten
         für die eingestellten kostenlosen Monate ab dem jeweiligen Beitritt,
         unabhängig vom regulären Zahlungszeitraum. Für alle anderen Mitglieder

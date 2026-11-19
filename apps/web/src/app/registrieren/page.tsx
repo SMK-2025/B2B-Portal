@@ -198,7 +198,7 @@ export default function RegistrationPage() {
     <main
       className={
         networkBrand
-          ? "v2 registrationWizard networkRegistrationBranded"
+          ? `v2 registrationWizard networkRegistrationBranded${cityNetwork?" cityNetworkAuth":""}`
           : "v2 registrationWizard"
       }
       style={
@@ -299,7 +299,7 @@ export default function RegistrationPage() {
                   }
                 >
                   {cityNetwork
-                    ? "Und du bist mittendrin!"
+                    ? "Und Sie mittendrin."
                     : "Persönlich verbunden."}
                 </NetworkText>
               </h2>
@@ -307,13 +307,12 @@ export default function RegistrationPage() {
                 {cityNetwork ? (
                   <NetworkText id="ui.auth.leverkusen.story-intro">
                     <strong>
-                      Das Unternehmernetzwerk {cityName} ist dein
+                      Das Unternehmernetzwerk {cityName} ist Ihr
                       Online-Treffpunkt für geschäftliche Kontakte vor Ort.
                     </strong>{" "}
-                    Ein unabhängiges B2B-Netzwerk, in dem du dein Unternehmen
-                    vorstellst, passende Leistungen findest und neue
-                    Verbindungen aufbaust. So einfach war das Netzwerken noch
-                    nie.
+                    Ein unabhängiges B2B-Netzwerk, in dem Sie Ihr Unternehmen
+                    vorstellen, passende Leistungen finden und neue
+                    Verbindungen aufbauen – dann, wenn es in Ihren Alltag passt.
                   </NetworkText>
                 ) : networkBrand?.slug === "bayer04leverkusen" ? (
                   <NetworkText id="ui.auth.story-intro">
@@ -336,7 +335,7 @@ export default function RegistrationPage() {
               {cityNetwork ? (
                 <p>
                   <NetworkText id="ui.auth.leverkusen.story-action">
-                    Registriere dich und erstelle deine persönliche
+                    Registrieren Sie sich und erstellen Sie Ihre eigene
                     Unternehmens-Seite.
                   </NetworkText>
                 </p>

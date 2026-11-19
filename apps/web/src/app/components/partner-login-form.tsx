@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { portalRequest, savePortalSession } from "../lib/portal-api";
+import {cityNetwork} from "../lib/city-networks";
 export function PartnerLoginForm({
   networkSlug,
   invite,
@@ -16,6 +17,7 @@ export function PartnerLoginForm({
   onOnboarding: (token: string, invite: string) => void;
 }) {
   const router = useRouter();
+  const formal=Boolean(cityNetwork(networkSlug));
   const [choices, setChoices] = useState<{ slug: string; name: string }[]>([]);
   const [challenge, setChallenge] = useState("");
   const [busy, setBusy] = useState(false),
@@ -154,7 +156,7 @@ export function PartnerLoginForm({
       <>
         <h1>
           <NetworkText id="ui.partner-login-form.5e7c9a72701d15f0">
-            Dein Netzwerk auswählen
+            {formal ? "Ihr Netzwerk auswählen" : "Dein Netzwerk auswählen"}
           </NetworkText>
         </h1>
         {choices.map((n) => (
@@ -176,7 +178,7 @@ export function PartnerLoginForm({
       </h1>
       <p className="lead">
         <NetworkText id="ui.partner-login-form.73f829a230bc17cc">
-          Melde dich mit deinem persönlichen Zugang an.
+          {formal ? "Melden Sie sich mit Ihrem persönlichen Zugang an." : "Melde dich mit deinem persönlichen Zugang an."}
         </NetworkText>
       </p>
       <form className="formGrid" onSubmit={login}>

@@ -1,6 +1,9 @@
 "use client";
 import { NetworkText } from "./network-text-editor";
 import { cityNetwork } from "../lib/city-networks";
+import { readContributionSelection, saveContributionSelection, selectedContributionText } from "../lib/contribution-selection";
+import {MemberContributionField} from "./member-contribution-field";
+import {contributionTotals,parseMonthlyContribution,type ContributionOffer} from "../lib/member-contribution";
 import { useEffect, useState, type FormEvent, type ChangeEvent } from "react";
 import Link from "next/link";
 import { portalRequest } from "../lib/portal-api";
@@ -8,6 +11,7 @@ import { authorizedMailingToken } from "../lib/mailing-token";
 import "./network-participation-request.css";
 import { LaunchPromotionNotice, type LaunchPromotion } from "./launch-promotion-notice";
 type Offer = {
+  contribution?:ContributionOffer;
   launchPromotion?: LaunchPromotion | null;
   version: string;
   monthlyNetCents: number;
@@ -40,8 +44,22 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
     [busy, setBusy] = useState(false),
     [sent, setSent] = useState(false),
     [error, setError] = useState("");
-  const [offer, setOffer] = useState<Offer | null>(null),
+  const [baseOffer, setOffer] = useState<Offer | null>(null),
     [loading, setLoading] = useState(false);
+  const [contribution,setContribution]=useState("9,90");
+  const [hasSelectedContribution,setHasSelectedContribution]=useState(false);
+  const selectedCents=parseMonthlyContribution(contribution,baseOffer?.contribution?.minimumMonthlyNetCents||990);
+  const offer=contributionTotals(baseOffer,selectedCents);
+  const contributionUnavailable=hasSelectedContribution && !!baseOffer && !baseOffer.contribution;
+  useEffect(() => {
+    if (!local) return;
+    const cents = readContributionSelection(network);
+    if (cents !== null) {
+      setContribution(selectedContributionText(cents));
+      setHasSelectedContribution(true);
+      void loadOffer();
+    }
+  }, [network]);
   const [fields, setFields] = useState({
     firstName: "",
     lastName: "",
@@ -97,6 +115,8 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
       return;
     }
     if (!offer) return;
+    if(contributionUnavailable){setError("Ihr gewählter Beitrag kann noch nicht gebucht werden. Das neue Beitragsmodell ist in diesem Netzwerk noch nicht aktiviert. Es erfolgt keine Buchung zu einem anderen Preis.");return;}
+    if(offer.contribution && selectedCents===null){setError("Bitte einen gültigen Monatsbeitrag eingeben.");return;}
     setBusy(true);
     try {
       await portalRequest("/networks/participation/request", {
@@ -107,6 +127,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
           renewalAccepted: new FormData(event.currentTarget).get("renewalAccepted") === "on",
           network,
           offerVersion: offer.version,
+          ...(offer.contribution?{selectedMonthlyNetCents:selectedCents}:{}),
           referral: new URLSearchParams(window.location.search).get("ref"),
           mailingToken: authorizedMailingToken(),
         },
@@ -174,6 +195,11 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
         </NetworkText>
       </h1>
       <form className="formGrid participationWizard" onSubmit={submit}>
+        {hasSelectedContribution && <div className="full" role="status">
+          <strong>Ihr gewählter Beitrag: {selectedCents === null ? "Bitte prüfen" : `${money(selectedCents)} netto pro Monat`}</strong>
+          {selectedCents !== null && <p>Für zwölf Monate: {money(selectedCents * 12)} netto zuzüglich Umsatzsteuer. Ihre Auswahl bleibt für dieses Stadtnetzwerk gespeichert.</p>}
+          {contributionUnavailable && <p className="error">Vorschau: Das neue Beitragsmodell ist für dieses Netzwerk noch nicht aktiviert. Ihr Betrag wird nicht durch den bisherigen Preis ersetzt. Eine Buchung ist erst nach Aktivierung möglich.</p>}
+        </div>}
         {step === 1 && (
           <>
             <label>
@@ -317,6 +343,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
                       {local ? "Ihre Portalnutzung" : "Deine Portalnutzung"}
                     </NetworkText>
                   </h2>
+                  {offer.contribution && !offer.launchPromotion?.available && <MemberContributionField value={contribution} minimum={offer.contribution.minimumMonthlyNetCents} onChange={value=>{setContribution(value);const cents=parseMonthlyContribution(value,offer.contribution!.minimumMonthlyNetCents);if(cents!==null)saveContributionSelection(network,cents);setConsents(old=>({...old,costsAccepted:false}));}}/>}
                   <LaunchPromotionNotice promotion={offer.launchPromotion} monthlyNetCents={offer.monthlyNetCents}/>
                   {offer.centrallyFunded ? (
                     <p>
@@ -481,7 +508,7 @@ export function NetworkParticipationRequest({ network }: { network: string }) {
         <button
           type="submit"
           className="primary full"
-          disabled={busy || (step === 3 && (!offer || loading))}
+          disabled={busy || (step === 3 && (!offer || loading || contributionUnavailable || (!!offer.contribution && selectedCents===null)))}
         >
           <NetworkText id="ui.network-participation-request.adefdfe728e461d5">
             {busy

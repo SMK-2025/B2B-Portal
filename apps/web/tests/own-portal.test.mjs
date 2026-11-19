@@ -10,8 +10,10 @@ test('public header uses Login and Eigenes Portal on desktop and mobile', () => 
   assert.doesNotMatch(header, /Partnerportal anmelden|Portal anfragen|mailto:/);
 });
 test('own portal landing covers member value, control, boundaries and contact', () => {
-  const page = read('eigenes-portal/page.tsx');
-  for (const copy of ['PagePilot AI', 'Mitglieder-Chat', 'Vernetzungsanfragen', 'Veranstaltungen', 'QR-Code', 'Dokumente', 'Angebote', 'Gesuche', 'Netzwerkinitiator', 'Private Mitglieder-Chats', 'Homepage-Anbindung', 'Beispielansicht', 'mailto:service@b2b-matching.de']) assert.ok(page.includes(copy), copy);
+  const route = read('eigenes-portal/page.tsx');
+  assert.match(route,/PublishedMarketing page="eigenes-portal"/);
+  const page = read('components/marketing-info-page.tsx')+read('components/city-marketing.tsx');
+  for (const copy of ['PagePilot AI', 'Mitglieder-Chat', 'Veranstaltungen', 'QR-Code', 'Dokumente', 'Angebote', 'Gesuche', 'Netzwerkleitung', 'Homepage', 'mailto:service@b2b-matching.de']) assert.ok(page.includes(copy), copy);
   assert.match(read('sitemap.ts'), /\/eigenes-portal/);
   assert.match(read('eigenes-portal/portal.css'), /max-width:\s*480px/);
 });

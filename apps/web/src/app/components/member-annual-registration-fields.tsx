@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { portalRequest } from "../lib/portal-api";
 import { LaunchPromotionNotice, type LaunchPromotion } from "./launch-promotion-notice";
+import { MemberContributionField } from "./member-contribution-field";
+import { contributionTotals, parseMonthlyContribution, type ContributionOffer } from "../lib/member-contribution";
 type Quote = {
+  contribution?: ContributionOffer;
   launchPromotion?: LaunchPromotion | null;
   networkName: string;
   monthlyNetCents: number;
@@ -44,14 +47,18 @@ export function MemberAnnualRegistrationFields({
   onPaymentModel?: (model: "individual" | "network") => void;
   onFreeStart?: (free:boolean)=>void;
 }) {
-  const [quote, setQuote] = useState<Quote | null>(null),
+  const [baseQuote, setQuote] = useState<Quote | null>(null),
     [error, setError] = useState("");
+  const [contribution, setContribution] = useState("9,90");
+  const selectedCents = parseMonthlyContribution(contribution, baseQuote?.contribution?.minimumMonthlyNetCents ?? 990);
+  const quote = contributionTotals(baseQuote, selectedCents);
   function load() {
     setError("");
     setQuote(null);
     portalRequest<Quote>("/networks/invitations/quote", { body: { invite } })
       .then((value) => {
         setQuote(value);
+        if(value.contribution) setContribution((value.contribution.selectedMonthlyNetCents / 100).toFixed(2).replace(".", ","));
         onPaymentModel?.(value.memberPaymentModel || "individual");
         onFreeStart?.(!!value.launchPromotion && (value.launchPromotion.available ?? ((value.launchPromotion.remaining || 0)>0 || !!value.launchPromotion.reserved)));
       })
@@ -136,6 +143,7 @@ export function MemberAnnualRegistrationFields({
       <input type="hidden" name="launchPromotionAccepted" value={quote.launchPromotion.version}/>
       <input type="hidden" name="acceptedBillingVersion" value={quote.billing?.version || ""}/>
       <input type="hidden" name="acceptedMonthlyNetCents" value={quote.monthlyNetCents}/>
+      {quote.contribution && <input type="hidden" name="acceptedContributionVersion" value={quote.contribution.version} />}
       <label className="full memberAnnualConsent"><input type="checkbox" name="authorityConfirmed" required/><span>Ich bin berechtigt, mein Unternehmen im Netzwerk anzumelden.</span></label>
       <label className="full memberAnnualConsent"><input type="checkbox" name="termsAccepted" required/><span>Ich akzeptiere die <Link href="/agb" target="_blank">AGB</Link> für meine kostenlose Mitgliedschaft von {months} Monaten.</span></label>
       <button className="primary full" disabled={loading}>{loading ? "Mitgliedschaft wird eingerichtet …" : "Kostenlose Mitgliedschaft starten"}</button>
@@ -168,7 +176,7 @@ export function MemberAnnualRegistrationFields({
         <dl className="registrationPriceList">
           <div>
             <dt>Portalnutzung · alle Funktionen</dt>
-            <dd>{money(quote.monthlyNetCents)} netto / Monat</dd>
+            <dd>{quote.contribution ? "Ab " : ""}{money(quote.monthlyNetCents)} netto / Monat</dd>
           </div>
           <div>
             <dt>{quote.months || 12} Monate netto</dt>
@@ -197,8 +205,7 @@ export function MemberAnnualRegistrationFields({
             <label className="full legalConsent">
               <input type="checkbox" required name="priceUnderstood" />
               <span>
-                Ich bestätige die Preisangaben verbindlich und möchte am
-                Online-Netzwerken teilnehmen.
+                {quote.contribution ? "Ich habe den Mindestbeitrag verstanden. Meinen Beitrag und die verbindliche Buchung bestätige ich im nächsten Schritt." : "Ich bestätige die Preisangaben verbindlich und möchte am Online-Netzwerken teilnehmen."}
               </span>
             </label>
             <small className="full">
@@ -215,6 +222,7 @@ export function MemberAnnualRegistrationFields({
     );
   const price = (
     <div className="full pricingClarity">
+      {quote.contribution && !priceOnly && <MemberContributionField value={contribution} onChange={setContribution} minimum={quote.contribution.minimumMonthlyNetCents} />}
       <LaunchPromotionNotice promotion={quote.launchPromotion} monthlyNetCents={quote.monthlyNetCents}/>
       <h2>Deine Nutzung des Netzwerkpartner-Portals</h2>
       <p>Alle Funktionen für deinen persönlichen Partnerzugang. Anbieter und Vertragspartner: Media Online Innovations Group.</p>
@@ -271,10 +279,12 @@ export function MemberAnnualRegistrationFields({
       </p>
     </div>
   );
+  if (priceOnly && quote.contribution) return <div><h2>Ihr Beitrag für {quote.networkName}</h2><p>Ab {money(quote.contribution.minimumMonthlyNetCents)} netto pro Monat für zwölf Monate. Sie wählen Ihren Beitrag im Anmeldeformular selbst. Alle Mitglieder erhalten dieselben Funktionen.</p></div>;
   if (priceOnly) return price;
   return (
     <>
-      {!hidePrice && price}
+      {(!hidePrice || quote.contribution) && price}
+      {quote.contribution && <input type="hidden" name="acceptedContributionVersion" value={quote.contribution.version} />}
       {promotional && quote.launchPromotion &&
         <input type="hidden" name="launchPromotionAccepted" value={quote.launchPromotion.version}/>}
       {quote.billing?.automaticInvoices && (
@@ -382,7 +392,7 @@ export function MemberAnnualRegistrationFields({
         </span>
       </label>
       <label className="full memberAnnualConsent">
-        <input type="checkbox" name="paymentObligationAccepted" required />
+        <input key={quote.monthlyNetCents} type="checkbox" name="paymentObligationAccepted" required />
         <span>
           {promotional ? `Ich starte für ${quote.launchPromotion!.freeMonths} Monate kostenlos. Wenn ich die automatische Verlängerung nicht fristgerecht ausschalte, buche ich anschließend für insgesamt` : "Ich buche verbindlich für insgesamt"} {money(quote.grossCents)}{" "}
           inklusive 19 % MwSt. für {quote.months || 12} Monate.{" "}
@@ -391,7 +401,7 @@ export function MemberAnnualRegistrationFields({
             : "Die Zahlungspflicht besteht auch bei sofortiger Freischaltung."}
         </span>
       </label>
-      <button className="primary full" disabled={loading}>
+      <button className="primary full" disabled={loading || (!!quote.contribution && selectedCents === null)}>
         {loading
           ? "Jahresmitgliedschaft wird angelegt …"
           : promotional ? "Kostenlos starten · kostenpflichtige Verlängerung bestätigen" : "Zahlungspflichtige Jahresmitgliedschaft buchen"}

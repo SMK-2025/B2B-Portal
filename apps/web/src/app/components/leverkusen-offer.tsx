@@ -5,7 +5,8 @@ import {
   LaunchPromotionNotice,
   type LaunchPromotion,
 } from "./launch-promotion-notice";
-type Offer = {
+export type CityMembershipOffer = {
+  contribution?: {minimumMonthlyNetCents: number};
   launchPromotion?: LaunchPromotion | null;
   monthlyNetCents: number;
   annualNetCents: number;
@@ -31,16 +32,19 @@ export function LeverkusenOffer({
   requestHref,
   networkSlug = "unternehmernetzwerkleverkusen",
   formal = false,
+  initialOffer,
 }: {
   requestHref: string;
   networkSlug?: string;
   formal?: boolean;
+  initialOffer?: CityMembershipOffer | null;
 }) {
-  const [offer, setOffer] = useState<Offer | null>(null),
+  const [offer, setOffer] = useState<CityMembershipOffer | null>(initialOffer || null),
     [error, setError] = useState(false);
   useEffect(() => {
+    if(initialOffer) {setOffer(initialOffer);return;}
     let current = true;
-    void portalRequest<Offer>(
+    void portalRequest<CityMembershipOffer>(
       `/networks/participation/quote/${encodeURIComponent(networkSlug)}`,
     )
       .then((o) => {
@@ -52,7 +56,7 @@ export function LeverkusenOffer({
     return () => {
       current = false;
     };
-  }, [networkSlug]);
+  }, [networkSlug,initialOffer]);
   return (
     <aside className="levOffer" aria-label="Aktuelle Teilnahmebedingungen">
       <span className="levEyebrow">
@@ -79,9 +83,10 @@ export function LeverkusenOffer({
                 formal={formal}
               />
               <p className="levOfferPrice">
-                <strong>{money(offer.monthlyNetCents)}</strong>
+                <strong>{offer.contribution ? "Ab " : ""}{money(offer.monthlyNetCents)}</strong>
                 <span>netto pro Monat · zzgl. {offer.vatPercent} % MwSt.</span>
               </p>
+              {offer.contribution && <p>Was ist Ihnen Ihr Unternehmernetzwerk wert? Sie bestimmen Ihren Monatsbeitrag selbst – ab {money(offer.contribution.minimumMonthlyNetCents)} netto. Alle Mitglieder nutzen dieselben Funktionen. Mit einem höheren Beitrag unterstützen Sie zusätzliche B2B-Kampagnen für genau dieses Stadtnetzwerk. Eine bestimmte Zahl neuer Kontakte oder Aufträge können wir nicht versprechen.</p>}
               <dl>
                 <div>
                   <dt>Laufzeit</dt>
@@ -96,7 +101,7 @@ export function LeverkusenOffer({
                   <dd>{money(offer.vatCents)}</dd>
                 </div>
                 <div className="levOfferTotal">
-                  <dt>Gesamtbetrag</dt>
+                  <dt>{offer.contribution ? "Gesamtbetrag beim Mindestbeitrag" : "Gesamtbetrag"}</dt>
                   <dd>{money(offer.grossCents)}</dd>
                 </div>
               </dl>

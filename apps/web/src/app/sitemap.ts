@@ -3,6 +3,7 @@ import { activeCityNetworks } from "./lib/active-city-networks";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://b2b-matching.de";
   const fixed = [
+    ["/vorteile", "monthly", .9], ["/fuer-wen", "monthly", .9], ["/fragen", "monthly", .8],
     ["/eigenes-portal", "monthly", .95],
     ["/Leverkusen", "monthly", .9],
     ["/Koeln", "monthly", .9],

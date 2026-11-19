@@ -1,0 +1,262 @@
+.cm-orbit {
+  overflow: hidden;
+  padding: 20px 0 0;
+  min-width: 0;
+}
+.cm-orbit-stage {
+  position: relative;
+  height: 490px;
+  width: 100%;
+  perspective: none;
+  perspective-origin: 50% 50%;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  outline-offset: -4px;
+}
+.cm-orbit-stage:active {
+  cursor: grabbing;
+}
+.cm-orbit-stage.is-dragging .cm-orbit-card {
+  transition: none;
+}
+.cm-orbit-stage:focus-visible {
+  outline: 3px solid #8a9cfc;
+}
+.cm-orbit-stage::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  width: 76%;
+  height: 38px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #202b4f1f;
+  filter: blur(20px);
+  pointer-events: none;
+}
+.cm-orbit-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(270px, 30vw, 370px);
+  height: 380px;
+  isolation: isolate;
+  border-radius: 13px;
+  overflow: hidden;
+  color: #fff;
+  background: #25315c;
+  box-shadow: 0 12px 30px #1b294f30;
+  transition:
+    transform 0.6s cubic-bezier(0.2, 0.75, 0.2, 1),
+    filter 0.6s,
+    opacity 0.6s;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+.cm-orbit-card[data-slot="0"] {
+  transform: translate3d(calc(-50% + var(--orbit-drag, 0px)), -43%, 130px);
+  z-index: 5;
+  filter: brightness(1);
+}
+.cm-orbit-card[data-slot="-1"] {
+  transform: translate3d(
+      calc(-50% - min(27vw, 325px) + var(--orbit-drag, 0px)),
+      -53%,
+      -110px
+    )
+    rotateY(23deg);
+  z-index: 3;
+  filter: brightness(0.86);
+}
+.cm-orbit-card[data-slot="1"] {
+  transform: translate3d(
+      calc(-50% + min(27vw, 325px) + var(--orbit-drag, 0px)),
+      -53%,
+      -110px
+    )
+    rotateY(-23deg);
+  z-index: 3;
+  filter: brightness(0.86);
+}
+.cm-orbit-card[data-slot="-2"] {
+  transform: translate3d(
+      calc(-50% - min(60vw, 720px) + var(--orbit-drag, 0px)),
+      -64%,
+      -280px
+    )
+    rotateY(33deg);
+  z-index: 1;
+  filter: brightness(0.72);
+}
+.cm-orbit-card[data-slot="2"] {
+  transform: translate3d(
+      calc(-50% + min(60vw, 720px) + var(--orbit-drag, 0px)),
+      -64%,
+      -280px
+    )
+    rotateY(-33deg);
+  z-index: 1;
+  filter: brightness(0.72);
+}
+.cm-orbit-card > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.cm-orbit-caption {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-direction: column;
+  padding: 28px;
+  background: linear-gradient(transparent 20%, #10182fa8 65%, #10182ff5);
+}
+.cm-orbit-caption small {
+  font-size: 0.9375rem;
+  color: #fff;
+}
+.cityMarketing .cm-orbit-caption h3 {
+  font-size: 2.15rem;
+  line-height: 1.1;
+  margin: 10px 0 20px;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+.cityMarketing .cm-orbit-caption a,
+.cityMarketing .cm-orbit-caption button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid #ffffff8c;
+  border-radius: 4px;
+  background: #ffffff18;
+  color: #fff;
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+}
+.cm-orbit-controls {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0;
+}
+.cityMarketing .cm-orbit-controls button {
+  border: 1px solid #cbd3e7;
+  color: #354568;
+  background: #fff;
+  border-radius: 50%;
+  padding: 10px;
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.cm-orbit-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.cityMarketing .cm-orbit-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.cm-orbit-directory {
+  border-top: 1px solid #dfe3ee;
+  padding: 18px 0;
+  margin-top: 20px;
+  font-size: 0.9375rem;
+  color: #43516b;
+}
+.cm-orbit-directory summary {
+  cursor: pointer;
+  width: fit-content;
+  margin: auto;
+}
+.cm-orbit-directory ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 24px 0 0;
+}
+.cm-orbit-directory a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@media (max-width: 700px) {
+  .cm-orbit-stage {
+    height: 405px;
+    perspective: none;
+  }
+  .cm-orbit-card {
+    width: 225px;
+    height: 300px;
+  }
+  .cm-orbit-caption {
+    padding: 20px;
+  }
+  .cityMarketing .cm-orbit-caption h3 {
+    font-size: 1.65rem;
+  }
+  .cm-orbit-card[data-slot="-1"] {
+    transform: translate3d(
+        calc(-50% - 39vw + var(--orbit-drag, 0px)),
+        -57%,
+        -130px
+      )
+      rotateY(23deg);
+  }
+  .cm-orbit-card[data-slot="1"] {
+    transform: translate3d(
+        calc(-50% + 39vw + var(--orbit-drag, 0px)),
+        -57%,
+        -130px
+      )
+      rotateY(-23deg);
+  }
+  .cm-orbit-card[data-slot="-2"] {
+    transform: translate3d(
+        calc(-50% - 63vw + var(--orbit-drag, 0px)),
+        -72%,
+        -280px
+      )
+      rotateY(33deg);
+  }
+  .cm-orbit-card[data-slot="2"] {
+    transform: translate3d(
+        calc(-50% + 63vw + var(--orbit-drag, 0px)),
+        -72%,
+        -280px
+      )
+      rotateY(-33deg);
+  }
+  .cm-orbit-directory ul {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cm-orbit-card {
+    transition: none;
+    will-change: auto;
+  }
+}

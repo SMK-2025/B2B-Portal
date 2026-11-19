@@ -1,0 +1,87 @@
+.cm-contribution {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 65px;
+  align-items: center;
+  background: #fff;
+}
+.cm-contribution > div > p {
+  color: #566078;
+}
+.cityMarketing .cm-contribution h3 {
+  font-size: 1.4rem;
+  margin: 28px 0 14px;
+}
+.cm-contribution-calculator {
+  padding: 32px;
+  border: 1px solid #d8dfef;
+  border-radius: 10px;
+  background: #f5f6fc;
+  box-shadow: 0 12px 30px #29385c0a;
+}
+.cm-contribution-calculator label {
+  display: grid;
+  gap: 12px;
+  font-size: 1rem;
+  color: #273555;
+}
+.cm-contribution-calculator input {
+  width: 100%;
+  max-width: 230px;
+  border: 1px solid #aab8d7;
+  border-radius: 5px;
+  background: #fff;
+  color: #182039;
+  padding: 14px 16px;
+  font: inherit;
+  font-size: 1.65rem;
+}
+.cm-contribution-calculator input:focus-visible {
+  outline: 3px solid #aebcf9;
+  outline-offset: 3px;
+}
+.cm-contribution-calculator dl {
+  margin: 25px 0;
+  border-top: 1px solid #d7dfee;
+  padding-top: 16px;
+}
+.cm-contribution-calculator dl > div {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin: 12px 0;
+  line-height: 1.5;
+  font-size: 1rem;
+}
+.cm-contribution-calculator dd {
+  margin: 0;
+  white-space: nowrap;
+}
+.cm-contribution-total {
+  padding-top: 16px;
+  border-top: 1px solid #d7dfee;
+  font-size: 1.2rem !important;
+  font-weight: 650;
+}
+.cityMarketing .cm-contribution-error {
+  color: #a31c39;
+  font-size: 0.9375rem;
+}
+.cityMarketing .cm-contribution-preview {
+  font-size: 0.875rem;
+  border-left: 3px solid #8b96da;
+  padding-left: 14px;
+  color: #566078;
+}
+.cm-contribution-calculator > .cm-button {
+  margin-top: 16px;
+}
+@media (max-width: 800px) {
+  .cm-contribution {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .cm-contribution-calculator {
+    padding: 25px;
+  }
+}

@@ -4,6 +4,25 @@ import { readFileSync } from "node:fs";
 const json = (path) =>
   JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 
+test("hero city ticker links every network independently of six rotating backgrounds", () => {
+  const source=readFileSync(new URL('../src/app/components/city-marketing.tsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/app/components/city-marketing.css',import.meta.url),'utf8');
+  assert.match(source,/CITY_NETWORKS\.map\(\(network\)/);
+  assert.ok(source.includes('href={`${prefix}${network.route}` as never}'));
+  assert.match(source,/prefetch=\{false\}/);
+  assert.match(source,/aria-hidden=\{copy === 1/);
+  assert.match(source,/tabIndex=\{copy === 1 \? -1/);
+  const keys=source.match(/const HERO_PHOTO_KEYS = (\[[^;]+\]);/)[1];
+  const selected=JSON.parse(keys);
+  assert.equal(selected.length,6);
+  for(const key of selected)assert.ok(json('../src/app/lib/city-photos.json').some(p=>p.key===key));
+  assert.match(source,/% HERO_PHOTO_KEYS\.length/);
+  assert.match(css,/cm-city-ticker:hover/);
+  assert.match(css,/cm-city-ticker:focus-within/);
+  assert.match(css,/\.cityMarketing \.cm-hero \.cm-city-ticker\s*\{\s*display: block/);
+  assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);
+});
+
 test("homepage hero uses approved copy and the own-network CTA has its matching destination", () => {
   const source = readFileSync(new URL("../src/app/components/city-marketing.tsx", import.meta.url), "utf8");
   for (const text of ["Gemeinsam netzwerken. Mehr Kontakte gewinnen.", "Finden Sie Geschäftskontakte,", "die zu Ihrem Unternehmen passen.", "Für Ihre Stadt. Für Ihren Verein. Unter Ihrer eigenen Marke.", "Entdecken Sie Unternehmen, finden Sie passende Partner und kommen Sie direkt ins Gespräch.", "Eigenes Netzwerk aufbauen"]) assert.ok(source.includes(text), text);

@@ -17,6 +17,7 @@ import { CityOrbit } from "./city-orbit";
 import { CityContributionPresentation } from "./city-contribution-presentation";
 
 type City = (typeof CITY_NETWORKS)[number];
+const HERO_PHOTO_KEYS = ["bremen", "koeln", "leverkusen", "hamburg", "berlin", "muenchen"];
 const features = [
   [
     "Unternehmensseite",
@@ -181,7 +182,7 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
     [playing, setPlaying] = useState(false);
   const selected = city
     ? photos.find((p) => p.key === city.key)!
-    : photos.find((p) => p.key === ["bremen", "koeln", "leverkusen"][index])!;
+    : photos.find((p) => p.key === HERO_PHOTO_KEYS[index])!;
   useEffect(() => {
     if (!city && !window.matchMedia("(prefers-reduced-motion: reduce)").matches)
       setPlaying(true);
@@ -189,7 +190,7 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
   useEffect(() => {
     if (!playing || city) return;
     const timer = setInterval(() => {
-      if (document.visibilityState === "visible") setIndex((i) => (i + 1) % 3);
+      if (document.visibilityState === "visible") setIndex((i) => (i + 1) % HERO_PHOTO_KEYS.length);
     }, 7000);
     return () => clearInterval(timer);
   }, [playing, city]);
@@ -270,23 +271,22 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
         </div>
       </div>
       {!city && (
-        <div className="cm-photo-controls">
-          <div role="group" aria-label="Stadtmotiv wählen">
-            {["Bremen", "Köln", "Leverkusen"].map((name, i) => (
-              <button
-                key={name}
-                onClick={() => {
-                  setIndex(i);
-                  setPlaying(false);
-                }}
-                aria-pressed={index === i}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setPlaying(!playing)}>
-            {playing ? "Bildwechsel pausieren" : "Bildwechsel starten"}
+        <div className={`cm-photo-controls${playing ? " is-playing" : ""}`}>
+          <nav className="cm-city-ticker" aria-label="Direkt zu Ihrem Stadtnetzwerk">
+            <div className="cm-city-ticker-track">
+              {[0, 1].map((copy) => (
+                <div className="cm-city-ticker-group" key={copy} aria-hidden={copy === 1 ? true : undefined}>
+                  {CITY_NETWORKS.map((network) => (
+                    <Link key={network.key} href={`${prefix}${network.route}` as never} tabIndex={copy === 1 ? -1 : undefined} prefetch={false}>
+                      {network.city}
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </nav>
+          <button type="button" className="cm-motion-toggle" onClick={() => setPlaying(!playing)} aria-pressed={!playing}>
+            {playing ? "Animation pausieren" : "Animation starten"}
           </button>
         </div>
       )}

@@ -407,6 +407,7 @@
 .cm-photo-controls {
   position: absolute;
   left: max(24px, calc((100vw - 1280px) / 2));
+  right: max(24px, calc((100vw - 1280px) / 2));
   bottom: 60px;
   text-align: left;
   display: flex;
@@ -422,9 +423,41 @@
   cursor: pointer;
   font-size: 0.875rem;
 }
-.cm-photo-controls button[aria-pressed="true"] {
-  border-bottom-color: #c1c7ff;
-  font-weight: 750;
+.cityMarketing .cm-hero .cm-city-ticker {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-block: 1px solid #ffffff35;
+  background: #11182f40;
+}
+.cm-city-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: cm-city-ticker 200s linear infinite;
+  animation-play-state: paused;
+}
+.is-playing .cm-city-ticker-track { animation-play-state: running; }
+.cm-city-ticker:hover .cm-city-ticker-track { animation-play-state: paused; }
+.cm-city-ticker-group { display: flex; align-items: center; flex-shrink: 0; }
+.cityMarketing .cm-city-ticker a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 20px;
+  color: #fff;
+  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.cm-city-ticker a:hover { text-decoration: underline; text-underline-offset: 5px; }
+.cm-city-ticker:focus-within { overflow-x: auto; }
+.cm-city-ticker:focus-within .cm-city-ticker-track { animation: none; }
+.cm-city-ticker:focus-within .cm-city-ticker-group[aria-hidden] { display: none; }
+.cm-motion-toggle { flex-shrink: 0; min-height: 44px; }
+@keyframes cm-city-ticker {
+  to { transform: translateX(-50%); }
 }
 .cm-breadcrumb {
   display: flex;
@@ -1152,6 +1185,7 @@
     flex-wrap: wrap;
     gap: 4px;
   }
+  .cityMarketing .cm-hero .cm-city-ticker { flex: 1 0 100%; }
   .cm-credit {
     left: 16px;
     right: 16px;
@@ -1289,6 +1323,9 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .cm-city-ticker { overflow-x: auto; }
+  .cm-city-ticker-track { animation: none !important; }
+  .cm-city-ticker-group[aria-hidden] { display: none; }
   .cityMarketing * {
     scroll-behavior: auto !important;
     transition: none !important;

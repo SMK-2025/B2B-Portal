@@ -85,7 +85,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [{ url: "/icons/b2b-matching-symbol-brand.png", type: "image/png" }],
     shortcut: "/icons/b2b-matching-symbol-brand.png",
-    apple: "/icons/b2b-matching-symbol-brand.png",
+    apple: [{ url: "/icons/apple-touch-icon-180.png", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
@@ -98,7 +98,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#7473ed",
+  themeColor: "#536bdb",
 };
 
 export default function RootLayout({

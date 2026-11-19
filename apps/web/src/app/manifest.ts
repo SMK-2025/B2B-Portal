@@ -1,20 +1,23 @@
 import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "B2B Matching – Partnerportal für Netzwerke",
+    id: "/",
+    name: "B2B Matching – Unternehmernetzwerke",
     short_name: "B2B Matching",
-    description: "Das geschlossene Partnerportal für starke Netzwerke und bessere Zusammenarbeit.",
+    description: "Unternehmen entdecken, Geschäftskontakte knüpfen und im eigenen Netzwerk ins Gespräch kommen.",
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait-primary",
-    background_color: "#fffaf0",
-    theme_color: "#123b3a",
+    background_color: "#ffffff",
+    theme_color: "#536bdb",
+    prefer_related_applications: false,
     categories: ["business", "productivity"],
     lang: "de-DE",
     icons: [
-      { src: "/icons/b2b-matching-symbol-brand.png", sizes: "1565x1341", type: "image/png", purpose: "any" },
-      { src: "/icons/b2b-matching-symbol-brand.png", sizes: "1565x1341", type: "image/png", purpose: "maskable" }
+      { src: "/icons/pwa-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icons/pwa-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
     ]
   };
 }

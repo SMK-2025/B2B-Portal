@@ -6,6 +6,25 @@ export function cityDragPosition(origin: number, dx: number, spacing: number) {
   const active = Math.round(position);
   return { active, fraction: position - active };
 }
+export type CityDragIntent = "pending" | "horizontal" | "vertical";
+export function cityDragIntent(dx: number, dy: number): CityDragIntent {
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return "pending";
+  if (Math.abs(dx) > Math.abs(dy) * 1.1) return "horizontal";
+  if (Math.abs(dy) > Math.abs(dx) * 1.1) return "vertical";
+  return "pending";
+}
+export function cityDragRelease(origin: number, dx: number, spacing: number) {
+  const position=cityDragPosition(origin, dx, spacing);
+  // A short, deliberate swipe advances one city; long drags still track continuously.
+  if (position.active===origin)
+    return Math.abs(dx)>=Math.min(48,spacing*.25) ? origin-Math.sign(dx) : origin;
+  return position.active;
+}
+export function cityCaptureEnded(activePointer: number | undefined, pointer: number, ownCapture: boolean) {
+  // Touch implicitly captures the child that was touched. Its lost-capture event bubbles
+  // when we transfer capture to the stage; that must NOT cancel the actual drag.
+  return ownCapture && activePointer===pointer;
+}
 export function cityOrbitPose(position: number, viewport: number) {
   const mobile = viewport <= 700;
   const a = Math.abs(position),

@@ -1,5 +1,11 @@
-const CACHE = "b2b-matching-public-assets-v2";
-const PUBLIC_ASSETS = ["/icons/b2b-matching-symbol.svg"];
+const CACHE = "b2b-matching-public-assets-v3";
+const PUBLIC_ASSETS = [
+  "/icons/b2b-matching-symbol.svg",
+  "/icons/pwa-192.png",
+  "/icons/pwa-512.png",
+  "/icons/pwa-maskable-512.png",
+  "/icons/apple-touch-icon-180.png",
+];
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(PUBLIC_ASSETS)),

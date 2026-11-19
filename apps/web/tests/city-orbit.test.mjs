@@ -6,7 +6,32 @@ import {
   cityOrbitSlots,
   cityDragPosition,
   cityOrbitPose,
+  cityDragIntent,
+  cityDragRelease,
+  cityCaptureEnded,
 } from "../src/app/lib/city-orbit.ts";
+test("touch capture transferred from a child does not cancel the stage gesture",()=>{
+  assert.equal(cityCaptureEnded(7,7,false),false);
+  assert.equal(cityCaptureEnded(7,8,true),false);
+  assert.equal(cityCaptureEnded(undefined,7,true),false);
+  assert.equal(cityCaptureEnded(7,7,true),true);
+  const source=readFileSync(new URL('../src/app/components/city-orbit.tsx',import.meta.url),'utf8');
+  assert.match(source,/event.target===event.currentTarget/);
+  assert.match(source,/current.id !== event.pointerId/);
+});
+test("horizontal swipes rotate, vertical gestures retain page scrolling, and taps do not advance",()=>{
+  assert.equal(cityDragIntent(4,3),'pending');
+  assert.equal(cityDragIntent(-25,7),'horizontal');
+  assert.equal(cityDragIntent(8,36),'vertical');
+  for(const width of [320,390,700,1440]) {
+    const spacing=width<=700?width*.39:Math.min(width*.27,325);
+    assert.equal(cityDragRelease(0,-50,spacing),1);
+    assert.equal(cityDragRelease(0,50,spacing),-1);
+    assert.equal(cityDragRelease(0,4,spacing),0);
+    assert.equal(cityDragRelease(0,-3*spacing,spacing),3);
+    assert.equal(wrapCityIndex(cityDragRelease(0,50,spacing),50),49);
+  }
+});
 test("cards share one horizontal axis and equal side tilt", () => {
   for (const viewport of [390, 1440]) {
     for (const slot of [-2, -1, 0, 1, 2]) {

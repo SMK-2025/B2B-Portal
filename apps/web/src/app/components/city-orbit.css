@@ -9,10 +9,16 @@
   width: 100%;
   perspective: none;
   perspective-origin: 50% 50%;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
   cursor: grab;
   user-select: none;
+  -webkit-user-select: none;
   outline-offset: -4px;
+}
+.cm-orbit-card,
+.cm-orbit-caption,
+.cm-orbit-caption :is(a, button) {
+  touch-action: pan-y pinch-zoom;
 }
 .cm-orbit-stage:active {
   cursor: grabbing;

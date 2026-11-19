@@ -4,6 +4,10 @@ import Link from "next/link";
 import { CITY_NETWORKS } from "../lib/city-networks";
 import {
   cityDragPosition,
+  cityDragIntent,
+  cityDragRelease,
+  cityCaptureEnded,
+  type CityDragIntent,
   cityOrbitPose,
   cityOrbitSlots,
   wrapCityIndex,
@@ -28,7 +32,7 @@ export function CityOrbit({
     x: number;
     y: number;
     id: number;
-    locked: boolean;
+    axis: CityDragIntent;
     origin: number;
     spacing: number;
   } | null>(null);
@@ -77,12 +81,12 @@ export function CityOrbit({
     return () => node.removeEventListener("wheel", wheel);
   }, [cities.length]);
   function pointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (event.button !== 0 || cities.length < 2) return;
+    if (event.button !== 0 || event.isPrimary === false || cities.length < 2 || gesture.current) return;
     gesture.current = {
       x: event.clientX,
       y: event.clientY,
       id: event.pointerId,
-      locked: false,
+      axis: "pending",
       origin: active,
       spacing:
         viewport <= 700 ? viewport * 0.39 : Math.min(viewport * 0.27, 325),
@@ -93,16 +97,14 @@ export function CityOrbit({
     if (!current || current.id !== event.pointerId) return;
     const dx = event.clientX - current.x,
       dy = event.clientY - current.y;
-    if (
-      !current.locked &&
-      Math.abs(dx) > 12 &&
-      Math.abs(dx) > Math.abs(dy) * 1.2
-    ) {
-      current.locked = true;
-      setDragging(true);
-      event.currentTarget.setPointerCapture(event.pointerId);
+    if (current.axis === "pending") {
+      current.axis = cityDragIntent(dx, dy);
+      if (current.axis === "horizontal") {
+        setDragging(true);
+        try { event.currentTarget.setPointerCapture(event.pointerId); } catch {}
+      }
     }
-    if (current.locked) {
+    if (current.axis === "horizontal") {
       const position = cityDragPosition(current.origin, dx, current.spacing);
       setActive(position.active);
       setDrag(position.fraction);
@@ -111,15 +113,15 @@ export function CityOrbit({
   }
   function pointerUp(event: PointerEvent<HTMLDivElement>) {
     const current = gesture.current;
-    if (!current) return;
-    if (current.locked) {
+    if (!current || current.id !== event.pointerId) return;
+    if (current.axis === "horizontal") {
       // Include the release coordinate when the browser coalesces the last move.
       setActive(
-        cityDragPosition(
+        cityDragRelease(
           current.origin,
           event.clientX - current.x,
           current.spacing,
-        ).active,
+        ),
       );
       suppressClick.current = Date.now() + 350;
       if (event.currentTarget.hasPointerCapture(event.pointerId))
@@ -138,6 +140,7 @@ export function CityOrbit({
     >
       <div
         ref={stage}
+        data-active-city={cities[index]?.key || ""}
         className={`cm-orbit-stage${dragging ? " is-dragging" : ""}`}
         tabIndex={0}
         aria-label="Städte mit Maus oder Finger drehen. Pfeiltasten wechseln die Stadt."
@@ -149,7 +152,8 @@ export function CityOrbit({
           setDrag(0);
           setDragging(false);
         }}
-        onLostPointerCapture={() => {
+        onLostPointerCapture={(event) => {
+          if (!cityCaptureEnded(gesture.current?.id,event.pointerId,event.target===event.currentTarget)) return;
           gesture.current = null;
           setDrag(0);
           setDragging(false);

@@ -46,3 +46,14 @@ test("navigation and footer lead to pages instead of the old homepage anchors", 
   assert.match(router, /notFound\(\)/);
   assert.match(router, /index:\s*false/);
 });
+test("mobile header keeps both CTAs inside the hamburger disclosure", () => {
+  const main=readFileSync(new URL("../src/app/components/city-marketing.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/app/components/city-marketing.css",import.meta.url),"utf8");
+  assert.match(main,/aria-controls="cm-navigation"/);
+  assert.match(main,/aria-label=\{open \? "Menü schließen" : "Menü öffnen"\}/);
+  assert.match(main,/M4 6h16M4 12h16M4 18h16/);
+  assert.ok(main.indexOf('id="cm-navigation"')<main.indexOf('className="cm-header-actions"'));
+  assert.match(css,/\.cm-navigation\s*\{\s*display: none/);
+  assert.match(css,/\.cm-navigation\.is-open\s*\{\s*display: flex/);
+  assert.match(main,/event.key === "Escape"/);
+});

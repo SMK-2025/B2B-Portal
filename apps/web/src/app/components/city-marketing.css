@@ -98,6 +98,14 @@
   gap: 24px;
   align-items: center;
 }
+.cm-navigation {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
 .cm-header nav a {
   font-size: 0.9375rem;
   white-space: nowrap;
@@ -1020,6 +1028,11 @@
     width: 100%;
     gap: 30px;
   }
+  .cm-navigation {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 16px;
+  }
   .cm-header img {
     width: 175px;
   }
@@ -1043,17 +1056,20 @@
     gap: 30px;
   }
 }
-@media (max-width: 700px) {
+@media (max-width: 1150px) {
   .cm-header {
-    gap: 10px;
-    padding: 16px;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 12px 20px;
   }
   .cm-header img {
-    width: 130px;
+    width: 150px;
   }
   .cm-header-actions {
-    margin-left: auto;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 12px 0 4px;
+    gap: 10px;
   }
   .cm-header .cm-button,
   .cm-header .cm-login {
@@ -1062,25 +1078,55 @@
     min-height: 42px;
   }
   .cm-menu {
-    display: block;
-    order: 4;
-    width: 100%;
-    border: 1px solid #dfe3ee;
-    background: #f6f7fb;
-    padding: 7px;
-    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    padding: 9px;
+    border-radius: 5px;
     color: #30264f;
+    cursor: pointer;
   }
-  .cm-header nav {
+  .cm-menu:hover {
+    background: #f1f3f8;
+  }
+  .cm-navigation {
     display: none;
-    order: 5;
-    padding: 8px 0;
+    flex: none;
+    order: 3;
+    width: 100%;
     flex-direction: column;
-    gap: 16px;
+    align-items: stretch;
+    gap: 0;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--cm-line);
   }
-  .cm-header nav.is-open {
+  .cm-navigation.is-open {
     display: flex;
   }
+  .cm-header nav {
+    display: flex;
+    order: 0;
+    padding: 0;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0;
+  }
+  .cm-header nav a {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    padding: 10px 4px;
+    border-bottom: 1px solid #edf0f6;
+  }
+}
+@media (max-width: 700px) {
   .cm-hero {
     min-height: 700px;
     padding: 75px 20px 170px;

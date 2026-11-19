@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { CITY_NETWORKS } from "../lib/city-networks";
@@ -88,11 +88,35 @@ function Header({
   currentPage?: MarketingPageKey;
 }) {
   const [open, setOpen] = useState(false);
+  const header = useRef<HTMLElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!header.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    const closeDesktop = () => { if (window.innerWidth > 1150) setOpen(false); };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+    window.addEventListener("resize", closeDesktop);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeEscape);
+      window.removeEventListener("resize", closeDesktop);
+    };
+  }, [open]);
   return (
-    <header className="cm-header">
+    <header className="cm-header" ref={header}>
       <Link
         href={(prefix || "/") as never}
         aria-label="B2B Matching Startseite"
+        onClick={() => setOpen(false)}
       >
         <img
           src="/images/b2b-matching-logo-full.png"
@@ -102,16 +126,21 @@ function Header({
         />
       </Link>
       <button
+        ref={menuButton}
+        type="button"
         className="cm-menu"
+        aria-label={open ? "Menü schließen" : "Menü öffnen"}
         aria-expanded={open}
-        aria-controls="cm-nav"
+        aria-controls="cm-navigation"
         onClick={() => setOpen(!open)}
       >
-        Menü
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+          <path d={open ? "M6 6l12 12M18 6 6 18" : "M4 6h16M4 12h16M4 18h16"} />
+        </svg>
       </button>
+      <div id="cm-navigation" className={open ? "cm-navigation is-open" : "cm-navigation"}>
       <nav
         id="cm-nav"
-        className={open ? "is-open" : ""}
         aria-label="Hauptnavigation"
       >
         {MARKETING_NAV.map((page) => (
@@ -128,6 +157,7 @@ function Header({
       <div className="cm-header-actions">
         <Link
           className="cm-login"
+          onClick={() => setOpen(false)}
           href={
             (city ? `/anmelden?network=${city.slug}` : "/anmelden") as never
           }
@@ -136,10 +166,12 @@ function Header({
         </Link>
         <Link
           className="cm-button"
+          onClick={() => setOpen(false)}
           href={marketingHref(prefix, "eigenes-portal") as never}
         >
           Eigenes Portal
         </Link>
+      </div>
       </div>
     </header>
   );

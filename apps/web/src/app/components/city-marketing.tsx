@@ -226,7 +226,7 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
         <p className="cm-eyebrow">
           {city
             ? `Unternehmernetzwerk ${city.city}`
-            : "Das Netzwerk für Unternehmen"}
+            : "Gemeinsam netzwerken. Mehr Kontakte gewinnen."}
         </p>
         <h1 id="cm-title">
           {city ? (
@@ -237,21 +237,21 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
             </>
           ) : (
             <>
-              Gute Kontakte
+              Finden Sie Geschäftskontakte,
               <br />
-              passieren nicht <em>nebenbei.</em>
+              <em>die zu Ihrem Unternehmen passen.</em>
             </>
           )}
         </h1>
         <p className="cm-lead">
           {city
             ? `In ${city.city} netzwerken, Kontakte knüpfen und Partner finden.`
-            : "Ihr Unternehmen sichtbar machen. Die richtigen Kontakte finden. Ins Gespräch kommen."}
+            : "Für Ihre Stadt. Für Ihren Verein. Unter Ihrer eigenen Marke."}
         </p>
         <p className="cm-hero-description">
           {city
             ? "Unternehmen und Leistungen entdecken, im Mitglieder-Chat sprechen, Angebote teilen und Zusammenarbeit auf den Weg bringen – dann, wenn es in Ihren Alltag passt."
-            : "B2B Matching bringt Ihr regionales Unternehmernetzwerk in Ihren Alltag – digital, persönlich und dann, wenn es für Sie passt."}
+            : "Entdecken Sie Unternehmen, finden Sie passende Partner und kommen Sie direkt ins Gespräch. In Ihrem regionalen Unternehmernetzwerk – oder in einem eigenen Netzwerk für Ihren Verein, Verband oder Business Club."}
         </p>
         <div className="cm-actions">
           <Link className="cm-button" href={(city ? "#mitgliedschaft" : registration) as never}>
@@ -262,10 +262,10 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
             href={
               (city
                 ? `/anmelden?network=${city.slug}`
-                : marketingHref(prefix, "funktionen")) as never
+                : marketingHref(prefix, "eigenes-portal")) as never
             }
           >
-            {city ? "Als Mitglied einloggen" : "Möglichkeiten ansehen"}
+            {city ? "Als Mitglied einloggen" : "Eigenes Netzwerk aufbauen"}
           </Link>
         </div>
       </div>

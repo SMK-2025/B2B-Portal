@@ -4,6 +4,16 @@ import { readFileSync } from "node:fs";
 const json = (path) =>
   JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 
+test("homepage backgrounds crossfade only after the incoming image has loaded", () => {
+  const source=readFileSync(new URL('../src/app/components/city-marketing.tsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/app/components/city-marketing.css',import.meta.url),'utf8');
+  assert.match(source,/function HeroBackdrop/);
+  assert.match(source,/onLoad=\{\(\) => \{[\s\S]*?layer.key !== photo.key[\s\S]*?setActive\(i\)/);
+  assert.match(source,/HeroBackdrop photo=\{selected\}/);
+  assert.match(css,/transition: opacity 1\.4s ease-in-out/);
+  assert.match(css,/\.cm-hero-image-layer\.is-visible \{ opacity: 1/);
+});
+
 test("hero city ticker links every network independently of six rotating backgrounds", () => {
   const source=readFileSync(new URL('../src/app/components/city-marketing.tsx',import.meta.url),'utf8');
   const css=readFileSync(new URL('../src/app/components/city-marketing.css',import.meta.url),'utf8');

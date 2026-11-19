@@ -177,6 +177,33 @@ function Header({
     </header>
   );
 }
+function HeroBackdrop({ photo }: { photo: (typeof photos)[number] }) {
+  const [layers, setLayers] = useState<((typeof photos)[number] | null)[]>([photo, null]);
+  const [active, setActive] = useState(0);
+  const activeLayer = useRef(0);
+  useEffect(() => {
+    const next = 1 - activeLayer.current;
+    setLayers((current) => current[activeLayer.current]?.key === photo.key
+      ? current : current.map((layer, i) => i === next ? photo : layer));
+  }, [photo.key]);
+  return <div className="cm-hero-backdrop" aria-hidden="true">
+    {layers.map((layer, i) => layer && <Image
+      key={i}
+      src={layer.src}
+      alt=""
+      fill
+      sizes="100vw"
+      priority={i === 0}
+      loading={i === 0 ? undefined : "eager"}
+      className={`cm-hero-image cm-hero-image-layer${i === active ? " is-visible" : ""}`}
+      onLoad={() => {
+        if (layer.key !== photo.key) return;
+        activeLayer.current = i;
+        setActive(i);
+      }}
+    />)}
+  </div>;
+}
 function Hero({ city, prefix }: { city?: City; prefix: string }) {
   const [index, setIndex] = useState(0),
     [playing, setPlaying] = useState(false);
@@ -202,7 +229,7 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
       className={`cm-hero${city ? " cm-hero-city" : ""}`}
       aria-labelledby="cm-title"
     >
-      <Image
+      {city ? <Image
         key={selected.src}
         src={selected.src}
         alt={`Stadtansicht ${selected.city}`}
@@ -210,7 +237,7 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
         sizes="100vw"
         priority
         className="cm-hero-image"
-      />
+      /> : <HeroBackdrop photo={selected} />}
       <div className="cm-hero-shade" />
       {selected.key==="aachen" && <a className="cm-required-credit" href={selected.sourceUrl} target="_blank" rel="noopener noreferrer">© CEphoto, Uwe Aranas · CC BY-SA 3.0</a>}
       <div className="cm-hero-content">

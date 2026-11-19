@@ -1101,7 +1101,7 @@
   .cm-photo-controls {
     left: 16px;
     right: 16px;
-    bottom: 100px;
+    bottom: 32px;
     justify-content: center;
     flex-wrap: wrap;
     gap: 4px;

@@ -1,0 +1,45 @@
+{
+  "site": "https://b2b-matching.de",
+  "ga4": {
+    "accountId": "388918670",
+    "propertyId": "565122804",
+    "streamId": "16374561044",
+    "measurementId": "G-6CM073DSVV",
+    "retentionMonths": 2,
+    "resetRetentionOnActivity": false,
+    "googleSignals": false,
+    "adPersonalization": false,
+    "userProvidedData": false,
+    "automaticFormDetection": false,
+    "automaticHistoryPageViews": false,
+    "keyEvents": ["membership_start"]
+  },
+  "gtm": {
+    "accountId": "6379556602",
+    "containerId": "287773020",
+    "publicId": "GTM-PVD8HPJ9",
+    "verifiedPublishedVersion": "3",
+    "controlledEvents": ["b2b_page_view", "b2b_conversion"]
+  },
+  "googleTag": {
+    "accountId": "6406455527",
+    "containerId": "287779717",
+    "publicId": "GTM-PWSJN2K6",
+    "verifiedPublishedVersion": "3"
+  },
+  "consent": {
+    "storageKey": "b2b-matching-consent-v2",
+    "version": "2026-11-19-ga4-v1",
+    "requiredCategory": "statistics",
+    "maximumAgeDays": 180,
+    "loadGoogleBeforeConsent": false,
+    "privatePortalAnalysis": false,
+    "sendQueryStrings": false,
+    "sendFormFields": false
+  },
+  "searchConsole": {
+    "verifiedProperty": "https://b2b-matching.de/",
+    "sitemap": "https://b2b-matching.de/sitemap.xml",
+    "linkedGa4PropertyId": "565122804"
+  }
+}

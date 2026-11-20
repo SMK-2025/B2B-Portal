@@ -1,0 +1,17 @@
+"use client";
+import {useRef,useState} from "react";
+import {getPortalSession,portalRequest} from "../lib/portal-api";
+type Access={enabled:boolean;sourceMembershipId:string;cityCount:number;activeCityCount:number;sources:Array<{membershipId:string;networkName:string;company:string;city:string;homeCity:string|null;published:boolean}>};
+export function AdminCityAccess({userId,name,onSaved}:{userId:string;name:string;onSaved:()=>void}) {
+  const dialog=useRef<HTMLDialogElement>(null),[access,setAccess]=useState<Access|null>(null),[source,setSource]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");
+  const endpoint=`/networks/admin/members/${encodeURIComponent(userId)}/city-access`;
+  async function open(){setError("");dialog.current?.showModal();setBusy(true);try{const data=await portalRequest<Access>(endpoint,{token:getPortalSession()||""});setAccess(data);setSource(data.sourceMembershipId||data.sources[0]?.membershipId||"");}catch(e){setError(e instanceof Error?e.message:"Zugang konnte nicht geladen werden.");}finally{setBusy(false);}}
+  async function save(enabled:boolean){setBusy(true);setError("");try{const data=await portalRequest<Access>(endpoint,{token:getPortalSession()||"",body:{enabled,sourceMembershipId:source}});setAccess(data);onSaved();}catch(e){setError(e instanceof Error?e.message:"Freigabe fehlgeschlagen.");}finally{setBusy(false);}}
+  return <><button type="button" onClick={()=>void open()}>Premium & Stadtnetzwerke</button><dialog ref={dialog} className="adminUsersDialog adminBillingDialog" style={{padding:24,maxWidth:800}}><header><h2>Premium & Stadtnetzwerke · {name}</h2><button type="button" onClick={()=>dialog.current?.close()}>Schließen</button></header>
+    <p>Ein Zugang für alle aktiven Stadtnetzwerke. Unternehmensseite und Premium-Kennzeichnung erscheinen dort automatisch. Vereinsportale werden dadurch nicht zusätzlich freigeschaltet.</p>
+    {access&&<><p><strong>{access.enabled?"Premium aktiviert":"Kein Premium"}</strong> · Mitglied in {access.activeCityCount} von {access.cityCount} aktiven Stadtnetzwerken.</p><label>Zentrale Unternehmensseite<select value={source} onChange={e=>setSource(e.target.value)} disabled={busy}>{access.sources.map(s=><option key={s.membershipId} value={s.membershipId}>{s.company} · {s.networkName} · {s.city||"Firmensitz fehlt"}</option>)}</select></label>
+    {access.sources.find(s=>s.membershipId===source)?.homeCity?<p>Stadtnetzwerk am Firmensitz: {access.sources.find(s=>s.membershipId===source)!.homeCity}. Bei einer Vereinsmitgliedschaft bleibt diese Zuordnung auch ohne Premium bestehen.</p>:<p>Der Firmensitz ist noch keinem Stadtnetzwerk eindeutig zugeordnet. Bitte den Ort in der ursprünglichen Unternehmensseite prüfen; es wird keine Stadt geraten.</p>}
+    <p>Keine neue Buchung, keine zusätzliche Rechnung und keine Zugangsmail. Bestehende eigene Mitgliedschaften, Unternehmensseiten und lokale Sperren bleiben erhalten. Änderungen der zentralen Unternehmensseite werden in die zusätzlich freigeschalteten Städte synchronisiert. Nur veröffentlichte Seiten werden angezeigt. Nachrichten bleiben vertraulich im jeweiligen Netzwerk.</p>
+    <div><button className="networkPrimary" type="button" disabled={busy||!source} onClick={()=>void save(true)}>Premium für alle Stadtnetzwerke aktivieren</button>{access.enabled&&<button type="button" disabled={busy} onClick={()=>void save(false)}>Premium deaktivieren</button>}</div></>}
+    {busy&&<p role="status">Wird verarbeitet …</p>}{error&&<p role="alert">{error}</p>}</dialog></>;
+}

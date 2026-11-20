@@ -8,6 +8,7 @@ import {
 import { Observable, mergeMap } from "rxjs";
 import { PortalStore } from "./portal.store";
 import { tokenHash } from "../auth/password";
+import { reconcileCityMembers } from "../networks/city-member-access";
 
 @Injectable()
 export class PersistenceInterceptor implements NestInterceptor {
@@ -19,6 +20,8 @@ export class PersistenceInterceptor implements NestInterceptor {
   ): Observable<unknown> {
     const request = _context.switchToHttp().getRequest();
     const authorization = request.headers?.authorization;
+    let synchronizationUserId: string | undefined;
+    let synchronizationAll = false;
     if (
       typeof authorization === "string" &&
       authorization.startsWith("Bearer ")
@@ -30,6 +33,8 @@ export class PersistenceInterceptor implements NestInterceptor {
         session && Date.parse(session.expiresAt) > Date.now()
           ? this.store.users.get(session.userId)
           : undefined;
+      synchronizationUserId=user?.id;
+      synchronizationAll=user?.accountRole==="platform_admin";
       if (user?.visitorNetworkId) {
         const path = String(request.path || request.url).split("?")[0];
         const securityRead = /\/auth\/(session\/check|account(?:\/mfa)?)$/.test(
@@ -60,8 +65,10 @@ export class PersistenceInterceptor implements NestInterceptor {
       (request.method === "POST" && /^\/api\/networks\/[^/]+\/profile\/import$/.test(path))
     ) return next.handle();
     const before = this.store.fingerprint();
+    if(synchronizationUserId) reconcileCityMembers(this.store,synchronizationAll?undefined:synchronizationUserId);
     return next.handle().pipe(
       mergeMap(async (value) => {
+        if(synchronizationUserId) reconcileCityMembers(this.store,synchronizationAll?undefined:synchronizationUserId);
         if (before !== this.store.fingerprint()) await this.store.persist();
         return value;
       }),

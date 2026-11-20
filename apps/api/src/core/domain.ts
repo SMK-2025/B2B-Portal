@@ -29,6 +29,7 @@ export type ReviewStatus =
   | "suspended";
 
 export interface UserRecord {
+  cityPremium?: { enabled: boolean; sourceMembershipId: string; updatedAt: string; updatedBy: string };
   operatorNetworkSeenAt?: Record<string, string>;
   serviceSetup?: {
     networkId: string;
@@ -77,6 +78,8 @@ export interface NetworkConnectionRecord {
 }
 
 export interface OrganizationRecord {
+  cityProfileSourceId?: string;
+  cityProfileSourceVersion?: string;
   id: string;
   legalName: string;
   displayName: string;
@@ -187,6 +190,7 @@ export interface NetworkRecord {
   trialEndsAt: string | null;
   enabledModules: NetworkModule[];
   settings: {
+    networkKind?: "club" | "private";
     features?: Partial<Record<import("../networks/network-features").NetworkFeature, boolean>>;
     featureRevision?: number;
     sportSelection?: "bayer04leverkusen" | "bayer-giants";
@@ -223,6 +227,7 @@ export interface NetworkRecord {
 }
 
 export interface NetworkMembershipRecord {
+  cityAccess?: { sourceMembershipId: string; reason: "premium" | "club_city"; managedInactive?: boolean };
   homepageHidden?: boolean;
   homepageGrants?: Partial<
     Record<

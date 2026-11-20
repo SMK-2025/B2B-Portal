@@ -50,6 +50,7 @@ type Profile = {
   publishedAt: string | null;
 };
 type Response = {
+  sourceProfileSlug?: string;
   organization: {
     displayName: string;
     legalName: string;
@@ -71,13 +72,15 @@ export function NetworkProfileWorkspace({service}:{service?:{networkId:string;us
     const token=getPortalSession();if(!token||!networkId||service)return;
     setLoading(true);
     try{
-      const [primary,additional]=await Promise.all([portalRequest<Response>(`/networks/${networkId}/profile`,{token}),portalRequest<{pages:CompanyPage[]}>(`/networks/${networkId}/company-pages`,{token})]);
+      const primary=await portalRequest<Response>(`/networks/${networkId}/profile`,{token});
+      const additional=primary.sourceProfileSlug?{pages:[]}:await portalRequest<{pages:CompanyPage[]}>(`/networks/${networkId}/company-pages`,{token});
       setOwn(primary);setPages(additional.pages);
-      if(loadedNetwork.current!==networkId){loadedNetwork.current=networkId;const query=new URLSearchParams(location.search);if(query.has('pruefen'))setEditing({id:'main',action:'preview'});else if(!primary.profile||query.has('einrichten'))setEditing({id:'main',action:'setup'});}
+      if(loadedNetwork.current!==networkId){loadedNetwork.current=networkId;const query=new URLSearchParams(location.search);if(!primary.sourceProfileSlug){if(query.has('pruefen'))setEditing({id:'main',action:'preview'});else if(!primary.profile||query.has('einrichten'))setEditing({id:'main',action:'setup'});}}
     }catch(e){setNotice(e instanceof Error?e.message:'Seiten konnten nicht geladen werden.');}finally{setLoading(false);}
   }
   useEffect(()=>{void load();},[networkId,service]);
   if(service)return <CompanyPageEditor service={service}/>;
+  if(own?.sourceProfileSlug) return <section className="networkCard"><h2>{own.profile?.companyName || own.organization.displayName}</h2><p>Ihre Unternehmensseite wird aus Ihrem ursprünglichen Netzwerk übernommen. Änderungen dort erscheinen automatisch auch in Ihren Stadtnetzwerken. Gespräche und Anfragen bleiben je Netzwerk getrennt.</p><Link className="networkPrimary" href={`/portal/netzwerk/${own.sourceProfileSlug}/profil`}>Zentrale Unternehmensseite bearbeiten</Link></section>;
   const finish=(message?:string)=>{setEditing(null);if(message)setNotice(message);void load();};
   if(editing)return <><button type="button" className="networkSecondary" onClick={()=>finish()}>← Meine Unternehmensseiten</button><CompanyPageEditor key={editing.id} pageId={editing.id==='main'?undefined:editing.id} initialAction={editing.action} onDone={finish}/></>;
   async function create(event:FormEvent<HTMLFormElement>){

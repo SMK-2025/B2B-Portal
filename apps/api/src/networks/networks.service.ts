@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import { CITY_NETWORKS, cityNetwork, acceptsParticipation, cityBrand, CITY_BRAND } from "./city-networks";
+import { reconcileCityMembers, eligibleCitySource, headquartersCity, networkKind, premiumInCity } from "./city-member-access";
 import {bookingNetwork,contributionPolicy,CONTRIBUTION_MINIMUM,defaultCityContributionSettings} from "./member-contribution";
 import { networkPulse, updatePulse, visibleCooperation, activatePulseOnReply } from './network-pulse';
 import { NETWORK_FEATURES, MODULE_FEATURES, featureEnabled, networkFeatures, type NetworkFeature } from './network-features';
@@ -130,6 +131,57 @@ const NETWORK_CONTENT_CATEGORIES: Partial<
 
 @Injectable()
 export class NetworksService {
+  cityMemberAccess(authorization: string | undefined, userId: string) {
+    this.requirePlatformAdmin(this.auth.authenticate(authorization).id);
+    const user=this.store.users.get(userId);
+    if(!user || user.accountRole==="platform_admin" || user.visitorNetworkId) throw new BadRequestException("Bitte ein bestehendes Mitglied wählen.");
+    const sources=this.store.networkMemberships.filter(m=>m.userId===userId && !m.cityAccess && eligibleCitySource(this.store,m)).map(m=>{
+      const org=this.store.organizations.get(m.organizationId)!, profile=org.networkProfile!;
+      const home=headquartersCity(profile.city,profile.country);
+      return {membershipId:m.id,networkName:this.raw(m.networkId).name,company:org.displayName,city:profile.city,homeCity:home?.city||null,published:profile.status==="published"};
+    });
+    return {enabled:user.cityPremium?.enabled===true,sourceMembershipId:user.cityPremium?.sourceMembershipId||"",sources,
+      cityCount:[...this.store.networks.values()].filter(n=>networkKind(n)==="city" && n.status==="active").length,
+      activeCityCount:this.store.networkMemberships.filter(m=>m.userId===userId && m.status==="active" && cityNetwork(this.store.networks.get(m.networkId)?.slug||"")).length};
+  }
+  async setCityMemberAccess(authorization: string | undefined, userId: string, input: Record<string,unknown>) {
+    const actor=this.auth.authenticate(authorization); this.requirePlatformAdmin(actor.id);
+    this.cityMemberAccess(authorization,userId);
+    if(typeof input.enabled!=="boolean") throw new BadRequestException("Bitte Premium aktivieren oder deaktivieren.");
+    const source=this.store.networkMemberships.find(m=>m.id===input.sourceMembershipId && m.userId===userId && eligibleCitySource(this.store,m));
+    if(input.enabled && !source) throw new BadRequestException("Bitte eine aktive ursprüngliche Mitgliedschaft mit Unternehmensseite wählen.");
+    const user=this.store.users.get(userId)!;
+    user.cityPremium={enabled:input.enabled,sourceMembershipId:source?.id||user.cityPremium?.sourceMembershipId||"",updatedBy:actor.id,updatedAt:new Date().toISOString()};
+    reconcileCityMembers(this.store);
+    this.operatorAudit(actor.id,source?.networkId||"", "operator.city-premium.updated",{userId,enabled:input.enabled,sourceMembershipId:user.cityPremium.sourceMembershipId});
+    await this.store.persist();
+    return this.cityMemberAccess(authorization,userId);
+  }
+  async setNetworkKind(authorization:string|undefined,networkId:string,input:Record<string,unknown>) {
+    const actor=this.auth.authenticate(authorization);this.requirePlatformAdmin(actor.id);
+    const network=this.raw(networkId);
+    if(cityNetwork(network.slug) || !["club","private"].includes(String(input.kind))) throw new BadRequestException("Stadtnetzwerke sind fest zugeordnet. Andere Netzwerke können als Vereinsnetzwerk oder eigenständiges Portal geführt werden.");
+    network.settings.networkKind=input.kind as "club"|"private";
+    network.updatedAt=new Date().toISOString();
+    reconcileCityMembers(this.store);
+    this.operatorAudit(actor.id,networkId,"operator.network.kind.updated",{kind:input.kind});
+    await this.store.persist();return {kind:networkKind(network)};
+  }
+  accountNetworkInbox(authorization:string|undefined) {
+    const user=this.auth.authenticate(authorization);
+    const ids=new Set(this.store.networkMemberships.filter(m=>m.userId===user.id && m.status==="active").map(m=>m.networkId));
+    const result=[] as Array<ReturnType<NetworksService["networkNotifications"]>[number] & {network:{id:string;slug:string;name:string};destination:string}>;
+    for(const id of ids) {
+      const network=this.store.networks.get(id);if(!network || network.status!=="active")continue;
+      try { for(const item of this.networkNotifications(authorization,id)) {
+        const content=this.store.networkContents.get(String(item.data.contentId||""));
+        const page=content?.type==="conversation"?`kommunikation?chat=${encodeURIComponent(content.id)}`:content?.type==="event"?`veranstaltungen?event=${encodeURIComponent(content.id)}`:item.data.contentId?"themen":"mitglieder";
+        result.push({...item,network:{id,slug:network.slug,name:network.name},destination:`/portal/netzwerk/${network.slug}/${page}`});
+      } }
+      catch(error) {if(!(error instanceof ForbiddenException))throw error;}
+    }
+    return result.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,200);
+  }
   operatorMailStatus(authorization: string | undefined) {
     const user = this.auth.authenticate(authorization);
     this.requirePlatformAdmin(user.id);
@@ -834,6 +886,7 @@ export class NetworksService {
           .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
       return {
         ...network,
+        networkKind: networkKind(network),
         activitySummary: (() => {
           const items = this.operatorActivityItems(
             network.id,
@@ -975,6 +1028,8 @@ export class NetworksService {
       );
     const now = new Date().toISOString();
     const organization = structuredClone(original);
+    delete organization.cityProfileSourceId;
+    delete organization.cityProfileSourceVersion;
     organization.id = randomUUID();
     organization.createdAt = now;
     organization.networkProfile!.status = "published";
@@ -1036,6 +1091,7 @@ export class NetworksService {
         loginCount?: number;
         lastLoginAt?: string | null;
         loginTrackingStartedAt?: string | null;
+        cityPremium?: boolean;
         admissionStatus?: string;
         company?: string;
         affiliation?: string;
@@ -1081,6 +1137,7 @@ export class NetworksService {
           profile.contactPhone,
         ].every((v) => Boolean(v?.trim()));
       rows.set(user.email.toLowerCase(), {
+        cityPremium: user.cityPremium?.enabled===true,
         centrallyFunded: this.store.networkMemberships.some(
           (m) =>
             m.networkId === networkId &&
@@ -2277,6 +2334,7 @@ export class NetworksService {
 
   mine(authorization: string | undefined) {
     const user = this.auth.authenticate(authorization);
+    reconcileCityMembers(this.store,user.id);
     return this.store.networkMemberships
       .filter((item) => item.userId === user.id && item.status === "active")
       .map((item) => ({
@@ -2293,7 +2351,10 @@ export class NetworksService {
           this.canEditCompany(user.id, item.organizationId, item.role) &&
           this.userModules(user.id, item.networkId).includes("profiles") &&
           !this.store.organizations.get(item.organizationId)?.networkProfile,
-        organization: this.store.organizations.get(item.organizationId),
+        organization: (()=>{
+          const org=this.store.organizations.get(item.organizationId);
+          return item.cityAccess && org ? {id:org.id,displayName:org.displayName,legalName:org.legalName,cityProfileSourceId:org.cityProfileSourceId,networkProfile:org.networkProfile?{status:org.networkProfile.status,logoUrl:null}:null} : org;
+        })(),
       }));
   }
 
@@ -2470,6 +2531,7 @@ export class NetworksService {
         return {
           ...item,
           user: this.publicUser(item.userId),
+          premium: premiumInCity(this.store,item.userId,networkId),
           organization: organization
             ? {
                 id: organization.id,
@@ -2846,7 +2908,8 @@ export class NetworksService {
         websiteUrl: organization.websiteUrl,
       },
       profile: organization.networkProfile || null,
-      canEdit: this.canEditCompany(user.id, organization.id, membership.role),
+      sourceProfileSlug: membership.cityAccess ? this.store.networks.get(this.store.networkMemberships.find(m=>m.id===membership.cityAccess!.sourceMembershipId)?.networkId||"")?.slug : undefined,
+      canEdit: !membership.cityAccess && this.canEditCompany(user.id, organization.id, membership.role),
     };
   }
 
@@ -3042,6 +3105,7 @@ export class NetworksService {
     input: Record<string, unknown>,
     networkId?: string,
   ) {
+    if(organization.cityProfileSourceId) throw new BadRequestException("Diese Unternehmensseite wird zentral synchronisiert. Bitte im ursprünglichen Netzwerk bearbeiten.");
     if (networkId) {
       const previous = organization.networkProfile, network = this.raw(networkId);
       input = { ...input };
@@ -3404,6 +3468,7 @@ export class NetworksService {
     if (!["active", "rejected", "suspended", "left"].includes(status))
       throw new BadRequestException("Ungültiger Mitgliederstatus.");
     membership.status = status as NetworkMembershipRecord["status"];
+    if(membership.cityAccess) delete membership.cityAccess.managedInactive;
     membership.reviewedByUserId = actor.id;
     membership.reviewedAt = new Date().toISOString();
     membership.updatedAt = membership.reviewedAt;
@@ -5472,7 +5537,7 @@ export class NetworksService {
     )
       throw new ForbiddenException("Kein Zugriff auf dieses Netzwerk.");
     const membership = this.store.networkMemberships.find(m => m.userId === userId && m.networkId === networkId && m.status === "active");
-    if (membership && !membership.complimentaryAccess && !membership.centrallyFunded && !["visitor", "network_admin"].includes(membership.role) && !this.isNetworkInitiator(userId, networkId)) {
+    if (membership && !premiumInCity(this.store,userId,networkId) && !membership.complimentaryAccess && !membership.centrallyFunded && !["visitor", "network_admin"].includes(membership.role) && !this.isNetworkInitiator(userId, networkId)) {
       const latest = [...this.store.networkOrders.values()]
         .filter(o => o.networkId === networkId && o.orderedByUserId === userId && o.kind === "member_annual" && o.status === "accepted")
         .sort((a,b) => (b.serviceEndsAt || "").localeCompare(a.serviceEndsAt || ""))[0];
@@ -5590,6 +5655,7 @@ export class NetworksService {
   }
   private userModules(userId: string, networkId: string) {
     const network = this.raw(networkId);
+    if(premiumInCity(this.store,userId,networkId)) return network.enabledModules;
     if (
       this.store.networkMemberships.some(
         (m) =>

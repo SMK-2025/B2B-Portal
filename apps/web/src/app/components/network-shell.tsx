@@ -3,6 +3,7 @@ import { NetworkText } from "./network-text-editor";
 import { networkPageLabel } from "../lib/network-page-label";
 import { NetworkReferralButton } from "./network-referral-button";
 import { NetworkNotifications } from "./network-notifications";
+import {NetworkMembershipSwitcher} from "./network-membership-switcher";
 import { NetworkSystemMessages } from "./network-system-messages";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -99,7 +100,7 @@ type Access = {
   secondaryColor: string;
 };
 type Mine = {
-  organization?: { networkProfile?: { logoUrl?: string | null } | null } | null;
+  organization?: {id?:string;cityProfileSourceId?:string; networkProfile?: { logoUrl?: string | null } | null } | null;
   membership: { role: string };
   network: {
     id: string;
@@ -312,7 +313,7 @@ function NetworkFrame({
             offeredModules: network.offeredModules,
             logoUrl: network.logoUrl,
             companyLogoUrl:
-              membership?.organization?.networkProfile?.logoUrl || null,
+              membership?.organization?.networkProfile?.logoUrl || mine.find(m=>m.organization?.id===membership?.organization?.cityProfileSourceId)?.organization?.networkProfile?.logoUrl || null,
             primaryColor: network.primaryColor,
             secondaryColor: network.secondaryColor,
           });
@@ -585,6 +586,7 @@ function NetworkFrame({
               )}
             </div>
           </header>
+          <NetworkMembershipSwitcher slug={slug}/>
           <div
             id="network-horizontal-navigation"
             className={`networkHorizontalNavigation${mobileOpen ? " isOpen" : ""}`}

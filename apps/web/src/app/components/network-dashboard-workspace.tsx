@@ -37,6 +37,7 @@ type Dashboard = {
   announcements: Item[];
 };
 type Partner = {
+  premium?: boolean;
   id: string;
   userId: string;
   status: string;
@@ -186,12 +187,14 @@ export function NetworkDashboardWorkspace({
           company: member.organization!.displayName,
           logo: member.organization!.networkProfile!.logoUrl,
           tagline: member.organization!.networkProfile!.tagline,
+          premium: member.premium,
         }))
     : data.recentMembers.slice(0, 3).map((member) => ({
         id: member.id,
         userId: "",
         name: member.name,
         company: "Netzwerkpartner",
+        premium: false,
         logo: member.logoUrl,
         tagline: undefined,
       }));
@@ -328,6 +331,7 @@ export function NetworkDashboardWorkspace({
                         <span className="loungeMemberTileText">
                           <span>
                             <strong>{member.company}</strong>
+                            {member.premium && <small>Premium-Mitglied</small>}
                             <small>{member.name}</small>
                           </span>
                           <span className="loungeMemberTileArrow" aria-hidden="true">↗</span>

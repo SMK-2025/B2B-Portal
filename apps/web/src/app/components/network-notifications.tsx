@@ -14,6 +14,8 @@ export function NetworkNotifications() {
         id: string;
         readAt: string | null;
         createdAt: string;
+        network?: {id:string;slug:string;name:string};
+        destination?: string;
         data: {
           contentId?: string;
           welcomeMembershipId?: string;
@@ -40,7 +42,7 @@ export function NetworkNotifications() {
     try {
       setItems(
         await portalRequest<typeof items>(
-          "/networks/" + access.networkId + "/notifications",
+          "/networks/account/network-inbox",
           { token },
         ),
       );
@@ -93,7 +95,7 @@ export function NetworkNotifications() {
           <header>
             <b>
               <NetworkText id="ui.network-notifications.e46d83a49849667d">
-                Neuigkeiten im Netzwerk
+                Neuigkeiten aus Ihren Netzwerken
               </NetworkText>
             </b>
             <button onClick={() => setOpen(false)} aria-label="Schließen">
@@ -105,6 +107,11 @@ export function NetworkNotifications() {
               key={i.id}
               className={`networkNewsItem ${!i.readAt ? "unread" : ""} ${i.data.event ? "networkNewsEvent" : ""}`}
               onClick={() => {
+                if(i.destination && (i.network?.id!==access?.networkId || i.destination.includes("/kommunikation?chat="))){
+                  setOpen(false);
+                  router.push(i.destination as never);
+                  return;
+                }
                 if ((i.data.welcomeMembershipId || i.data.partnerMembershipId) && access) {
                   setOpen(false);
                   router.push(
@@ -134,6 +141,7 @@ export function NetworkNotifications() {
                 <img src={i.data.event.imageUrl} alt="" />
               )}
               <span className="networkNewsCopy">
+                {i.network && <small>{i.network.name}</small>}
                 <small>
                   <NetworkText id="ui.network-notifications.dfd2cd9b641075d5">
                     {i.data.event ? "VERANSTALTUNG" : "NEUIGKEIT"}

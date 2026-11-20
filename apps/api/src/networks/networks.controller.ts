@@ -365,6 +365,18 @@ export class NetworksController {
   ) {
     return this.networks.adminList(authorization);
   }
+  @Get("admin/members/:userId/city-access") cityMemberAccess(@Headers("authorization") auth:string|undefined,@Param("userId") id:string) {
+    return this.networks.cityMemberAccess(auth,id);
+  }
+  @Post("admin/members/:userId/city-access") setCityMemberAccess(@Headers("authorization") auth:string|undefined,@Param("userId") id:string,@Body() body:Record<string,unknown>) {
+    return this.networks.setCityMemberAccess(auth,id,body);
+  }
+  @Post("admin/:networkId/kind") setKind(@Headers("authorization") auth:string|undefined,@Param("networkId") id:string,@Body() body:Record<string,unknown>) {
+    return this.networks.setNetworkKind(auth,id,body);
+  }
+  @Get("account/network-inbox") accountInbox(@Headers("authorization") auth:string|undefined) {
+    return this.networks.accountNetworkInbox(auth);
+  }
   @Get("admin/:networkId/users") adminUsers(
     @Headers("authorization") authorization: string | undefined,
     @Param("networkId") networkId: string,

@@ -47,6 +47,7 @@ export type PartnerPageProfile = {
 };
 type Profile = PartnerPageProfile;
 export type Member = {
+  premium?: boolean;
   id: string;
   userId: string;
   role: string;
@@ -289,7 +290,7 @@ export function NetworkMembersWorkspace() {
                     </span>
                   )}
                   <b className={`networkMemberStatus ${member.status}`}>
-                    {labels[member.status]}
+                    {member.premium && member.status === "active" ? "Premium-Mitglied" : labels[member.status]}
                   </b>
                 </div>
                 <small className="networkMemberPublication" aria-hidden={profile?.status === "published"}>
@@ -613,6 +614,7 @@ export function ProfileDialog({
               </NetworkText>
             </small>
             <h2 id="partner-profile-title">{p.companyName}</h2>
+            {member.premium && <small>Premium-Mitglied</small>}
             <p>{p.tagline}</p>
             <div className="partnerHeroActions">
               <button

@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { ServiceMemberForm } from "./service-member-form";
 import { NetworkProfileWorkspace } from "./network-profile-workspace";
 import { AdminCompanyPages } from "./admin-company-pages";
+import {AdminCityAccess} from "./admin-city-access";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { InvoiceDownload, type BillingInvoice } from "./admin-network-billing";
 type Row = {
+  cityPremium?: boolean;
   service?: {
     sentAt: string | null;
     claimedAt: string | null;
@@ -403,6 +405,7 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                             </summary>
                             <div>
                               {row.userId && <AdminCompanyPages networkId={id} userId={row.userId} name={row.name}/>}
+                              {row.userId && row.role!=="visitor" && <AdminCityAccess userId={row.userId} name={row.company||row.name} onSaved={()=>void open()}/>}
                               {row.service && (
                                 <>
                                   {!row.service.sentAt && (
@@ -550,6 +553,7 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                       </td>
                       <td>
                         {row.name}
+                        {row.cityPremium && <small> · Premium-Mitglied</small>}
                         {row.company && (
                           <>
                             <br />

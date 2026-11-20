@@ -12,6 +12,7 @@ import { LaunchPromotionSettings } from "./launch-promotion-settings";
 
 type NetworkStatus = "draft" | "trial" | "active" | "suspended";
 type Network = {
+  networkKind?: "city"|"club"|"private";
   id: string;
   slug: string;
   name: string;
@@ -437,6 +438,7 @@ export function AdminNetworkWorkspace() {
                     <div>
                       <small>{network.slug}</small>
                       <h2>{network.name}</h2>
+                      {network.networkKind==="city"?<small>Stadtnetzwerk</small>:<label>Netzwerktyp<select value={network.networkKind||"private"} disabled={busy} onChange={async e=>{const kind=e.target.value;setBusy(true);try{await portalRequest(`/networks/admin/${network.id}/kind`,{token:getPortalSession()||"",body:{kind}});await refreshNetworks();setNotice("Netzwerktyp gespeichert. Firmensitz-Zuordnungen wurden aktualisiert.");}catch(error){showError(error);}finally{setBusy(false);}}}><option value="private">Eigenständiges Portal</option><option value="club">Vereinsnetzwerk</option></select></label>}
                       {network.websiteUrl && (
                         <a
                           href={network.websiteUrl}

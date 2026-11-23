@@ -365,6 +365,9 @@ export class NetworksController {
   ) {
     return this.networks.adminList(authorization);
   }
+  @Post("admin/:networkId/invitations/:invitationId/delete") deleteUnusedInvitation(@Headers("authorization") auth:string|undefined,@Param("networkId") networkId:string,@Param("invitationId") invitationId:string,@Body() body:Record<string,unknown>) {
+    return this.networks.deleteUnusedInvitation(auth,networkId,invitationId,body);
+  }
   @Get("admin/members/:userId/city-access") cityMemberAccess(@Headers("authorization") auth:string|undefined,@Param("userId") id:string) {
     return this.networks.cityMemberAccess(auth,id);
   }

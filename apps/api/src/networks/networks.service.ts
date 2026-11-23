@@ -131,6 +131,19 @@ const NETWORK_CONTENT_CATEGORIES: Partial<
 
 @Injectable()
 export class NetworksService {
+  async deleteUnusedInvitation(authorization:string|undefined,networkId:string,invitationId:string,input:Record<string,unknown>) {
+    const actor=this.auth.authenticate(authorization);this.requirePlatformAdmin(actor.id);this.raw(networkId);
+    const record=this.store.networkContents.get(invitationId);
+    const email=emailAddress(input.confirmEmail);
+    if(!record || record.networkId!==networkId || record.data.kind!=="network_invitation" || record.data.usedAt || String(record.data.email).toLowerCase()!==email)
+      throw new BadRequestException("Die ungenutzte Einladung wurde nicht gefunden oder inzwischen verändert. Bitte die Übersicht aktualisieren.");
+    if(this.store.userByEmail.has(email)) throw new ConflictException("Diese Person ist inzwischen registriert. Es wird kein Konto und keine Einladung automatisch gelöscht.");
+    const ids=new Set([...this.store.networkContents.values()].filter(r=>r.networkId===networkId && r.data.kind==="network_invitation" && !r.data.usedAt && String(r.data.email).toLowerCase()===email).map(r=>r.id));
+    for(const id of ids)this.store.networkContents.delete(id);
+    this.store.notifications.splice(0,this.store.notifications.length,...this.store.notifications.filter(n=>n.data.networkId!==networkId || (!ids.has(String(n.data.contentId||"")) && !ids.has(String(n.data.invitationId||"")))));
+    this.operatorAudit(actor.id,networkId,"operator.unused-invitation.deleted",{count:ids.size});
+    await this.store.persist();return {deleted:true,count:ids.size};
+  }
   cityMemberAccess(authorization: string | undefined, userId: string) {
     this.requirePlatformAdmin(this.auth.authenticate(authorization).id);
     const user=this.store.users.get(userId);
@@ -1077,6 +1090,7 @@ export class NetworksService {
       {
         name: string;
         email: string;
+        invitationId?: string;
         role: string;
         status: string;
         startsAt: string | null;
@@ -1215,6 +1229,7 @@ export class NetworksService {
       else
         rows.set(email, {
           name: "Noch nicht registriert",
+          invitationId: invitation.id,
           email,
           role: String(invitation.data.role || "member"),
           status:

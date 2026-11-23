@@ -7,6 +7,7 @@ import {AdminCityAccess} from "./admin-city-access";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { InvoiceDownload, type BillingInvoice } from "./admin-network-billing";
 type Row = {
+  invitationId?: string;
   cityPremium?: boolean;
   service?: {
     sentAt: string | null;
@@ -98,6 +99,12 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
   const [rows, setRows] = useState<Row[]>([]),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false);
+  async function deleteInvitation(row:Row) {
+    if(!row.invitationId || !window.confirm(`${name}\nDie ungenutzte Einladung für ${row.email} dauerhaft löschen? Es werden keine Mitgliedskonten oder Rechnungen gelöscht. Eine spätere neue Anmeldung bleibt möglich.`))return;
+    setLoading(true);setError("");
+    try{await portalRequest(`/networks/admin/${id}/invitations/${row.invitationId}/delete`,{token:getPortalSession()||"",body:{confirmEmail:row.email}});await open();setServiceNotice("Einladung gelöscht. Eine eigenständige Anmeldung bleibt möglich.");}
+    catch(e){setError(e instanceof Error?e.message:"Einladung konnte nicht gelöscht werden.");setLoading(false);}
+  }
   const [visitorAccess, setVisitorAccess] = useState<{
     email: string;
     password: string;
@@ -398,6 +405,7 @@ export function AdminNetworkUsers({ id, name }: { id: string; name: string }) {
                   {rows.map((row) => (
                     <tr key={row.email}>
                       <td>
+                        {row.invitationId && !row.userId && <button type="button" className="portalReject" aria-label={`Einladung für ${row.email} löschen`} disabled={loading} onClick={()=>void deleteInvitation(row)}>Einladung löschen</button>}
                         {row.name !== "Noch nicht registriert" && (
                           <details className="adminUserMenu">
                             <summary aria-label={`Aktionen für ${row.email}`}>

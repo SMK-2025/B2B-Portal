@@ -1,18 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./styles.css";
-import "./network-brand-overrides.css";
-import "./network-exchange.css";
-import "./bundesliga.css";
-import "./partner-page-editor.css";
-import "./partner-mini-site.css";
-import "./partner-chat.css";
-import "./partner-business-card.css";
-import "./network-lounge.css";
 import "./public-brand.css";
 import "./public-card-system.css";
-import "./network-text-editor.css";
-import "./admin-network-overview.css";
 import { NetworkTextProvider } from "./components/network-text-editor";
 import { PwaRegister } from "./pwa-register";
 import { CookieConsent } from "./components/cookie-consent";
@@ -22,8 +12,6 @@ import { PublicCardArtwork } from "./components/public-card-artwork";
 import { shareImage } from "./components/public-metadata";
 import { PublicNavigation } from "./components/public-navigation";
 import { MailingAttributionBridge } from "./components/mailing-attribution-bridge";
-import "./mailings.css";
-import "./member-showcase.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://b2b-matching.de";
 

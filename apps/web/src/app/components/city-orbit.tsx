@@ -28,6 +28,15 @@ export function CityOrbit({
     [dragging, setDragging] = useState(false),
     [viewport, setViewport] = useState(1200);
   const stage = useRef<HTMLDivElement>(null);
+  const [imagesEnabled,setImagesEnabled]=useState(false);
+  useEffect(()=>{
+    const node=stage.current;if(!node)return;
+    if(!('IntersectionObserver' in window)){setImagesEnabled(true);return;}
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)){setImagesEnabled(true);observer.disconnect();}
+    },{rootMargin:'200px'});
+    observer.observe(node);return()=>observer.disconnect();
+  },[]);
   const gesture = useRef<{
     x: number;
     y: number;
@@ -187,9 +196,14 @@ export function CityOrbit({
               aria-hidden={Math.abs(slot - drag) >= 2.75 || undefined}
               aria-label={`Unternehmernetzwerk ${city.city}${slot === 0 ? ", im Vordergrund" : ""}`}
             >
-              {photo && (
+              {photo && imagesEnabled && (
                 <img
-                  src={photo.small}
+                  src={`/images/optimized/city-${city.key}-480.webp`}
+                  srcSet={`/images/optimized/city-${city.key}-480.webp 480w, /images/optimized/city-${city.key}-960.webp 960w`}
+                  sizes="(max-width: 700px) 225px, 370px"
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
                   alt={`Stadtansicht ${city.city}`}
                   width="440"
                   height="360"

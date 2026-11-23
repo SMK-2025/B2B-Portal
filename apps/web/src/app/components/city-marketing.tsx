@@ -14,6 +14,7 @@ import {
 } from "../lib/marketing-pages";
 import "./city-marketing.css";
 import { CityOrbit } from "./city-orbit";
+import {MarketingLogo} from "./marketing-logo";
 import { CityContributionPresentation } from "./city-contribution-presentation";
 
 type City = (typeof CITY_NETWORKS)[number];
@@ -119,12 +120,7 @@ function Header({
         aria-label="B2B Matching Startseite"
         onClick={() => setOpen(false)}
       >
-        <img
-          src="/images/b2b-matching-logo-full.png"
-          alt="B2B Matching"
-          width="240"
-          height="40"
-        />
+        <MarketingLogo/>
       </Link>
       <button
         ref={menuButton}
@@ -178,6 +174,7 @@ function Header({
   );
 }
 function HeroBackdrop({ photo }: { photo: (typeof photos)[number] }) {
+  const imageSet=(key:string,mobile=false)=>(mobile?[640,960]:[1280,1920,2400]).map(width=>`/images/optimized/hero-${mobile?'mobile-':''}${key}-${width}.webp ${width}w`).join(', ');
   const [layers, setLayers] = useState<((typeof photos)[number] | null)[]>([photo, null]);
   const [active, setActive] = useState(0);
   const activeLayer = useRef(0);
@@ -187,21 +184,26 @@ function HeroBackdrop({ photo }: { photo: (typeof photos)[number] }) {
       ? current : current.map((layer, i) => i === next ? photo : layer));
   }, [photo.key]);
   return <div className="cm-hero-backdrop" aria-hidden="true">
-    {layers.map((layer, i) => layer && <Image
+    <link rel="preload" as="image" media="(max-width: 700px)" imageSrcSet={imageSet(HERO_PHOTO_KEYS[0],true)} imageSizes="100vw" fetchPriority="high"/>
+    <link rel="preload" as="image" media="(min-width: 701px)" imageSrcSet={imageSet(HERO_PHOTO_KEYS[0])} imageSizes="100vw" fetchPriority="high"/>
+    {layers.map((layer, i) => layer && <picture key={i}>
+      <source media="(max-width: 700px)" srcSet={imageSet(layer.key,true)} sizes="100vw"/>
+      <img
       key={i}
-      src={layer.src}
+      src={`/images/optimized/hero-${layer.key}-1920.webp`}
+      srcSet={imageSet(layer.key)}
       alt=""
-      fill
       sizes="100vw"
-      priority={i === 0}
-      loading={i === 0 ? undefined : "eager"}
+      loading="eager"
+      fetchPriority={i===0 && layer.key===HERO_PHOTO_KEYS[0]?"high":"low"}
+      decoding="async"
       className={`cm-hero-image cm-hero-image-layer${i === active ? " is-visible" : ""}`}
       onLoad={() => {
         if (layer.key !== photo.key) return;
         activeLayer.current = i;
         setActive(i);
       }}
-    />)}
+    /></picture>)}
   </div>;
 }
 function Hero({ city, prefix }: { city?: City; prefix: string }) {
@@ -652,12 +654,7 @@ export function CityMarketing({
               </Link>
             </div>
             <div className="cm-brand-panel">
-              <img
-                src="/images/b2b-matching-logo-full.png"
-                alt="B2B Matching"
-                width="240"
-                height="40"
-              />
+              <MarketingLogo large/>
               <strong>
                 Ihre Marke.
                 <br />

@@ -1,4 +1,5 @@
 "use client";
+import "../portal-ui.css";
 import { NetworkText } from "./network-text-editor";
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";

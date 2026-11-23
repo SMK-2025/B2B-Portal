@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
+import {MarketingLogo} from "./marketing-logo";
 import photos from "../lib/city-photos.json";
 import { targetAudiences } from "./public-site-data";
 import { marketingHref } from "../lib/marketing-pages";
@@ -174,12 +175,7 @@ export function MarketingFooter({ prefix }: { prefix: string }) {
               href={(prefix || "/") as never}
               aria-label="B2B Matching Startseite"
             >
-              <img
-                src="/images/b2b-matching-logo-full.png"
-                alt="B2B Matching"
-                width="240"
-                height="40"
-              />
+                <MarketingLogo/>
             </Link>
             <p>
               Unternehmen kennenlernen.

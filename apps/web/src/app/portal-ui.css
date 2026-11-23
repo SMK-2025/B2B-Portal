@@ -1,0 +1,13 @@
+/* Only portal and network-authentication routes need these styles. */
+@import "./network-brand-overrides.css";
+@import "./network-exchange.css";
+@import "./bundesliga.css";
+@import "./partner-page-editor.css";
+@import "./partner-mini-site.css";
+@import "./partner-chat.css";
+@import "./partner-business-card.css";
+@import "./network-lounge.css";
+@import "./network-text-editor.css";
+@import "./admin-network-overview.css";
+@import "./mailings.css";
+@import "./member-showcase.css";

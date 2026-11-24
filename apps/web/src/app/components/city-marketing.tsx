@@ -269,7 +269,7 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
             <>
               Vernetzen Sie sich.
               <br />
-              <em>Regional und bundesweit.</em>
+              <em>Regional oder bundesweit.</em>
             </>
           )}
         </h1>

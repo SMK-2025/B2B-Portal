@@ -35,7 +35,7 @@ test("hero city ticker links every network independently of six rotating backgro
 
 test("homepage hero uses approved copy and the own-network CTA has its matching destination", () => {
   const source = readFileSync(new URL("../src/app/components/city-marketing.tsx", import.meta.url), "utf8");
-  for (const text of ["Ein Portal. 50 Stadtnetzwerke. Viele Möglichkeiten.", "Vernetzen Sie sich.", "Regional und bundesweit.", "Unternehmernetzwerke, Vereinsnetzwerke und Wirtschaftsnetzwerke – auf einer Plattform.", "Lernen Sie Unternehmen kennen, knüpfen Sie neue Geschäftskontakte und tauschen Sie sich direkt mit anderen Mitgliedern aus.", "Was ist Ihnen ein guter Kontakt wert?", "Ihr Stadtnetzwerk ab 9,90 € netto pro Monat – entdecken Sie jetzt Ihr Unternehmernetzwerk.", "Bei zwölf Monaten Laufzeit.", "Stadtnetzwerk entdecken", "Eigenes Netzwerk aufbauen"]) assert.ok(source.includes(text), text);
+  for (const text of ["Ein Portal. 50 Stadtnetzwerke. Viele Möglichkeiten.", "Vernetzen Sie sich.", "Regional oder bundesweit.", "Unternehmernetzwerke, Vereinsnetzwerke und Wirtschaftsnetzwerke – auf einer Plattform.", "Lernen Sie Unternehmen kennen, knüpfen Sie neue Geschäftskontakte und tauschen Sie sich direkt mit anderen Mitgliedern aus.", "Was ist Ihnen ein guter Kontakt wert?", "Ihr Stadtnetzwerk ab 9,90 € netto pro Monat – entdecken Sie jetzt Ihr Unternehmernetzwerk.", "Bei zwölf Monaten Laufzeit.", "Stadtnetzwerk entdecken", "Eigenes Netzwerk aufbauen"]) assert.ok(source.includes(text), text);
   assert.ok(!source.includes("Sie entscheiden, ob Sie mehr beitragen möchten"));
   assert.match(source, /marketingHref\(prefix, "eigenes-portal"\)/);
   assert.ok(source.includes('city ? "Als Mitglied einloggen" : "Eigenes Netzwerk aufbauen"'));

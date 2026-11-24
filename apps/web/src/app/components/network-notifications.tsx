@@ -141,7 +141,7 @@ export function NetworkNotifications() {
                 <img src={i.data.event.imageUrl} alt="" />
               )}
               <span className="networkNewsCopy">
-                {i.network && <small>{i.network.name}</small>}
+                {i.network && i.network.id !== access?.networkId && <small>{i.network.name}</small>}
                 <small>
                   <NetworkText id="ui.network-notifications.dfd2cd9b641075d5">
                     {i.data.event ? "VERANSTALTUNG" : "NEUIGKEIT"}

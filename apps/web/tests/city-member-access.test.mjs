@@ -13,6 +13,8 @@ test('operator-only city access is reachable from registered member actions',()=
 test('cross-network notifications use server-authorized network destinations and source editing stays central',()=>{
   const notifications=source('network-notifications.tsx');
   assert.match(notifications,/\/networks\/account\/network-inbox/);
+  // The current network is redundant; other networks must remain identifiable.
+  assert.match(notifications,/i\.network && i\.network\.id !== access\?\.networkId && <small>\{i\.network\.name\}<\/small>/);
   assert.match(notifications,/router.push\(i.destination as never\)/);
   assert.match(notifications,/i.network.name/);
   assert.match(source('network-profile-workspace.tsx'),/own\?\.sourceProfileSlug/);

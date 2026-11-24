@@ -256,7 +256,7 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
         <p className="cm-eyebrow">
           {city
             ? `Unternehmernetzwerk ${city.city}`
-            : "Gemeinsam netzwerken. Mehr Kontakte gewinnen."}
+            : "Ein Portal. 50 Stadtnetzwerke. Viele Möglichkeiten."}
         </p>
         <h1 id="cm-title">
           {city ? (
@@ -267,25 +267,34 @@ function Hero({ city, prefix }: { city?: City; prefix: string }) {
             </>
           ) : (
             <>
-              Finden Sie Geschäftskontakte,
+              Vernetzen Sie sich.
               <br />
-              <em>die zu Ihrem Unternehmen passen.</em>
+              <em>Regional und bundesweit.</em>
             </>
           )}
         </h1>
         <p className="cm-lead">
           {city
-            ? `In ${city.city} netzwerken, Kontakte knüpfen und Partner finden.`
-            : "Für Ihre Stadt. Für Ihren Verein. Unter Ihrer eigenen Marke."}
+            ? `In ${city.city} netzwerken, Kontakte knüpfen und Unternehmen kennenlernen.`
+            : "Unternehmernetzwerke, Vereinsnetzwerke und Wirtschaftsnetzwerke – auf einer Plattform."}
         </p>
         <p className="cm-hero-description">
           {city
             ? "Unternehmen und Leistungen entdecken, im Mitglieder-Chat sprechen, Angebote teilen und Zusammenarbeit auf den Weg bringen – dann, wenn es in Ihren Alltag passt."
-            : "Entdecken Sie Unternehmen, finden Sie passende Partner und kommen Sie direkt ins Gespräch. In Ihrem regionalen Unternehmernetzwerk – oder in einem eigenen Netzwerk für Ihren Verein, Verband oder Business Club."}
+            : "Lernen Sie Unternehmen kennen, knüpfen Sie neue Geschäftskontakte und tauschen Sie sich direkt mit anderen Mitgliedern aus."}
         </p>
+        {!city && (
+          <p className="cm-hero-description">
+            <strong>Was ist Ihnen ein guter Kontakt wert?</strong>
+            <br />
+            Ihr Stadtnetzwerk ab 9,90 € netto pro Monat – entdecken Sie jetzt Ihr Unternehmernetzwerk.
+            <br />
+            <small>Bei zwölf Monaten Laufzeit.</small>
+          </p>
+        )}
         <div className="cm-actions">
           <Link className="cm-button" href={(city ? "#mitgliedschaft" : registration) as never}>
-            {city ? "Mitglied werden" : "Netzwerk entdecken"}
+            {city ? "Mitglied werden" : "Stadtnetzwerk entdecken"}
           </Link>
           <Link
             className="cm-button cm-button-ghost"

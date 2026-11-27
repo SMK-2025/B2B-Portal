@@ -17,7 +17,9 @@ import { useNetworkAccess } from "./network-shell";
 import { partnerBranding } from "../lib/partner-branding";
 import { PartnerBusinessCard } from "./partner-business-card";
 import { CompanyCardHero } from "./company-card-hero";
+import {MemberPortrait} from './member-portrait';
 export type PartnerPageProfile = {
+  contactPhotoUrl?:string|null;
   documents?: PartnerDocument[];
   heroImageUrl?: string | null;
   sections?: Array<{ title: string; body: string; area?: string }>;
@@ -279,7 +281,8 @@ export function NetworkMembersWorkspace() {
                 style={partnerBranding(profile)}
               >
                 <MemberCardHero networkId={networkId} memberId={member.id} companyName={member.organization?.displayName || member.organization?.legalName || "Unternehmen"} services={profile?.services}/>
-                <div className="networkPartnerCardTop">
+                <div className={`networkPartnerCardTop${profile?.contactPhotoUrl?' hasPortrait':''}`}>
+                  <MemberPortrait photo={profile?.contactPhotoUrl} name={profile?.contactName}/>
                   {profile?.logoUrl ? (
                     <img src={profile.logoUrl} alt="" />
                   ) : (
@@ -557,6 +560,7 @@ export function ProfileDialog({
             }}
             aria-label={`${p.companyName} – Seitenanfang`}
           >
+            <MemberPortrait photo={p.contactPhotoUrl} name={p.contactName}/>
             {p.logoUrl ? (
               <img src={p.logoUrl} alt={p.companyName} />
             ) : (

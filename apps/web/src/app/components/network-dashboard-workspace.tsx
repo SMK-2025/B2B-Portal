@@ -47,6 +47,7 @@ type Partner = {
     networkProfile: {
       status: "draft" | "published";
       contactName: string;
+      contactPhotoUrl?:string|null;
       logoUrl: string | null;
       tagline?: string;
     } | null;
@@ -186,6 +187,7 @@ export function NetworkDashboardWorkspace({
             member.organization!.displayName,
           company: member.organization!.displayName,
           logo: member.organization!.networkProfile!.logoUrl,
+          photo:member.organization!.networkProfile!.contactPhotoUrl,
           tagline: member.organization!.networkProfile!.tagline,
           premium: member.premium,
         }))
@@ -196,6 +198,7 @@ export function NetworkDashboardWorkspace({
         company: "Netzwerkpartner",
         premium: false,
         logo: member.logoUrl,
+        photo:undefined,
         tagline: undefined,
       }));
   return (
@@ -326,6 +329,8 @@ export function NetworkDashboardWorkspace({
                           networkId={data.network.id}
                           membershipId={member.userId ? member.id : undefined}
                           logo={member.logo}
+                          photo={member.photo}
+                          contactName={member.name}
                           company={member.company}
                         />
                         <span className="loungeMemberTileText">

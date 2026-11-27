@@ -6,6 +6,19 @@ import { OrganizationsService } from "../organizations/organizations.service";
 import { NetworksService } from "./networks.service";
 import { annualOrder, pricing } from "./annual-membership";
 describe("personal annual membership billing", () => {
+  it('stores, preserves, removes and tenant-isolates a personal photo in member cards and company detail',async()=>{
+    const f=await fixture(),org=f.orgs.create(f.member,f.input,true),photo='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=';
+    const saved=f.networks.updateOwnProfile(f.member,f.network.id,{publish:false,contactPhotoUrl:photo,logoUrl:'https://example.org/logo.png'});
+    expect(saved.contactPhotoUrl).toBe(photo);const {contactPhotoUrl:_,...legacy}=saved;
+    expect(f.networks.updateOwnProfile(f.member,f.network.id,{...legacy,publish:false}).contactPhotoUrl).toBe(photo);
+    org.networkProfile!.status='published';const membership=f.store.networkMemberships[0];
+    expect(f.networks.memberPage(f.member,f.network.id,{}).items[0].organization?.networkProfile?.contactPhotoUrl).toBe(photo);
+    expect(f.networks.memberDetail(f.member,f.network.id,membership.id).organization?.networkProfile?.contactPhotoUrl).toBe(photo);
+    expect(()=>f.networks.updateOwnProfile(f.owner,f.network.id,{contactPhotoUrl:null})).toThrow();
+    expect(()=>f.networks.memberDetail(f.member,'other-network',membership.id)).toThrow();
+    const copy=new PortalStore();(copy as unknown as {hydrate:(v:unknown)=>void}).hydrate(JSON.parse(f.store.snapshot()));expect(copy.organizations.get(org.id)?.networkProfile?.contactPhotoUrl).toBe(photo);
+    const removed=f.networks.updateOwnProfile(f.member,f.network.id,{...org.networkProfile,publish:false,contactPhotoUrl:null});expect(removed.contactPhotoUrl).toBeNull();expect(removed.logoUrl).toBe('https://example.org/logo.png');
+  });
   it('hides unpublished companies from members in directory, detail and hero but keeps manager access',async()=>{
     const f=await fixture();const org=f.orgs.create(f.member,f.input,true);const membership=f.store.networkMemberships[0];
     org.networkProfile={status:'draft',companyName:'Private draft',tagline:'Draft',heroImageUrl:'private-image'} as any;

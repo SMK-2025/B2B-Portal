@@ -12,6 +12,7 @@ import { reconcileCityMembers, eligibleCitySource, headquartersCity, networkKind
 import {bookingNetwork,contributionPolicy,CONTRIBUTION_MINIMUM,defaultCityContributionSettings} from "./member-contribution";
 import { networkPulse, updatePulse, visibleCooperation, activatePulseOnReply } from './network-pulse';
 import { createRecommendation, respondRecommendation, recommendationRows, recommendationPulse } from './member-recommendations';
+import {memberPhoto} from './member-photo';
 import { NETWORK_FEATURES, MODULE_FEATURES, featureEnabled, networkFeatures, type NetworkFeature } from './network-features';
 import { companyDomain, sameCompanyDomain } from "./company-page-domain";
 import { publicLaunchOffer, launchSettings, validateLaunchBilling } from "./launch-promotion";
@@ -2479,7 +2480,7 @@ export class NetworksService {
       const organization = this.store.organizations.get(this.store.networkMemberships.find(m=>m.id===member.id)!.organizationId);
       return [member, ...(organization?.additionalCompanyPages || []).filter(p=>p.networkId===networkId && p.reviewStatus==='approved' && p.profile?.status==='published').map(p=>({
         ...member, id: member.id + '~' + p.id,
-        organization: {...member.organization!, displayName:p.profile!.companyName,legalName:p.companyName,websiteUrl:p.websiteUrl,networkProfile:{status:p.profile!.status,logoUrl:p.profile!.logoUrl,companyName:p.profile!.companyName,tagline:p.profile!.tagline,services:p.profile!.services,contactName:p.profile!.contactName,primaryColor:p.profile!.primaryColor,secondaryColor:p.profile!.secondaryColor}},
+        organization: {...member.organization!, displayName:p.profile!.companyName,legalName:p.companyName,websiteUrl:p.websiteUrl,networkProfile:{status:p.profile!.status,logoUrl:p.profile!.logoUrl,contactPhotoUrl:p.profile!.contactPhotoUrl,companyName:p.profile!.companyName,tagline:p.profile!.tagline,services:p.profile!.services,contactName:p.profile!.contactName,primaryColor:p.profile!.primaryColor,secondaryColor:p.profile!.secondaryColor}},
       }))];
     }).filter(member => (this.isNetworkManager(user.id,networkId) || member.organization?.networkProfile?.status==='published') && (!status || member.status===status) && `${member.organization?.displayName||''} ${member.user?.firstName||''} ${member.user?.lastName||''} ${member.organization?.networkProfile?.services||''} ${member.organization?.networkProfile?.tagline||''}`.toLowerCase().includes(query));
     const entryPage=Math.min(page,Math.max(1,Math.ceil(entries.length/pageSize)));
@@ -2556,6 +2557,7 @@ export class NetworksService {
                 websiteUrl: organization.websiteUrl,
                 networkProfile: canSeeProfile ? (summary?{
                   status:profile!.status,logoUrl:profile!.logoUrl,companyName:profile!.companyName,
+                  contactPhotoUrl:profile!.contactPhotoUrl,
                   tagline:profile!.tagline,services:profile!.services,contactName:profile!.contactName,
                   primaryColor:profile!.primaryColor,secondaryColor:profile!.secondaryColor,
                 }:this.visibleProfile(networkId,profile!)) : null,
@@ -2949,7 +2951,7 @@ export class NetworksService {
   }
   companyPages(authorization:string|undefined,networkId:string){
     const {organization,user}=this.companyPageOwner(authorization,networkId);
-    return {pages:(organization.additionalCompanyPages||[]).filter(p=>p.networkId===networkId&&p.ownerUserId===user.id).map(page=>({...page,profile:page.profile?{companyName:page.profile.companyName,tagline:page.profile.tagline,status:page.profile.status,logoUrl:page.profile.logoUrl,heroImageUrl:page.profile.heroImageUrl,primaryColor:page.profile.primaryColor,secondaryColor:page.profile.secondaryColor}:null})),limit:5};
+    return {pages:(organization.additionalCompanyPages||[]).filter(p=>p.networkId===networkId&&p.ownerUserId===user.id).map(page=>({...page,profile:page.profile?{companyName:page.profile.companyName,tagline:page.profile.tagline,status:page.profile.status,logoUrl:page.profile.logoUrl,contactPhotoUrl:page.profile.contactPhotoUrl,contactName:page.profile.contactName,heroImageUrl:page.profile.heroImageUrl,primaryColor:page.profile.primaryColor,secondaryColor:page.profile.secondaryColor}:null})),limit:5};
   }
   createCompanyPage(authorization:string|undefined,networkId:string,input:Record<string,unknown>){
     const {organization,user}=this.companyPageOwner(authorization,networkId);
@@ -3175,6 +3177,7 @@ export class NetworksService {
       });
     })();
     const profile: NetworkPartnerProfile = {
+      contactPhotoUrl:memberPhoto(input.contactPhotoUrl,previous?.contactPhotoUrl),
       documents,
       heroImageUrl:
         input.heroImageUrl === undefined

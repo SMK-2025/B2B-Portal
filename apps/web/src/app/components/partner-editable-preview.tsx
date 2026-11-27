@@ -1,4 +1,5 @@
 "use client";
+import {readMemberPhoto} from '../lib/member-photo';
 import { PartnerDocumentsEditor } from "./partner-documents";
 import { useState, type FormEvent } from "react";
 import {
@@ -107,6 +108,7 @@ export function PartnerEditablePreview({
     [message, setMessage] = useState("");
   const [hero, setHero] = useState(initial.heroImageUrl || null),
     [logo, setLogo] = useState(initial.logoUrl),
+    [photo,setPhoto]=useState(initial.contactPhotoUrl||null),
     [documents, setDocuments] = useState(initial.documents || []);
   async function savePage(publish:boolean){
     if(busy||readingImage)return;setBusy(true);setMessage('');
@@ -174,7 +176,7 @@ export function PartnerEditablePreview({
       };
       if (area === "documents") next = { ...next, documents };
       if (area === "hero")
-        next = { ...next, heroImageUrl: hero, logoUrl: logo };
+        next = { ...next, heroImageUrl: hero, logoUrl: logo,contactPhotoUrl:photo };
     }
     try {
       const saved = await onSave(next);
@@ -224,6 +226,7 @@ export function PartnerEditablePreview({
               return;
             setHero(draft.heroImageUrl || null);
             setLogo(draft.logoUrl);
+            setPhoto(draft.contactPhotoUrl||null);
             setDocuments(draft.documents || []);
             setEditing(area);
             setMessage("");
@@ -282,6 +285,7 @@ export function PartnerEditablePreview({
                 {[
                   ["Titelbild", hero, setHero],
                   ["Firmenlogo", logo, setLogo],
+                  ["Persönliches Foto",photo,setPhoto],
                 ].map(([label, url, set]) => (
                   <div className="partnerInlineImage" key={String(label)}>
                     <h4>{String(label)}</h4>
@@ -305,16 +309,14 @@ export function PartnerEditablePreview({
                         onChange={(event) => {
                           const file = event.target.files?.[0];
                           event.currentTarget.value = "";
-                          void image(
-                            file,
-                            set as (value: string | null) => void,
-                          );
+                          if(label==='Persönliches Foto'&&file){setReadingImage(true);void readMemberPhoto(file).then(setPhoto).catch(e=>setMessage(e instanceof Error?e.message:'Foto konnte nicht gelesen werden.')).finally(()=>setReadingImage(false));}
+                          else void image(file,set as (value: string | null) => void);
                         }}
                       />
                     </label>
                     <small>{label === "Titelbild"
                       ? "Empfohlen: 1.920 × 800 Pixel (12:5). Vollflächige Anzeige mit Beschnitt an den Rändern; wichtige Motive mittig und Texte mit ausreichend Randabstand platzieren. PNG, JPG oder WebP · max. 1,5 MB."
-                      : "PNG, JPG oder WebP · max. 1,5 MB"}</small>
+                      : label==='Persönliches Foto'?'Optional · PNG, JPG oder WebP bis 10 MB. Wird automatisch verkleinert.':'PNG, JPG oder WebP · max. 1,5 MB'}</small>
                     {url && (
                       <button
                         type="button"

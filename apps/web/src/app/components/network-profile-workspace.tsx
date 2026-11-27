@@ -19,8 +19,11 @@ import { companySetupProgress } from "../lib/company-setup-progress";
 import { PartnerEditablePreview } from "./partner-editable-preview";
 import type { PartnerPageProfile } from "./network-members-workspace";
 import { CompanyCardHero } from "./company-card-hero";
+import {MemberPortrait} from './member-portrait';
+import {readMemberPhoto} from '../lib/member-photo';
 
 type Profile = {
+  contactPhotoUrl?:string|null;
   documents?: PartnerDocument[];
   heroImageUrl?: string | null;
   sections?: Array<{ title: string; body: string; area?: string }>;
@@ -101,7 +104,7 @@ export function NetworkProfileWorkspace({service}:{service?:{networkId:string;us
     </section>}
     <div className="companyPagesGrid">{cards.map(page=><article className="networkPartnerCard networkMemberShowcase companyOwnerCard" key={page.id} style={partnerBranding(page.profile)}>
       <CompanyCardHero image={page.profile?.heroImageUrl} companyName={page.companyName} services={page.profile?.services}/>
-      <div className="networkPartnerCardTop">{page.profile?.logoUrl?<img src={page.profile.logoUrl} alt=""/>:<span>{page.companyName.slice(0,2).toUpperCase()}</span>}<b className="networkMemberStatus">{pageStates[page.reviewStatus]}</b></div>
+      <div className={`networkPartnerCardTop${page.profile?.contactPhotoUrl?' hasPortrait':''}`}><MemberPortrait photo={page.profile?.contactPhotoUrl} name={page.profile?.contactName}/>{page.profile?.logoUrl?<img src={page.profile.logoUrl} alt=""/>:<span>{page.companyName.slice(0,2).toUpperCase()}</span>}<b className="networkMemberStatus">{pageStates[page.reviewStatus]}</b></div>
       <small className="networkMemberPublication">{page.reviewStatus!=='approved'?'Noch nicht veröffentlicht':''}</small>
       <p>{page.profile?.tagline||'Zeig, was dein Unternehmen ausmacht.'}</p>
       <div className="networkPartnerCardActions companyOwnerActions"><button type="button" className="companySetupButton" onClick={()=>setEditing({id:page.id,action:'setup'})}>Einrichtung öffnen</button><button type="button" onClick={()=>setEditing({id:page.id,action:'preview'})}>Vorschau öffnen & bearbeiten</button></div>
@@ -138,6 +141,8 @@ function CompanyPageEditor({
       : pageId ? `/networks/${networkId}/company-pages/${pageId}` : `/networks/${networkId}/profile`,
     [data, setData] = useState<Response | null>(null),
     [logo, setLogo] = useState<string | null>(null),
+    [photo,setPhoto]=useState<string|null>(null),
+    [readingPhoto,setReadingPhoto]=useState(false),
     [hero, setHero] = useState<string | null>(null),
     [documents, setDocuments] = useState<PartnerDocument[]>([]),
     [readingDocuments, setReadingDocuments] = useState(false),
@@ -158,6 +163,7 @@ function CompanyPageEditor({
           (initialAction==='setup' || (!value.profile && initialAction!=='preview') ||
             new URLSearchParams(window.location.search).has("einrichten"));
         setLogo(value.profile?.logoUrl || null);
+        setPhoto(value.profile?.contactPhotoUrl||null);
         setHero(value.profile?.heroImageUrl || null);
         setSections(value.profile?.sections || []);
         setDocuments(value.profile?.documents || []);
@@ -204,6 +210,10 @@ function CompanyPageEditor({
       setLogo(typeof reader.result === "string" ? reader.result : null);
     reader.readAsDataURL(file);
   }
+  async function choosePhoto(event:ChangeEvent<HTMLInputElement>){
+    const file=event.target.files?.[0];event.currentTarget.value='';if(!file)return;
+    setReadingPhoto(true);try{setPhoto(await readMemberPhoto(file));setNotice('');}catch(e){setNotice(e instanceof Error?e.message:'Foto konnte nicht gelesen werden.');}finally{setReadingPhoto(false);}
+  }
   function chooseHero(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.currentTarget.value = "";
@@ -221,7 +231,7 @@ function CompanyPageEditor({
     reader.readAsDataURL(file);
   }
   async function save(formElement: HTMLFormElement, publish: boolean) {
-    if (readingDocuments || busy) return;
+    if (readingDocuments || readingPhoto || busy) return;
     const token = getPortalSession();
     if (!token || !networkId) return;
     const form = new FormData(formElement);
@@ -245,6 +255,7 @@ function CompanyPageEditor({
           contactEmail: form.get("contactEmail"),
           contactPhone: form.get("contactPhone"),
           logoUrl: logo,
+          contactPhotoUrl:photo,
           heroImageUrl: hero,
           sections,
           documents,
@@ -257,7 +268,7 @@ function CompanyPageEditor({
           publish,
         },
       });
-      verifyPartnerMediaSave({ heroImageUrl: hero, logoUrl: logo }, profile);
+      verifyPartnerMediaSave({ heroImageUrl: hero, logoUrl: logo,contactPhotoUrl:photo }, profile);
       setData((current) => (current ? { ...current, profile } : current));
       if (publish || onDone) {dialog.current?.close();onDone?.(publish ? pageId ? 'Deine zusätzliche Unternehmensseite wurde zur Freigabe eingereicht.' : 'Deine Unternehmensseite ist jetzt in diesem Netzwerk sichtbar.' : 'Dein Entwurf ist gespeichert. Du kannst später hier weitermachen.');}
       setNotice(
@@ -389,6 +400,7 @@ function CompanyPageEditor({
       updatedAt: p.updatedAt || "",
       websiteUrl: String(fields.websiteUrl || ""),
       logoUrl: logo,
+      contactPhotoUrl:photo,
       heroImageUrl: hero,
       documents,
       sections,
@@ -407,6 +419,7 @@ function CompanyPageEditor({
     setPreview(saved);
     setHero(saved.heroImageUrl || null);
     setLogo(saved.logoUrl);
+    setPhoto(saved.contactPhotoUrl||null);
     setSections(saved.sections || []);
     setDocuments(saved.documents || []);
     for (const [key, value] of Object.entries(saved)) {
@@ -962,6 +975,13 @@ function CompanyPageEditor({
                       </NetworkText>
                     </small>
                   </label>
+                  <div className="partnerPhotoUpload">
+                    <label>Persönliches Foto<input type="file" accept="image/png,image/jpeg,image/webp" disabled={!data.canEdit||busy||readingPhoto} onChange={e=>void choosePhoto(e)}/></label>
+                    <MemberPortrait photo={photo} name={p.contactName}/>
+                    <small>Optional · PNG, JPG oder WebP bis 10 MB. Wird automatisch verkleinert und im Netzwerk links neben Ihrem Firmenlogo angezeigt.</small>
+                    {photo&&<button type="button" disabled={!data.canEdit||busy||readingPhoto} onClick={()=>setPhoto(null)}>Foto entfernen</button>}
+                    {readingPhoto&&<p role="status">Foto wird vorbereitet …</p>}
+                  </div>
                   <label className="networkLogoUpload">
                     <span>
                       <NetworkText id="ui.network-profile-workspace.d89ef6ecaf32f5d9">
@@ -1340,6 +1360,7 @@ function CompanyPageEditor({
                 </NetworkText>
               </small>
               <div className="networkProfileLogo">
+                <MemberPortrait photo={photo} name={p?.contactName}/>
                 {logo ? (
                   <img src={logo} alt="" />
                 ) : (

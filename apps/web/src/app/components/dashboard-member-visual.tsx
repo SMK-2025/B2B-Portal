@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
+import {MemberPortrait} from './member-portrait';
 
-export function DashboardMemberVisual({ networkId, membershipId, logo, company }: {
+export function DashboardMemberVisual({ networkId, membershipId, logo, company,photo,contactName }: {
+  photo?:string|null;
+  contactName?:string;
   networkId: string;
   membershipId?: string;
   logo: string | null;
@@ -26,9 +29,10 @@ export function DashboardMemberVisual({ networkId, membershipId, logo, company }
     <span className={`loungeMemberVisual${hero ? " hasHero" : ""}`}>
       {hero && <img className="loungeMemberHeroImage" src={hero} alt="" onError={() => setHero(null)} />}
       {hero && <span className="loungeMemberHeroOverlay" aria-hidden="true" />}
-      <span className="loungeMemberTileLogo">
+      {photo&&<span className="loungeMemberIdentity"><MemberPortrait photo={photo} name={contactName}/><span className="loungeMemberTileLogo">{logo?<img src={logo} alt=""/>:<b>{company.slice(0,2)}</b>}</span></span>}
+      {!photo&&<span className="loungeMemberTileLogo">
         {logo ? <img src={logo} alt="" /> : <b>{company.slice(0, 2)}</b>}
-      </span>
+      </span>}
     </span>
   );
 }

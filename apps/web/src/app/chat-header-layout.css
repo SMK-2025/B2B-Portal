@@ -1,0 +1,32 @@
+/* Both controls share one equal-column row; identity can wrap independently. */
+.partnerChat .partnerChatHeader{display:grid;grid-template-columns:44px minmax(0,1fr) minmax(300px,440px);align-items:center;gap:16px;min-width:0}
+.partnerChat .partnerChatIdentity{min-width:0}
+.partnerChat .partnerChatIdentity h2,.partnerChat .partnerChatIdentity p{max-width:100%;white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip;line-height:1.4}
+.partnerChat .partnerChatHeader>.partnerChatHeaderActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:10px;width:100%;min-width:0}
+.partnerChat .partnerChatHeaderActions>.chatCooperation{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%;min-width:0;margin:0;padding:0;border:0}
+.partnerChat .partnerChatHeaderActions .chatStatusLabel{display:block;min-width:0;width:100%;margin:0}
+.chatStatusSrLabel{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.chatStatusPicker{display:block;position:relative;min-width:0;width:100%;height:56px}
+.chatStatusDisplay{display:flex;flex-direction:column;justify-content:center;width:100%;height:100%;min-width:0;box-sizing:border-box;padding:6px 28px 6px 12px;border:1px solid var(--network-accent,#ccd5e0);border-radius:9px;background:#fff;color:#173043;text-align:left}
+.chatStatusDisplay>small{display:block;margin:0;font-size:10px;line-height:12px;color:#64748b}
+.chatStatusValue{display:block;white-space:normal;overflow-wrap:anywhere;font-size:14px;line-height:17px;font-weight:600}
+.chatStatusDisplay>svg{position:absolute;right:9px;top:calc(50% - 8px)}
+/* Keep the native accessible picker, but render its selected label with wrapping. */
+.partnerChat .partnerChatHeaderActions .chatStatusPicker select{position:absolute;inset:0;width:100%;height:100%;min-width:0;max-width:none;margin:0;padding:0;opacity:0;cursor:pointer;box-sizing:border-box}
+.chatStatusPicker:focus-within .chatStatusDisplay{outline:3px solid var(--network-accent,#5260da);outline-offset:3px}
+.chatStatusPicker:has(select:disabled) .chatStatusDisplay{opacity:.75}
+.partnerChat .partnerChatHeaderActions>.recommendationTrigger{width:100%;height:56px;min-height:56px;max-height:56px;min-width:0;padding:8px 12px;white-space:normal;box-sizing:border-box;margin:0}
+@media(max-width:1100px){
+ .partnerChat .partnerChatHeader{grid-template-columns:44px minmax(0,1fr);gap:12px;padding:14px 16px}
+ .partnerChat .partnerChatHeader>.partnerChatHeaderActions{grid-column:1/-1}
+}
+@media(max-width:620px){
+ .partnerChat .partnerChatHeader{grid-template-columns:24px 36px minmax(0,1fr);gap:10px;padding:12px}
+ .partnerChat .partnerChatIdentity h2{font-size:16px;margin:0;line-height:1.35}
+ .partnerChat .partnerChatIdentity p{font-size:12px;line-height:1.4;margin:3px 0 0}
+ .partnerChat .partnerChatHeaderActions>.recommendationTrigger{font-size:13px;gap:5px;padding:6px}
+ .partnerChat .partnerChatHeaderActions>.recommendationTrigger svg{width:18px;height:18px}
+ .chatStatusDisplay{padding:6px 24px 6px 8px}
+ .chatStatusValue{font-size:13px;line-height:15px}
+ .chatStatusDisplay>small{font-size:10px;line-height:12px}
+}

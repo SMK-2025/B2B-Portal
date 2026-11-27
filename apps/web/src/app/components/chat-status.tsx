@@ -79,7 +79,13 @@ export function ChatCooperation({
   return (
     <section className="chatCooperation">
       <label className="chatStatusLabel">
-        Gesprächsstatus
+        <span className="chatStatusSrLabel">Gesprächsstatus</span>
+        <span className="chatStatusPicker">
+        <span className="chatStatusDisplay" aria-hidden="true">
+          <small>Gesprächsstatus</small>
+          <span className="chatStatusValue">{ready ? labels[s?.stage || 'chat'] : thread ? 'Wartet auf Antwort' : 'Noch kein Gespräch'}</span>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m5 7 5 5 5-5"/></svg>
+        </span>
         <select
           aria-label="Gesprächsstatus ändern"
           value={ready ? s?.stage || "chat" : ""}
@@ -105,6 +111,7 @@ export function ChatCooperation({
             </option>
           ))}
         </select>
+        </span>
       </label>
       {pending && (
         <button

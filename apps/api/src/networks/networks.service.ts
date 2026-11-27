@@ -11,6 +11,7 @@ import { CITY_NETWORKS, cityNetwork, acceptsParticipation, cityBrand, CITY_BRAND
 import { reconcileCityMembers, eligibleCitySource, headquartersCity, networkKind, premiumInCity } from "./city-member-access";
 import {bookingNetwork,contributionPolicy,CONTRIBUTION_MINIMUM,defaultCityContributionSettings} from "./member-contribution";
 import { networkPulse, updatePulse, visibleCooperation, activatePulseOnReply } from './network-pulse';
+import { createRecommendation, respondRecommendation, recommendationRows, recommendationPulse } from './member-recommendations';
 import { NETWORK_FEATURES, MODULE_FEATURES, featureEnabled, networkFeatures, type NetworkFeature } from './network-features';
 import { companyDomain, sameCompanyDomain } from "./company-page-domain";
 import { publicLaunchOffer, launchSettings, validateLaunchBilling } from "./launch-promotion";
@@ -188,7 +189,7 @@ export class NetworksService {
       const network=this.store.networks.get(id);if(!network || network.status!=="active")continue;
       try { for(const item of this.networkNotifications(authorization,id)) {
         const content=this.store.networkContents.get(String(item.data.contentId||""));
-        const page=content?.type==="conversation"?`kommunikation?chat=${encodeURIComponent(content.id)}`:content?.type==="event"?`veranstaltungen?event=${encodeURIComponent(content.id)}`:item.data.contentId?"themen":"mitglieder";
+        const page=item.type==='network.recommendation.community'?'':content?.type==="conversation"?`kommunikation?chat=${encodeURIComponent(content.id)}`:content?.type==="event"?`veranstaltungen?event=${encodeURIComponent(content.id)}`:item.data.contentId?"themen":"mitglieder";
         result.push({...item,network:{id,slug:network.slug,name:network.name},destination:`/portal/netzwerk/${network.slug}/${page}`});
       } }
       catch(error) {if(!(error instanceof ForbiddenException))throw error;}
@@ -3609,6 +3610,7 @@ export class NetworksService {
       "messages",
       "networkPulse",
       "pulseNotes",
+      "recommendations",
       "cooperationThreadId",
       "cooperationPartners",
       "meetings",
@@ -3771,6 +3773,7 @@ export class NetworksService {
         "messages",
         "networkPulse",
         "pulseNotes",
+        "recommendations",
         "cooperationThreadId",
         "cooperationPartners",
         "meetings",
@@ -4785,14 +4788,44 @@ export class NetworksService {
     this.requireFeature(networkId, "pulse");
     const days = Number(daysValue || 30);
     if (![30,60,90,180].includes(days)) throw new BadRequestException('Ungültiger Zeitraum.');
-    return networkPulse(this.store, networkId, days);
+    return [...networkPulse(this.store, networkId, days),...(featureEnabled(this.raw(networkId),'recommendations')?recommendationPulse(this.store,networkId,days):[])].sort((a,b)=>b.at.localeCompare(a.at));
   }
   pulseRevenue(authorization: string | undefined, networkId: string) {
     const actor = this.auth.authenticate(authorization);
     this.requireNetworkAccess(actor.id, networkId);
     this.requireFeature(networkId, "cooperationRevenue");
     const entries = networkPulse(this.store, networkId, 365000).filter(e => e.amountNet !== undefined);
-    return {amountNet: Math.round(entries.reduce((sum,e)=>sum+(e.amountNet || 0),0)*100)/100, cooperations:entries.length};
+    const deals=recommendationRows(this.store,networkId).filter(r=>r.milestones.deal&&r.publishRevenue);
+    return {amountNet: Math.round((entries.reduce((sum,e)=>sum+(e.amountNet || 0),0)+deals.reduce((sum,r)=>sum+(r.amountNet||0),0))*100)/100, cooperations:entries.length,recommendations:deals.length};
+  }
+  recommendationOverview(authorization:string|undefined,networkId:string){
+    const actor=this.auth.authenticate(authorization);
+    this.requireNetworkAccess(actor.id,networkId);this.requireNetworkInitiator(actor.id,networkId);
+    return recommendationRows(this.store,networkId);
+  }
+  async readRecommendationNotice(authorization:string|undefined,networkId:string,noticeId:string){
+    const actor=this.auth.authenticate(authorization);this.requireNetworkAccess(actor.id,networkId);
+    const notice=this.store.notifications.find(n=>n.id===noticeId&&n.userId===actor.id&&n.data.networkId===networkId&&n.type==='network.recommendation.community');
+    if(!notice)throw new NotFoundException('Hinweis nicht gefunden.');
+    notice.readAt=notice.readAt||new Date().toISOString();await this.store.persist();return {ok:true};
+  }
+  async recommend(authorization:string|undefined,networkId:string,contentId:string,input:Record<string,unknown>){
+    const actor=this.auth.authenticate(authorization);
+    this.requireWritableNetwork(actor.id,networkId);this.requireFeature(networkId,'recommendations');
+    const record=this.readThread(actor.id,networkId,contentId);
+    createRecommendation(this.store,record,actor.id,input);
+    this.notifyContent(record,actor.id,'network.reply');
+    for(const userId of new Set(this.store.networkMemberships.filter(m=>m.networkId===networkId&&m.status==='active'&&m.userId!==actor.id).map(m=>m.userId))){
+      this.store.notifications.push({id:randomUUID(),userId,type:'network.recommendation.community',data:{networkId,title:'Mitglieder helfen einander: Eine neue Empfehlung wurde ausgesprochen.'},readAt:null,createdAt:new Date().toISOString()});
+    }
+    await this.store.persist();return this.thread(authorization,networkId,contentId);
+  }
+  async recommendationResponse(authorization:string|undefined,networkId:string,contentId:string,recommendationId:string,input:Record<string,unknown>){
+    const actor=this.auth.authenticate(authorization);
+    this.requireWritableNetwork(actor.id,networkId);this.requireFeature(networkId,'recommendations');
+    const record=this.readThread(actor.id,networkId,contentId);
+    respondRecommendation(this.store,record,actor.id,recommendationId,input);
+    await this.store.persist();return this.thread(authorization,networkId,contentId);
   }
   updateChatPulse(authorization: string | undefined, networkId: string, contentId: string, input: Record<string, unknown>) {
     const actor = this.auth.authenticate(authorization);

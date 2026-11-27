@@ -2,6 +2,7 @@
 import { NetworkText } from "./network-text-editor";
 import { type ChatPulseState } from './network-pulse';
 import { ChatCooperation } from './chat-status';
+import {RecommendationButton,RecommendationCard,type MemberRecommendation} from './member-recommendations';
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
@@ -24,6 +25,7 @@ type FileData = {
   size: number;
 };
 type Message = {
+  recommendationId?:string;
   id: string;
   userId: string;
   author: string;
@@ -44,6 +46,7 @@ type Conversation = {
   data: {
     participantUserIds?: string[];
     messages?: Message[];
+    recommendations?:MemberRecommendation[];
     directChat?: boolean;
     networkPulse?: ChatPulseState;
     pulseNotes?: Message[];
@@ -482,6 +485,7 @@ export function PartnerChatWorkspace() {
                   alt={`Logo ${person.company || person.name}`}
                 />
               )}
+              <RecommendationButton key={`recommend-${thread?.id || partner}`} threadId={thread?.data.directChat?thread.id:undefined} onUpdate={()=>{if(thread)void portalRequest<Conversation>(`${base}/content/${thread.id}/thread`,{token:getPortalSession()||''}).then(updated=>{setThread(updated);void loadList();}).catch(()=>setNotice('Empfehlungen bitte erneut laden.'));}}/>
               <ChatCooperation key={thread?.id || partner} networkId={networkId} thread={thread} onUpdate={() => { if(thread) void portalRequest<Conversation>(`${base}/content/${thread.id}/thread`, { token: getPortalSession() || '' }).then(setThread).catch(() => setNotice('Status bitte erneut laden.')); }} />
             </header>
             <div
@@ -585,6 +589,7 @@ export function PartnerChatWorkspace() {
                 </div>
               ) : null}
               {[...(thread?.data.messages || []), ...(thread?.data.pulseNotes || []).map(n => ({...n, kind:'status-note'}))].sort((a,b)=>a.createdAt.localeCompare(b.createdAt)).map((message, index, all) => {
+                if(message.kind==='recommendation'&&thread){const recommendation=thread.data.recommendations?.find(r=>r.id===message.recommendationId);return recommendation?<RecommendationCard key={message.id} entry={recommendation} threadId={thread.id} onUpdate={()=>void portalRequest<Conversation>(`${base}/content/${thread.id}/thread`,{token:getPortalSession()||''}).then(setThread).catch(()=>setNotice('Rückmeldung bitte erneut laden.'))}/>:null;}
                 if(message.kind === 'status-note') return <aside className="partnerChatSystemNote" key={message.id}><strong>Status aktualisiert</strong><p>{message.body}</p><time>{new Date(message.createdAt).toLocaleString('de-DE')}</time></aside>;
                 const own =
                     message.userId ===

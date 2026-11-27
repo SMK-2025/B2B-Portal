@@ -12,6 +12,7 @@ export function NetworkNotifications() {
     [items, setItems] = useState<
       Array<{
         id: string;
+        type?:string;
         readAt: string | null;
         createdAt: string;
         network?: {id:string;slug:string;name:string};
@@ -107,6 +108,8 @@ export function NetworkNotifications() {
               key={i.id}
               className={`networkNewsItem ${!i.readAt ? "unread" : ""} ${i.data.event ? "networkNewsEvent" : ""}`}
               onClick={() => {
+                if(i.type==='network.recommendation.community'&&i.network){void portalRequest(`/networks/${i.network.id}/recommendation-notices/${i.id}/read`,{token:getPortalSession()||'',body:{}}).then(()=>void load()).catch(()=>{});}
+                if(i.destination && !i.data.contentId && !i.data.welcomeMembershipId && !i.data.partnerMembershipId && i.data.creditMonths===undefined){setOpen(false);router.push(i.destination as never);return;}
                 if(i.destination && (i.network?.id!==access?.networkId || i.destination.includes("/kommunikation?chat="))){
                   setOpen(false);
                   router.push(i.destination as never);

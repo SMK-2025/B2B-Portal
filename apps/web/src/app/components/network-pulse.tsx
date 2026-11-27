@@ -14,6 +14,7 @@ export type ChatPulseState = {
   history: { stage: string; comment: string; at: string }[];
 };
 const labels: Record<string, string> = {
+  recommendation: "Empfehlung ausgesprochen",
   chat: "Im Gespräch",
   offer: "Angebot",
   negotiation: "Verhandlungen",
@@ -66,7 +67,7 @@ export function NetworkPulse() {
         <div>
           <h2>Netzwerk-Puls</h2>
           <p>
-            Gespräche und Kooperationen in deinem Netzwerk.
+            Gespräche, Empfehlungen und Kooperationen in deinem Netzwerk.
           </p>
         </div>
         <label>
@@ -116,7 +117,7 @@ export function NetworkPulse() {
       </div>
       <small>
         Nur Status und gemeinsam freigegebene Beschreibungen – keine
-        Chat-Inhalte.
+        Chat-Inhalte oder empfohlene Kontaktdaten.
       </small>
     </section>
   );
@@ -127,6 +128,7 @@ export function CooperationRevenue() {
     [revenue, setRevenue] = useState<{
       amountNet: number;
       cooperations: number;
+      recommendations?:number;
     } | null>(null);
   const [expanded, setExpanded] = useState(false);
   useEffect(() => {
@@ -170,7 +172,7 @@ export function CooperationRevenue() {
       {expanded && (
         <p>
           {revenue
-            ? `${revenue.cooperations} gemeinsam bestätigte Kooperationen · Netto-Umsatz. Nur von beiden Gesprächspartnern ausdrücklich veröffentlichte Beträge in diesem Netzwerk.`
+            ? `${revenue.cooperations} gemeinsam bestätigte Kooperationen und ${revenue.recommendations || 0} vom Empfänger gemeldete Empfehlungsgeschäfte · Netto-Umsatz. Nur ausdrücklich veröffentlichte Beträge in diesem Netzwerk.`
             : "Die veröffentlichten Umsätze werden geladen."}
         </p>
       )}

@@ -316,6 +316,10 @@ export class NetworksController {
     @Param('networkId') id: string,
     @Query('days') days?: string,
   ) { return this.networks.pulse(auth, id, days); }
+  @Get(':networkId/recommendations') recommendations(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string){return this.networks.recommendationOverview(auth,id);}
+  @Post(':networkId/recommendation-notices/:noticeId/read') readRecommendationNotice(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string,@Param('noticeId') noticeId:string){return this.networks.readRecommendationNotice(auth,id,noticeId);}
+  @Post(':networkId/content/:contentId/recommendations') recommend(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string,@Param('contentId') contentId:string,@Body() body:Record<string,unknown>){return this.networks.recommend(auth,id,contentId,body);}
+  @Post(':networkId/content/:contentId/recommendations/:recommendationId') recommendationResponse(@Headers('authorization') auth:string|undefined,@Param('networkId') id:string,@Param('contentId') contentId:string,@Param('recommendationId') recommendationId:string,@Body() body:Record<string,unknown>){return this.networks.recommendationResponse(auth,id,contentId,recommendationId,body);}
   @Get(':networkId/pulse/revenue') pulseRevenue(@Headers('authorization') auth: string | undefined, @Param('networkId') id:string) {return this.networks.pulseRevenue(auth,id);}
   @Post(':networkId/content/:contentId/pulse') updateChatPulse(
     @Headers('authorization') auth: string | undefined,

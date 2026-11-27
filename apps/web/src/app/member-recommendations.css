@@ -1,0 +1,151 @@
+.recommendationDialog {
+  width: min(680px, 94vw);
+  max-height: 90dvh;
+  overflow: auto;
+  border: 1px solid #dce3eb;
+  border-radius: 16px;
+  padding: 24px;
+  color: #192f40;
+  background: #fff;
+}
+.recommendationDialog::backdrop {
+  background: #10203399;
+}
+.recommendationDialog header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.recommendationDialog label,
+.recommendationCard label,
+.recommendationOverview > label {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+}
+.recommendationFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+.recommendationDialog input:not([type="checkbox"]),
+.recommendationDialog textarea,
+.recommendationCard input:not([type="checkbox"]),
+.recommendationCard textarea,
+.recommendationOverview input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  font: inherit;
+}
+.recommendationCheck {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 10px !important;
+}
+.recommendationCheck input {
+  width: auto;
+  flex: none;
+  margin-top: 4px;
+}
+.recommendationCard {
+  padding: 16px;
+  border: 1px solid #ccd5e2;
+  border-left: 3px solid var(--network-primary, #5964df);
+  border-radius: 10px;
+  background: #f8fafc;
+  min-width: 0;
+}
+.recommendationCard p,
+.recommendationCard li {
+  overflow-wrap: anywhere;
+}
+.recommendationDescription {
+  white-space: pre-wrap;
+}
+.recommendationActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.recommendationCard button,
+.recommendationDialog button {
+  padding: 8px 12px;
+  margin: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #192f40;
+  cursor: pointer;
+}
+.recommendationCard button:disabled,
+.recommendationDialog button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.recommendationOverview {
+  padding: 24px;
+}
+.recommendationSummary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+.recommendationSummary > div {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+.recommendationSummary strong {
+  font-size: 1.8rem;
+}
+.recommendationTable {
+  overflow-x: auto;
+}
+.recommendationTable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.recommendationTable th,
+.recommendationTable td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #dce3eb;
+}
+.recommendationList details {
+  border: 1px solid #dce3eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.recommendationList summary {
+  cursor: pointer;
+}
+.recommendationList dl > div {
+  display: flex;
+  gap: 20px;
+}
+.recommendationList dt {
+  min-width: 160px;
+}
+@media (max-width: 600px) {
+  .recommendationFields {
+    grid-template-columns: 1fr;
+  }
+  .recommendationSummary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .recommendationDialog {
+    padding: 16px;
+  }
+  .recommendationList dl > div {
+    display: block;
+  }
+}

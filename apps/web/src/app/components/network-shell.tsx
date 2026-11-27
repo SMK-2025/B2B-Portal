@@ -144,6 +144,7 @@ const primaryPartnerItems = [
 ];
 const adminItems = [
   { path: "funktionen", label: "Funktionen", icon: "⚙" },
+  { path: "empfehlungen", label: "Empfehlungen", icon: "↗" },
   { path: "einstellungen", label: "Branding & Einstellungen", icon: "⚙" },
   {
     path: "mitglieder",
@@ -346,6 +347,7 @@ function NetworkFrame({
         "einstellungen",
         "funktionen",
         "auswertungen",
+        "empfehlungen",
         "umsaetze",
         "veroeffentlichungen",
       ].includes(section || "")
@@ -418,7 +420,7 @@ function NetworkFrame({
         ),
     ),
     visibleAdmin = adminItems.filter(
-      (item) => item.path === "mitglieder" || !item.module || access.enabledModules.includes(item.module),
+      (item) => (item.path !== 'empfehlungen' || access.isInitiator) && (item.path === "mitglieder" || !item.module || access.enabledModules.includes(item.module)),
     ),
     href = (path: string) => (path ? `${base}/${path}` : base),
     isActive = (path: string) => pathname === href(path),

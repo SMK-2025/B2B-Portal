@@ -1,4 +1,5 @@
 import { HomepageProfileConsent } from "../../../../components/homepage-profile-consent";
+import {RecommendationsOverview} from '../../../../components/member-recommendations';
 import { notFound, redirect } from "next/navigation";
 import { NetworkShell } from "../../../../components/network-shell";
 import { NetworkModuleWorkspace } from "../../../../components/network-module-workspace";
@@ -12,6 +13,7 @@ import { NetworkConversationsWorkspace } from "../../../../components/network-ex
 import { AccountSettingsWorkspace } from "../../../../components/account-settings-workspace";
 import { NetworkFeaturesWorkspace } from "../../../../components/network-features-workspace";
 const pages: Record<string, [string, string]> = {
+  empfehlungen:['Empfehlungen','Nachvollziehen, wie Mitglieder einander helfen und welche Kontakte daraus entstehen.'],
   funktionen: ["Funktionen", "Bestimmen Sie selbst, welche Funktionen Ihr Netzwerk nutzt."],
   konto: [
     "Mein Konto & Sicherheit",
@@ -87,6 +89,7 @@ export default async function Page({
     .join(" ");
   let body;
   if (bereich === "funktionen") body = <NetworkFeaturesWorkspace />;
+  else if(bereich==='empfehlungen')body=<RecommendationsOverview/>;
   else if (bereich === "mitglieder") body = <NetworkMembersWorkspace />;
   else if (bereich === "konto")
     body = <AccountSettingsWorkspace networkSlug={slug} />;

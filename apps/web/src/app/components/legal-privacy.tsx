@@ -1,8 +1,8 @@
 import { LegalPage, LegalSection } from "./legal-page";
 
 
-export function PrivacyContent({current=false}:{current?:boolean}) {
-  return <LegalPage eyebrow="DATENSCHUTZ" title="Datenschutz im Partnerportal" intro="Informationen zur Nutzung durch Unternehmen und ihre Ansprechpartner." updated={current?"19. November 2026":"3. November 2026"}>
+export function PrivacyContent({current=false,recommendationsEnabled=false}:{current?:boolean;recommendationsEnabled?:boolean}) {
+  return <LegalPage eyebrow="DATENSCHUTZ" title="Datenschutz im Partnerportal" intro="Informationen zur Nutzung durch Unternehmen und ihre Ansprechpartner." updated={recommendationsEnabled?"27. November 2026":current?"19. November 2026":"3. November 2026"}>
     <LegalSection title="Verantwortlicher">
       <p>Media Online Innovations Group, Inhaber Martin Kelm, Im Weidenblech 25, 51371 Leverkusen, Telefon 0214 / 330 140 60, E-Mail: service@b2b-matching.de.</p>
     </LegalSection>
@@ -13,6 +13,10 @@ export function PrivacyContent({current=false}:{current?:boolean}) {
     <LegalSection title="Zusammenarbeit im geschützten Netzwerk">
       <p>Mitglieder sehen die entsprechend ihrer Berechtigung freigegebenen Unternehmensprofile und Inhalte. Bei Beiträgen, Kommentaren und Vernetzungsanfragen können Name und Unternehmenslogo sichtbar sein. Persönliche Chats richten sich an die Gesprächsteilnehmer. Anmeldungen, Zusagen und gegebenenfalls Gästedaten sind für die zuständige Veranstaltungsverwaltung einsehbar. Die Netzwerkleitung sieht die für ihre Aufgaben erforderlichen Mitglieder- und Veranstaltungsdaten. Grundlage ist die Bereitstellung der genutzten Funktionen nach Art. 6 Abs. 1 Buchst. b bzw. f DSGVO.</p>
     </LegalSection>
+    {recommendationsEnabled&&<LegalSection title="Empfehlungen zwischen Mitgliedern">
+      <p>Bei einer im Mitglieder-Chat ausdrücklich versendeten Empfehlung speichern wir das empfohlene Unternehmen, den Ansprechpartner, E-Mail-Adresse, Rufnummer, die Beschreibung des Anliegens sowie Absender, Empfänger und Zeitpunkte. Der Absender bestätigt vor dem Versand, dass er die Kontaktdaten weitergeben darf. Neben den beiden Gesprächsteilnehmern kann die zuständige Netzwerkleitung die Empfehlung und die vom Empfänger dokumentierten Rückmeldungen einsehen. Diese Berechtigung umfasst nicht die übrigen privaten Chatnachrichten.</p>
+      <p>Erst das bewusste Öffnen der Empfehlung wird als „geöffnet“ dokumentiert. Annahme, Dank, Antwort, entstandener Kontakt und Geschäft werden ausschließlich durch den Empfänger angegeben; eine tatsächliche Kontaktaufnahme außerhalb des Portals wird nicht automatisch überwacht. Die Netzwerkleitung kann auswerten, welche Empfehlungen bislang ohne Rückmeldung geblieben sind. Im Netzwerk-Puls erscheinen die beteiligten Mitglieder und der Hinweis auf eine Empfehlung, nicht die empfohlenen Kontaktdaten oder das geschilderte Anliegen. Die Netzwerkmitglieder erhalten hierzu einen allgemeinen Hinweis im Portal. Ein gemeldeter Netto-Umsatz fließt nur nach ausdrücklicher Freigabe des Empfängers in die sichtbare Umsatzsumme dieses Netzwerks ein.</p>
+    </LegalSection>}
     <LegalSection title="Öffentliche Homepage">
       <p>In Netzwerken mit Homepage-Anbindung entscheiden Sie gesondert, welche Ihrer Profilangaben öffentlich erscheinen. Ohne Ihre Freigabe wird Ihr Profil nicht über diese Schnittstelle veröffentlicht. Sie können die Freigabe im Portal ändern oder für die Zukunft widerrufen (Art. 6 Abs. 1 Buchst. a DSGVO). Der Widerruf beendet die Auslieferung der betroffenen Angaben; bereits von Dritten angefertigte Kopien werden dadurch nicht automatisch gelöscht. Für öffentliche Termine, Bilder und Rückblicke gilt die jeweilige Veranstaltungs- bzw. Beitragsfreigabe. Sie umfasst nicht automatisch die Einwilligung abgebildeter Personen.</p>
     </LegalSection>

@@ -3,6 +3,7 @@ import type { NetworkRecord } from "../core/domain";
 // One catalog for API, administration, navigation and dashboard. Omitted values
 // preserve the existing experience; a switch never changes billing or deletes data.
 export const NETWORK_FEATURES = [
+  {id:'recommendations',name:'Empfehlungen im Mitglieder-Chat',description:'Kontakte empfehlen, Rückmeldungen dokumentieren und Empfehlungen als Netzwerkleitung auswerten.',requires:'chat'},
   {
     id: "profiles",
     name: "Mitglieder & Unternehmensseiten",

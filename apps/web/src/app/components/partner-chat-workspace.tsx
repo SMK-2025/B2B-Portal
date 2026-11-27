@@ -16,6 +16,7 @@ type Person = {
   company: string;
   role: string;
   logoUrl?: string | null;
+  contactPhotoUrl?:string|null;
 };
 type FileData = {
   id: string;
@@ -55,10 +56,10 @@ type Conversation = {
 const ids = (item: Conversation) => [
   ...new Set([item.createdByUserId, ...(item.data.participantUserIds || [])]),
 ];
-function Avatar({ person }: { person?: Person }) {
+function Avatar({ person,companyBadge=true }: { person?: Person;companyBadge?:boolean }) {
   return (
-    <span className="partnerChatAvatar">
-      {person?.logoUrl ? (
+    <span className={`partnerChatAvatar${person?.contactPhotoUrl?' hasPortrait':''}`}>
+      {person?.contactPhotoUrl ? <img className="partnerChatPortrait" src={person.contactPhotoUrl} alt={`Foto von ${person.name}`} loading="lazy" decoding="async"/> : person?.logoUrl ? (
         <img src={person.logoUrl} alt="" />
       ) : (
         (person?.name || "P")
@@ -67,6 +68,7 @@ function Avatar({ person }: { person?: Person }) {
           .map((x) => x[0])
           .join("")
       )}
+      {person?.contactPhotoUrl&&person.logoUrl&&companyBadge&&<img className="partnerChatLogoBadge" src={person.logoUrl} alt={`Logo ${person.company||'des Unternehmens'}`} loading="lazy" decoding="async"/>}
     </span>
   );
 }
@@ -468,7 +470,7 @@ export function PartnerChatWorkspace() {
               >
                 ‹
               </button>
-              <Avatar person={person} />
+              <Avatar person={person} companyBadge={false} />
               <div>
                 <h2>{person?.name || thread?.title || "Mitglieder-Chat"}</h2>
                 <p>

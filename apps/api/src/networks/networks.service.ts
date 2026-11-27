@@ -4746,6 +4746,7 @@ export class NetworksService {
       .map((m) => ({
         userId: m.userId,
         logoUrl: this.store.organizations.get(m.organizationId)?.networkProfile?.logoUrl || null,
+        contactPhotoUrl: (()=>{const profile=this.store.organizations.get(m.organizationId)?.networkProfile;return profile&&(profile.status==='published'||m.userId===actor.id)?profile.contactPhotoUrl||null:null;})(),
         role: m.role,
         name: [
           this.store.users.get(m.userId)?.firstName,

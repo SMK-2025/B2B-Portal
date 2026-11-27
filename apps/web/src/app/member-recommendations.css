@@ -8,6 +8,20 @@
   color: #192f40;
   background: #fff;
 }
+.partnerChatHeader .recommendationTrigger,
+.recommendationDialog button[type="submit"] {
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:44px;padding:11px 17px;box-sizing:border-box;
+  border:1px solid var(--partner-primary,var(--network-accent,#5260da));border-radius:9px;
+  background:var(--partner-primary,var(--network-accent,#5260da));color:var(--partner-ink,#fff);
+  font:inherit;font-size:14px;font-weight:600;line-height:1.3;white-space:nowrap;cursor:pointer;
+  box-shadow:0 3px 9px var(--partner-border,#142b4026);transition:filter .15s,box-shadow .15s;
+}
+.recommendationTrigger svg{flex:none}
+.partnerChatHeader .recommendationTrigger:hover:not(:disabled),.recommendationDialog button[type="submit"]:hover:not(:disabled){filter:brightness(.94)}
+.partnerChatHeader .recommendationTrigger:focus-visible,.recommendationDialog button[type="submit"]:focus-visible{outline:3px solid var(--partner-primary,var(--network-accent,#5260da));outline-offset:3px}
+.partnerChatHeader .recommendationTrigger:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+@media(max-width:700px){.partnerChatHeader .recommendationTrigger{min-height:42px;padding:10px 13px;font-size:13px}}
 .recommendationDialog::backdrop {
   background: #10203399;
 }

@@ -1,12 +1,3 @@
-.partnerChat .partnerChatCompanyLogo {
-  flex: 0 1 145px;
-  width: 145px;
-  height: 48px;
-  max-width: 22%;
-  object-fit: contain;
-  object-position: right center;
-  margin-left: 12px;
-}
 .partnerChat .partnerChatHistory {
   background-color: #f5f3f0;
   background-image:
@@ -149,13 +140,6 @@
   }
   .partnerChat .partnerChatWelcome h3 {
     font-size: 23px;
-  }
-  .partnerChat .partnerChatCompanyLogo {
-    width: 75px;
-    flex-basis: 75px;
-    height: 34px;
-    max-width: 22%;
-    margin-left: 0;
   }
   .partnerChatStarters {
     flex-direction: column;

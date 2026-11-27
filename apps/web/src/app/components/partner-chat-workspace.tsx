@@ -470,7 +470,7 @@ export function PartnerChatWorkspace() {
               >
                 ‹
               </button>
-              <Avatar person={person} companyBadge={false} />
+              <Avatar person={person} />
               <div>
                 <h2>{person?.name || thread?.title || "Mitglieder-Chat"}</h2>
                 <p>
@@ -480,13 +480,6 @@ export function PartnerChatWorkspace() {
                   </NetworkText>
                 </p>
               </div>
-              {person?.logoUrl && (
-                <img
-                  className="partnerChatCompanyLogo"
-                  src={person.logoUrl}
-                  alt={`Logo ${person.company || person.name}`}
-                />
-              )}
               <RecommendationButton key={`recommend-${thread?.id || partner}`} threadId={thread?.data.directChat&&!closed?thread.id:undefined} onEnsureThread={!thread&&person?async()=>{const created=await portalRequest<Conversation>(`${base}/content`,{token:getPortalSession()||'',body:{type:'conversation',status:'published',title:`Mitglieder-Chat · ${person.name}`.slice(0,200),description:'Vertraulicher Austausch zwischen zwei Mitgliedern.',participantUserIds:[person.userId],data:{category:'Sonstiger Austausch',directChat:true}}});return created.id;}:undefined} onUpdate={id=>{setSelected(id);void portalRequest<Conversation>(`${base}/content/${id}/thread`,{token:getPortalSession()||''}).then(updated=>{setThread(updated);void loadList();}).catch(()=>setNotice('Empfehlungen bitte erneut laden.'));}}/>
               <ChatCooperation key={thread?.id || partner} networkId={networkId} thread={thread} onUpdate={() => { if(thread) void portalRequest<Conversation>(`${base}/content/${thread.id}/thread`, { token: getPortalSession() || '' }).then(setThread).catch(() => setNotice('Status bitte erneut laden.')); }} />
             </header>

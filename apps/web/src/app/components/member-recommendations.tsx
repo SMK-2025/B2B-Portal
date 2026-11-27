@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getPortalSession, portalRequest } from "../lib/portal-api";
 import { useNetworkAccess } from "./network-shell";
+import {partnerBranding} from '../lib/partner-branding';
 import "../member-recommendations.css";
 export type MemberRecommendation = {
   id: string;
@@ -89,6 +90,10 @@ export function RecommendationButton({
     <>
       <button
         type="button"
+        className="recommendationTrigger"
+        style={partnerBranding(access)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
         disabled={!threadId && !onEnsureThread}
         title={
           !threadId && !onEnsureThread
@@ -100,12 +105,14 @@ export function RecommendationButton({
           setOpen(true);
         }}
       >
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6m-3-3h6"/></svg>
         Empfehlung
       </button>
       {open && (
         <dialog
           ref={dialog}
           className="recommendationDialog"
+          style={partnerBranding(access)}
           onCancel={() => setOpen(false)}
         >
           <form onSubmit={send}>

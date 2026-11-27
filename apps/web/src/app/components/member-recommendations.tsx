@@ -33,10 +33,12 @@ const stamp = (v?: string) =>
   v ? new Date(v).toLocaleString("de-DE", { timeZone: "Europe/Berlin" }) : "–";
 export function RecommendationButton({
   threadId,
+  onEnsureThread,
   onUpdate,
 }: {
   threadId?: string;
-  onUpdate: () => void;
+  onEnsureThread?: () => Promise<string>;
+  onUpdate: (threadId: string) => void;
 }) {
   const access = useNetworkAccess(),
     dialog = useRef<HTMLDialogElement>(null);
@@ -51,13 +53,14 @@ export function RecommendationButton({
     return null;
   async function send(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!access || !threadId || busy) return;
+    if (!access || (!threadId && !onEnsureThread) || busy) return;
     setBusy(true);
     setError("");
     const form = new FormData(e.currentTarget);
     try {
+      const id = threadId || (await onEnsureThread!());
       await portalRequest(
-        `/networks/${access.networkId}/content/${threadId}/recommendations`,
+        `/networks/${access.networkId}/content/${id}/recommendations`,
         {
           token: getPortalSession() || "",
           body: {
@@ -71,7 +74,7 @@ export function RecommendationButton({
         },
       );
       setOpen(false);
-      onUpdate();
+      onUpdate(id);
     } catch (e) {
       setError(
         e instanceof Error
@@ -86,10 +89,10 @@ export function RecommendationButton({
     <>
       <button
         type="button"
-        disabled={!threadId}
+        disabled={!threadId && !onEnsureThread}
         title={
-          !threadId
-            ? "Starten Sie zuerst das Gespräch mit einer Nachricht."
+          !threadId && !onEnsureThread
+            ? "Empfehlungen sind in einem offenen Einzelgespräch möglich."
             : undefined
         }
         onClick={() => {
